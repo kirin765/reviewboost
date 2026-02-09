@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.env*.local
+.env.local
+assets/fonts/*.otf
+assets/fonts/*.ttf
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local secrets/build artifacts
+.env.local
+.env
+.next/
+node_modules/
+*.log
