@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Capabilities } from "@/lib/capabilities";
 import CopyButton from "@/components/CopyButton";
+import { isApiErrorBody } from "@/lib/api_error";
 
 type AnalysisResult = {
   stats: {
@@ -96,19 +97,34 @@ export default function DashboardPage() {
   function friendlyErrorMessage(raw: string) {
     const s = String(raw || "").trim();
     if (!s) return "처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
-    if (s.includes("CSV 파싱 실패")) return "CSV를 읽지 못했어요. 엑셀에서 'CSV(쉼표로 구분)'로 저장했는지 확인해주세요.";
-    if (s.includes("빈 파일")) return "빈 파일이에요. 내용이 있는 CSV를 올려주세요.";
-    if (s.includes("파일이 너무 큽니다")) return "파일이 너무 커서 업로드할 수 없어요. CSV를 나눠서 시도해주세요.";
     if (s.includes("업로드 파일을 읽을 수 없습니다")) return "파일을 읽지 못했어요. 다시 선택해서 시도해주세요.";
     if (s.includes("로그인이 필요합니다")) return "저장된 리포트를 보려면 로그인이 필요합니다.";
     return s;
+  }
+
+  async function readErrorText(res: Response): Promise<string> {
+    const ct = res.headers.get("content-type") ?? "";
+    if (ct.includes("application/json")) {
+      try {
+        const json = await res.json();
+        if (isApiErrorBody(json)) {
+          const msg = String(json.error.message ?? "").trim();
+          const help = Array.isArray(json.error.help) ? json.error.help.map((h) => String(h).trim()).filter(Boolean) : [];
+          const lines = [msg, ...help.map((h) => `- ${h}`)].filter(Boolean);
+          return lines.join("\n");
+        }
+      } catch {
+        // fall through to text()
+      }
+    }
+    return friendlyErrorMessage(await res.text());
   }
 
   async function loadPreview(f: File) {
     const fd = new FormData();
     fd.set("file", f);
     const res = await fetch("/api/preview", { method: "POST", body: fd });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await readErrorText(res));
     const json = (await res.json()) as CsvPreview;
     setPreview(json);
     setTextCol(json.inferred.textCol ?? "");
@@ -134,7 +150,7 @@ export default function DashboardPage() {
       if (dateCol) fd.set("dateCol", dateCol);
       if (useLLM) fd.set("useLLM", "1");
       const res = await fetch("/api/analyze", { method: "POST", body: fd });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await readErrorText(res));
       const json = (await res.json()) as AnalysisResult;
       setResult(json);
     } catch (e: any) {
@@ -154,7 +170,7 @@ export default function DashboardPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(result)
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await readErrorText(res));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

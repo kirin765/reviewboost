@@ -23,6 +23,21 @@ export type CsvPreview = {
   warnings: string[];
 };
 
+function inferDelimiter(csvText: string): "," | ";" | "\t" {
+  // Naive delimiter inference to reduce "one giant column" CSVs coming from locale settings.
+  // We look at a few lines and count common separators.
+  const lines = csvText.split(/\r?\n/).slice(0, 10).filter((l) => l.trim().length > 0);
+  const count = (d: string) => lines.reduce((acc, l) => acc + (l.split(d).length - 1), 0);
+  const comma = count(",");
+  const semi = count(";");
+  const tab = count("\t");
+
+  // Prefer the dominant delimiter, but keep comma as default.
+  if (tab >= 3 && tab > comma * 2 && tab > semi * 2) return "\t";
+  if (semi >= 3 && semi > comma * 2) return ";";
+  return ",";
+}
+
 function normalizeKey(k: string) {
   return k.trim().toLowerCase();
 }
@@ -103,6 +118,12 @@ function synthColumnsFromWidth(width: number): string[] {
 
 export function previewReviewCsv(csvText: string): CsvPreview {
   const warnings: string[] = [];
+  const delimiter = inferDelimiter(csvText);
+  if (delimiter !== ",") {
+    warnings.push(
+      `구분자가 '${delimiter === "\t" ? "TAB" : delimiter}' 로 감지되었습니다. 엑셀에서 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'로 저장하면 가장 안정적입니다.`
+    );
+  }
 
   // First attempt: parse as header CSV
   const headerRecords = parse(csvText, {
@@ -110,7 +131,8 @@ export function previewReviewCsv(csvText: string): CsvPreview {
     skip_empty_lines: true,
     relax_column_count: true,
     bom: true,
-    trim: true
+    trim: true,
+    delimiter
   }) as Record<string, unknown>[];
 
   if (headerRecords.length === 0) {
@@ -155,7 +177,8 @@ export function previewReviewCsv(csvText: string): CsvPreview {
     skip_empty_lines: true,
     relax_column_count: true,
     bom: true,
-    trim: true
+    trim: true,
+    delimiter
   }) as unknown[][];
 
   const width = Math.max(...rows.map((r) => (Array.isArray(r) ? r.length : 0)));
@@ -188,7 +211,8 @@ export function parseReviewCsvWithMapping(csvText: string, mapping?: Partial<Csv
       skip_empty_lines: true,
       relax_column_count: true,
       bom: true,
-      trim: true
+      trim: true,
+      delimiter: inferDelimiter(csvText)
     }) as Record<string, unknown>[];
 
     return records
@@ -206,7 +230,8 @@ export function parseReviewCsvWithMapping(csvText: string, mapping?: Partial<Csv
     skip_empty_lines: true,
     relax_column_count: true,
     bom: true,
-    trim: true
+    trim: true,
+    delimiter: inferDelimiter(csvText)
   }) as unknown[][];
 
   const colIndex = (colName: string) => {

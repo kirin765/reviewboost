@@ -1,33 +1,34 @@
 import { classifyHeuristic, computeAnalysisFromClassified } from "@/lib/analysis";
 import { parseReviewCsvWithMapping } from "@/lib/csv";
+import { ApiError, apiErrorResponse } from "@/lib/api_error";
 import { classifyReviewsWithOpenAI } from "@/lib/openai_classify";
 import { generateSuggestions } from "@/lib/openai_suggestions";
 import { getSupabaseAdminClient } from "@/lib/supabase_server";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
+import { readUploadedCsvText } from "@/lib/upload_csv";
 
 export const runtime = "nodejs";
 
 const MAX_BYTES = 6 * 1024 * 1024;
 
-function jsonError(status: number, message: string) {
-  return new Response(message, { status, headers: { "content-type": "text/plain; charset=utf-8" } });
-}
-
 export async function POST(req: Request) {
-  const ct = req.headers.get("content-type") ?? "";
-  if (!ct.includes("multipart/form-data")) return jsonError(415, "multipart/form-data 로 업로드하세요.");
-
-  const form = await req.formData();
-  const file = form.get("file");
-  const f: any = file;
-  if (!f || typeof f !== "object") return jsonError(400, "file 필드가 필요합니다.");
-  if (typeof f.text !== "function") return jsonError(400, "업로드 파일을 읽을 수 없습니다.");
-  const size = typeof f.size === "number" ? f.size : null;
-  if (typeof size === "number" && size <= 0) return jsonError(400, "빈 파일입니다.");
-  if (typeof size === "number" && size > MAX_BYTES) return jsonError(413, `파일이 너무 큽니다. 최대 ${MAX_BYTES} bytes`);
-
-  const filename = typeof f.name === "string" ? f.name : null;
-  const csvText = await f.text();
+  let form: FormData;
+  let filename: string | null;
+  let csvText: string;
+  try {
+    // This also enforces: 형식(.csv), 빈 파일, 대용량, 인코딩(UTF-8) 기본 가드레일.
+    const uploaded = await readUploadedCsvText(req, MAX_BYTES);
+    filename = uploaded.filename;
+    csvText = uploaded.csvText;
+    form = uploaded.form;
+  } catch (e: any) {
+    if (e instanceof ApiError) return apiErrorResponse(e);
+    return apiErrorResponse(
+      new ApiError(500, "CSV_PARSE_FAILED", "처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", {
+        details: e?.message ?? String(e)
+      })
+    );
+  }
 
   const headerMode = (form.get("headerMode") as string | null) ?? null;
   const textCol = (form.get("textCol") as string | null) ?? null;
@@ -44,7 +45,16 @@ export async function POST(req: Request) {
       dateCol: dateCol || undefined
     });
   } catch (e: any) {
-    return jsonError(400, `CSV 파싱 실패: ${e?.message ?? String(e)}`);
+    return apiErrorResponse(
+      new ApiError(400, "CSV_PARSE_FAILED", "CSV를 읽지 못했어요.", {
+        help: [
+          "엑셀/구글시트에서 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'로 다시 저장해서 올려주세요.",
+          "구분자가 ';' 또는 TAB인 경우, 쉼표(,)로 바꿔 저장하면 안정적입니다.",
+          "따옴표(\")가 짝이 맞지 않거나 줄바꿈이 섞이면 파싱이 실패할 수 있어요."
+        ],
+        details: e?.message ?? String(e)
+      })
+    );
   }
 
   // 1) Heuristic classification (baseline)
