@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Capabilities } from "@/lib/capabilities";
 import CopyButton from "@/components/CopyButton";
 import { isApiErrorBody } from "@/lib/api_error";
@@ -48,6 +48,7 @@ type CsvPreview = {
 };
 
 export default function DashboardPage() {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +94,18 @@ export default function DashboardPage() {
     if (!result) return 3;
     return 4;
   }, [file, preview, result]);
+
+  function resetAll() {
+    setFile(null);
+    setPreview(null);
+    setResult(null);
+    setError(null);
+    setTextCol("");
+    setRatingCol("");
+    setDateCol("");
+    setUseLLM(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   function friendlyErrorMessage(raw: string) {
     const s = String(raw || "").trim();
@@ -160,6 +173,31 @@ export default function DashboardPage() {
     }
   }
 
+  async function onSample() {
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      // Load sample.csv into a File so the rest of the pipeline can stay the same.
+      const res = await fetch("/sample.csv", { cache: "no-store" });
+      if (!res.ok) throw new Error("샘플 CSV를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+      const blob = await res.blob();
+      const f = new File([blob], "sample.csv", { type: "text/csv" });
+      setFile(f);
+      setPreview(null);
+      setTextCol("");
+      setRatingCol("");
+      setDateCol("");
+      setUseLLM(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      await loadPreview(f);
+    } catch (e: any) {
+      setError(friendlyErrorMessage(e?.message ?? String(e)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onDownloadPdf() {
     if (!result) return;
     setBusy(true);
@@ -203,7 +241,16 @@ export default function DashboardPage() {
               샘플 CSV 다운로드
             </a>
           </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: -2, marginBottom: 10 }}>
+            <button className="btn btnWarn" onClick={onSample} disabled={busy}>
+              샘플로 테스트
+            </button>
+            <button className="btn" onClick={resetAll} disabled={busy}>
+              새로 시작
+            </button>
+          </div>
           <input
+            ref={fileInputRef}
             className="input"
             type="file"
             accept=".csv,text/csv"
@@ -216,6 +263,7 @@ export default function DashboardPage() {
               setTextCol("");
               setRatingCol("");
               setDateCol("");
+              setUseLLM(false);
             }}
             disabled={busy}
           />
@@ -234,21 +282,6 @@ export default function DashboardPage() {
             </button>
             <button className="btn" onClick={onDownloadPdf} disabled={!result || busy}>
               PDF 다운로드
-            </button>
-            <button
-              className="btn"
-              onClick={() => {
-                setFile(null);
-                setPreview(null);
-                setResult(null);
-                setError(null);
-                setTextCol("");
-                setRatingCol("");
-                setDateCol("");
-              }}
-              disabled={busy}
-            >
-              새로 시작
             </button>
           </div>
 
