@@ -361,24 +361,33 @@ export default function DashboardPage() {
           {!summary ? (
             <p className="muted">분석 결과가 여기에 표시됩니다.</p>
           ) : (
-            <div className="kpiRow">
-              <div className="kpi">
-                <div className="label">리뷰 수</div>
-                <div className="value">{summary.total}</div>
-              </div>
-              <div className="kpi">
-                <div className="label">부정 비율</div>
-                <div className="value" style={{ color: "var(--warn)" }}>
-                  {summary.neg}
+            <>
+              <div className="kpiRow">
+                <div className="kpi">
+                  <div className="label">리뷰 수</div>
+                  <div className="value">{summary.total}</div>
+                </div>
+                <div className="kpi">
+                  <div className="label">부정 비율</div>
+                  <div className="value" style={{ color: "var(--warn)" }}>
+                    {summary.neg}
+                  </div>
+                </div>
+                <div className="kpi">
+                  <div className="label">우선순위 점수</div>
+                  <div className="value" style={{ color: "var(--accent)" }}>
+                    {summary.score}
+                  </div>
                 </div>
               </div>
-              <div className="kpi">
-                <div className="label">우선순위 점수</div>
-                <div className="value" style={{ color: "var(--accent)" }}>
-                  {summary.score}
-                </div>
-              </div>
-            </div>
+              <p className="hint">
+                우선순위 점수는 “지금 먼저 개선할 가치”를 0~100으로 요약한 값입니다. 부정 비율(부정/전체)이 높고, 최근
+                이슈(최근30일 비중)가 높을수록 우선순위가 올라갑니다.
+              </p>
+              {!result?.stats.recentness?.hasDates ? (
+                <p className="hint muted">작성일 열이 없으면 “최근 이슈”는 계산되지 않거나 약하게만 반영됩니다.</p>
+              ) : null}
+            </>
           )}
           {result && (
             <div style={{ marginTop: 12 }}>

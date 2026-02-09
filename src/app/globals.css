@@ -149,7 +149,8 @@ a {
 
 .kpiRow {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* Flexible: KPI count varies by page (3~5). */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 

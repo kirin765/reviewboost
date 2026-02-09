@@ -65,13 +65,18 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
   const stats: any = data.stats;
   const suggestions: any = data.suggestions;
   const created = new Date(data.created_at).toLocaleString("ko-KR");
+  const priorityScore = Number(data.priority_score ?? 0);
+  const recent30Share =
+    stats?.recentness?.hasDates && typeof stats?.recentness?.last30Share === "number"
+      ? `${Math.round(stats.recentness.last30Share * 100)}%`
+      : null;
 
   return (
     <main style={{ marginTop: 18 }}>
       <div className="card">
         <h2>분석 상세</h2>
         <p className="muted">
-          {data.input_filename ?? "CSV"} · {created} · 우선순위 {Number(data.priority_score ?? 0).toFixed(1)}
+          {data.input_filename ?? "CSV"} · {created} · 우선순위 {priorityScore.toFixed(1)}
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
           <a className="btn" href="/dashboard/history">
@@ -104,7 +109,26 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
               <div className="label">평균 별점</div>
               <div className="value">{typeof stats?.avgRating === "number" ? stats.avgRating.toFixed(2) : "-"}</div>
             </div>
+            <div className="kpi">
+              <div className="label">우선순위 점수</div>
+              <div className="value" style={{ color: "var(--accent)" }}>
+                {priorityScore.toFixed(1)}
+              </div>
+            </div>
+            <div className="kpi">
+              <div className="label">최근 이슈(최근30일 비중)</div>
+              <div className="value" style={{ color: "var(--warn)" }}>
+                {recent30Share ?? "-"}
+              </div>
+            </div>
           </div>
+          <p className="hint">
+            우선순위 점수는 부정 비율(부정/전체), 별점 하락, 문제 카테고리 영향도, 리뷰 수, 최근성(작성일 기준)을 합쳐 “지금
+            먼저 손봐야 할 정도”를 0~100으로 만든 값입니다.
+          </p>
+          {!stats?.recentness?.hasDates ? (
+            <p className="hint muted">작성일 컬럼이 없으면 최근성/최근 이슈는 계산되지 않거나 약하게만 반영됩니다.</p>
+          ) : null}
         </div>
 
         <div className="card">
