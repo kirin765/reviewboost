@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [preview, setPreview] = useState<CsvPreview | null>(null);
+  const [cellModal, setCellModal] = useState<{ col: string; value: string } | null>(null);
   const [textCol, setTextCol] = useState<string>("");
   const [ratingCol, setRatingCol] = useState<string>("");
   const [dateCol, setDateCol] = useState<string>("");
@@ -113,6 +114,14 @@ export default function DashboardPage() {
     if (s.includes("업로드 파일을 읽을 수 없습니다")) return "파일을 읽지 못했어요. 다시 선택해서 시도해주세요.";
     if (s.includes("로그인이 필요합니다")) return "저장된 리포트를 보려면 로그인이 필요합니다.";
     return s;
+  }
+
+  function renderCellPreview(v: unknown) {
+    const s = String(v ?? "");
+    const singleLine = s.replace(/\s+/g, " ").trim();
+    if (!singleLine) return "";
+    if (singleLine.length <= 120) return singleLine;
+    return `${singleLine.slice(0, 120)}…`;
   }
 
   async function readErrorText(res: Response): Promise<string> {
@@ -222,6 +231,14 @@ export default function DashboardPage() {
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setCellModal(null);
+    }
+    if (cellModal) window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [cellModal]);
 
   return (
     <main style={{ marginTop: 18 }}>
@@ -351,6 +368,9 @@ export default function DashboardPage() {
               </div>
               <div style={{ marginTop: 12 }}>
                 <div className="muted">미리보기 (처음 몇 줄)</div>
+                <p className="hint muted" style={{ marginTop: 6, marginBottom: 0 }}>
+                  셀을 클릭하면 전체 내용을 볼 수 있습니다.
+                </p>
                 <div className="tableWrap" style={{ marginTop: 8 }}>
                   <table className="table">
                     <thead>
@@ -364,7 +384,16 @@ export default function DashboardPage() {
                       {preview.sampleRows.map((r, idx) => (
                         <tr key={idx}>
                           {preview.columns.slice(0, 6).map((c) => (
-                            <td key={c}>{String(r[c] ?? "")}</td>
+                            <td key={c}>
+                              <button
+                                type="button"
+                                className="cellBtn"
+                                title={String(r[c] ?? "")}
+                                onClick={() => setCellModal({ col: c, value: String(r[c] ?? "") })}
+                              >
+                                {renderCellPreview(r[c])}
+                              </button>
+                            </td>
                           ))}
                         </tr>
                       ))}
@@ -378,6 +407,31 @@ export default function DashboardPage() {
                   {preview.warnings.join("\n")}
                 </p>
               ) : null}
+            </div>
+          ) : null}
+
+          {cellModal ? (
+            <div className="modalOverlay" role="dialog" aria-modal="true" aria-label="셀 전체보기">
+              <div className="modal">
+                <div className="modalHeader">
+                  <div>
+                    <div className="muted">전체보기</div>
+                    <div style={{ fontWeight: 800 }}>{cellModal.col}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <CopyButton text={cellModal.value} className="btn btnSmall btnPrimary">
+                      전체 복사
+                    </CopyButton>
+                    <button type="button" className="btn btnSmall" onClick={() => setCellModal(null)}>
+                      닫기
+                    </button>
+                  </div>
+                </div>
+                <div className="modalBody" style={{ whiteSpace: "pre-wrap" }}>
+                  {cellModal.value || <span className="muted">(빈 값)</span>}
+                </div>
+              </div>
+              <button type="button" className="modalBackdrop" aria-label="닫기" onClick={() => setCellModal(null)} />
             </div>
           ) : null}
 
