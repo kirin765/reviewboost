@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
+import CopyButton from "@/components/CopyButton";
 
 export const dynamic = "force-dynamic";
 
@@ -129,9 +130,12 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
           <h2>개선 제안: 상세페이지</h2>
           <div className="list">
             {(suggestions?.detailPageCopy ?? []).map((s: string, idx: number) => (
-              <div className="row" key={idx}>
+              <div className="row" key={idx} style={{ alignItems: "flex-start" }}>
                 <div className="left" style={{ whiteSpace: "pre-wrap" }}>
                   {s}
+                </div>
+                <div className="right">
+                  <CopyButton text={s} />
                 </div>
               </div>
             ))}
@@ -141,16 +145,22 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
           <h2>개선 제안: CS/FAQ</h2>
           <div className="list">
             {(suggestions?.csResponseTemplates ?? []).map((s: string, idx: number) => (
-              <div className="row" key={`cs-${idx}`}>
+              <div className="row" key={`cs-${idx}`} style={{ alignItems: "flex-start" }}>
                 <div className="left" style={{ whiteSpace: "pre-wrap" }}>
                   {s}
+                </div>
+                <div className="right">
+                  <CopyButton text={s} />
                 </div>
               </div>
             ))}
             {(suggestions?.faqRecommendations ?? []).map((s: string, idx: number) => (
-              <div className="row" key={`faq-${idx}`}>
+              <div className="row" key={`faq-${idx}`} style={{ alignItems: "flex-start" }}>
                 <div className="left" style={{ whiteSpace: "pre-wrap" }}>
                   {s}
+                </div>
+                <div className="right">
+                  <CopyButton text={s} />
                 </div>
               </div>
             ))}

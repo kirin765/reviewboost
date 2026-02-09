@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Capabilities } from "@/lib/capabilities";
+import CopyButton from "@/components/CopyButton";
 
 type AnalysisResult = {
   stats: {
@@ -101,27 +102,6 @@ export default function DashboardPage() {
     if (s.includes("업로드 파일을 읽을 수 없습니다")) return "파일을 읽지 못했어요. 다시 선택해서 시도해주세요.";
     if (s.includes("로그인이 필요합니다")) return "저장된 리포트를 보려면 로그인이 필요합니다.";
     return s;
-  }
-
-  async function copyText(text: string) {
-    const t = String(text ?? "");
-    try {
-      await navigator.clipboard.writeText(t);
-    } catch {
-      // Fallback for older browsers.
-      const ta = document.createElement("textarea");
-      ta.value = t;
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      try {
-        document.execCommand("copy");
-      } finally {
-        document.body.removeChild(ta);
-      }
-    }
   }
 
   async function loadPreview(f: File) {
@@ -458,9 +438,7 @@ export default function DashboardPage() {
                     {s}
                   </div>
                   <div className="right">
-                    <button className="btn btnSmall" onClick={() => copyText(s)}>
-                      복사
-                    </button>
+                    <CopyButton text={s} />
                   </div>
                 </div>
               ))}
@@ -476,9 +454,7 @@ export default function DashboardPage() {
                     {s}
                   </div>
                   <div className="right">
-                    <button className="btn btnSmall" onClick={() => copyText(s)}>
-                      복사
-                    </button>
+                    <CopyButton text={s} />
                   </div>
                 </div>
               ))}
@@ -488,9 +464,7 @@ export default function DashboardPage() {
                     {s}
                   </div>
                   <div className="right">
-                    <button className="btn btnSmall" onClick={() => copyText(s)}>
-                      복사
-                    </button>
+                    <CopyButton text={s} />
                   </div>
                 </div>
               ))}
@@ -508,6 +482,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
     </main>
   );
 }
