@@ -115,12 +115,38 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
                 <div className="left">
                   <strong>{k.keyword}</strong>
                 </div>
-                <div className="right">{k.count}</div>
+                <div className="right" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span>{k.count}</span>
+                  <CopyButton text={k.keyword} />
+                </div>
               </div>
             ))}
           </div>
           {(!stats?.negativeKeywordsTop10 || stats.negativeKeywordsTop10.length === 0) && (
             <p className="muted">키워드가 없습니다.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid">
+        <div className="card">
+          <h2>문제 카테고리</h2>
+          {stats?.categoryCounts && Object.keys(stats.categoryCounts).length > 0 ? (
+            <div className="list">
+              {Object.entries(stats.categoryCounts as Record<string, number>)
+                .sort((a, b) => b[1] - a[1])
+                .map(([cat, count]) => (
+                  <div className="row" key={cat}>
+                    <div className="left">{cat}</div>
+                    <div className="right" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span>{count}</span>
+                      <CopyButton text={cat} />
+                    </div>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <p className="muted">카테고리가 없습니다.</p>
           )}
         </div>
       </div>
@@ -165,6 +191,25 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
               </div>
             ))}
           </div>
+          {(suggestions?.notes ?? []).length > 0 ? (
+            <>
+              <p className="hint" style={{ marginBottom: 0 }}>
+                메모
+              </p>
+              <div className="list">
+                {(suggestions.notes ?? []).map((n: string, i: number) => (
+                  <div className="row" key={`note-${i}`} style={{ alignItems: "flex-start" }}>
+                    <div className="left" style={{ whiteSpace: "pre-wrap" }}>
+                      {n}
+                    </div>
+                    <div className="right">
+                      <CopyButton text={n} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </main>

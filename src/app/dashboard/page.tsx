@@ -404,7 +404,10 @@ export default function DashboardPage() {
                     <div className="left">
                       <strong>{k.keyword}</strong>
                     </div>
-                    <div className="right">{k.count}</div>
+                    <div className="right" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span>{k.count}</span>
+                      <CopyButton text={k.keyword} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -419,7 +422,10 @@ export default function DashboardPage() {
                 .map(([cat, count]) => (
                   <div className="row" key={cat}>
                     <div className="left">{cat}</div>
-                    <div className="right">{count}</div>
+                    <div className="right" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span>{count}</span>
+                      <CopyButton text={cat} />
+                    </div>
                   </div>
                 ))}
             </div>
@@ -470,14 +476,23 @@ export default function DashboardPage() {
               ))}
             </div>
             {result.suggestions.notes.length > 0 && (
-              <p className="hint">
-                {result.suggestions.notes.map((n, i) => (
-                  <span key={i}>
-                    {n}
-                    {i < result.suggestions.notes.length - 1 ? " / " : ""}
-                  </span>
-                ))}
-              </p>
+              <>
+                <p className="hint" style={{ marginBottom: 0 }}>
+                  메모
+                </p>
+                <div className="list">
+                  {result.suggestions.notes.map((n, i) => (
+                    <div className="row" key={`note-${i}`} style={{ alignItems: "flex-start" }}>
+                      <div className="left" style={{ whiteSpace: "pre-wrap" }}>
+                        {n}
+                      </div>
+                      <div className="right">
+                        <CopyButton text={n} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
