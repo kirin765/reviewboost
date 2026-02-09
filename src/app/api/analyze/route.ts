@@ -1,6 +1,7 @@
 import { classifyHeuristic, computeAnalysisFromClassified } from "@/lib/analysis";
 import { parseReviewCsvWithMapping } from "@/lib/csv";
 import { ApiError, apiErrorResponse } from "@/lib/api_error";
+import { CSV_PARSE_FAILED_HELP } from "@/lib/csv_errors";
 import { classifyReviewsWithOpenAI } from "@/lib/openai_classify";
 import { generateSuggestions } from "@/lib/openai_suggestions";
 import { getSupabaseAdminClient } from "@/lib/supabase_server";
@@ -47,11 +48,7 @@ export async function POST(req: Request) {
   } catch (e: any) {
     return apiErrorResponse(
       new ApiError(400, "CSV_PARSE_FAILED", "CSV를 읽지 못했어요.", {
-        help: [
-          "엑셀/구글시트에서 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'로 다시 저장해서 올려주세요.",
-          "구분자가 ';' 또는 TAB인 경우, 쉼표(,)로 바꿔 저장하면 안정적입니다.",
-          "따옴표(\")가 짝이 맞지 않거나 줄바꿈이 섞이면 파싱이 실패할 수 있어요."
-        ],
+        help: CSV_PARSE_FAILED_HELP,
         details: e?.message ?? String(e)
       })
     );

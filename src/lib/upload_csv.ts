@@ -1,4 +1,5 @@
 import { ApiError } from "@/lib/api_error";
+import { CSV_EMPTY_HELP } from "@/lib/csv_errors";
 
 export const DEFAULT_MAX_CSV_BYTES = 6 * 1024 * 1024;
 
@@ -50,7 +51,7 @@ export async function readUploadedCsvText(req: Request, maxBytes: number): Promi
 
   const size = typeof f.size === "number" ? f.size : null;
   if (typeof size === "number" && size <= 0) {
-    throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 CSV를 올려주세요.");
+    throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 CSV를 올려주세요.", { help: CSV_EMPTY_HELP });
   }
   if (typeof size === "number" && size > maxBytes) {
     throw new ApiError(413, "CSV_TOO_LARGE", "파일이 너무 커서 업로드할 수 없어요.", {
@@ -73,7 +74,7 @@ export async function readUploadedCsvText(req: Request, maxBytes: number): Promi
 
   const csvText = await f.text();
   if (csvText.trim().length === 0) {
-    throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 CSV를 올려주세요.");
+    throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 CSV를 올려주세요.", { help: CSV_EMPTY_HELP });
   }
   if (looksLikeBadEncoding(csvText)) {
     throw new ApiError(400, "CSV_ENCODING", "문자가 깨진 CSV로 보여요(인코딩 문제).", {
