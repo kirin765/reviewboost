@@ -55,6 +55,7 @@ export default function DashboardPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [preview, setPreview] = useState<CsvPreview | null>(null);
   const [cellModal, setCellModal] = useState<{ col: string; value: string } | null>(null);
+  const [showAllPreviewCols, setShowAllPreviewCols] = useState(false);
   const [textCol, setTextCol] = useState<string>("");
   const [ratingCol, setRatingCol] = useState<string>("");
   const [dateCol, setDateCol] = useState<string>("");
@@ -96,11 +97,22 @@ export default function DashboardPage() {
     return 4;
   }, [file, preview, result]);
 
+  const previewCols = useMemo(() => {
+    if (!preview) return [];
+    return showAllPreviewCols ? preview.columns : preview.columns.slice(0, 6);
+  }, [preview, showAllPreviewCols]);
+
+  const previewTableMinWidth = useMemo(() => {
+    // Make the table horizontally scrollable when showing many columns.
+    return Math.max(520, previewCols.length * 140);
+  }, [previewCols.length]);
+
   function resetAll() {
     setFile(null);
     setPreview(null);
     setResult(null);
     setError(null);
+    setShowAllPreviewCols(false);
     setTextCol("");
     setRatingCol("");
     setDateCol("");
@@ -117,11 +129,30 @@ export default function DashboardPage() {
   }
 
   function renderCellPreview(v: unknown) {
-    const s = String(v ?? "");
-    const singleLine = s.replace(/\s+/g, " ").trim();
-    if (!singleLine) return "";
-    if (singleLine.length <= 120) return singleLine;
-    return `${singleLine.slice(0, 120)}…`;
+    const raw = String(v ?? "");
+    const normalized = raw.replace(/\r\n/g, "\n").trim();
+    if (!normalized) return "";
+
+    // Keep newlines so the preview can show basic wrapping, but avoid huge cells.
+    let truncated = false;
+    const rawLines = normalized
+      .split("\n")
+      .map((l) => l.replace(/[ \t]+/g, " ").trimEnd());
+
+    // Drop leading/trailing empty lines.
+    while (rawLines.length && rawLines[0] === "") rawLines.shift();
+    while (rawLines.length && rawLines[rawLines.length - 1] === "") rawLines.pop();
+
+    if (rawLines.length > 3) truncated = true;
+    let out = rawLines.slice(0, 3).join("\n").trim();
+
+    const maxChars = 180;
+    if (out.length > maxChars) {
+      truncated = true;
+      out = out.slice(0, maxChars).trimEnd();
+    }
+
+    return truncated ? `${out}…` : out;
   }
 
   async function readErrorText(res: Response): Promise<string> {
@@ -194,6 +225,7 @@ export default function DashboardPage() {
       const f = new File([blob], "sample.csv", { type: "text/csv" });
       setFile(f);
       setPreview(null);
+      setShowAllPreviewCols(false);
       setTextCol("");
       setRatingCol("");
       setDateCol("");
@@ -277,6 +309,7 @@ export default function DashboardPage() {
               setPreview(null);
               setResult(null);
               setError(null);
+              setShowAllPreviewCols(false);
               setTextCol("");
               setRatingCol("");
               setDateCol("");
@@ -367,15 +400,28 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div style={{ marginTop: 12 }}>
-                <div className="muted">미리보기 (처음 몇 줄)</div>
+                <div className="muted" style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+                  <span>미리보기 (처음 몇 줄)</span>
+                  {preview.columns.length > 6 ? (
+                    <button
+                      type="button"
+                      className="btn btnSmall"
+                      onClick={() => setShowAllPreviewCols((v) => !v)}
+                      disabled={busy}
+                      aria-pressed={showAllPreviewCols}
+                    >
+                      {showAllPreviewCols ? "앞의 6개만 보기" : "전체 컬럼 보기"}
+                    </button>
+                  ) : null}
+                </div>
                 <p className="hint muted" style={{ marginTop: 6, marginBottom: 0 }}>
                   셀을 클릭하면 전체 내용을 볼 수 있습니다.
                 </p>
                 <div className="tableWrap" style={{ marginTop: 8 }}>
-                  <table className="table">
+                  <table className="table" style={{ minWidth: previewTableMinWidth }}>
                     <thead>
                       <tr>
-                        {preview.columns.slice(0, 6).map((c) => (
+                        {previewCols.map((c) => (
                           <th key={c}>{c}</th>
                         ))}
                       </tr>
@@ -383,7 +429,7 @@ export default function DashboardPage() {
                     <tbody>
                       {preview.sampleRows.map((r, idx) => (
                         <tr key={idx}>
-                          {preview.columns.slice(0, 6).map((c) => (
+                          {previewCols.map((c) => (
                             <td key={c}>
                               <button
                                 type="button"
@@ -400,7 +446,9 @@ export default function DashboardPage() {
                     </tbody>
                   </table>
                 </div>
-                {preview.columns.length > 6 ? <p className="hint muted">컬럼이 많아 앞의 6개만 표시합니다.</p> : null}
+                {preview.columns.length > 6 && !showAllPreviewCols ? (
+                  <p className="hint muted">컬럼이 많아 앞의 6개만 표시합니다. (전체 컬럼 보기 가능)</p>
+                ) : null}
               </div>
               {preview.warnings?.length ? (
                 <p className="hint muted" style={{ whiteSpace: "pre-wrap" }}>
