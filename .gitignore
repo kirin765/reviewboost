@@ -14,3 +14,4 @@ yarn-error.log*
 .next/
 node_modules/
 *.log
+*.pdf

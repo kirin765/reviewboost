@@ -73,3 +73,14 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 
 - 테이블 정의: `supabase/schema.sql`
   - 포함: analyses/reviews 테이블 + RLS 정책(본인 데이터만 조회/삭제)
+
+## 설정 파일(.env) 운영 가이드
+
+- 템플릿: `.env.example`
+- 로컬 개발용 실제 값: `.env.local` (gitignore, **커밋/푸시 금지**)
+- `SUPABASE_SERVICE_ROLE_KEY` 같은 서버 전용 키는 **클라이언트 번들에 노출되지 않게** 서버에서만 사용하세요.
+
+## CI (GitHub Actions)
+
+- `main` 푸시 / PR 시 자동으로 `npm ci` → `lint` → `build`를 실행합니다.
+- CI에서는 `PUPPETEER_SKIP_DOWNLOAD=1`로 Chromium 다운로드를 생략합니다(빌드/정적 검사 목적).
