@@ -1,4 +1,4 @@
-import { previewReviewCsv } from "@/lib/csv";
+import { inferDelimiter, previewReviewCsv } from "@/lib/csv";
 import { ApiError, apiErrorResponse } from "@/lib/api_error";
 import { CSV_PARSE_FAILED_HELP } from "@/lib/csv_errors";
 import { readUploadedCsvText } from "@/lib/upload_csv";
@@ -6,6 +6,14 @@ import { readUploadedCsvText } from "@/lib/upload_csv";
 export const runtime = "nodejs";
 
 const MAX_BYTES = 6 * 1024 * 1024;
+
+function delimiterHint(csvText: string): string[] {
+  const delimiter = inferDelimiter(csvText);
+  if (delimiter === ",") return [];
+  return [
+    `구분자가 '${delimiter === "\t" ? "TAB" : delimiter}' 로 감지되었습니다. 엑셀에서 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'로 저장하면 가장 안정적입니다.`
+  ];
+}
 
 export async function POST(req: Request) {
   try {
@@ -17,7 +25,7 @@ export async function POST(req: Request) {
       // Most failures here are user-facing CSV syntax issues (quotes/newlines/delimiter).
       return apiErrorResponse(
         new ApiError(400, "CSV_PARSE_FAILED", "CSV를 읽지 못했어요.", {
-          help: CSV_PARSE_FAILED_HELP,
+          help: [...delimiterHint(csvText), ...CSV_PARSE_FAILED_HELP],
           details: e?.message ?? String(e)
         })
       );

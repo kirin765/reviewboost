@@ -23,7 +23,7 @@ export type CsvPreview = {
   warnings: string[];
 };
 
-function inferDelimiter(csvText: string): "," | ";" | "\t" {
+export function inferDelimiter(csvText: string): "," | ";" | "\t" {
   // Naive delimiter inference to reduce "one giant column" CSVs coming from locale settings.
   // We look at a few lines and count common separators.
   const lines = csvText.split(/\r?\n/).slice(0, 10).filter((l) => l.trim().length > 0);
