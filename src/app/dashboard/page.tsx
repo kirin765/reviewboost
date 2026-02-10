@@ -492,13 +492,19 @@ export default function DashboardPage() {
             <p className="hint">
               저장됨: 나중에 “저장된 리포트”에서 다시 볼 수 있습니다.
             </p>
+          ) : caps?.supabaseConfigured === false ? (
+            <p className="hint muted">
+              지금은 저장 기능이 꺼져 있어 저장되지 않습니다. 대신 <strong>PDF 다운로드</strong>로 공유할 수 있어요.
+            </p>
           ) : (
             <p className="hint muted">지금은 저장 없이 분석만 진행됩니다. (저장 기능은 로그인 기능을 켜면 사용할 수 있어요.)</p>
           )}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-            <a className="btn" href="/dashboard/history">
-              저장된 리포트
-            </a>
+            {caps?.supabaseConfigured === false ? null : (
+              <a className="btn" href="/dashboard/history">
+                저장된 리포트
+              </a>
+            )}
             {result?.meta?.stored && result.meta.analysisId ? (
               <a className="btn" href={`/dashboard/analysis/${result.meta.analysisId}`}>
                 저장된 분석 보기
