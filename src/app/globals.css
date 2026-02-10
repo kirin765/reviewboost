@@ -251,6 +251,45 @@ a {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: grid;
+  gap: 8px;
+}
+
+.checkItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.checkBox {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  margin-top: 2px;
+}
+
+.checkText {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.checkText strong {
+  color: rgba(255, 255, 255, 0.92);
+}
+
 .detailsSummary {
   cursor: pointer;
   color: rgba(255, 255, 255, 0.86);
