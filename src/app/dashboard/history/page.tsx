@@ -25,6 +25,9 @@ export default async function HistoryPage() {
         <div className="card">
           <h2>저장된 리포트</h2>
           <p className="muted">지금은 저장 기능이 꺼져 있어, 여기에는 목록이 표시되지 않습니다.</p>
+          <p className="hint muted" style={{ marginTop: 8 }}>
+            대신 대시보드에서 CSV를 분석한 뒤 <strong>PDF 다운로드</strong>로 바로 공유용 리포트를 만들 수 있어요. (저장 없이도 가능)
+          </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
             <a className="btn btnPrimary" href="/dashboard">
               새 분석
