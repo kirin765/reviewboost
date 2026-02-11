@@ -65,6 +65,8 @@ const SYNONYMS: Array<{ into: string; from: string[] }> = [
 function normalizeToken(tok: string): string {
   let t = tok.toLowerCase().trim();
   if (!t) return "";
+  // Exclude numeric/date-like fragments (e.g. 12, 2025, 12월, 2025년).
+  if (/\d/.test(t)) return "";
 
   // strip simple particles/endings
   for (const suf of PARTICLE_SUFFIXES) {
@@ -114,4 +116,3 @@ export function topKeywords(texts: string[], topN: number): Array<{ keyword: str
 
   return merged.sort((a, b) => b.count - a.count).slice(0, topN);
 }
-

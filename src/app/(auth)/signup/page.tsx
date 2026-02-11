@@ -5,10 +5,11 @@ export const dynamic = "force-dynamic";
 export default function SignupPage(props: { searchParams?: Record<string, string | string[] | undefined> }) {
   const sp = props.searchParams ?? {};
   const err = typeof sp.error === "string" ? sp.error : "";
+  const next = typeof sp.next === "string" && sp.next.startsWith("/") && !sp.next.startsWith("//") ? sp.next : "/dashboard";
   const supabaseConfigured = typeof process.env.SUPABASE_URL === "string" && typeof process.env.SUPABASE_ANON_KEY === "string";
 
   return (
-    <main style={{ marginTop: 18 }}>
+    <main className="pageMain">
       <div className="grid">
         <div className="card">
           <h2>회원가입</h2>
@@ -16,6 +17,7 @@ export default function SignupPage(props: { searchParams?: Record<string, string
 
           {supabaseConfigured ? (
             <form action={signUpAction} style={{ display: "grid", gap: 10, marginTop: 12 }}>
+              <input type="hidden" name="next" value={next} />
               <input className="input" name="email" type="email" placeholder="email@example.com" required />
               <input
                 className="input"
@@ -25,6 +27,32 @@ export default function SignupPage(props: { searchParams?: Record<string, string
                 minLength={6}
                 required
               />
+              <label className="consentRow">
+                <input type="checkbox" name="agreeTerms" value="yes" required />
+                <span>
+                  [필수] 이용약관 동의{" "}
+                  <a className="link" href="/terms" target="_blank" rel="noreferrer">
+                    자세히 보기
+                  </a>
+                </span>
+              </label>
+              <label className="consentRow">
+                <input type="checkbox" name="agreePrivacy" value="yes" required />
+                <span>
+                  [필수] 개인정보 수집·이용 동의{" "}
+                  <a className="link" href="/privacy" target="_blank" rel="noreferrer">
+                    자세히 보기
+                  </a>
+                </span>
+              </label>
+              <div className="consentSummary">
+                목적: 회원 식별/로그인/계정관리 | 항목: 이메일 | 보유기간: 회원 탈퇴 시까지(법령 보관 제외) | 거부 시:
+                회원가입 불가
+              </div>
+              <label className="consentRow optional">
+                <input type="checkbox" name="agreeMarketing" value="yes" />
+                <span>[선택] 광고성 정보(이벤트/혜택) 이메일 수신 동의</span>
+              </label>
               <button className="btn btnPrimary" type="submit">
                 회원가입
               </button>
@@ -47,8 +75,8 @@ export default function SignupPage(props: { searchParams?: Record<string, string
         <div className="card">
           <h2>이미 계정이 있나요?</h2>
           <p className="muted">로그인 페이지로 이동하세요.</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-            <a className="btn" href="/login">
+          <div className="actionRow">
+            <a className="btn" href={`/login?next=${encodeURIComponent(next)}`}>
               로그인으로 이동
             </a>
             <a className="btn" href="/dashboard">

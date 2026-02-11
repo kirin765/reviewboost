@@ -1,12 +1,12 @@
 export default function HomePage() {
   return (
-    <main style={{ marginTop: 18 }}>
-      <div className="card">
-        <h2>리뷰로 매출 올릴 포인트, 자동으로 뽑아드립니다</h2>
-        <p className="muted">
+    <main className="pageMain">
+      <div className="card heroCard">
+        <h1 className="heroTitle">리뷰로 매출 올릴 포인트, 자동으로 뽑아드립니다</h1>
+        <p className="heroLead">
           CSV로 리뷰를 올리면, 자주 나오는 불만(키워드/카테고리)과 상세페이지/CS/FAQ 문구를 바로 쓸 수 있게 정리해줍니다.
         </p>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+        <div className="actionRow actionRowLg">
           <a className="btn btnPrimary" href="/dashboard">
             CSV 올리고 분석하기
           </a>
@@ -47,7 +47,7 @@ export default function HomePage() {
           <p className="muted">
             CSV 헤더는 어떤 이름이어도 괜찮습니다. 업로드 후 화면에서 “리뷰 내용/별점/작성일” 열만 선택해주면 됩니다.
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+          <div className="actionRow">
             <a className="btn" href="/sample.csv" download>
               샘플 CSV 다운로드
             </a>

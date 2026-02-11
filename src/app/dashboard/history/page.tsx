@@ -21,14 +21,14 @@ export default async function HistoryPage() {
 
   if (!supabase) {
     return (
-      <main style={{ marginTop: 18 }}>
+      <main className="pageMain">
         <div className="card">
           <h2>저장된 리포트</h2>
           <p className="muted">지금은 저장 기능이 꺼져 있어, 여기에는 목록이 표시되지 않습니다.</p>
           <p className="hint muted" style={{ marginTop: 8 }}>
             대신 대시보드에서 CSV를 분석한 뒤 <strong>PDF 다운로드</strong>로 바로 공유용 리포트를 만들 수 있어요. (저장 없이도 가능)
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+          <div className="actionRow">
             <a className="btn btnPrimary" href="/dashboard">
               새 분석
             </a>
@@ -42,7 +42,7 @@ export default async function HistoryPage() {
   }
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/login");
+  if (!userData.user) redirect(`/login?next=${encodeURIComponent("/dashboard/history")}`);
 
   const { data, error } = await supabase
     .from("analyses")
@@ -52,13 +52,13 @@ export default async function HistoryPage() {
 
   if (error) {
     return (
-      <main style={{ marginTop: 18 }}>
+      <main className="pageMain">
         <div className="card">
           <h2>히스토리 로드 실패</h2>
           <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
             {error.message}
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+          <div className="actionRow">
             <a className="btn" href="/dashboard">
               대시보드
             </a>
@@ -71,11 +71,11 @@ export default async function HistoryPage() {
   const rows = (data ?? []) as AnalysisRow[];
 
   return (
-    <main style={{ marginTop: 18 }}>
+    <main className="pageMain">
       <div className="card">
         <h2>내 분석 히스토리</h2>
         <p className="muted">최근 50개까지 표시합니다.</p>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+        <div className="actionRow">
           <a className="btn btnPrimary" href="/dashboard">
             새 분석
           </a>

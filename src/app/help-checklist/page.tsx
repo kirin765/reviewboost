@@ -1,10 +1,10 @@
 export default function HelpChecklistPage() {
   return (
-    <main style={{ marginTop: 18 }}>
+    <main className="pageMain">
       <div className="card">
         <h2>체크리스트</h2>
         <p className="muted">CSV 업로드부터 결과 적용까지, 처음 진입 시 이것만 보면 됩니다.</p>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+        <div className="actionRow">
           <a className="btn btnPrimary" href="/dashboard">
             지금 분석하기
           </a>

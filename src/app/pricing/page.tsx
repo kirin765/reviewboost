@@ -1,6 +1,6 @@
 export default function PricingPage() {
   return (
-    <main style={{ marginTop: 18 }}>
+    <main className="pageMain">
       <div className="card">
         <h2>요금제 (MVP)</h2>
         <p className="muted">현재는 데모 성격의 MVP로, 실제 결제는 붙어있지 않습니다.</p>
@@ -59,7 +59,7 @@ export default function PricingPage() {
           <p className="muted">
             다음 단계는 로그인 기반 저장 기능, 결제, 경쟁사 리뷰 업로드/비교 리포트입니다.
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+          <div className="actionRow">
             <a className="btn btnPrimary" href="/dashboard">
               지금 분석하기
             </a>

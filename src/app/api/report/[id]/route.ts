@@ -8,14 +8,19 @@ function textError(status: number, message: string) {
   return new Response(message, { status, headers: { "content-type": "text/plain; charset=utf-8" } });
 }
 
-export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
 
   let analysis: any;
   try {
     const supabase = createSupabaseServerActionClient();
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return textError(401, "로그인이 필요합니다.");
+    if (!userData.user) {
+      const url = new URL(req.url);
+      url.pathname = "/login";
+      url.search = `next=${encodeURIComponent(`/api/report/${id}`)}`;
+      return Response.redirect(url, 307);
+    }
 
     const { data, error } = await supabase
       .from("analyses")

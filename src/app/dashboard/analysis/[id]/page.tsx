@@ -15,14 +15,14 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
 
   if (!supabase) {
     return (
-      <main style={{ marginTop: 18 }}>
+      <main className="pageMain">
         <div className="card">
           <h2>저장된 분석 보기</h2>
           <p className="muted">저장 기능이 꺼져 있어 이 페이지를 사용할 수 없습니다.</p>
           <p className="hint muted" style={{ marginTop: 8 }}>
             저장 없이도 대시보드에서 분석 후 <strong>PDF 다운로드</strong>로 공유용 리포트를 만들 수 있어요.
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+          <div className="actionRow">
             <a className="btn btnPrimary" href="/dashboard">
               새 분석
             </a>
@@ -36,7 +36,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
   }
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/login");
+  if (!userData.user) redirect(`/login?next=${encodeURIComponent(`/dashboard/analysis/${id}`)}`);
 
   const { data, error } = await supabase
     .from("analyses")
@@ -46,7 +46,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
 
   if (error || !data) {
     return (
-      <main style={{ marginTop: 18 }}>
+      <main className="pageMain">
         <div className="card">
           <h2>분석을 찾을 수 없음</h2>
           <p className="muted">권한이 없거나 삭제된 항목일 수 있습니다.</p>
@@ -55,7 +55,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
               {error.message}
             </p>
           ) : null}
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+          <div className="actionRow">
             <a className="btn" href="/dashboard/history">
               히스토리
             </a>
@@ -75,13 +75,13 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
       : null;
 
   return (
-    <main style={{ marginTop: 18 }}>
+    <main className="pageMain">
       <div className="card">
         <h2>분석 상세</h2>
         <p className="muted">
           {data.input_filename ?? "CSV"} · {created} · 우선순위 {priorityScore.toFixed(1)}
         </p>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+        <div className="actionRow">
           <a className="btn" href="/dashboard/history">
             히스토리
           </a>

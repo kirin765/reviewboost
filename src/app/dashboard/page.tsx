@@ -273,10 +273,10 @@ export default function DashboardPage() {
   }, [cellModal]);
 
   return (
-    <main style={{ marginTop: 18 }}>
-      <div className="grid">
-        <div className="card">
-          <h2>리뷰 CSV 분석</h2>
+    <main className="pageMain">
+      <div className="grid dashboardTopGrid">
+        <div className="card heroCard">
+          <h1 className="heroTitle">리뷰 CSV 분석</h1>
           <div className="pillRow" style={{ marginBottom: 10 }}>
             <span className={`pill ${step === 1 ? "pillActive" : ""}`}>1. 파일 선택</span>
             <span className={`pill ${step === 2 ? "pillActive" : ""}`}>2. 미리보기</span>
@@ -284,13 +284,13 @@ export default function DashboardPage() {
             <span className={`pill ${step === 4 ? "pillActive" : ""}`}>4. 결과</span>
           </div>
 
-          <p className="muted" style={{ marginTop: 0 }}>
+          <p className="heroLead">
             리뷰 내용이 들어있는 CSV 파일을 올려주세요. 샘플로 먼저 테스트해도 됩니다:{" "}
             <a className="link" href="/sample.csv" download>
               샘플 CSV 다운로드
             </a>
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: -2, marginBottom: 10 }}>
+          <div className="actionRow actionRowTight">
             <button className="btn btnWarn" onClick={onSample} disabled={busy}>
               샘플로 테스트
             </button>
@@ -326,7 +326,7 @@ export default function DashboardPage() {
               <span>CSV 파일을 선택하세요.</span>
             )}
           </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+          <div className="actionRow">
             <button className="btn btnPrimary" onClick={onAnalyze} disabled={!file || busy}>
               {busy ? "처리 중..." : preview ? "분석 시작" : "다음: 미리보기"}
             </button>
@@ -499,7 +499,7 @@ export default function DashboardPage() {
           ) : (
             <p className="hint muted">지금은 저장 없이 분석만 진행됩니다. (저장 기능은 로그인 기능을 켜면 사용할 수 있어요.)</p>
           )}
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+          <div className="actionRow">
             {caps?.supabaseConfigured === false ? null : (
               <a className="btn" href="/dashboard/history">
                 저장된 리포트

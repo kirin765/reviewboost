@@ -5,10 +5,12 @@ export const dynamic = "force-dynamic";
 export default function LoginPage(props: { searchParams?: Record<string, string | string[] | undefined> }) {
   const sp = props.searchParams ?? {};
   const err = typeof sp.error === "string" ? sp.error : "";
+  const notice = typeof sp.notice === "string" ? sp.notice : "";
+  const next = typeof sp.next === "string" && sp.next.startsWith("/") && !sp.next.startsWith("//") ? sp.next : "/dashboard";
   const supabaseConfigured = typeof process.env.SUPABASE_URL === "string" && typeof process.env.SUPABASE_ANON_KEY === "string";
 
   return (
-    <main style={{ marginTop: 18 }}>
+    <main className="pageMain">
       <div className="grid">
         <div className="card">
           <h2>로그인</h2>
@@ -16,11 +18,17 @@ export default function LoginPage(props: { searchParams?: Record<string, string 
 
           {supabaseConfigured ? (
             <form action={signInAction} style={{ display: "grid", gap: 10, marginTop: 12 }}>
+              <input type="hidden" name="next" value={next} />
               <input className="input" name="email" type="email" placeholder="email@example.com" required />
               <input className="input" name="password" type="password" placeholder="비밀번호" required />
               <button className="btn btnPrimary" type="submit">
                 로그인
               </button>
+              <div className="actionRow actionRowTight">
+                <a className="link" href={`/forgot-password?next=${encodeURIComponent(next)}`}>
+                  비밀번호를 잊으셨나요?
+                </a>
+              </div>
             </form>
           ) : (
             <p className="hint muted" style={{ marginTop: 12 }}>
@@ -32,6 +40,10 @@ export default function LoginPage(props: { searchParams?: Record<string, string 
             <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
               {err}
             </p>
+          ) : notice ? (
+            <p className="hint ok" style={{ whiteSpace: "pre-wrap" }}>
+              {notice}
+            </p>
           ) : (
             <p className="hint muted">로그인은 “저장된 리포트” 기능을 위한 옵션입니다.</p>
           )}
@@ -40,8 +52,8 @@ export default function LoginPage(props: { searchParams?: Record<string, string 
         <div className="card">
           <h2>회원가입</h2>
           <p className="muted">계정이 없으면 회원가입 후 로그인하세요.</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-            <a className="btn" href="/signup">
+          <div className="actionRow">
+            <a className="btn" href={`/signup?next=${encodeURIComponent(next)}`}>
               회원가입으로 이동
             </a>
             <a className="btn" href="/dashboard">
