@@ -35,10 +35,19 @@ npm i
 cp .env.example .env.local
 ```
 
-3. 개발 서버
+3. 개발 서버 (3000)
 ```bash
 npm run dev
 ```
+
+4. 운영 서버 (도메인 접속용, 80포트)
+```bash
+npm run build
+npm run start
+```
+
+- `npm run start`는 `0.0.0.0:80`으로 실행됩니다.
+- 리눅스에서 80포트 바인딩은 권한이 필요할 수 있습니다(예: root/`setcap`/리버스 프록시).
 
 ## 샘플 CSV
 

@@ -57,7 +57,7 @@ export async function renderReportPdfBuffer(args: {
   doc.on("data", (c: any) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
 
   const koFontPath = findKoreanFontPath();
-  if (!koFontPath && (args.requireKoreanFont ?? true)) {
+  if (!koFontPath && (args.requireKoreanFont ?? false)) {
     throw new Error(
       [
         "PDFKit 한글 폰트를 찾지 못했습니다.",

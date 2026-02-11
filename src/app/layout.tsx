@@ -2,6 +2,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 import { signOutAction } from "@/app/(auth)/actions";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
+import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
 
 export const metadata: Metadata = {
   title: "ReviewBoost MVP",
@@ -26,6 +28,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ko">
       <body>
+        <GoogleAnalytics />
+        <AnalyticsQueryEvents />
         <div className="container">
           <div className="header">
             <div className="brand">

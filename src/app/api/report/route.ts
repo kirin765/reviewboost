@@ -18,6 +18,13 @@ function textError(status: number, message: string) {
   return new Response(message, { status, headers: { "content-type": "text/plain; charset=utf-8" } });
 }
 
+function safeHeaderValue(value: unknown) {
+  return String(value ?? "")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/[^\x20-\x7E]/g, "")
+    .slice(0, 400);
+}
+
 export async function POST(req: Request) {
   let body: unknown;
   try {
@@ -71,7 +78,8 @@ export async function POST(req: Request) {
         title: "ReviewBoost 요약 리포트",
         stats,
         suggestions,
-        meta: { filename: meta?.filename ?? null, createdAt: new Date().toISOString() }
+        meta: { filename: meta?.filename ?? null, createdAt: new Date().toISOString() },
+        requireKoreanFont: false
       });
       return new Response(buf as any, {
         status: 200,
@@ -79,14 +87,11 @@ export async function POST(req: Request) {
           "content-type": "application/pdf",
           "content-disposition": `attachment; filename="reviewboost-report.pdf"`,
           "x-report-renderer": "pdfkit",
-          "x-puppeteer-error": String(e?.message ?? e ?? "")
+          "x-puppeteer-error": safeHeaderValue(e?.message ?? e ?? "")
         }
       });
     } catch (e2: any) {
-      return textError(
-        501,
-        `PDF 생성 실패(Puppeteer 실패 + PDFKit 폰트 없음):\n${String(e2?.message ?? e2 ?? "")}`
-      );
+      return textError(501, `PDF 생성 실패(Puppeteer 실패 + PDFKit fallback 실패):\n${String(e2?.message ?? e2 ?? "")}`);
     }
   }
 }

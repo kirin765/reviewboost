@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Capabilities } from "@/lib/capabilities";
 import CopyButton from "@/components/CopyButton";
 import { isApiErrorBody } from "@/lib/api_error";
+import { gtagEvent } from "@/lib/analytics";
 
 type AnalysisResult = {
   stats: {
@@ -183,6 +184,14 @@ export default function DashboardPage() {
     setTextCol(json.inferred.textCol ?? "");
     setRatingCol((json.inferred.ratingCol ?? "") || "");
     setDateCol((json.inferred.dateCol ?? "") || "");
+
+    gtagEvent("csv_upload", {
+      file_name: f.name,
+      file_size: f.size,
+      rows: json.totalRows,
+      columns: json.columns.length,
+      header_mode: json.headerMode
+    });
   }
 
   async function onAnalyze() {
@@ -206,6 +215,11 @@ export default function DashboardPage() {
       if (!res.ok) throw new Error(await readErrorText(res));
       const json = (await res.json()) as AnalysisResult;
       setResult(json);
+      gtagEvent("analysis_complete", {
+        total_reviews: json.stats.total,
+        priority_score: Number(json.stats.priorityScore.toFixed(1)),
+        negative_ratio: Number(json.stats.negativeRatio.toFixed(4))
+      });
     } catch (e: any) {
       setError(friendlyErrorMessage(e?.message ?? String(e)));
     } finally {
@@ -257,6 +271,10 @@ export default function DashboardPage() {
       a.download = `reviewboost-report-${Date.now()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
+      gtagEvent("report_download", {
+        file_name: a.download,
+        total_reviews: result.stats.total
+      });
     } catch (e: any) {
       setError(friendlyErrorMessage(e?.message ?? String(e)));
     } finally {
@@ -383,12 +401,16 @@ export default function DashboardPage() {
                           type="checkbox"
                           checked={useLLM}
                           onChange={(e) => setUseLLM(e.target.checked)}
-                          disabled={busy || caps?.openaiConfigured === false}
+                          disabled={busy || caps?.openaiConfigured === false || caps?.aiAdvancedAvailable === false}
                         />
                       </label>
                       {caps?.openaiConfigured === false ? (
                         <p className="hint muted" style={{ margin: 0 }}>
                           현재는 AI 연결이 꺼져 있어 기본 분석으로 진행됩니다.
+                        </p>
+                      ) : caps?.aiAdvancedAvailable === false ? (
+                        <p className="hint muted" style={{ margin: 0 }}>
+                          AI 고급 분석은 Basic 이상 요금제에서 사용할 수 있습니다.
                         </p>
                       ) : (
                         <p className="hint muted" style={{ margin: 0 }}>
@@ -493,8 +515,19 @@ export default function DashboardPage() {
               저장됨: 나중에 “저장된 리포트”에서 다시 볼 수 있습니다.
             </p>
           ) : caps?.supabaseConfigured === false ? (
+            <>
+              <p className="hint muted">
+                지금은 저장 기능이 꺼져 있어 저장되지 않습니다. 대신 <strong>PDF 다운로드</strong>로 공유할 수 있어요.
+              </p>
+              <p className="hint muted" style={{ marginTop: 6 }}>
+                현재 플랜: <strong>{caps.planLabel}</strong> · 이번 달 사용량: {caps.monthlyUsed}
+                {typeof caps.monthlyLimit === "number" ? ` / ${caps.monthlyLimit}` : ""}
+              </p>
+            </>
+          ) : caps ? (
             <p className="hint muted">
-              지금은 저장 기능이 꺼져 있어 저장되지 않습니다. 대신 <strong>PDF 다운로드</strong>로 공유할 수 있어요.
+              현재 플랜: <strong>{caps.planLabel}</strong> · 이번 달 사용량: {caps.monthlyUsed}
+              {typeof caps.monthlyLimit === "number" ? ` / ${caps.monthlyLimit}` : ""}
             </p>
           ) : (
             <p className="hint muted">지금은 저장 없이 분석만 진행됩니다. (저장 기능은 로그인 기능을 켜면 사용할 수 있어요.)</p>

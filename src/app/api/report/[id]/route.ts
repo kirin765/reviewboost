@@ -8,6 +8,13 @@ function textError(status: number, message: string) {
   return new Response(message, { status, headers: { "content-type": "text/plain; charset=utf-8" } });
 }
 
+function safeHeaderValue(value: unknown) {
+  return String(value ?? "")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/[^\x20-\x7E]/g, "")
+    .slice(0, 400);
+}
+
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
 
@@ -72,7 +79,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
         title: "ReviewBoost 요약 리포트",
         stats: analysis.stats,
         suggestions: analysis.suggestions,
-        meta: { filename: analysis.input_filename ?? null, createdAt: analysis.created_at }
+        meta: { filename: analysis.input_filename ?? null, createdAt: analysis.created_at },
+        requireKoreanFont: false
       });
       return new Response(buf as any, {
         status: 200,
@@ -80,14 +88,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
           "content-type": "application/pdf",
           "content-disposition": `attachment; filename="reviewboost-report-${analysis.id}.pdf"`,
           "x-report-renderer": "pdfkit",
-          "x-puppeteer-error": String(e?.message ?? e ?? "")
+          "x-puppeteer-error": safeHeaderValue(e?.message ?? e ?? "")
         }
       });
     } catch (e2: any) {
-      return textError(
-        501,
-        `PDF 생성 실패(Puppeteer 실패 + PDFKit 폰트 없음):\n${String(e2?.message ?? e2 ?? "")}`
-      );
+      return textError(501, `PDF 생성 실패(Puppeteer 실패 + PDFKit fallback 실패):\n${String(e2?.message ?? e2 ?? "")}`);
     }
   }
 }

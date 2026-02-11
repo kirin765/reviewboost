@@ -7,6 +7,8 @@ import { generateSuggestions } from "@/lib/openai_suggestions";
 import { getSupabaseAdminClient } from "@/lib/supabase_server";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { readUploadedCsvText } from "@/lib/upload_csv";
+import { canUseAdvancedAi, monthStartIso, monthlyLimitForPlan, resolvePlanTier } from "@/lib/plan";
+import { getCapabilitiesBase } from "@/lib/capabilities";
 
 export const runtime = "nodejs";
 
@@ -44,6 +46,51 @@ export async function POST(req: Request) {
   const ratingCol = (form.get("ratingCol") as string | null) ?? null;
   const dateCol = (form.get("dateCol") as string | null) ?? null;
   const useLLM = String(form.get("useLLM") ?? "").trim() === "1";
+  const baseCaps = getCapabilitiesBase();
+
+  let supabaseAuth: ReturnType<typeof createSupabaseServerActionClient> | null = null;
+  let userId: string | null = null;
+  let userEmail: string | null = null;
+  if (baseCaps.supabaseConfigured) {
+    try {
+      supabaseAuth = createSupabaseServerActionClient();
+      const { data } = await supabaseAuth.auth.getUser();
+      userId = data.user?.id ?? null;
+      userEmail = data.user?.email ?? null;
+    } catch {
+      // ignore
+    }
+  }
+
+  const plan = resolvePlanTier(userEmail);
+  const monthlyLimit = monthlyLimitForPlan(plan);
+
+  if (useLLM && !canUseAdvancedAi(plan)) {
+    return apiErrorResponse(
+      new ApiError(403, "PLAN_UPGRADE_REQUIRED", "AI 고급 분석은 Basic 이상 요금제에서 사용할 수 있습니다.", {
+        help: ["요금제 페이지에서 Basic 이상으로 업그레이드한 뒤 다시 시도해주세요."]
+      })
+    );
+  }
+
+  if (monthlyLimit !== null && userId && supabaseAuth) {
+    try {
+      const { count } = await supabaseAuth
+        .from("analyses")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", monthStartIso());
+      if ((count ?? 0) >= monthlyLimit) {
+        return apiErrorResponse(
+          new ApiError(429, "MONTHLY_LIMIT_EXCEEDED", `이번 달 분석 한도(${monthlyLimit}회)를 초과했습니다.`, {
+            help: ["다음 달에 다시 시도하거나 상위 요금제로 업그레이드해주세요."]
+          })
+        );
+      }
+    } catch {
+      // ignore count failure and continue analysis
+    }
+  }
 
   let rows;
   try {
@@ -94,10 +141,6 @@ export async function POST(req: Request) {
 
   // Optional persistence (Supabase)
   try {
-    const supabaseAuth = createSupabaseServerActionClient();
-    const { data: authData } = await supabaseAuth.auth.getUser();
-    const userId = authData.user?.id ?? null;
-
     // 1) If service role is configured, insert with admin client (bypasses RLS).
     const admin = getSupabaseAdminClient();
     if (admin) {
@@ -129,7 +172,7 @@ export async function POST(req: Request) {
     }
 
     // 2) No service role: insert via user session (requires RLS + authenticated user).
-    if (userId) {
+    if (userId && supabaseAuth) {
       const insertAnalysis = await supabaseAuth
         .from("analyses")
         .insert({

@@ -6,7 +6,9 @@ export type ApiErrorCode =
   | "CSV_EMPTY"
   | "CSV_TOO_LARGE"
   | "CSV_ENCODING"
-  | "CSV_PARSE_FAILED";
+  | "CSV_PARSE_FAILED"
+  | "PLAN_UPGRADE_REQUIRED"
+  | "MONTHLY_LIMIT_EXCEEDED";
 
 export type ApiErrorBody = {
   error: {
@@ -57,4 +59,3 @@ export function isApiErrorBody(v: unknown): v is ApiErrorBody {
   if (typeof anyV.error.message !== "string") return false;
   return true;
 }
-
