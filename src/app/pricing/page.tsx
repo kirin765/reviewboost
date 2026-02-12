@@ -1,9 +1,18 @@
-export default function PricingPage() {
+import PricingActions from "@/components/PricingActions";
+
+export default function PricingPage({
+  searchParams
+}: {
+  searchParams?: { billing?: string };
+}) {
+  const billing = searchParams?.billing;
   return (
     <main className="pageMain">
       <div className="card">
         <h2>요금제 (MVP)</h2>
-        <p className="muted">현재는 MVP 단계이며, 아래 구성/가격은 운영 중 조정될 수 있습니다.</p>
+        <p className="muted">현재는 MVP 단계이며, 아래 구성/가격은 운영 데이터에 따라 조정될 수 있습니다.</p>
+        {billing === "success" ? <p className="hint">결제가 완료되었습니다. 구독 상태 반영까지 최대 1분 정도 소요될 수 있습니다.</p> : null}
+        {billing === "cancel" ? <p className="hint">결제가 취소되었습니다. 다시 시도하실 수 있습니다.</p> : null}
       </div>
 
       <div className="grid">
@@ -31,12 +40,16 @@ export default function PricingPage() {
               <div className="left">AI 고급 분석</div>
               <div className="right">미포함</div>
             </div>
+            <div className="row">
+              <div className="left">PDF 워터마크</div>
+              <div className="right">포함</div>
+            </div>
           </div>
         </div>
 
         <div className="card">
           <h2>Basic</h2>
-          <p className="muted">월 49,000원 (1인 실사용 추천)</p>
+          <p className="muted">월 39,000원 (1인 실사용 추천, 초기 검증 가격)</p>
           <div className="list">
             <div className="row">
               <div className="left">분석 횟수</div>
@@ -48,7 +61,7 @@ export default function PricingPage() {
             </div>
             <div className="row">
               <div className="left">AI 고급 분석</div>
-              <div className="right">포함</div>
+              <div className="right">포함 (대용량 시 부분 적용)</div>
             </div>
             <div className="row">
               <div className="left">PDF 워터마크</div>
@@ -59,6 +72,7 @@ export default function PricingPage() {
               <div className="right">우선 이메일</div>
             </div>
           </div>
+          <PricingActions plan="basic" />
         </div>
       </div>
 
@@ -76,24 +90,25 @@ export default function PricingPage() {
               <div className="right">최대 5명</div>
             </div>
             <div className="row">
-              <div className="left">경쟁사 비교 분석</div>
-              <div className="right">포함</div>
+              <div className="left">AI 고급 분석</div>
+              <div className="right">확장 한도 (대량 처리 우선)</div>
             </div>
             <div className="row">
               <div className="left">팀 공유</div>
-              <div className="right">포함</div>
+              <div className="right">포함 (공동 운영 권장)</div>
             </div>
             <div className="row">
               <div className="left">지원</div>
               <div className="right">최우선 지원</div>
             </div>
           </div>
+          <PricingActions plan="pro" />
         </div>
 
         <div className="card">
           <h2>안내</h2>
-          <p className="muted">현재는 MVP 단계로, 실제 결제/과금 집행은 순차 적용 예정입니다.</p>
-          <p className="muted">요금제별 제한은 운영 데이터에 따라 조정될 수 있으며 사전 공지됩니다.</p>
+          <p className="muted">Basic 가격은 초기 검증 구간(39,000원)이며 운영 지표에 따라 49,000원으로 조정될 수 있습니다.</p>
+          <p className="muted">AI 고급 분석은 안정성을 위해 대용량 업로드 시 일부 리뷰 샘플 중심으로 동작할 수 있습니다.</p>
           <div className="actionRow">
             <a className="btn btnPrimary" href="/dashboard">
               지금 분석하기

@@ -1,4 +1,5 @@
 import { signUpAction } from "@/app/(auth)/actions";
+import FeedbackModal from "@/components/FeedbackModal";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export default function SignupPage(props: { searchParams?: Record<string, string
 
   return (
     <main className="pageMain">
+      {err ? <FeedbackModal title="회원가입 실패" message={err} tone="error" /> : null}
       <div className="grid">
         <div className="card">
           <h2>회원가입</h2>
@@ -63,13 +65,9 @@ export default function SignupPage(props: { searchParams?: Record<string, string
             </p>
           )}
 
-          {err ? (
-            <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
-              {err}
-            </p>
-          ) : (
+          {!err ? (
             <p className="hint muted">회원가입은 “저장된 리포트” 기능을 위한 옵션입니다.</p>
-          )}
+          ) : null}
         </div>
 
         <div className="card">

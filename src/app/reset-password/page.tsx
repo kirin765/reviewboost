@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import FeedbackModal from "@/components/FeedbackModal";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -61,6 +62,8 @@ export default function ResetPasswordPage() {
 
   return (
     <main className="pageMain">
+      {error ? <FeedbackModal title="비밀번호 변경 실패" message={error} tone="error" /> : null}
+      {!error && notice ? <FeedbackModal title="안내" message={notice} /> : null}
       <div className="grid">
         <div className="card">
           <h2>새 비밀번호 설정</h2>
@@ -88,17 +91,9 @@ export default function ResetPasswordPage() {
               {busy ? "변경 중..." : "비밀번호 변경"}
             </button>
           </form>
-          {error ? (
-            <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
-              {error}
-            </p>
-          ) : notice ? (
-            <p className="hint ok" style={{ whiteSpace: "pre-wrap" }}>
-              {notice}
-            </p>
-          ) : (
+          {!error && !notice ? (
             <p className="hint muted">링크가 만료되면 로그인 화면에서 비밀번호 재설정을 다시 요청하세요.</p>
-          )}
+          ) : null}
         </div>
       </div>
     </main>

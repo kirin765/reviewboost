@@ -27,31 +27,42 @@ export async function classifyReviewsWithOpenAI(args: {
   const client = new OpenAI({ apiKey });
 
   const out: LlmClassification[] = [];
-  const batchSize = 40;
+  const parsedBatchSize = Number(process.env.OPENAI_CLASSIFY_BATCH_SIZE ?? "60");
+  const batchSize = Number.isFinite(parsedBatchSize) && parsedBatchSize > 0 ? Math.floor(parsedBatchSize) : 60;
+  const parsedTimeoutMs = Number(process.env.OPENAI_CLASSIFY_TIMEOUT_MS ?? "8000");
+  const timeoutMs = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs >= 3000 ? Math.floor(parsedTimeoutMs) : 8000;
 
   for (let i = 0; i < args.texts.length; i += batchSize) {
     const batch = args.texts.slice(i, i + batchSize);
     const payload = batch.map((t, idx) => ({ id: i + idx, text: t.slice(0, 600) }));
 
-    const resp = await client.chat.completions.create({
-      model,
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
+    let resp;
+    try {
+      resp = await client.chat.completions.create(
         {
-          role: "user",
-          content: [
-            `너는 이커머스 리뷰 분석기다.`,
-            `입력 배열 items의 각 원소에 대해 sentiment/category를 분류하라.`,
-            `sentiment는 positive|neutral|negative 중 하나.`,
-            `category는 배송|품질|가격|사용성|CS|기타 중 하나.`,
-            `출력은 반드시 JSON만: { "items": [{ "id": number, "sentiment": "...", "category": "..." }, ...] }`,
-            ``,
-            JSON.stringify({ items: payload })
-          ].join("\n")
-        }
-      ]
-    });
+          model,
+          temperature: 0,
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "user",
+              content: [
+                `너는 이커머스 리뷰 분석기다.`,
+                `입력 배열 items의 각 원소에 대해 sentiment/category를 분류하라.`,
+                `sentiment는 positive|neutral|negative 중 하나.`,
+                `category는 배송|품질|가격|사용성|CS|기타 중 하나.`,
+                `출력은 반드시 JSON만: { "items": [{ "id": number, "sentiment": "...", "category": "..." }, ...] }`,
+                ``,
+                JSON.stringify({ items: payload })
+              ].join("\n")
+            }
+          ]
+        },
+        { timeout: timeoutMs }
+      );
+    } catch {
+      return null;
+    }
 
     const text = resp.choices?.[0]?.message?.content ?? "";
     let parsed: any;
@@ -80,4 +91,3 @@ export async function classifyReviewsWithOpenAI(args: {
 
   return out;
 }
-

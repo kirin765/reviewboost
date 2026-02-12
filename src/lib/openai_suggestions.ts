@@ -1,7 +1,10 @@
 import OpenAI from "openai";
 import type { AnalysisStats, Suggestions } from "@/lib/types";
 
-function fallbackSuggestions(stats: AnalysisStats): Suggestions {
+function fallbackSuggestions(
+  stats: AnalysisStats,
+  opts?: { modeLabel?: "heuristic" | "llm_fallback"; llmTargetCount?: number; totalCount?: number }
+): Suggestions {
   const topCats = Object.entries(stats.categoryCounts).sort((a, b) => b[1] - a[1]).slice(0, 2);
   const topKw = stats.negativeKeywordsTop10.slice(0, 5).map((k) => k.keyword);
 
@@ -22,18 +25,31 @@ function fallbackSuggestions(stats: AnalysisStats): Suggestions {
     `FAQ: 구성품 누락/파손 시 어떻게 처리하나요?`
   ];
 
-  const notes = [
-    `AI 연결 없이 기본 문구 템플릿으로 만들었습니다. (설정되어 있으면 더 다양한 문구를 생성할 수 있어요.)`,
-    topKw.length ? `자주 언급된 부정 키워드: ${topKw.join(", ")}` : `부정 키워드가 충분히 추출되지 않았습니다.`
-  ];
+  const notes = [];
+  if (opts?.modeLabel === "heuristic") {
+    notes.push("일반 분석 모드: 규칙 기반 템플릿 제안입니다. AI 고급 분석을 켜면 문구 다양성과 맥락 반영이 강화됩니다.");
+  } else if (opts?.modeLabel === "llm_fallback") {
+    notes.push("AI 고급 분석 요청이 지연/실패되어 템플릿 제안으로 자동 전환되었습니다.");
+  } else {
+    notes.push(`AI 연결 없이 기본 문구 템플릿으로 만들었습니다. (설정되어 있으면 더 다양한 문구를 생성할 수 있어요.)`);
+  }
+  if (typeof opts?.llmTargetCount === "number" && typeof opts?.totalCount === "number" && opts.totalCount > opts.llmTargetCount) {
+    notes.push(`대용량 안정화를 위해 ${opts.totalCount}개 중 ${opts.llmTargetCount}개 리뷰만 AI 대상으로 처리했습니다.`);
+  }
+  notes.push(topKw.length ? `자주 언급된 부정 키워드: ${topKw.join(", ")}` : `부정 키워드가 충분히 추출되지 않았습니다.`);
 
   return { detailPageCopy, csResponseTemplates, faqRecommendations, notes };
 }
 
-export async function generateSuggestions(stats: AnalysisStats): Promise<Suggestions> {
+export async function generateSuggestions(
+  stats: AnalysisStats,
+  opts?: { useAiNarrative?: boolean; llmTargetCount?: number; totalCount?: number }
+): Promise<Suggestions> {
+  if (!opts?.useAiNarrative) return fallbackSuggestions(stats, { modeLabel: "heuristic" });
+
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
-  if (!apiKey) return fallbackSuggestions(stats);
+  if (!apiKey) return fallbackSuggestions(stats, { modeLabel: "llm_fallback", llmTargetCount: opts?.llmTargetCount, totalCount: opts?.totalCount });
 
   const client = new OpenAI({ apiKey });
   const prompt = {
@@ -49,21 +65,32 @@ export async function generateSuggestions(stats: AnalysisStats): Promise<Suggest
     ].join("\n")
   };
 
-  const resp = await client.chat.completions.create({
-    model,
-    messages: [prompt],
-    temperature: 0.4,
-    response_format: { type: "json_object" }
-  });
+  const parsedTimeoutMs = Number(process.env.OPENAI_SUGGEST_TIMEOUT_MS ?? "6000");
+  const timeoutMs = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs >= 3000 ? Math.floor(parsedTimeoutMs) : 6000;
+
+  let resp;
+  try {
+    resp = await client.chat.completions.create(
+      {
+        model,
+        messages: [prompt],
+        temperature: 0.4,
+        response_format: { type: "json_object" }
+      },
+      { timeout: timeoutMs }
+    );
+  } catch {
+    return fallbackSuggestions(stats, { modeLabel: "llm_fallback", llmTargetCount: opts?.llmTargetCount, totalCount: opts?.totalCount });
+  }
 
   const text = resp.choices?.[0]?.message?.content ?? "";
   try {
     const parsed = JSON.parse(text) as Suggestions;
     if (!parsed.detailPageCopy || !parsed.csResponseTemplates || !parsed.faqRecommendations || !parsed.notes) {
-      return fallbackSuggestions(stats);
+      return fallbackSuggestions(stats, { modeLabel: "llm_fallback", llmTargetCount: opts?.llmTargetCount, totalCount: opts?.totalCount });
     }
     return parsed;
   } catch {
-    return fallbackSuggestions(stats);
+    return fallbackSuggestions(stats, { modeLabel: "llm_fallback", llmTargetCount: opts?.llmTargetCount, totalCount: opts?.totalCount });
   }
 }

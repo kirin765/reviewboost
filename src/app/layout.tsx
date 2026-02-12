@@ -32,20 +32,29 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <AnalyticsQueryEvents />
         <div className="container">
           <div className="header">
-            <div className="brand">
-              <strong>ReviewBoost</strong>
-              <span>리뷰 기반 매출 개선 리포트 MVP</span>
+            <div className="headerLeft">
+              <div className="brand">
+                <strong>ReviewBoost</strong>
+                <span>리뷰 기반 매출 개선 리포트 MVP</span>
+              </div>
+              <nav className="topNav" aria-label="주요 메뉴">
+                <a className="navLink" href="/help">
+                  사용법
+                </a>
+                <a className="navLink" href="/pricing">
+                  요금제
+                </a>
+                <a className="navLink" href="/dashboard">
+                  분석하기
+                </a>
+                {!email && supabaseConfigured ? (
+                  <a className="navLink" href="/login">
+                    로그인(선택)
+                  </a>
+                ) : null}
+              </nav>
             </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <a className="btn" href="/help">
-                사용법
-              </a>
-              <a className="btn" href="/pricing">
-                요금제
-              </a>
-              <a className="btn" href="/dashboard">
-                분석하기
-              </a>
+            <div className="headerRight">
               {email ? (
                 <>
                   <a className="btn" href="/dashboard/history">
@@ -60,14 +69,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     </button>
                   </form>
                 </>
-              ) : supabaseConfigured ? (
-                <a className="btn" href="/login">
-                  로그인(선택)
-                </a>
               ) : null}
             </div>
           </div>
           {children}
+          <footer className="siteFooter" aria-label="법적 고지">
+            <a className="footerLink" href="/term">
+              Terms of Service
+            </a>
+            <span className="footerDot" aria-hidden="true">
+              ·
+            </span>
+            <a className="footerLink" href="/privacy">
+              Privacy Policy
+            </a>
+          </footer>
         </div>
       </body>
     </html>

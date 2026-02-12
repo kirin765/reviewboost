@@ -7,12 +7,72 @@ import { generateSuggestions } from "@/lib/openai_suggestions";
 import { getSupabaseAdminClient } from "@/lib/supabase_server";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { readUploadedCsvText } from "@/lib/upload_csv";
-import { canUseAdvancedAi, monthStartIso, monthlyLimitForPlan, resolvePlanTier } from "@/lib/plan";
+import { canUseAdvancedAi, monthStartIso, monthlyLimitForPlan, resolvePlanTierForUser } from "@/lib/plan";
 import { getCapabilitiesBase } from "@/lib/capabilities";
+import { devAllowAdvancedAiBypass, devForcedAnalysisMode } from "@/lib/dev_flags";
 
 export const runtime = "nodejs";
 
 const MAX_BYTES = 6 * 1024 * 1024;
+const DEFAULT_MAX_LLM_REVIEWS = 180;
+
+function readMaxLlmReviews(): number {
+  const raw = Number(process.env.MAX_LLM_REVIEWS ?? String(DEFAULT_MAX_LLM_REVIEWS));
+  if (!Number.isFinite(raw) || raw < 20) return DEFAULT_MAX_LLM_REVIEWS;
+  return Math.floor(raw);
+}
+
+function pickLlmTargetIndicesByHeuristic(
+  classified: Array<{ sentiment: "positive" | "neutral" | "negative"; reviewedAt?: string | null }>,
+  maxCount: number
+): number[] {
+  if (classified.length <= maxCount) return classified.map((_, idx) => idx);
+
+  const groups = {
+    negative: [] as number[],
+    neutral: [] as number[],
+    positive: [] as number[]
+  };
+
+  for (let i = 0; i < classified.length; i++) {
+    const s = classified[i]?.sentiment;
+    if (s === "negative") groups.negative.push(i);
+    else if (s === "neutral") groups.neutral.push(i);
+    else groups.positive.push(i);
+  }
+
+  // Prioritize problematic reviews, then ambiguous, then positive.
+  const weights = {
+    negative: 0.5,
+    neutral: 0.3,
+    positive: 0.2
+  } as const;
+
+  const order = ["negative", "neutral", "positive"] as const;
+  const picked = new Set<number>();
+
+  for (const key of order) {
+    const target = Math.floor(maxCount * weights[key]);
+    const bucket = groups[key];
+    for (let i = 0; i < bucket.length && i < target; i++) picked.add(bucket[i]!);
+  }
+
+  // Fill remainder with recent-first across all sentiments.
+  const remainingCandidates = classified
+    .map((row, idx) => ({
+      idx,
+      ts: row.reviewedAt ? new Date(row.reviewedAt).getTime() : 0
+    }))
+    .sort((a, b) => b.ts - a.ts || a.idx - b.idx)
+    .map((v) => v.idx);
+
+  for (const idx of remainingCandidates) {
+    if (picked.size >= maxCount) break;
+    picked.add(idx);
+  }
+
+  return Array.from(picked).sort((a, b) => a - b);
+}
 
 function delimiterHint(csvText: string): string[] {
   const delimiter = inferDelimiter(csvText);
@@ -45,8 +105,11 @@ export async function POST(req: Request) {
   const textCol = (form.get("textCol") as string | null) ?? null;
   const ratingCol = (form.get("ratingCol") as string | null) ?? null;
   const dateCol = (form.get("dateCol") as string | null) ?? null;
-  const useLLM = String(form.get("useLLM") ?? "").trim() === "1";
+  const useLLMRequested = String(form.get("useLLM") ?? "").trim() === "1";
+  const forcedMode = devForcedAnalysisMode();
+  const useLLM = forcedMode === "llm" ? true : forcedMode === "heuristic" ? false : useLLMRequested;
   const baseCaps = getCapabilitiesBase();
+  const maxLlmReviews = readMaxLlmReviews();
 
   let supabaseAuth: ReturnType<typeof createSupabaseServerActionClient> | null = null;
   let userId: string | null = null;
@@ -62,10 +125,11 @@ export async function POST(req: Request) {
     }
   }
 
-  const plan = resolvePlanTier(userEmail);
+  const plan = await resolvePlanTierForUser({ userId, email: userEmail });
   const monthlyLimit = monthlyLimitForPlan(plan);
 
-  if (useLLM && !canUseAdvancedAi(plan)) {
+  const allowAdvancedAi = canUseAdvancedAi(plan) || devAllowAdvancedAiBypass();
+  if (useLLM && !allowAdvancedAi) {
     return apiErrorResponse(
       new ApiError(403, "PLAN_UPGRADE_REQUIRED", "AI 고급 분석은 Basic 이상 요금제에서 사용할 수 있습니다.", {
         help: ["요금제 페이지에서 Basic 이상으로 업그레이드한 뒤 다시 시도해주세요."]
@@ -111,17 +175,27 @@ export async function POST(req: Request) {
 
   // 1) Heuristic classification (baseline)
   let classified = classifyHeuristic(rows);
+  let llmApplied = false;
+  let llmTargetCount = 0;
 
   // 2) Optional: LLM classification for sentiment/category
   if (useLLM) {
     try {
-      const llm = await classifyReviewsWithOpenAI({ texts: classified.map((r) => r.text) });
-      if (llm && llm.length === classified.length) {
-        classified = classified.map((r, idx) => ({
-          ...r,
-          sentiment: llm[idx]!.sentiment,
-          category: llm[idx]!.category
-        }));
+      const targetIdx = pickLlmTargetIndicesByHeuristic(classified, maxLlmReviews);
+      llmTargetCount = targetIdx.length;
+      const targetTexts = targetIdx.map((i) => classified[i]!.text);
+      const llm = await classifyReviewsWithOpenAI({ texts: targetTexts });
+      if (llm && llm.length === targetTexts.length) {
+        for (let i = 0; i < targetIdx.length; i++) {
+          const idx = targetIdx[i]!;
+          const item = llm[i]!;
+          classified[idx] = {
+            ...classified[idx]!,
+            sentiment: item.sentiment,
+            category: item.category
+          };
+        }
+        llmApplied = true;
       }
     } catch {
       // ignore; keep heuristic
@@ -129,13 +203,19 @@ export async function POST(req: Request) {
   }
 
   const { stats } = computeAnalysisFromClassified(classified);
-  const suggestions = await generateSuggestions(stats);
+  const suggestions = await generateSuggestions(stats, {
+    useAiNarrative: llmApplied,
+    llmTargetCount,
+    totalCount: classified.length
+  });
   const payload = {
     stats,
     suggestions,
     meta: {
       filename,
-      stored: false as const
+      stored: false as const,
+      analysisMode: llmApplied ? "llm" : "heuristic",
+      llmTargetCount
     }
   };
 
@@ -167,7 +247,16 @@ export async function POST(req: Request) {
           reviewed_at: r.reviewedAt ?? null
         }));
         if (reviews.length) await admin.from("reviews").insert(reviews);
-        return Response.json({ ...payload, meta: { filename, stored: true as const, analysisId } });
+        return Response.json({
+          ...payload,
+          meta: {
+            filename,
+            stored: true as const,
+            analysisId,
+            analysisMode: llmApplied ? "llm" : "heuristic",
+            llmTargetCount
+          }
+        });
       }
     }
 
@@ -187,7 +276,16 @@ export async function POST(req: Request) {
 
       const analysisId = insertAnalysis.data?.id as string | undefined;
       if (analysisId) {
-        return Response.json({ ...payload, meta: { filename, stored: true as const, analysisId } });
+        return Response.json({
+          ...payload,
+          meta: {
+            filename,
+            stored: true as const,
+            analysisId,
+            analysisMode: llmApplied ? "llm" : "heuristic",
+            llmTargetCount
+          }
+        });
       }
     }
   } catch {

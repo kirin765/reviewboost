@@ -1,4 +1,5 @@
 import { requestPasswordResetAction } from "@/app/(auth)/actions";
+import FeedbackModal from "@/components/FeedbackModal";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export default function ForgotPasswordPage(props: { searchParams?: Record<string
 
   return (
     <main className="pageMain">
+      {err ? <FeedbackModal title="재설정 요청 실패" message={err} tone="error" /> : null}
       <div className="grid">
         <div className="card">
           <h2>비밀번호 재설정</h2>
@@ -29,13 +31,9 @@ export default function ForgotPasswordPage(props: { searchParams?: Record<string
             </p>
           )}
 
-          {err ? (
-            <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
-              {err}
-            </p>
-          ) : (
+          {!err ? (
             <p className="hint muted">요청 후 메일이 오지 않으면 스팸함도 확인해주세요.</p>
-          )}
+          ) : null}
         </div>
 
         <div className="card">

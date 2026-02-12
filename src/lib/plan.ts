@@ -1,4 +1,5 @@
 export type PlanTier = "free" | "basic" | "pro";
+import { resolvePlanTierByBilling } from "@/lib/billing";
 
 function parseEmailList(raw: string | undefined): Set<string> {
   return new Set(
@@ -20,6 +21,17 @@ export function resolvePlanTier(email: string | null | undefined): PlanTier {
   if (basicEmails.has(normalized)) return "basic";
 
   return "free";
+}
+
+export async function resolvePlanTierForUser(args: {
+  userId?: string | null;
+  email?: string | null;
+}): Promise<PlanTier> {
+  const fallback = resolvePlanTier(args.email ?? null);
+  return resolvePlanTierByBilling({
+    userId: args.userId ?? null,
+    fallbackPlan: fallback
+  });
 }
 
 export function monthlyLimitForPlan(plan: PlanTier): number | null {
@@ -45,4 +57,3 @@ export function planLabel(plan: PlanTier): string {
 export function monthStartIso(d = new Date()): string {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 0, 0, 0, 0)).toISOString();
 }
-

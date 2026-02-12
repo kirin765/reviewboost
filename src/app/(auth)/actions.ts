@@ -87,10 +87,15 @@ export async function signUpAction(formData: FormData) {
   let signUpError: string | null = null;
   try {
     const supabase = createSupabaseServerActionClient();
+    const origin = detectOriginFromHeaders();
+    const emailRedirectTo = origin
+      ? `${origin}/auth/confirm?next=${encodeURIComponent(next)}`
+      : undefined;
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo,
         data: {
           agree_terms: agreeTerms,
           agree_privacy: agreePrivacy,

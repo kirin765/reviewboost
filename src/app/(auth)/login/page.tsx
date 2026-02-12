@@ -1,4 +1,5 @@
 import { signInAction } from "@/app/(auth)/actions";
+import FeedbackModal from "@/components/FeedbackModal";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,8 @@ export default function LoginPage(props: { searchParams?: Record<string, string 
 
   return (
     <main className="pageMain">
+      {err ? <FeedbackModal title="로그인 실패" message={err} tone="error" /> : null}
+      {!err && notice ? <FeedbackModal title="안내" message={notice} /> : null}
       <div className="grid">
         <div className="card">
           <h2>로그인</h2>
@@ -36,17 +39,9 @@ export default function LoginPage(props: { searchParams?: Record<string, string 
             </p>
           )}
 
-          {err ? (
-            <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
-              {err}
-            </p>
-          ) : notice ? (
-            <p className="hint ok" style={{ whiteSpace: "pre-wrap" }}>
-              {notice}
-            </p>
-          ) : (
+          {!err && !notice ? (
             <p className="hint muted">로그인은 “저장된 리포트” 기능을 위한 옵션입니다.</p>
-          )}
+          ) : null}
         </div>
 
         <div className="card">

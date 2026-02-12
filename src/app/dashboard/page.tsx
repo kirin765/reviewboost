@@ -5,6 +5,7 @@ import type { Capabilities } from "@/lib/capabilities";
 import CopyButton from "@/components/CopyButton";
 import { isApiErrorBody } from "@/lib/api_error";
 import { gtagEvent } from "@/lib/analytics";
+import FeedbackModal from "@/components/FeedbackModal";
 
 type AnalysisResult = {
   stats: {
@@ -35,6 +36,8 @@ type AnalysisResult = {
     filename: string | null;
     stored: boolean;
     analysisId?: string;
+    analysisMode?: "llm" | "heuristic";
+    llmTargetCount?: number;
   };
 };
 
@@ -50,6 +53,7 @@ type CsvPreview = {
 
 export default function DashboardPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const summaryCardRef = useRef<HTMLDivElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +66,8 @@ export default function DashboardPage() {
   const [dateCol, setDateCol] = useState<string>("");
   const [useLLM, setUseLLM] = useState<boolean>(false);
   const [caps, setCaps] = useState<Capabilities | null>(null);
+  const [analysisDoneNotice, setAnalysisDoneNotice] = useState<string | null>(null);
+  const [lastRunRequestedLLM, setLastRunRequestedLLM] = useState<boolean>(false);
 
   const summary = useMemo(() => {
     if (!result) return null;
@@ -75,6 +81,30 @@ export default function DashboardPage() {
       last30: stats.recentness?.hasDates ? `${Math.round((stats.recentness.last30Share ?? 0) * 100)}%` : null
     };
   }, [result]);
+
+  const llmFallbackNotice = useMemo(() => {
+    if (!result) return null;
+    if (!lastRunRequestedLLM) return null;
+    if (result.meta.analysisMode === "llm") return null;
+    return "AI 고급 분석 요청이 지연/실패되어 일반 분석 결과로 자동 전환되었습니다.";
+  }, [result, lastRunRequestedLLM]);
+
+  const llmPartialNotice = useMemo(() => {
+    if (!result) return null;
+    if (!lastRunRequestedLLM) return null;
+    if (result.meta.analysisMode !== "llm") return null;
+    const used = Number(result.meta.llmTargetCount ?? 0);
+    if (!Number.isFinite(used) || used <= 0) return null;
+    if (used >= result.stats.total) return null;
+    return `대용량 안정성을 위해 전체 ${result.stats.total}개 중 ${used}개 리뷰에 AI 고급 분석을 적용하고, 나머지는 일반 분석으로 처리했습니다.`;
+  }, [result, lastRunRequestedLLM]);
+
+  const analysisModeLabel = useMemo(() => {
+    if (!result) return null;
+    if (result.meta.analysisMode === "llm") return "분석 방식: AI 고급 분석";
+    if (lastRunRequestedLLM) return "분석 방식: 일반 분석 (AI 요청 후 전환)";
+    return "분석 방식: 일반 분석";
+  }, [result, lastRunRequestedLLM]);
 
   useEffect(() => {
     let cancelled = false;
@@ -113,11 +143,13 @@ export default function DashboardPage() {
     setPreview(null);
     setResult(null);
     setError(null);
+    setAnalysisDoneNotice(null);
     setShowAllPreviewCols(false);
     setTextCol("");
     setRatingCol("");
     setDateCol("");
     setUseLLM(false);
+    setLastRunRequestedLLM(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -199,6 +231,7 @@ export default function DashboardPage() {
     setBusy(true);
     setError(null);
     setResult(null);
+    setAnalysisDoneNotice(null);
     try {
       if (!preview) {
         await loadPreview(file);
@@ -210,11 +243,13 @@ export default function DashboardPage() {
       fd.set("textCol", textCol);
       if (ratingCol) fd.set("ratingCol", ratingCol);
       if (dateCol) fd.set("dateCol", dateCol);
-      if (useLLM) fd.set("useLLM", "1");
+      const requestedLLM = useLLM;
+      if (requestedLLM) fd.set("useLLM", "1");
       const res = await fetch("/api/analyze", { method: "POST", body: fd });
       if (!res.ok) throw new Error(await readErrorText(res));
       const json = (await res.json()) as AnalysisResult;
       setResult(json);
+      setLastRunRequestedLLM(requestedLLM);
       gtagEvent("analysis_complete", {
         total_reviews: json.stats.total,
         priority_score: Number(json.stats.priorityScore.toFixed(1)),
@@ -231,6 +266,7 @@ export default function DashboardPage() {
     setBusy(true);
     setError(null);
     setResult(null);
+    setAnalysisDoneNotice(null);
     try {
       // Load sample.csv into a File so the rest of the pipeline can stay the same.
       const res = await fetch("/sample.csv", { cache: "no-store" });
@@ -244,6 +280,7 @@ export default function DashboardPage() {
       setRatingCol("");
       setDateCol("");
       setUseLLM(false);
+      setLastRunRequestedLLM(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await loadPreview(f);
     } catch (e: any) {
@@ -290,9 +327,19 @@ export default function DashboardPage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [cellModal]);
 
+  useEffect(() => {
+    if (!result || !summaryCardRef.current) return;
+    summaryCardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    setAnalysisDoneNotice("분석이 완료되었습니다. 핵심 지표로 이동했습니다.");
+  }, [result]);
+
   return (
     <main className="pageMain">
-      <div className="grid dashboardTopGrid">
+      {error ? <FeedbackModal title="분석 처리 오류" message={error} tone="error" /> : null}
+      {!error && analysisDoneNotice ? (
+        <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
+      ) : null}
+      <div className="grid">
         <div className="card heroCard">
           <h1 className="heroTitle">리뷰 CSV 분석</h1>
           <div className="pillRow" style={{ marginBottom: 10 }}>
@@ -308,7 +355,7 @@ export default function DashboardPage() {
               샘플 CSV 다운로드
             </a>
           </p>
-          <div className="actionRow actionRowTight">
+          <div className="toolbar">
             <button className="btn btnWarn" onClick={onSample} disabled={busy}>
               샘플로 테스트
             </button>
@@ -332,6 +379,7 @@ export default function DashboardPage() {
               setRatingCol("");
               setDateCol("");
               setUseLLM(false);
+              setLastRunRequestedLLM(false);
             }}
             disabled={busy}
           />
@@ -344,14 +392,16 @@ export default function DashboardPage() {
               <span>CSV 파일을 선택하세요.</span>
             )}
           </div>
-          <div className="actionRow">
+          <div className="toolbar">
             <button className="btn btnPrimary" onClick={onAnalyze} disabled={!file || busy}>
               {busy ? "처리 중..." : preview ? "분석 시작" : "다음: 미리보기"}
             </button>
-            <button className="btn" onClick={onDownloadPdf} disabled={!result || busy}>
-              PDF 다운로드
-            </button>
           </div>
+          {busy ? (
+            <p className="hint" style={{ marginTop: 6 }}>
+              {preview ? "리뷰를 분석 중입니다. 잠시만 기다려주세요." : "CSV 미리보기를 준비하고 있습니다."}
+            </p>
+          ) : null}
 
           {preview ? (
             <div style={{ marginTop: 12 }}>
@@ -505,11 +555,6 @@ export default function DashboardPage() {
             </div>
           ) : null}
 
-          {error && (
-            <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
-              {error}
-            </p>
-          )}
           {result?.meta?.stored ? (
             <p className="hint">
               저장됨: 나중에 “저장된 리포트”에서 다시 볼 수 있습니다.
@@ -546,8 +591,23 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card" ref={summaryCardRef}>
           <h2>핵심 지표</h2>
+          {analysisModeLabel ? (
+            <div style={{ marginTop: 0, marginBottom: 8 }}>
+              <span className="pill">{analysisModeLabel}</span>
+            </div>
+          ) : null}
+          {llmFallbackNotice ? (
+            <p className="hint" style={{ color: "var(--warn)", marginTop: 0, whiteSpace: "pre-wrap" }}>
+              {llmFallbackNotice}
+            </p>
+          ) : null}
+          {llmPartialNotice ? (
+            <p className="hint muted" style={{ marginTop: llmFallbackNotice ? 6 : 0, whiteSpace: "pre-wrap" }}>
+              {llmPartialNotice}
+            </p>
+          ) : null}
           {!summary ? (
             <p className="muted">분석 결과가 여기에 표시됩니다.</p>
           ) : (
@@ -577,6 +637,11 @@ export default function DashboardPage() {
               {!result?.stats.recentness?.hasDates ? (
                 <p className="hint muted">작성일 열이 없으면 “최근 이슈”는 계산되지 않거나 약하게만 반영됩니다.</p>
               ) : null}
+              <div className="toolbar">
+                <button className="btn" onClick={onDownloadPdf} disabled={!result || busy}>
+                  PDF 다운로드
+                </button>
+              </div>
             </>
           )}
           {result && (
