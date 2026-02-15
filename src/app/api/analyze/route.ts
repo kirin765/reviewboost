@@ -9,7 +9,13 @@ import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { readUploadedCsvText } from "@/lib/upload_csv";
 import { monthStartIso, monthlyLimitForPlan, resolvePlanTierForUser, type PlanTier } from "@/lib/plan";
 import { getCapabilitiesBase } from "@/lib/capabilities";
-import { devForcedAnalysisMode } from "@/lib/dev_flags";
+import { devForcedAnalysisMode, devAllowAdvancedAiBypass } from "@/lib/dev_flags";
+import { getGatesForPlan } from "@/lib/plan_gates";
+import { topKeywords, extractPositiveKeywords } from "@/lib/keywords";
+import { extractUrgentReviews } from "@/lib/urgent_reviews";
+import { calculatePriorityMatrix } from "@/lib/priority_matrix";
+import { simulateRatingImprovements } from "@/lib/rating_simulation";
+import { generateActionItems } from "@/lib/action_items";
 
 export const runtime = "nodejs";
 
@@ -132,6 +138,15 @@ export async function POST(req: Request) {
 
   const plan = await resolvePlanTierForUser({ userId, email: userEmail });
   const monthlyLimit = monthlyLimitForPlan(plan);
+  const gates = getGatesForPlan(plan);
+  const devBypass = devAllowAdvancedAiBypass();
+
+  // Check if LLM is allowed for this plan
+  let effectiveUseLLM = useLLM;
+  if (!gates.allowLLM && !devBypass) {
+    effectiveUseLLM = false;
+    console.log(`[LLM:analyze] LLM 비활성화 — plan=${plan}, allowLLM=${gates.allowLLM}`);
+  }
 
   const maxLlmReviews = readMaxLlmReviews(plan);
 
@@ -171,12 +186,21 @@ export async function POST(req: Request) {
     );
   }
 
+  // Check max reviews per analysis limit
+  let truncated = false;
+  const maxReviews = gates.maxReviewsPerAnalysis;
+  if (rows.length > maxReviews) {
+    rows = rows.slice(0, maxReviews);
+    truncated = true;
+    console.log(`[analyze] 리뷰 ${maxReviews}개로 제한 — 초과분 버림`);
+  }
+
   // 1) Heuristic classification (baseline)
   let classified = classifyHeuristic(rows);
   let llmApplied = false;
 
   // 2) Optional: LLM classification for sentiment/category
-  if (useLLM) {
+  if (effectiveUseLLM) {
     try {
       const targetIdx = pickLlmTargetIndicesByHeuristic(classified, maxLlmReviews);
       console.log(`[LLM:analyze] 분류 요청 — plan=${plan}, 전체=${classified.length}건, LLM대상=${targetIdx.length}건`);
@@ -217,13 +241,36 @@ export async function POST(req: Request) {
     topKeywords: stats.negativeKeywordsTop10,
     totalCount: classified.length
   });
+
+  // === V2 New Features ===
+  const urgentReviews = extractUrgentReviews(classified);
+  const priorityMatrix = calculatePriorityMatrix(classified, stats);
+  const ratingSimulation = simulateRatingImprovements(stats, stats.negativeKeywordsTop10);
+
+  // Extract positive keywords from positive reviews
+  const positiveReviews = classified.filter((r) => r.sentiment === "positive");
+  const positiveKeywordsRaw = extractPositiveKeywords(
+    positiveReviews.map((r) => r.text),
+    10
+  );
+  const positiveKeywords = positiveKeywordsRaw.map((k) => ({ ...k, sentiment: 'positive' as const }));
+
+  const actionItems = generateActionItems(classified, suggestions);
+
   const payload = {
     stats,
     suggestions,
     meta: {
       filename,
-      stored: false as const
-    }
+      stored: false as const,
+      truncated
+    },
+    // V2 optional fields
+    urgentReviews,
+    priorityMatrix,
+    ratingSimulation,
+    positiveKeywords,
+    actionItems
   };
 
   // Optional persistence (Supabase)
@@ -259,7 +306,8 @@ export async function POST(req: Request) {
           meta: {
             filename,
             stored: true as const,
-            analysisId
+            analysisId,
+            truncated
           }
         });
       }
@@ -286,7 +334,8 @@ export async function POST(req: Request) {
           meta: {
             filename,
             stored: true as const,
-            analysisId
+            analysisId,
+            truncated
           }
         });
       }
