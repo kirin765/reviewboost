@@ -6,6 +6,10 @@ import CopyButton from "@/components/CopyButton";
 import { isApiErrorBody } from "@/lib/api_error";
 import { gtagEvent } from "@/lib/analytics";
 import FeedbackModal from "@/components/FeedbackModal";
+import { PlanProvider, useGates } from "@/contexts/PlanContext";
+import PlanGate from "@/components/PlanGate";
+import BlurGate from "@/components/BlurGate";
+import type { PlanTier } from "@/lib/types";
 
 type AnalysisResult = {
   stats: {
@@ -36,9 +40,41 @@ type AnalysisResult = {
     filename: string | null;
     stored: boolean;
     analysisId?: string;
-    analysisMode?: "llm" | "heuristic";
-    llmTargetCount?: number;
+    truncated?: boolean;
   };
+  // V2 new fields
+  urgentReviews?: Array<{
+    review: { text: string; rating: number | null; sentiment: string; category: string };
+    highlightedText: string;
+    daysSinceWritten: number | null;
+  }>;
+  priorityMatrix?: Array<{
+    category: string;
+    frequency: number;
+    frequencyPct: number;
+    impact: number;
+    quadrant: 'critical' | 'monitor' | 'review' | 'observe';
+    actionSummary: string;
+  }>;
+  ratingSimulation?: {
+    currentAvg: number;
+    scenarios: Array<{
+      label: string;
+      resolvedCount: number;
+      newAvg: number;
+      delta: number;
+      relatedKeywords: string[];
+    }>;
+  };
+  positiveKeywords?: Array<{ keyword: string; count: number; sentiment: string }>;
+  actionItems?: Array<{
+    id: string;
+    action: string;
+    relatedKeyword: string;
+    reviewCount: number;
+    impact: 'high' | 'medium' | 'low';
+    category: 'detailPage' | 'csResponse' | 'faq';
+  }>;
 };
 
 type CsvPreview = {
@@ -51,7 +87,7 @@ type CsvPreview = {
   warnings: string[];
 };
 
-export default function DashboardPage() {
+function DashboardContent() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const summaryCardRef = useRef<HTMLDivElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -64,10 +100,9 @@ export default function DashboardPage() {
   const [textCol, setTextCol] = useState<string>("");
   const [ratingCol, setRatingCol] = useState<string>("");
   const [dateCol, setDateCol] = useState<string>("");
-  const [useLLM, setUseLLM] = useState<boolean>(false);
   const [caps, setCaps] = useState<Capabilities | null>(null);
   const [analysisDoneNotice, setAnalysisDoneNotice] = useState<string | null>(null);
-  const [lastRunRequestedLLM, setLastRunRequestedLLM] = useState<boolean>(false);
+  const gates = useGates();
 
   const summary = useMemo(() => {
     if (!result) return null;
@@ -81,30 +116,6 @@ export default function DashboardPage() {
       last30: stats.recentness?.hasDates ? `${Math.round((stats.recentness.last30Share ?? 0) * 100)}%` : null
     };
   }, [result]);
-
-  const llmFallbackNotice = useMemo(() => {
-    if (!result) return null;
-    if (!lastRunRequestedLLM) return null;
-    if (result.meta.analysisMode === "llm") return null;
-    return "AI 고급 분석 요청이 지연/실패되어 일반 분석 결과로 자동 전환되었습니다.";
-  }, [result, lastRunRequestedLLM]);
-
-  const llmPartialNotice = useMemo(() => {
-    if (!result) return null;
-    if (!lastRunRequestedLLM) return null;
-    if (result.meta.analysisMode !== "llm") return null;
-    const used = Number(result.meta.llmTargetCount ?? 0);
-    if (!Number.isFinite(used) || used <= 0) return null;
-    if (used >= result.stats.total) return null;
-    return `대용량 안정성을 위해 전체 ${result.stats.total}개 중 ${used}개 리뷰에 AI 고급 분석을 적용하고, 나머지는 일반 분석으로 처리했습니다.`;
-  }, [result, lastRunRequestedLLM]);
-
-  const analysisModeLabel = useMemo(() => {
-    if (!result) return null;
-    if (result.meta.analysisMode === "llm") return "분석 방식: AI 고급 분석";
-    if (lastRunRequestedLLM) return "분석 방식: 일반 분석 (AI 요청 후 전환)";
-    return "분석 방식: 일반 분석";
-  }, [result, lastRunRequestedLLM]);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,8 +159,6 @@ export default function DashboardPage() {
     setTextCol("");
     setRatingCol("");
     setDateCol("");
-    setUseLLM(false);
-    setLastRunRequestedLLM(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -243,13 +252,10 @@ export default function DashboardPage() {
       fd.set("textCol", textCol);
       if (ratingCol) fd.set("ratingCol", ratingCol);
       if (dateCol) fd.set("dateCol", dateCol);
-      const requestedLLM = useLLM;
-      if (requestedLLM) fd.set("useLLM", "1");
       const res = await fetch("/api/analyze", { method: "POST", body: fd });
       if (!res.ok) throw new Error(await readErrorText(res));
       const json = (await res.json()) as AnalysisResult;
       setResult(json);
-      setLastRunRequestedLLM(requestedLLM);
       gtagEvent("analysis_complete", {
         total_reviews: json.stats.total,
         priority_score: Number(json.stats.priorityScore.toFixed(1)),
@@ -279,8 +285,6 @@ export default function DashboardPage() {
       setTextCol("");
       setRatingCol("");
       setDateCol("");
-      setUseLLM(false);
-      setLastRunRequestedLLM(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await loadPreview(f);
     } catch (e: any) {
@@ -378,8 +382,6 @@ export default function DashboardPage() {
               setTextCol("");
               setRatingCol("");
               setDateCol("");
-              setUseLLM(false);
-              setLastRunRequestedLLM(false);
             }}
             disabled={busy}
           />
@@ -442,33 +444,6 @@ export default function DashboardPage() {
                       ))}
                     </select>
                   </label>
-                  <details className="details">
-                    <summary className="detailsSummary">고급 옵션 (선택)</summary>
-                    <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-                      <label className="pill" style={{ justifyContent: "space-between" }}>
-                        <span>AI로 더 정확하게 분석</span>
-                        <input
-                          type="checkbox"
-                          checked={useLLM}
-                          onChange={(e) => setUseLLM(e.target.checked)}
-                          disabled={busy || caps?.openaiConfigured === false || caps?.aiAdvancedAvailable === false}
-                        />
-                      </label>
-                      {caps?.openaiConfigured === false ? (
-                        <p className="hint muted" style={{ margin: 0 }}>
-                          현재는 AI 연결이 꺼져 있어 기본 분석으로 진행됩니다.
-                        </p>
-                      ) : caps?.aiAdvancedAvailable === false ? (
-                        <p className="hint muted" style={{ margin: 0 }}>
-                          AI 고급 분석은 Basic 이상 요금제에서 사용할 수 있습니다.
-                        </p>
-                      ) : (
-                        <p className="hint muted" style={{ margin: 0 }}>
-                          AI 연결이 켜져 있으면 감성/카테고리를 더 정교하게 분류할 수 있습니다.
-                        </p>
-                      )}
-                    </div>
-                  </details>
                 </div>
               </div>
               <div style={{ marginTop: 12 }}>
@@ -593,47 +568,49 @@ export default function DashboardPage() {
 
         <div className="card" ref={summaryCardRef}>
           <h2>핵심 지표</h2>
-          {analysisModeLabel ? (
-            <div style={{ marginTop: 0, marginBottom: 8 }}>
-              <span className="pill">{analysisModeLabel}</span>
-            </div>
-          ) : null}
-          {llmFallbackNotice ? (
-            <p className="hint" style={{ color: "var(--warn)", marginTop: 0, whiteSpace: "pre-wrap" }}>
-              {llmFallbackNotice}
-            </p>
-          ) : null}
-          {llmPartialNotice ? (
-            <p className="hint muted" style={{ marginTop: llmFallbackNotice ? 6 : 0, whiteSpace: "pre-wrap" }}>
-              {llmPartialNotice}
-            </p>
-          ) : null}
           {!summary ? (
             <p className="muted">분석 결과가 여기에 표시됩니다.</p>
           ) : (
             <>
               <div className="kpiRow">
-                <div className="kpi">
+                <div className="kpiCard kpiCardPrimary">
                   <div className="label">리뷰 수</div>
                   <div className="value">{summary.total}</div>
+                  <div className="miniProgress">
+                    <div className="miniProgressBar" style={{ width: '100%' }}></div>
+                  </div>
                 </div>
-                <div className="kpi">
+                <div className="kpiCard kpiCardDanger">
                   <div className="label">부정 비율</div>
-                  <div className="value" style={{ color: "var(--warn)" }}>
+                  <div className="value" style={{ color: "var(--color-danger)" }}>
                     {summary.neg}
                   </div>
+                  <div className="subtext">낮을수록 좋음</div>
                 </div>
-                <div className="kpi">
+                <div className="kpiCard kpiCardSuccess">
+                  <div className="label">평균 별점</div>
+                  <div className="value" style={{ color: "var(--color-success)" }}>
+                    {result?.stats?.avgRating === null ? '-' : result?.stats?.avgRating?.toFixed(2) ?? '-'}
+                  </div>
+                  <div className="subtext">/ 5.0</div>
+                </div>
+                <div className="kpiCard kpiCardWarning">
                   <div className="label">우선순위 점수</div>
-                  <div className="value" style={{ color: "var(--accent)" }}>
+                  <div className="value" style={{ color: "var(--color-warning)" }}>
                     {summary.score}
                   </div>
+                  <div className="subtext">높을수록 긴급</div>
                 </div>
               </div>
               <p className="hint">
-                우선순위 점수는 “지금 먼저 개선할 가치”를 0~100으로 요약한 값입니다. 부정 비율(부정/전체)이 높고, 최근
+                우선순위 점수는 &ldquo;지금 먼저 개선할 가치&rdquo;를 0~100으로 요약한 값입니다. 부정 비율(부정/전체)이 높고, 최근
                 이슈(최근30일 비중)가 높을수록 우선순위가 올라갑니다.
               </p>
+              {result?.meta?.truncated ? (
+                <p className="hint" style={{ color: 'var(--color-warning)', marginTop: -8 }}>
+                  리뷰 수가 플랜 한도를 초과하여 {gates.maxReviewsPerAnalysis}개만 분석되었습니다. 전체 분석은 Basic 이상으로 업그레이드 후 이용하세요.
+                </p>
+              ) : null}
               {!result?.stats.recentness?.hasDates ? (
                 <p className="hint muted">작성일 열이 없으면 “최근 이슈”는 계산되지 않거나 약하게만 반영됩니다.</p>
               ) : null}
@@ -662,19 +639,25 @@ export default function DashboardPage() {
             {result.stats.negativeKeywordsTop10.length === 0 ? (
               <p className="muted">부정 키워드를 찾지 못했습니다.</p>
             ) : (
-              <div className="list">
-                {result.stats.negativeKeywordsTop10.map((k) => (
-                  <div className="row" key={k.keyword}>
-                    <div className="left">
-                      <strong>{k.keyword}</strong>
+              <BlurGate
+                visibleCount={gates.negativeKeywordVisibleCount}
+                totalCount={result.stats.negativeKeywordsTop10.length}
+                featureName="부정 키워드"
+              >
+                <div className="list">
+                  {result.stats.negativeKeywordsTop10.map((k) => (
+                    <div className="row" key={k.keyword}>
+                      <div className="left">
+                        <strong>{k.keyword}</strong>
+                      </div>
+                      <div className="right" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <span>{k.count}</span>
+                        <CopyButton text={k.keyword} />
+                      </div>
                     </div>
-                    <div className="right" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <span>{k.count}</span>
-                      <CopyButton text={k.keyword} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </BlurGate>
             )}
           </div>
 
@@ -762,6 +745,198 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* V2: Urgent Reviews */}
+      {result && result.urgentReviews && result.urgentReviews.length > 0 && (
+        <div className="grid">
+          <div className="card">
+            <h2>긴급 대응 필요 리뷰</h2>
+            <p className="hint" style={{ marginTop: -4, marginBottom: 12 }}>
+              별점 1~2점 + 부정 감정 리뷰 중 최근 7일 이내 또는 저별점 우선 10건
+            </p>
+            <BlurGate
+              visibleCount={gates.urgentReviewVisibleCount}
+              totalCount={result.urgentReviews.length}
+              featureName="긴급 대응"
+            >
+              <div>
+                {result.urgentReviews.map((ur, idx) => (
+                  <div className="urgentReview" key={idx}>
+                    <div className="row" style={{ background: 'transparent', border: 'none', padding: '4px 0' }}>
+                      <div className="left">
+                        <span className="badge badgeDanger">{ur.review.rating}점</span>
+                        <span className="badge" style={{ marginLeft: 6, background: 'var(--color-bg-soft)' }}>{ur.review.category}</span>
+                      </div>
+                      <div className="right" style={{ fontSize: 12, color: 'var(--color-muted)' }}>
+                        {ur.daysSinceWritten !== null ? `${ur.daysSinceWritten}일 전` : '날짜 없음'}
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: 14 }}>{ur.highlightedText}</div>
+                  </div>
+                ))}
+              </div>
+            </BlurGate>
+          </div>
+        </div>
+      )}
+
+      {/* V2: Priority Matrix */}
+      {result && result.priorityMatrix && result.priorityMatrix.length > 0 && (
+        <div className="card">
+          <h2>우선순위 매트릭스</h2>
+          <p className="hint" style={{ marginTop: -4, marginBottom: 16 }}>
+            카테고리별 빈도(발생빈도)와 영향도(비즈니셜 영항)를 기반으로 개선 우선순위 분류
+          </p>
+          <div className="priorityMatrix">
+            {result.priorityMatrix.map((pm, idx) => (
+              <div className={`quadrant ${pm.quadrant}`} key={idx}>
+                <div className="quadrantTitle">
+                  {pm.category} ({pm.frequency}건, {pm.frequencyPct}%)
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--color-muted)' }}>
+                  영향도: {pm.impact}/10
+                </div>
+                {gates.showPriorityActionSummary ? (
+                  <div style={{ fontSize: 12, marginTop: 6, color: '#555' }}>
+                    {pm.actionSummary}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, marginTop: 6, color: '#555', filter: 'blur(4px)', opacity: 0.5, userSelect: 'none' }}>
+                    {pm.actionSummary}
+                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(255,255,255,0.9)', padding: '4px 8px', borderRadius: 4, fontSize: 11 }}>
+                      Basic 이상
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* V2: Rating Simulation */}
+      <PlanGate requiredPlan="pro" featureName="별점 시뮬레이션">
+        {result && result.ratingSimulation && result.ratingSimulation.scenarios.length > 0 && (
+          <div className="card">
+            <h2>별점 시뮬레이션</h2>
+            <p className="hint" style={{ marginTop: -4, marginBottom: 16 }}>
+              부정 리뷰 해결 시 예상되는 평균 별점 변화 (현재: {result.ratingSimulation.currentAvg.toFixed(2)}점)
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+              {result.ratingSimulation.scenarios.map((sc, idx) => (
+                <div className="simulationCard" key={idx}>
+                  <div className="simulationLabel">{sc.label}</div>
+                  <div className="simulationValue">{sc.newAvg.toFixed(2)}점</div>
+                  <div className={`simulationDelta ${sc.delta >= 0 ? 'positive' : 'negative'}`}>
+                    {sc.delta >= 0 ? '+' : ''}{sc.delta.toFixed(2)}점
+                    <span style={{ fontSize: 12, color: 'var(--color-muted)', marginLeft: 6 }}>
+                      ({sc.resolvedCount}건 해결)
+                    </span>
+                  </div>
+                  {sc.relatedKeywords.length > 0 && (
+                    <div style={{ fontSize: 11, marginTop: 8, color: 'var(--color-muted)' }}>
+                      관련: {sc.relatedKeywords.join(', ')}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </PlanGate>
+
+      {/* V2: Positive Keywords */}
+      <PlanGate requiredPlan="pro" featureName="긍정 키워드">
+        {result && result.positiveKeywords && result.positiveKeywords.length > 0 && (
+          <div className="grid">
+            <div className="card">
+              <h2>긍정 키워드</h2>
+              <p className="hint" style={{ marginTop: -4, marginBottom: 12 }}>
+                고객이 만족하는 주요 포인트
+              </p>
+              <div className="list">
+                {result.positiveKeywords.map((k) => (
+                  <div className="row" key={k.keyword}>
+                    <div className="left">
+                      <strong>{k.keyword}</strong>
+                    </div>
+                    <div className="right" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span>{k.count}</span>
+                      <CopyButton text={k.keyword} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </PlanGate>
+
+      {/* V2: Action Items */}
+      {result && result.actionItems && result.actionItems.length > 0 && (
+        <div className="card">
+          <h2>개선 액션 아이템</h2>
+          <p className="hint" style={{ marginTop: -4, marginBottom: 16 }}>
+            우선적으로 해결해야 할 개선 항목들
+          </p>
+          <BlurGate
+            visibleCount={gates.actionItemVisibleCount}
+            totalCount={result.actionItems.length}
+            featureName="개선 액션"
+          >
+            <div>
+              {result.actionItems.map((item) => (
+                <div className={`actionItem impact${item.impact.charAt(0).toUpperCase() + item.impact.slice(1)}`} key={item.id}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span className={`badge badge${item.impact === 'high' ? 'Danger' : item.impact === 'medium' ? 'Warning' : 'Success'}`}>
+                        {item.impact === 'high' ? '높음' : item.impact === 'medium' ? '중간' : '낮음'}
+                      </span>
+                      <span className="badge badgePrimary">
+                        {item.category === 'detailPage' ? '상세페이지' : item.category === 'csResponse' ? 'CS응대' : 'FAQ'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 14 }}>{item.action}</div>
+                    {item.relatedKeyword && (
+                      <div style={{ fontSize: 12, color: 'var(--color-muted)', marginTop: 4 }}>
+                        관련 키워드: {item.relatedKeyword}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-muted)' }}>
+                    {item.reviewCount}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </BlurGate>
+        </div>
+      )}
+
     </main>
+  );
+}
+
+export default function DashboardPage() {
+  const [caps, setCaps] = useState<Capabilities | null>(null);
+  const [plan, setPlan] = useState<PlanTier>("free");
+
+  useEffect(() => {
+    fetch("/api/capabilities")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j) {
+          setCaps(j as Capabilities);
+          setPlan((j as Capabilities).plan as PlanTier);
+        }
+      })
+      .catch(() => {
+        // ignore
+      });
+  }, []);
+
+  return (
+    <PlanProvider plan={plan}>
+      <DashboardContent />
+    </PlanProvider>
   );
 }

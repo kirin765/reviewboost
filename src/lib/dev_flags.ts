@@ -1,3 +1,5 @@
+import type { PlanTier } from "@/lib/types";
+
 export type DevAnalysisMode = "auto" | "heuristic" | "llm";
 
 function parseBool(raw: string | undefined): boolean | null {
@@ -20,4 +22,14 @@ export function devForcedAnalysisMode(): DevAnalysisMode {
   if (raw === "heuristic") return "heuristic";
   if (raw === "llm") return "llm";
   return "auto";
+}
+
+export function devForcedPlan(): PlanTier | null {
+  const raw = String(process.env.DEV_FORCE_PLAN ?? "")
+    .trim()
+    .toLowerCase();
+  if (raw === "pro") return "pro";
+  if (raw === "basic") return "basic";
+  if (raw === "free") return "free";
+  return null;
 }

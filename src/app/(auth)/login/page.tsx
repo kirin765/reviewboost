@@ -14,48 +14,69 @@ export default function LoginPage(props: { searchParams?: Record<string, string 
     <main className="pageMain">
       {err ? <FeedbackModal title="로그인 실패" message={err} tone="error" /> : null}
       {!err && notice ? <FeedbackModal title="안내" message={notice} /> : null}
-      <div className="grid">
-        <div className="card">
-          <h2>로그인</h2>
-          <p className="muted">저장된 리포트를 쓰려면 로그인하면 됩니다. (분석은 로그인 없이도 가능)</p>
+      <div className="card" style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 32 }}>
+          {/* Left: Value proposition */}
+          <div>
+            <h2 style={{ marginTop: 0 }}>ReviewBoost에 오신 것을 환영합니다</h2>
+            <p className="muted" style={{ fontSize: 15, lineHeight: 1.7 }}>
+              리뷰 기반 매출 개선 서비스를 이용하려면 로그인하세요.
+            </p>
+            <div style={{ marginTop: 20 }}>
+              <h4 style={{ fontSize: 14, marginBottom: 8 }}>로그인하면:</h4>
+              <ul style={{ paddingLeft: 20, color: 'var(--color-muted)', fontSize: 14, lineHeight: 1.8 }}>
+                <li>분석 리포트 저장 및 재확인</li>
+                <li>지난 분석 히스토리 조회</li>
+                <li>구독 플랜 관리</li>
+              </ul>
+            </div>
+            <div style={{ marginTop: 24, padding: 16, background: 'var(--color-bg)', borderRadius: 'var(--radius-md)' }}>
+              <p style={{ fontSize: 13, color: 'var(--color-muted)', margin: 0 }}>
+                분석 자체는 로그인 없이도 무료로 사용 가능합니다.
+              </p>
+            </div>
+          </div>
 
-          {supabaseConfigured ? (
-            <form action={signInAction} style={{ display: "grid", gap: 10, marginTop: 12 }}>
-              <input type="hidden" name="next" value={next} />
-              <input className="input" name="email" type="email" placeholder="email@example.com" required />
-              <input className="input" name="password" type="password" placeholder="비밀번호" required />
-              <button className="btn btnPrimary" type="submit">
-                로그인
-              </button>
-              <div className="actionRow actionRowTight">
-                <a className="link" href={`/forgot-password?next=${encodeURIComponent(next)}`}>
-                  비밀번호를 잊으셨나요?
+          {/* Right: Login form */}
+          <div>
+            <h3 style={{ marginTop: 0, marginBottom: 16 }}>로그인</h3>
+            {supabaseConfigured ? (
+              <form action={signInAction} style={{ display: "grid", gap: 12 }}>
+                <input type="hidden" name="next" value={next} />
+                <div>
+                  <label className="muted" style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>이메일</label>
+                  <input className="input" name="email" type="email" placeholder="email@example.com" required />
+                </div>
+                <div>
+                  <label className="muted" style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>비밀번호</label>
+                  <input className="input" name="password" type="password" placeholder="비밀번호" required />
+                </div>
+                <button className="btn btnPrimary" type="submit" style={{ marginTop: 8 }}>
+                  로그인
+                </button>
+                <div style={{ marginTop: 8 }}>
+                  <a className="link" href={`/forgot-password?next=${encodeURIComponent(next)}`} style={{ fontSize: 13 }}>
+                    비밀번호를 잊으셨나요?
+                  </a>
+                </div>
+              </form>
+            ) : (
+              <p className="hint muted">
+                현재는 로그인 기능이 꺼져 있습니다. CSV 분석은 바로 사용할 수 있어요.
+              </p>
+            )}
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--color-border)' }}>
+              <p className="muted" style={{ fontSize: 13, marginBottom: 8 }}>계정이 없으신가요?</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <a className="btn" href={`/signup?next=${encodeURIComponent(next)}`}>
+                  회원가입
+                </a>
+                <a className="btn btnOutline" href="/dashboard">
+                  분석하러 가기
                 </a>
               </div>
-            </form>
-          ) : (
-            <p className="hint muted" style={{ marginTop: 12 }}>
-              현재는 로그인 기능이 꺼져 있습니다. CSV 분석은 바로 사용할 수 있어요.
-            </p>
-          )}
-
-          {!err && !notice ? (
-            <p className="hint muted">로그인은 “저장된 리포트” 기능을 위한 옵션입니다.</p>
-          ) : null}
-        </div>
-
-        <div className="card">
-          <h2>회원가입</h2>
-          <p className="muted">계정이 없으면 회원가입 후 로그인하세요.</p>
-          <div className="actionRow">
-            <a className="btn" href={`/signup?next=${encodeURIComponent(next)}`}>
-              회원가입으로 이동
-            </a>
-            <a className="btn" href="/dashboard">
-              분석하러 가기
-            </a>
+            </div>
           </div>
-          <p className="hint muted">로그인 없이도 분석은 가능합니다.</p>
         </div>
       </div>
     </main>
