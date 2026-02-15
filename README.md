@@ -41,9 +41,17 @@ npm run dev
 ```
 
 4. 운영 서버
+
+pm2를 사용한 배포 (처음 실행 시):
 ```bash
 npm run build
-npm run start
+pm2 start reviewboost
+```
+
+코드 변경 후 재배포:
+```bash
+npm run build
+pm2 restart reviewboost --update-env
 ```
 
 - `npm run dev`: `3001`

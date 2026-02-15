@@ -94,7 +94,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div className="footerSection">
               <h4>고객 지원</h4>
               <ul>
-                <li><a href="mailto:support@reviewboost.kr">support@reviewboost.kr</a></li>
+                <li><a href="mailto:support@reviewboost.co.kr">support@reviewboost.co.kr</a></li>
               </ul>
             </div>
           </footer>
