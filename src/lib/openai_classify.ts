@@ -21,9 +21,13 @@ export async function classifyReviewsWithOpenAI(args: {
   model?: string;
 }): Promise<LlmClassification[] | null> {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.warn("[LLM:classify] OPENAI_API_KEY 미설정 — LLM 분류 건너뜀");
+    return null;
+  }
 
   const model = args.model ?? process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  console.log(`[LLM:classify] 시작 — model=${model}, texts=${args.texts.length}건, batchSize=${Number(process.env.OPENAI_CLASSIFY_BATCH_SIZE ?? "60")}`);
   const client = new OpenAI({ apiKey });
 
   const out: LlmClassification[] = [];
@@ -60,7 +64,8 @@ export async function classifyReviewsWithOpenAI(args: {
         },
         { timeout: timeoutMs }
       );
-    } catch {
+    } catch (err) {
+      console.error(`[LLM:classify] API 호출 실패 — batch offset=${i}, error=${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
 
@@ -68,12 +73,16 @@ export async function classifyReviewsWithOpenAI(args: {
     let parsed: any;
     try {
       parsed = JSON.parse(text);
-    } catch {
+    } catch (err) {
+      console.error(`[LLM:classify] JSON 파싱 실패 — batch offset=${i}, response=${text.slice(0, 200)}`);
       return null;
     }
 
     const items = Array.isArray(parsed?.items) ? parsed.items : null;
-    if (!items) return null;
+    if (!items) {
+      console.error(`[LLM:classify] 응답 items 배열 없음 — batch offset=${i}, keys=${Object.keys(parsed ?? {}).join(",")}`);
+      return null;
+    }
 
     // map by id
     const map = new Map<number, LlmClassification>();
@@ -89,5 +98,6 @@ export async function classifyReviewsWithOpenAI(args: {
     }
   }
 
+  console.log(`[LLM:classify] 성공 — 총 ${out.length}건 분류 완료`);
   return out;
 }

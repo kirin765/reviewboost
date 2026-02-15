@@ -7,16 +7,28 @@ import { generateSuggestions } from "@/lib/openai_suggestions";
 import { getSupabaseAdminClient } from "@/lib/supabase_server";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { readUploadedCsvText } from "@/lib/upload_csv";
-import { canUseAdvancedAi, monthStartIso, monthlyLimitForPlan, resolvePlanTierForUser } from "@/lib/plan";
+import { monthStartIso, monthlyLimitForPlan, resolvePlanTierForUser, type PlanTier } from "@/lib/plan";
 import { getCapabilitiesBase } from "@/lib/capabilities";
-import { devAllowAdvancedAiBypass, devForcedAnalysisMode } from "@/lib/dev_flags";
+import { devForcedAnalysisMode, devAllowAdvancedAiBypass } from "@/lib/dev_flags";
+import { getGatesForPlan } from "@/lib/plan_gates";
+import { topKeywords, extractPositiveKeywords } from "@/lib/keywords";
+import { extractUrgentReviews } from "@/lib/urgent_reviews";
+import { calculatePriorityMatrix } from "@/lib/priority_matrix";
+import { simulateRatingImprovements } from "@/lib/rating_simulation";
+import { generateActionItems } from "@/lib/action_items";
 
 export const runtime = "nodejs";
 
 const MAX_BYTES = 6 * 1024 * 1024;
 const DEFAULT_MAX_LLM_REVIEWS = 180;
+const DEFAULT_MAX_LLM_REVIEWS_FREE = 60;
 
-function readMaxLlmReviews(): number {
+function readMaxLlmReviews(plan: PlanTier): number {
+  if (plan === "free") {
+    const raw = Number(process.env.MAX_LLM_REVIEWS_FREE ?? String(DEFAULT_MAX_LLM_REVIEWS_FREE));
+    if (!Number.isFinite(raw) || raw < 10) return DEFAULT_MAX_LLM_REVIEWS_FREE;
+    return Math.floor(raw);
+  }
   const raw = Number(process.env.MAX_LLM_REVIEWS ?? String(DEFAULT_MAX_LLM_REVIEWS));
   if (!Number.isFinite(raw) || raw < 20) return DEFAULT_MAX_LLM_REVIEWS;
   return Math.floor(raw);
@@ -105,11 +117,10 @@ export async function POST(req: Request) {
   const textCol = (form.get("textCol") as string | null) ?? null;
   const ratingCol = (form.get("ratingCol") as string | null) ?? null;
   const dateCol = (form.get("dateCol") as string | null) ?? null;
-  const useLLMRequested = String(form.get("useLLM") ?? "").trim() === "1";
   const forcedMode = devForcedAnalysisMode();
-  const useLLM = forcedMode === "llm" ? true : forcedMode === "heuristic" ? false : useLLMRequested;
+  const openaiAvailable = Boolean(process.env.OPENAI_API_KEY);
+  const useLLM = forcedMode === "llm" ? true : forcedMode === "heuristic" ? false : openaiAvailable;
   const baseCaps = getCapabilitiesBase();
-  const maxLlmReviews = readMaxLlmReviews();
 
   let supabaseAuth: ReturnType<typeof createSupabaseServerActionClient> | null = null;
   let userId: string | null = null;
@@ -127,15 +138,17 @@ export async function POST(req: Request) {
 
   const plan = await resolvePlanTierForUser({ userId, email: userEmail });
   const monthlyLimit = monthlyLimitForPlan(plan);
+  const gates = getGatesForPlan(plan);
+  const devBypass = devAllowAdvancedAiBypass();
 
-  const allowAdvancedAi = canUseAdvancedAi(plan) || devAllowAdvancedAiBypass();
-  if (useLLM && !allowAdvancedAi) {
-    return apiErrorResponse(
-      new ApiError(403, "PLAN_UPGRADE_REQUIRED", "AI 고급 분석은 Basic 이상 요금제에서 사용할 수 있습니다.", {
-        help: ["요금제 페이지에서 Basic 이상으로 업그레이드한 뒤 다시 시도해주세요."]
-      })
-    );
+  // Check if LLM is allowed for this plan
+  let effectiveUseLLM = useLLM;
+  if (!gates.allowLLM && !devBypass) {
+    effectiveUseLLM = false;
+    console.log(`[LLM:analyze] LLM 비활성화 — plan=${plan}, allowLLM=${gates.allowLLM}`);
   }
+
+  const maxLlmReviews = readMaxLlmReviews(plan);
 
   if (monthlyLimit !== null && userId && supabaseAuth) {
     try {
@@ -173,16 +186,24 @@ export async function POST(req: Request) {
     );
   }
 
+  // Check max reviews per analysis limit
+  let truncated = false;
+  const maxReviews = gates.maxReviewsPerAnalysis;
+  if (rows.length > maxReviews) {
+    rows = rows.slice(0, maxReviews);
+    truncated = true;
+    console.log(`[analyze] 리뷰 ${maxReviews}개로 제한 — 초과분 버림`);
+  }
+
   // 1) Heuristic classification (baseline)
   let classified = classifyHeuristic(rows);
   let llmApplied = false;
-  let llmTargetCount = 0;
 
   // 2) Optional: LLM classification for sentiment/category
-  if (useLLM) {
+  if (effectiveUseLLM) {
     try {
       const targetIdx = pickLlmTargetIndicesByHeuristic(classified, maxLlmReviews);
-      llmTargetCount = targetIdx.length;
+      console.log(`[LLM:analyze] 분류 요청 — plan=${plan}, 전체=${classified.length}건, LLM대상=${targetIdx.length}건`);
       const targetTexts = targetIdx.map((i) => classified[i]!.text);
       const llm = await classifyReviewsWithOpenAI({ texts: targetTexts });
       if (llm && llm.length === targetTexts.length) {
@@ -196,27 +217,60 @@ export async function POST(req: Request) {
           };
         }
         llmApplied = true;
+        console.log(`[LLM:analyze] 분류 적용 완료 — ${targetIdx.length}건 LLM 반영`);
+      } else {
+        console.warn(`[LLM:analyze] 분류 결과 null 또는 길이 불일치 — heuristic 유지`);
       }
-    } catch {
-      // ignore; keep heuristic
+    } catch (err) {
+      console.error(`[LLM:analyze] 분류 중 예외 — error=${err instanceof Error ? err.message : String(err)} → heuristic 유지`);
     }
+  } else {
+    console.log(`[LLM:analyze] LLM 미사용 — useLLM=false (openaiAvailable=${openaiAvailable}, forcedMode=${forcedMode ?? "none"})`);
   }
 
   const { stats } = computeAnalysisFromClassified(classified);
+
+  const negativeReviewSamples = classified
+    .filter((r) => r.sentiment === "negative")
+    .slice(0, 5)
+    .map((r) => ({ text: r.text.slice(0, 300), category: r.category }));
+
   const suggestions = await generateSuggestions(stats, {
     useAiNarrative: llmApplied,
-    llmTargetCount,
+    negativeReviewSamples,
+    topKeywords: stats.negativeKeywordsTop10,
     totalCount: classified.length
   });
+
+  // === V2 New Features ===
+  const urgentReviews = extractUrgentReviews(classified);
+  const priorityMatrix = calculatePriorityMatrix(classified, stats);
+  const ratingSimulation = simulateRatingImprovements(stats, stats.negativeKeywordsTop10);
+
+  // Extract positive keywords from positive reviews
+  const positiveReviews = classified.filter((r) => r.sentiment === "positive");
+  const positiveKeywordsRaw = extractPositiveKeywords(
+    positiveReviews.map((r) => r.text),
+    10
+  );
+  const positiveKeywords = positiveKeywordsRaw.map((k) => ({ ...k, sentiment: 'positive' as const }));
+
+  const actionItems = generateActionItems(classified, suggestions);
+
   const payload = {
     stats,
     suggestions,
     meta: {
       filename,
       stored: false as const,
-      analysisMode: llmApplied ? "llm" : "heuristic",
-      llmTargetCount
-    }
+      truncated
+    },
+    // V2 optional fields
+    urgentReviews,
+    priorityMatrix,
+    ratingSimulation,
+    positiveKeywords,
+    actionItems
   };
 
   // Optional persistence (Supabase)
@@ -253,8 +307,7 @@ export async function POST(req: Request) {
             filename,
             stored: true as const,
             analysisId,
-            analysisMode: llmApplied ? "llm" : "heuristic",
-            llmTargetCount
+            truncated
           }
         });
       }
@@ -282,8 +335,7 @@ export async function POST(req: Request) {
             filename,
             stored: true as const,
             analysisId,
-            analysisMode: llmApplied ? "llm" : "heuristic",
-            llmTargetCount
+            truncated
           }
         });
       }
