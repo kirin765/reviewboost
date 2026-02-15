@@ -23,6 +23,14 @@ const STOPWORDS = new Set([
   "주문"
 ]);
 
+// Positive sentiment indicators for keyword extraction
+const POSITIVE_INDICATORS = [
+  "좋아요", "좋습니다", "좋았어요", "최고", "훌륭", "만족", "감사", "추천",
+  "빠르", "빠르고", "배송빠", "빠른배송", "품질좋", "가성비", "저렴",
+  "친절", "응대좋", "만족스럽", "재구매", "추천해요", "좋은것", "마음에들",
+  "무료배송", "넉넉", "풍부", "듭", "양이많", "만족해요", "좋은제품"
+];
+
 const PARTICLE_SUFFIXES = [
   "으로",
   "에서",
@@ -115,4 +123,50 @@ export function topKeywords(texts: string[], topN: number): Array<{ keyword: str
   }
 
   return merged.sort((a, b) => b.count - a.count).slice(0, topN);
+}
+
+/**
+ * Extract positive keywords from texts.
+ * Filters for words that commonly indicate positive sentiment.
+ */
+export function extractPositiveKeywords(texts: string[], topN: number = 10): Array<{ keyword: string; count: number }> {
+  const freq = new Map<string, number>();
+
+  for (const text of texts) {
+    const lowerText = text.toLowerCase();
+    const toks = tokenize(text);
+
+    // Check for positive indicators in the text
+    for (const indicator of POSITIVE_INDICATORS) {
+      if (lowerText.includes(indicator)) {
+        // Extract the main keyword from the indicator
+        const mainWord = normalizeToken(indicator);
+        if (mainWord) {
+          freq.set(mainWord, (freq.get(mainWord) ?? 0) + 1);
+        }
+      }
+    }
+
+    // Also count bigrams that contain positive indicators
+    for (let i = 0; i + 1 < toks.length; i++) {
+      const a = toks[i]!;
+      const b = toks[i + 1]!;
+      const phrase = `${a} ${b}`;
+
+      // Check if any positive indicator appears in this phrase
+      for (const indicator of POSITIVE_INDICATORS) {
+        if (phrase.includes(indicator)) {
+          freq.set(phrase, (freq.get(phrase) ?? 0) + 1);
+          break;
+        }
+      }
+    }
+  }
+
+  const result: Array<{ keyword: string; count: number }> = [];
+  for (const [k, c] of freq) {
+    result.push({ keyword: k, count: c });
+  }
+
+  return result.sort((a, b) => b.count - a.count).slice(0, topN);
 }

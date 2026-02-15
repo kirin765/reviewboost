@@ -6,7 +6,7 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
 
 export const metadata: Metadata = {
-  title: "ReviewBoost MVP",
+  title: "ReviewBoost",
   description: "리뷰 CSV 업로드 -> 자동 분석/개선 제안 -> PDF 리포트"
 };
 
@@ -27,6 +27,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="ko">
+      <head>
+        <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet" />
+      </head>
       <body>
         <GoogleAnalytics />
         <AnalyticsQueryEvents />
@@ -34,8 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="header">
             <div className="headerLeft">
               <div className="brand">
-                <strong>ReviewBoost</strong>
-                <span>리뷰 기반 매출 개선 리포트 MVP</span>
+                <strong>📊 ReviewBoost</strong>
               </div>
               <nav className="topNav" aria-label="주요 메뉴">
                 <a className="navLink" href="/help">
@@ -49,7 +51,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </a>
                 {!email && supabaseConfigured ? (
                   <a className="navLink" href="/login">
-                    로그인(선택)
+                    로그인
                   </a>
                 ) : null}
               </nav>
@@ -73,16 +75,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </div>
           {children}
-          <footer className="siteFooter" aria-label="법적 고지">
-            <a className="footerLink" href="/term">
-              Terms of Service
-            </a>
-            <span className="footerDot" aria-hidden="true">
-              ·
-            </span>
-            <a className="footerLink" href="/privacy">
-              Privacy Policy
-            </a>
+          <footer className="siteFooterV2" aria-label="사이트 정보">
+            <div className="footerSection">
+              <h4>ReviewBoost</h4>
+              <ul>
+                <li><a href="/help">사용법</a></li>
+                <li><a href="/pricing">요금제</a></li>
+                <li><a href="/dashboard">분석하기</a></li>
+              </ul>
+            </div>
+            <div className="footerSection">
+              <h4>법적</h4>
+              <ul>
+                <li><a href="/term">서비스 이용약관</a></li>
+                <li><a href="/privacy">개인정보 처리방침</a></li>
+              </ul>
+            </div>
+            <div className="footerSection">
+              <h4>고객 지원</h4>
+              <ul>
+                <li><a href="mailto:support@reviewboost.kr">support@reviewboost.kr</a></li>
+              </ul>
+            </div>
           </footer>
         </div>
       </body>
