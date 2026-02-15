@@ -1,7 +1,6 @@
 import { getCapabilitiesBase } from "@/lib/capabilities";
-import { canUseAdvancedAi, monthStartIso, monthlyLimitForPlan, planLabel, resolvePlanTierForUser } from "@/lib/plan";
+import { monthStartIso, monthlyLimitForPlan, planLabel, resolvePlanTierForUser } from "@/lib/plan";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
-import { devAllowAdvancedAiBypass } from "@/lib/dev_flags";
 
 export const runtime = "nodejs";
 
@@ -45,6 +44,6 @@ export async function GET() {
     planLabel: planLabel(plan),
     monthlyLimit,
     monthlyUsed,
-    aiAdvancedAvailable: base.openaiConfigured && (canUseAdvancedAi(plan) || devAllowAdvancedAiBypass())
+    aiAdvancedAvailable: base.openaiConfigured
   });
 }

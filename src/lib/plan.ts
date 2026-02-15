@@ -35,13 +35,13 @@ export async function resolvePlanTierForUser(args: {
 }
 
 export function monthlyLimitForPlan(plan: PlanTier): number | null {
-  const free = Number(process.env.PLAN_FREE_MONTHLY_LIMIT ?? "30");
+  const free = Number(process.env.PLAN_FREE_MONTHLY_LIMIT ?? "100");
   const basic = Number(process.env.PLAN_BASIC_MONTHLY_LIMIT ?? "500");
   const pro = Number(process.env.PLAN_PRO_MONTHLY_LIMIT ?? "1500");
 
   if (plan === "pro") return Number.isFinite(pro) ? pro : 1500;
   if (plan === "basic") return Number.isFinite(basic) ? basic : 500;
-  return Number.isFinite(free) ? free : 30;
+  return Number.isFinite(free) ? free : 100;
 }
 
 export function canUseAdvancedAi(plan: PlanTier): boolean {

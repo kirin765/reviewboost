@@ -22,7 +22,7 @@ export default function PricingPage({
           <div className="list">
             <div className="row">
               <div className="left">CSV 업로드/분석</div>
-              <div className="right">월 30회</div>
+              <div className="right">월 100회</div>
             </div>
             <div className="row">
               <div className="left">PDF 리포트</div>
@@ -37,8 +37,8 @@ export default function PricingPage({
               <div className="right">기본 이메일</div>
             </div>
             <div className="row">
-              <div className="left">AI 고급 분석</div>
-              <div className="right">미포함</div>
+              <div className="left">분석 정밀도</div>
+              <div className="right">기본 분석</div>
             </div>
             <div className="row">
               <div className="left">PDF 워터마크</div>
@@ -60,8 +60,8 @@ export default function PricingPage({
               <div className="right">최대 500개</div>
             </div>
             <div className="row">
-              <div className="left">AI 고급 분석</div>
-              <div className="right">포함 (대용량 시 부분 적용)</div>
+              <div className="left">분석 정밀도</div>
+              <div className="right">정밀 분석 (리뷰 180건)</div>
             </div>
             <div className="row">
               <div className="left">PDF 워터마크</div>
@@ -90,8 +90,8 @@ export default function PricingPage({
               <div className="right">최대 5명</div>
             </div>
             <div className="row">
-              <div className="left">AI 고급 분석</div>
-              <div className="right">확장 한도 (대량 처리 우선)</div>
+              <div className="left">분석 정밀도</div>
+              <div className="right">최고 정밀도 (대량 우선 처리)</div>
             </div>
             <div className="row">
               <div className="left">팀 공유</div>
@@ -108,7 +108,7 @@ export default function PricingPage({
         <div className="card">
           <h2>안내</h2>
           <p className="muted">Basic 가격은 초기 검증 구간(39,000원)이며 운영 지표에 따라 49,000원으로 조정될 수 있습니다.</p>
-          <p className="muted">AI 고급 분석은 안정성을 위해 대용량 업로드 시 일부 리뷰 샘플 중심으로 동작할 수 있습니다.</p>
+          <p className="muted">대용량 업로드 시 안정성을 위해 일부 리뷰를 샘플링하여 분석할 수 있습니다.</p>
           <div className="actionRow">
             <a className="btn btnPrimary" href="/dashboard">
               지금 분석하기

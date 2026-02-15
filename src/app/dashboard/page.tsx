@@ -36,8 +36,6 @@ type AnalysisResult = {
     filename: string | null;
     stored: boolean;
     analysisId?: string;
-    analysisMode?: "llm" | "heuristic";
-    llmTargetCount?: number;
   };
 };
 
@@ -64,10 +62,8 @@ export default function DashboardPage() {
   const [textCol, setTextCol] = useState<string>("");
   const [ratingCol, setRatingCol] = useState<string>("");
   const [dateCol, setDateCol] = useState<string>("");
-  const [useLLM, setUseLLM] = useState<boolean>(false);
   const [caps, setCaps] = useState<Capabilities | null>(null);
   const [analysisDoneNotice, setAnalysisDoneNotice] = useState<string | null>(null);
-  const [lastRunRequestedLLM, setLastRunRequestedLLM] = useState<boolean>(false);
 
   const summary = useMemo(() => {
     if (!result) return null;
@@ -81,30 +77,6 @@ export default function DashboardPage() {
       last30: stats.recentness?.hasDates ? `${Math.round((stats.recentness.last30Share ?? 0) * 100)}%` : null
     };
   }, [result]);
-
-  const llmFallbackNotice = useMemo(() => {
-    if (!result) return null;
-    if (!lastRunRequestedLLM) return null;
-    if (result.meta.analysisMode === "llm") return null;
-    return "AI 고급 분석 요청이 지연/실패되어 일반 분석 결과로 자동 전환되었습니다.";
-  }, [result, lastRunRequestedLLM]);
-
-  const llmPartialNotice = useMemo(() => {
-    if (!result) return null;
-    if (!lastRunRequestedLLM) return null;
-    if (result.meta.analysisMode !== "llm") return null;
-    const used = Number(result.meta.llmTargetCount ?? 0);
-    if (!Number.isFinite(used) || used <= 0) return null;
-    if (used >= result.stats.total) return null;
-    return `대용량 안정성을 위해 전체 ${result.stats.total}개 중 ${used}개 리뷰에 AI 고급 분석을 적용하고, 나머지는 일반 분석으로 처리했습니다.`;
-  }, [result, lastRunRequestedLLM]);
-
-  const analysisModeLabel = useMemo(() => {
-    if (!result) return null;
-    if (result.meta.analysisMode === "llm") return "분석 방식: AI 고급 분석";
-    if (lastRunRequestedLLM) return "분석 방식: 일반 분석 (AI 요청 후 전환)";
-    return "분석 방식: 일반 분석";
-  }, [result, lastRunRequestedLLM]);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,8 +120,6 @@ export default function DashboardPage() {
     setTextCol("");
     setRatingCol("");
     setDateCol("");
-    setUseLLM(false);
-    setLastRunRequestedLLM(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -243,13 +213,10 @@ export default function DashboardPage() {
       fd.set("textCol", textCol);
       if (ratingCol) fd.set("ratingCol", ratingCol);
       if (dateCol) fd.set("dateCol", dateCol);
-      const requestedLLM = useLLM;
-      if (requestedLLM) fd.set("useLLM", "1");
       const res = await fetch("/api/analyze", { method: "POST", body: fd });
       if (!res.ok) throw new Error(await readErrorText(res));
       const json = (await res.json()) as AnalysisResult;
       setResult(json);
-      setLastRunRequestedLLM(requestedLLM);
       gtagEvent("analysis_complete", {
         total_reviews: json.stats.total,
         priority_score: Number(json.stats.priorityScore.toFixed(1)),
@@ -279,8 +246,6 @@ export default function DashboardPage() {
       setTextCol("");
       setRatingCol("");
       setDateCol("");
-      setUseLLM(false);
-      setLastRunRequestedLLM(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await loadPreview(f);
     } catch (e: any) {
@@ -378,8 +343,6 @@ export default function DashboardPage() {
               setTextCol("");
               setRatingCol("");
               setDateCol("");
-              setUseLLM(false);
-              setLastRunRequestedLLM(false);
             }}
             disabled={busy}
           />
@@ -442,33 +405,6 @@ export default function DashboardPage() {
                       ))}
                     </select>
                   </label>
-                  <details className="details">
-                    <summary className="detailsSummary">고급 옵션 (선택)</summary>
-                    <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-                      <label className="pill" style={{ justifyContent: "space-between" }}>
-                        <span>AI로 더 정확하게 분석</span>
-                        <input
-                          type="checkbox"
-                          checked={useLLM}
-                          onChange={(e) => setUseLLM(e.target.checked)}
-                          disabled={busy || caps?.openaiConfigured === false || caps?.aiAdvancedAvailable === false}
-                        />
-                      </label>
-                      {caps?.openaiConfigured === false ? (
-                        <p className="hint muted" style={{ margin: 0 }}>
-                          현재는 AI 연결이 꺼져 있어 기본 분석으로 진행됩니다.
-                        </p>
-                      ) : caps?.aiAdvancedAvailable === false ? (
-                        <p className="hint muted" style={{ margin: 0 }}>
-                          AI 고급 분석은 Basic 이상 요금제에서 사용할 수 있습니다.
-                        </p>
-                      ) : (
-                        <p className="hint muted" style={{ margin: 0 }}>
-                          AI 연결이 켜져 있으면 감성/카테고리를 더 정교하게 분류할 수 있습니다.
-                        </p>
-                      )}
-                    </div>
-                  </details>
                 </div>
               </div>
               <div style={{ marginTop: 12 }}>
@@ -593,21 +529,6 @@ export default function DashboardPage() {
 
         <div className="card" ref={summaryCardRef}>
           <h2>핵심 지표</h2>
-          {analysisModeLabel ? (
-            <div style={{ marginTop: 0, marginBottom: 8 }}>
-              <span className="pill">{analysisModeLabel}</span>
-            </div>
-          ) : null}
-          {llmFallbackNotice ? (
-            <p className="hint" style={{ color: "var(--warn)", marginTop: 0, whiteSpace: "pre-wrap" }}>
-              {llmFallbackNotice}
-            </p>
-          ) : null}
-          {llmPartialNotice ? (
-            <p className="hint muted" style={{ marginTop: llmFallbackNotice ? 6 : 0, whiteSpace: "pre-wrap" }}>
-              {llmPartialNotice}
-            </p>
-          ) : null}
           {!summary ? (
             <p className="muted">분석 결과가 여기에 표시됩니다.</p>
           ) : (
