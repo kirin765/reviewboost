@@ -28,6 +28,14 @@ export default function ResetPasswordPage() {
     return msg;
   }
 
+  function handleErrorClose() {
+    setError(null);
+  }
+
+  function handleNoticeClose() {
+    setNotice(null);
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -62,8 +70,8 @@ export default function ResetPasswordPage() {
 
   return (
     <main className="pageMain">
-      {error ? <FeedbackModal title="비밀번호 변경 실패" message={error} tone="error" /> : null}
-      {!error && notice ? <FeedbackModal title="안내" message={notice} /> : null}
+      {error ? <FeedbackModal title="비밀번호 변경 실패" message={error} tone="error" onClose={handleErrorClose} /> : null}
+      {!error && notice ? <FeedbackModal title="안내" message={notice} onClose={handleNoticeClose} /> : null}
       <div className="grid">
         <div className="card">
           <h2>새 비밀번호 설정</h2>
