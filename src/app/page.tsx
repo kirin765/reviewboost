@@ -2,10 +2,12 @@ export default function HomePage() {
   return (
     <main className="pageMain">
       <div className="card heroCard">
-        <h1 className="heroTitle">리뷰로 매출 올릴 포인트, 자동으로 뽑아드립니다</h1>
-        <p className="heroLead">
-          CSV로 리뷰를 올리면, 자주 나오는 불만(키워드/카테고리)과 상세페이지/CS/FAQ 문구를 바로 쓸 수 있게 정리해줍니다.
-        </p>
+        <a href="/help" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+          <h1 className="heroTitle">리뷰로 매출 올릴 포인트, 자동으로 뽑아드립니다</h1>
+          <p className="heroLead">
+            CSV로 리뷰를 올리면, 자주 나오는 불만(키워드/카테고리)과 상세페이지/CS/FAQ 문구를 바로 쓸 수 있게 정리해줍니다.
+          </p>
+        </a>
         <div className="actionRow actionRowLg">
           <a className="btn btnPrimary" href="/dashboard">
             CSV 올리고 분석하기
@@ -45,7 +47,7 @@ export default function HomePage() {
             가입이나 설정 없이도 분석은 바로 가능합니다. (저장 기능은 로그인 기능을 켜면 사용할 수 있어요.)
           </p>
           <p className="muted">
-            CSV 헤더는 어떤 이름이어도 괜찮습니다. 업로드 후 화면에서 “리뷰 내용/별점/작성일” 열만 선택해주면 됩니다.
+            CSV 헤더는 어떤 이름이어도 괜찮습니다. 업로드 후 화면에서 &quot;리뷰 내용/별점/작성일&quot; 열만 선택해주면 됩니다.
           </p>
           <div className="actionRow">
             <a className="btn" href="/sample.csv" download>
