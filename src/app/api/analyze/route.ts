@@ -14,6 +14,35 @@ export const runtime = "nodejs";
 
 const MAX_BYTES = 6 * 1024 * 1024;
 
+/**
+ * Extract client IP address from request headers.
+ * Handles proxies and load balancers (x-forwarded-for, etc.)
+ */
+function getClientIp(req: Request): string | null {
+  const headers = req.headers;
+  
+  // Check x-forwarded-for header (common for proxies/load balancers)
+  const forwarded = headers.get("x-forwarded-for");
+  if (forwarded) {
+    // x-forwarded-for can contain multiple IPs, take the first one (original client)
+    return forwarded.split(",")[0].trim();
+  }
+  
+  // Check x-real-ip header (commonly set by nginx, etc.)
+  const realIp = headers.get("x-real-ip");
+  if (realIp) {
+    return realIp.trim();
+  }
+  
+  // Check cf-connecting-ip (Cloudflare)
+  const cfIp = headers.get("cf-connecting-ip");
+  if (cfIp) {
+    return cfIp.trim();
+  }
+  
+  return null;
+}
+
 function delimiterHint(csvText: string): string[] {
   const delimiter = inferDelimiter(csvText);
   if (delimiter === ",") return [];
@@ -39,6 +68,9 @@ export async function POST(req: Request) {
       })
     );
   }
+
+  // Get client IP for usage tracking
+  const clientIp = getClientIp(req);
 
   const headerMode = (form.get("headerMode") as string | null) ?? null;
   const textCol = (form.get("textCol") as string | null) ?? null;
@@ -94,6 +126,30 @@ export async function POST(req: Request) {
     }
   }
 
+  // IP-based limiting for free users (no userId)
+  // This helps prevent abuse from anonymous users
+  if (monthlyLimit !== null && !userId && clientIp && plan === "free") {
+    try {
+      const admin = getSupabaseAdminClient();
+      if (admin) {
+        const { count } = await admin
+          .from("analyses")
+          .select("id", { count: "exact", head: true })
+          .eq("client_ip", clientIp)
+          .gte("created_at", monthStartIso());
+        if ((count ?? 0) >= monthlyLimit) {
+          return apiErrorResponse(
+            new ApiError(429, "MONTHLY_LIMIT_EXCEEDED", `이번 달 분석 한도(${monthlyLimit}회)를 초과했습니다. 로그인하면 더 많은 분석을 이용할 수 있습니다.`, {
+              help: ["로그인하여 무제한 분석을 이용하거나, 다음 달에 다시 시도해주세요."]
+            })
+          );
+        }
+      }
+    } catch {
+      // ignore count failure and continue analysis
+    }
+  }
+
   // Run analysis pipeline
   const { payload, classified } = await runAnalysisPipeline({
     csvText,
@@ -116,6 +172,7 @@ export async function POST(req: Request) {
         .from("analyses")
         .insert({
           user_id: userId,
+          client_ip: clientIp,
           input_filename: filename,
           stats: payload.stats,
           suggestions: payload.suggestions,
@@ -152,6 +209,7 @@ export async function POST(req: Request) {
         .from("analyses")
         .insert({
           user_id: userId,
+          client_ip: clientIp,
           input_filename: filename,
           stats: payload.stats,
           suggestions: payload.suggestions,
