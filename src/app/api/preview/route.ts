@@ -19,8 +19,8 @@ export async function POST(req: Request) {
   try {
     const { filename, csvText } = await readUploadedCsvText(req, MAX_BYTES);
     try {
-      const preview = previewReviewCsv(csvText);
-      return Response.json({ filename, ...preview });
+      const preview = previewReviewCsv(csvText, filename);
+      return Response.json(preview);
     } catch (e: any) {
       // Most failures here are user-facing CSV syntax issues (quotes/newlines/delimiter).
       return apiErrorResponse(
