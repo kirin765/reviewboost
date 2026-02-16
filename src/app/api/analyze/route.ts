@@ -1,90 +1,18 @@
-import { classifyHeuristic, computeAnalysisFromClassified } from "@/lib/analysis";
-import { inferDelimiter, parseReviewCsvWithMapping } from "@/lib/csv";
+import { inferDelimiter } from "@/lib/csv";
 import { ApiError, apiErrorResponse } from "@/lib/api_error";
 import { CSV_PARSE_FAILED_HELP } from "@/lib/csv_errors";
-import { classifyReviewsWithOpenAI } from "@/lib/openai_classify";
-import { generateSuggestions } from "@/lib/openai_suggestions";
 import { getSupabaseAdminClient } from "@/lib/supabase_server";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { readUploadedCsvText } from "@/lib/upload_csv";
-import { monthStartIso, monthlyLimitForPlan, resolvePlanTierForUser, type PlanTier } from "@/lib/plan";
+import { monthStartIso, monthlyLimitForPlan, resolvePlanTierForUser } from "@/lib/plan";
 import { getCapabilitiesBase } from "@/lib/capabilities";
 import { devForcedAnalysisMode, devAllowAdvancedAiBypass } from "@/lib/dev_flags";
 import { getGatesForPlan } from "@/lib/plan_gates";
-import { topKeywords, extractPositiveKeywords } from "@/lib/keywords";
-import { extractUrgentReviews } from "@/lib/urgent_reviews";
-import { calculatePriorityMatrix } from "@/lib/priority_matrix";
-import { simulateRatingImprovements } from "@/lib/rating_simulation";
-import { generateActionItems } from "@/lib/action_items";
+import { runAnalysisPipeline } from "@/lib/analysis_pipeline";
 
 export const runtime = "nodejs";
 
 const MAX_BYTES = 6 * 1024 * 1024;
-const DEFAULT_MAX_LLM_REVIEWS = 180;
-const DEFAULT_MAX_LLM_REVIEWS_FREE = 60;
-
-function readMaxLlmReviews(plan: PlanTier): number {
-  if (plan === "free") {
-    const raw = Number(process.env.MAX_LLM_REVIEWS_FREE ?? String(DEFAULT_MAX_LLM_REVIEWS_FREE));
-    if (!Number.isFinite(raw) || raw < 10) return DEFAULT_MAX_LLM_REVIEWS_FREE;
-    return Math.floor(raw);
-  }
-  const raw = Number(process.env.MAX_LLM_REVIEWS ?? String(DEFAULT_MAX_LLM_REVIEWS));
-  if (!Number.isFinite(raw) || raw < 20) return DEFAULT_MAX_LLM_REVIEWS;
-  return Math.floor(raw);
-}
-
-function pickLlmTargetIndicesByHeuristic(
-  classified: Array<{ sentiment: "positive" | "neutral" | "negative"; reviewedAt?: string | null }>,
-  maxCount: number
-): number[] {
-  if (classified.length <= maxCount) return classified.map((_, idx) => idx);
-
-  const groups = {
-    negative: [] as number[],
-    neutral: [] as number[],
-    positive: [] as number[]
-  };
-
-  for (let i = 0; i < classified.length; i++) {
-    const s = classified[i]?.sentiment;
-    if (s === "negative") groups.negative.push(i);
-    else if (s === "neutral") groups.neutral.push(i);
-    else groups.positive.push(i);
-  }
-
-  // Prioritize problematic reviews, then ambiguous, then positive.
-  const weights = {
-    negative: 0.5,
-    neutral: 0.3,
-    positive: 0.2
-  } as const;
-
-  const order = ["negative", "neutral", "positive"] as const;
-  const picked = new Set<number>();
-
-  for (const key of order) {
-    const target = Math.floor(maxCount * weights[key]);
-    const bucket = groups[key];
-    for (let i = 0; i < bucket.length && i < target; i++) picked.add(bucket[i]!);
-  }
-
-  // Fill remainder with recent-first across all sentiments.
-  const remainingCandidates = classified
-    .map((row, idx) => ({
-      idx,
-      ts: row.reviewedAt ? new Date(row.reviewedAt).getTime() : 0
-    }))
-    .sort((a, b) => b.ts - a.ts || a.idx - b.idx)
-    .map((v) => v.idx);
-
-  for (const idx of remainingCandidates) {
-    if (picked.size >= maxCount) break;
-    picked.add(idx);
-  }
-
-  return Array.from(picked).sort((a, b) => a - b);
-}
 
 function delimiterHint(csvText: string): string[] {
   const delimiter = inferDelimiter(csvText);
@@ -99,7 +27,6 @@ export async function POST(req: Request) {
   let filename: string | null;
   let csvText: string;
   try {
-    // This also enforces: 형식(.csv), 빈 파일, 대용량, 인코딩(UTF-8) 기본 가드레일.
     const uploaded = await readUploadedCsvText(req, MAX_BYTES);
     filename = uploaded.filename;
     csvText = uploaded.csvText;
@@ -148,8 +75,6 @@ export async function POST(req: Request) {
     console.log(`[LLM:analyze] LLM 비활성화 — plan=${plan}, allowLLM=${gates.allowLLM}`);
   }
 
-  const maxLlmReviews = readMaxLlmReviews(plan);
-
   if (monthlyLimit !== null && userId && supabaseAuth) {
     try {
       const { count } = await supabaseAuth
@@ -169,113 +94,22 @@ export async function POST(req: Request) {
     }
   }
 
-  let rows;
-  try {
-    rows = parseReviewCsvWithMapping(csvText, {
-      headerMode: headerMode === "headerless" ? "headerless" : "header",
-      textCol: textCol || undefined,
-      ratingCol: ratingCol || undefined,
-      dateCol: dateCol || undefined
-    });
-  } catch (e: any) {
-    return apiErrorResponse(
-      new ApiError(400, "CSV_PARSE_FAILED", "CSV를 읽지 못했어요.", {
-        help: [...delimiterHint(csvText), ...CSV_PARSE_FAILED_HELP],
-        details: e?.message ?? String(e)
-      })
-    );
-  }
-
-  // Check max reviews per analysis limit
-  let truncated = false;
-  const maxReviews = gates.maxReviewsPerAnalysis;
-  if (rows.length > maxReviews) {
-    rows = rows.slice(0, maxReviews);
-    truncated = true;
-    console.log(`[analyze] 리뷰 ${maxReviews}개로 제한 — 초과분 버림`);
-  }
-
-  // 1) Heuristic classification (baseline)
-  let classified = classifyHeuristic(rows);
-  let llmApplied = false;
-
-  // 2) Optional: LLM classification for sentiment/category
-  if (effectiveUseLLM) {
-    try {
-      const targetIdx = pickLlmTargetIndicesByHeuristic(classified, maxLlmReviews);
-      console.log(`[LLM:analyze] 분류 요청 — plan=${plan}, 전체=${classified.length}건, LLM대상=${targetIdx.length}건`);
-      const targetTexts = targetIdx.map((i) => classified[i]!.text);
-      const llm = await classifyReviewsWithOpenAI({ texts: targetTexts });
-      if (llm && llm.length === targetTexts.length) {
-        for (let i = 0; i < targetIdx.length; i++) {
-          const idx = targetIdx[i]!;
-          const item = llm[i]!;
-          classified[idx] = {
-            ...classified[idx]!,
-            sentiment: item.sentiment,
-            category: item.category
-          };
-        }
-        llmApplied = true;
-        console.log(`[LLM:analyze] 분류 적용 완료 — ${targetIdx.length}건 LLM 반영`);
-      } else {
-        console.warn(`[LLM:analyze] 분류 결과 null 또는 길이 불일치 — heuristic 유지`);
-      }
-    } catch (err) {
-      console.error(`[LLM:analyze] 분류 중 예외 — error=${err instanceof Error ? err.message : String(err)} → heuristic 유지`);
-    }
-  } else {
-    console.log(`[LLM:analyze] LLM 미사용 — useLLM=false (openaiAvailable=${openaiAvailable}, forcedMode=${forcedMode ?? "none"})`);
-  }
-
-  const { stats } = computeAnalysisFromClassified(classified);
-
-  const negativeReviewSamples = classified
-    .filter((r) => r.sentiment === "negative")
-    .slice(0, 5)
-    .map((r) => ({ text: r.text.slice(0, 300), category: r.category }));
-
-  const suggestions = await generateSuggestions(stats, {
-    useAiNarrative: llmApplied,
-    negativeReviewSamples,
-    topKeywords: stats.negativeKeywordsTop10,
-    totalCount: classified.length
+  // Run analysis pipeline
+  const { payload, classified } = await runAnalysisPipeline({
+    csvText,
+    headerMode,
+    textCol,
+    ratingCol,
+    dateCol,
+    plan,
+    useLLM: effectiveUseLLM
   });
 
-  // === V2 New Features ===
-  const urgentReviews = extractUrgentReviews(classified);
-  const priorityMatrix = calculatePriorityMatrix(classified, stats);
-  const ratingSimulation = simulateRatingImprovements(stats, stats.negativeKeywordsTop10);
-
-  // Extract positive keywords from positive reviews
-  const positiveReviews = classified.filter((r) => r.sentiment === "positive");
-  const positiveKeywordsRaw = extractPositiveKeywords(
-    positiveReviews.map((r) => r.text),
-    10
-  );
-  const positiveKeywords = positiveKeywordsRaw.map((k) => ({ ...k, sentiment: 'positive' as const }));
-
-  const actionItems = generateActionItems(classified, suggestions);
-
-  const payload = {
-    stats,
-    suggestions,
-    meta: {
-      filename,
-      stored: false as const,
-      truncated
-    },
-    // V2 optional fields
-    urgentReviews,
-    priorityMatrix,
-    ratingSimulation,
-    positiveKeywords,
-    actionItems
-  };
+  // Update filename in payload
+  payload.meta.filename = filename;
 
   // Optional persistence (Supabase)
   try {
-    // 1) If service role is configured, insert with admin client (bypasses RLS).
     const admin = getSupabaseAdminClient();
     if (admin) {
       const insertAnalysis = await admin
@@ -283,9 +117,9 @@ export async function POST(req: Request) {
         .insert({
           user_id: userId,
           input_filename: filename,
-          stats,
-          suggestions,
-          priority_score: stats.priorityScore
+          stats: payload.stats,
+          suggestions: payload.suggestions,
+          priority_score: payload.stats.priorityScore
         })
         .select("id")
         .single();
@@ -307,22 +141,21 @@ export async function POST(req: Request) {
             filename,
             stored: true as const,
             analysisId,
-            truncated
+            truncated: payload.meta.truncated
           }
         });
       }
     }
 
-    // 2) No service role: insert via user session (requires RLS + authenticated user).
     if (userId && supabaseAuth) {
       const insertAnalysis = await supabaseAuth
         .from("analyses")
         .insert({
           user_id: userId,
           input_filename: filename,
-          stats,
-          suggestions,
-          priority_score: stats.priorityScore
+          stats: payload.stats,
+          suggestions: payload.suggestions,
+          priority_score: payload.stats.priorityScore
         })
         .select("id")
         .single();
@@ -335,7 +168,7 @@ export async function POST(req: Request) {
             filename,
             stored: true as const,
             analysisId,
-            truncated
+            truncated: payload.meta.truncated
           }
         });
       }
