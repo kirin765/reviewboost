@@ -15,6 +15,7 @@ export type CsvMapping = {
 };
 
 export type CsvPreview = {
+  filename: string | null;
   headerMode: CsvHeaderMode;
   columns: string[];
   inferred: CsvMapping;
@@ -116,7 +117,7 @@ function synthColumnsFromWidth(width: number): string[] {
   return cols;
 }
 
-export function previewReviewCsv(csvText: string): CsvPreview {
+export function previewReviewCsv(csvText: string, filename: string | null = null): CsvPreview {
   const warnings: string[] = [];
   const delimiter = inferDelimiter(csvText);
   if (delimiter !== ",") {
@@ -137,6 +138,7 @@ export function previewReviewCsv(csvText: string): CsvPreview {
 
   if (headerRecords.length === 0) {
     return {
+      filename,
       headerMode: "header",
       columns: [],
       inferred: { headerMode: "header", textCol: "text", ratingCol: null, dateCol: null },
@@ -161,6 +163,7 @@ export function previewReviewCsv(csvText: string): CsvPreview {
     }
 
     return {
+      filename,
       headerMode: "header",
       columns: headerColumns,
       inferred,
@@ -190,7 +193,7 @@ export function previewReviewCsv(csvText: string): CsvPreview {
     return out;
   });
 
-  return { headerMode: "headerless", columns, inferred, sampleRows, totalRows: rows.length, warnings };
+  return { filename, headerMode: "headerless", columns, inferred, sampleRows, totalRows: rows.length, warnings };
 }
 
 export function parseReviewCsvWithMapping(csvText: string, mapping?: Partial<CsvMapping> | null): ReviewRow[] {
