@@ -213,11 +213,14 @@ function DashboardContent() {
     setCellModal({ col, value });
   };
 
+  const handleErrorClose = () => setError(null);
+  const handleAnalysisDoneClose = () => setAnalysisDoneNotice(null);
+
   return (
     <main className="pageMain">
-      {error ? <FeedbackModal title="분석 처리 오류" message={error} tone="error" /> : null}
+      {error ? <FeedbackModal title="분석 처리 오류" message={error} tone="error" onClose={handleErrorClose} /> : null}
       {!error && analysisDoneNotice ? (
-        <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
+        <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={handleAnalysisDoneClose} />
       ) : null}
       <div className="grid">
         <div className="card heroCard">

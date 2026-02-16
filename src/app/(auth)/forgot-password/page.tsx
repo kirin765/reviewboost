@@ -1,17 +1,35 @@
+"use client";
+
+import { useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { requestPasswordResetAction } from "@/app/(auth)/actions";
 import FeedbackModal from "@/components/FeedbackModal";
 
 export const dynamic = "force-dynamic";
 
-export default function ForgotPasswordPage(props: { searchParams?: Record<string, string | string[] | undefined> }) {
-  const sp = props.searchParams ?? {};
-  const err = typeof sp.error === "string" ? sp.error : "";
-  const next = typeof sp.next === "string" && sp.next.startsWith("/") && !sp.next.startsWith("//") ? sp.next : "/dashboard";
-  const supabaseConfigured = typeof process.env.SUPABASE_URL === "string" && typeof process.env.SUPABASE_ANON_KEY === "string";
+export default function ForgotPasswordPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const err = useMemo(() => {
+    const v = searchParams.get("error");
+    return typeof v === "string" ? v : "";
+  }, [searchParams]);
+
+  const next = useMemo(() => {
+    const v = searchParams.get("next");
+    return typeof v === "string" && v.startsWith("/") && !v.startsWith("//") ? v : "/dashboard";
+  }, [searchParams]);
+
+  const supabaseConfigured = typeof process.env.NEXT_PUBLIC_SUPABASE_URL === "string" && typeof process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY === "string";
+
+  function handleErrorClose() {
+    router.replace(`/forgot-password${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`);
+  }
 
   return (
     <main className="pageMain">
-      {err ? <FeedbackModal title="재설정 요청 실패" message={err} tone="error" /> : null}
+      {err ? <FeedbackModal key={err} title="재설정 요청 실패" message={err} tone="error" onClose={handleErrorClose} /> : null}
       <div className="grid">
         <div className="card">
           <h2>비밀번호 재설정</h2>
