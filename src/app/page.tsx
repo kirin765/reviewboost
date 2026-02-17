@@ -1,6 +1,35 @@
+"use client";
+
+import { useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import FeedbackModal from "@/components/FeedbackModal";
+
 export default function HomePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const err = useMemo(() => {
+    const v = searchParams.get("error");
+    return typeof v === "string" ? v : "";
+  }, [searchParams]);
+
+  const notice = useMemo(() => {
+    const v = searchParams.get("notice");
+    return typeof v === "string" ? v : "";
+  }, [searchParams]);
+
+  function handleErrorClose() {
+    router.replace("/");
+  }
+
+  function handleNoticeClose() {
+    router.replace("/");
+  }
+
   return (
     <main className="pageMain">
+      {err ? <FeedbackModal key={err} title="오류 발생" message={err} tone="error" onClose={handleErrorClose} /> : null}
+      {!err && notice ? <FeedbackModal key={notice} title="안내" message={notice} onClose={handleNoticeClose} /> : null}
       <div className="card heroCard">
         <a href="/help" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
           <h1 className="heroTitle">리뷰로 매출 올릴 포인트, 자동으로 뽑아드립니다</h1>
