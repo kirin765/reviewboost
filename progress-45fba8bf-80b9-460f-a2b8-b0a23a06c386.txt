@@ -1,0 +1,26 @@
+# Progress Log — run 45fba8bf-80b9-460f-a2b8-b0a23a06c386
+
+## Story US-04
+- Hardened `src/lib/billing.ts` billing persistence helpers:
+  - Added `normalizeBillingTimestamp` to safely normalize ISO strings, unix seconds, unix milliseconds, numeric strings, and invalid/null values.
+  - Refined plan resolution to deterministically choose the latest active paid subscription using stable in-memory ranking by `current_period_end`, then `updated_at`, then `paddle_subscription_id`.
+  - Kept paid-tier gating strict (`basic`/`pro`) and active-equivalent status filtering.
+  - Updated `upsertSubscription` to use normalized timestamps for period boundaries.
+  - Preserved idempotent upsert conflict keys:
+    - `profiles` upsert on `user_id`
+    - `subscriptions` upsert on `paddle_subscription_id`
+- Added focused unit tests in `src/lib/billing.test.ts` with mocked Supabase admin client behavior covering:
+  - timestamp normalization edge cases
+  - deterministic plan tier resolution behavior
+  - idempotent profile upsert conflict behavior
+  - idempotent subscription upsert + timestamp normalization behavior
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run build`
+- ✅ `npm test`
+
+## Codebase Patterns
+- For webhook-retry-safe billing logic, normalize all incoming temporal fields at the boundary (utility function) before persistence/comparison.
+- When DB ordering may be impacted by null/invalid values, apply deterministic in-memory sort with explicit tie-breakers to keep plan resolution stable under repeated events.
+- Unit-test Supabase query/upsert flows with lightweight chainable mocks to validate conflict keys and payload normalization without requiring a real DB.
