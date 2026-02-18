@@ -9,7 +9,9 @@
     "start:3000": "next start -p 3000 -H 0.0.0.0",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "pr:handoff:from-gh": "node scripts/pr-handoff-output.js from-gh-json",
+    "pr:handoff:validate": "node scripts/pr-handoff-output.js validate"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
