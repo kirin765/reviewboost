@@ -21,6 +21,8 @@ export type GhPullRequestPayload = {
   baseRefName?: string | null;
 };
 
+export type PullRequestLookupCandidate = GhPullRequestPayload;
+
 function normalizeValue(value: unknown): string {
   return typeof value === "string" ? value.trim() : String(value ?? "").trim();
 }
@@ -90,9 +92,43 @@ export type ReviewerResolutionResult =
       requiredFollowUp: string;
     };
 
+export function discoverPrMetadataFromOpenPullRequests(params: {
+  branchHint?: string | null;
+  openPullRequests: PullRequestLookupCandidate[];
+}): PrHandoffMetadata | null {
+  const branchHint = normalizeValue(params.branchHint);
+  const normalizedCandidates = params.openPullRequests
+    .map((candidate) => {
+      try {
+        return metadataFromGhPullRequestPayload(candidate);
+      } catch {
+        return null;
+      }
+    })
+    .filter((candidate): candidate is PrHandoffMetadata => candidate !== null);
+
+  const branchMatches = branchHint
+    ? normalizedCandidates.filter((candidate) => candidate.PR_BRANCH === branchHint)
+    : [];
+
+  if (branchMatches.length === 1) {
+    return branchMatches[0];
+  }
+
+  if (!branchHint && normalizedCandidates.length === 1) {
+    return normalizedCandidates[0];
+  }
+
+  return null;
+}
+
 export function resolvePrMetadataForReview(params: {
   stepOutput: string;
   fallbackLookup?: () => Partial<PrHandoffMetadata> | null;
+  fallbackDiscovery?: () => {
+    branchHint?: string | null;
+    openPullRequests: PullRequestLookupCandidate[];
+  } | null;
 }): ReviewerResolutionResult {
   const parsed = parsePrHandoffOutput(params.stepOutput);
 
@@ -110,6 +146,19 @@ export function resolvePrMetadataForReview(params: {
     return {
       status: "READY",
       metadata: fallback,
+      source: "fallback",
+    };
+  }
+
+  const fallbackDiscoveryInput = params.fallbackDiscovery?.() ?? null;
+  const discovered = fallbackDiscoveryInput
+    ? discoverPrMetadataFromOpenPullRequests(fallbackDiscoveryInput)
+    : null;
+
+  if (discovered) {
+    return {
+      status: "READY",
+      metadata: discovered,
       source: "fallback",
     };
   }
