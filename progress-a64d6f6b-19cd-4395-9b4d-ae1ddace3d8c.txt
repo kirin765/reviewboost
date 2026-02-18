@@ -1,0 +1,27 @@
+# Progress Log — run a64d6f6b-19cd-4395-9b4d-ae1ddace3d8c
+
+## Story SEO-001
+- Added `src/lib/seo/data-contract.ts` with normalized SEO directory TypeScript contracts for listings, categories, tools, countries, and cities.
+- Added strict zod schemas for raw source validation and `SeoDataContractError` for actionable build-time validation errors.
+- Added deterministic `stableId` generation and URL-safe slug helpers (`slugify`, `ensureSlug`).
+- Added `src/lib/seo/source-adapters.ts` with:
+  - `normalizeSeoDirectoryData(payload)` for normalization + relation linking.
+  - `loadSeoDirectoryData(options)` for build-time file loading (default `data/seo/directory.json`) and in-memory payload support.
+- Added tests in `src/lib/seo/source-adapters.test.ts` covering stable normalization and malformed-record rejection behavior.
+- Added test tooling/config:
+  - `vitest.config.ts`
+  - npm scripts: `typecheck`, `test`
+  - dev dependency: `vitest`
+- Added technical note: `docs/seo-data-contract.md`.
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run test`
+- ⚠️ `npm run build` failed due to existing project setup issue:
+  - `PageNotFoundError: Cannot find module for page: /_not-found`
+  - `PageNotFoundError: Cannot find module for page: /_document`
+
+## Codebase Patterns
+- Prefer a dedicated normalization layer for SEO/static-build data (`raw` -> `normalized`) so route generation/sitemaps operate on one trusted in-memory contract.
+- Use deterministic IDs derived from source identity and canonical text keys to keep static path output stable between builds.
+- Surface schema errors with `[collection][index].[field]` paths for fast data-fix loops during CI/build-time validation.
