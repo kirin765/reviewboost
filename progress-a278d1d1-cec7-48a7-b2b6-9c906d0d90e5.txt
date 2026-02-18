@@ -15,3 +15,13 @@
 - For uniqueness on nullable external IDs, use partial unique indexes:
   `create unique index if not exists ... where <column> is not null`.
 - Lightweight schema tests can be repository-level SQL contract checks via Node scripts when DB integration test infra is not yet present.
+- For TS utility unit tests without a dedicated test runner, use a small Node script with `typescript.transpileModule` + dynamic `import(data:)` and `node:assert/strict`.
+
+## Story US-02: Paddle 설정/매핑 유틸 구현
+- Standardized `src/lib/paddle.ts` env handling so `isPaddleConfigured()` validates trimmed required values (`PADDLE_API_KEY`, `PADDLE_BASIC_PRICE_ID`, `PADDLE_PRO_PRICE_ID`).
+- Improved mapping resilience by trimming inbound `priceId` in `paddlePlanForPriceId()` before comparison.
+- Added focused utility tests in `scripts/test-paddle-utils.mjs` covering:
+  - `paddleEnv()` live/sandbox branching,
+  - `paddlePriceIdForPlan()` and `paddlePlanForPriceId()` mapping,
+  - `isPaddleConfigured()` false behavior when required values are missing/blank.
+- Updated npm scripts: added `test:paddle-utils` and expanded `test` to run billing schema + paddle utility tests.

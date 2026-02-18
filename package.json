@@ -10,7 +10,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test:billing-schema": "node scripts/test-billing-schema.mjs",
-    "test": "npm run test:billing-schema"
+    "test:paddle-utils": "node scripts/test-paddle-utils.mjs",
+    "test": "npm run test:billing-schema && npm run test:paddle-utils"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
