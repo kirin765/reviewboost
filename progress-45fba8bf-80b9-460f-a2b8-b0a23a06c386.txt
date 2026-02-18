@@ -126,3 +126,32 @@
 ## Codebase Patterns
 - For Next.js client-component regressions in Vitest, prefer focused jsdom tests (`/** @vitest-environment jsdom */`) plus lightweight module mocks for app-specific UI wrappers.
 - Keep pricing query semantics explicit: billing UX hints should depend on `billing` only, while analytics query keys (e.g. `payment_success`) should be handled in dedicated analytics components and tested independently.
+
+## Story US-09
+- Added explicit PR handoff contract utilities in `src/lib/pr-handoff.ts`:
+  - Required key constants: `PR_NUMBER`, `PR_URL`, `PR_BRANCH`, `PR_BASE`
+  - Parser/formatter helpers for deterministic `KEY: value` output
+  - Strict metadata validator + assertion guard that rejects missing/empty required keys before step completion
+  - GitHub PR payload mapper from `number/url/headRefName/baseRefName`
+  - Reviewer resolution helper that first uses step output, then optional fallback discovery, then returns `SKIPPED_WITH_WARNING` instead of hard failure
+- Added workflow contract tests in `src/lib/pr-handoff.test.ts` covering:
+  - final output key formatting
+  - missing/empty key validation failures
+  - GitHub payload parsing + normalization
+  - reviewer fallback behavior + skip-with-warning behavior
+- Added automation helper script `scripts/pr-handoff-output.js`:
+  - `from-gh-json` mode to emit required keys from `gh pr ... --json` payload
+  - `validate` mode to verify existing output payload before marking PR step complete
+- Documented the required contract and reviewer fallback rules in `docs/pr-handoff-contract.md`.
+- Added npm scripts:
+  - `pr:handoff:from-gh`
+  - `pr:handoff:validate`
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run build`
+- ✅ `npm test`
+
+## Codebase Patterns
+- For cross-step workflow contracts, centralize required output keys as constants and share parser/validator helpers so both automation and tests enforce one source of truth.
+- Model non-critical handoff failures as explicit machine-readable statuses (e.g., `SKIPPED_WITH_WARNING`) instead of thrown errors to keep pipelines terminal and diagnosable.
