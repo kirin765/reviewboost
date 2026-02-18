@@ -75,3 +75,25 @@
 - For authenticated billing endpoints, perform auth checks before third-party config checks so client-facing auth semantics remain consistent and do not leak integration state.
 - Convert known integration/config exceptions into explicit API-layer status codes (`503` for integration unavailable, `500` for invalid internal mapping) instead of allowing thrown errors to surface as generic failures.
 - In checkout/session creation payloads, encode customer identity with a deterministic preference order (`customer_id` then `customer_email`) and assert both paths in unit tests.
+
+## Story US-07
+- Validated paid-plan gating integration around billing-backed plan resolution without changing runtime behavior:
+  - Confirmed `resolvePlanTierForUser` in `src/lib/plan.ts` computes email/default fallback and delegates final tier decision to `resolvePlanTierByBilling`.
+  - Confirmed gating remains tier-based (`basic`/`pro` allowed) and depends on billing status filtering in `resolvePlanTierByBilling`.
+- Added regression test coverage for billing-backed gating behavior:
+  - New `src/lib/billing.test.ts` verifies:
+    - fallback behavior when `userId` is missing
+    - safe fallback when billing storage client is unavailable
+    - paid unlock for active-equivalent statuses
+    - canceled/paused paid subscriptions do not unlock paid features
+    - safe fallback when billing query throws
+  - New `src/lib/plan.test.ts` verifies integration path from `resolvePlanTierForUser` to billing resolver and fallback-plan propagation.
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run build`
+- ✅ `npm test`
+
+## Codebase Patterns
+- For plan gating regressions, keep tests split by layer: resolver-unit tests for billing status semantics and plan-module tests for integration handoff (fallback construction + delegation).
+- When mocking hoisted modules in Vitest, use `vi.hoisted(...)` to define shared mocks safely before `vi.mock(...)` factories.
