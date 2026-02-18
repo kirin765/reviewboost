@@ -21,7 +21,10 @@ function paddleApiBase() {
 }
 
 export function isPaddleConfigured() {
-  return Boolean(process.env.PADDLE_API_KEY && process.env.PADDLE_BASIC_PRICE_ID && process.env.PADDLE_PRO_PRICE_ID);
+  const apiKey = String(process.env.PADDLE_API_KEY ?? "").trim();
+  const basic = String(process.env.PADDLE_BASIC_PRICE_ID ?? "").trim();
+  const pro = String(process.env.PADDLE_PRO_PRICE_ID ?? "").trim();
+  return Boolean(apiKey && basic && pro);
 }
 
 export function paddlePriceIdForPlan(plan: "basic" | "pro") {
@@ -30,10 +33,11 @@ export function paddlePriceIdForPlan(plan: "basic" | "pro") {
 }
 
 export function paddlePlanForPriceId(priceId: string | null | undefined): "free" | "basic" | "pro" {
+  const target = String(priceId ?? "").trim();
   const basic = String(process.env.PADDLE_BASIC_PRICE_ID ?? "").trim();
   const pro = String(process.env.PADDLE_PRO_PRICE_ID ?? "").trim();
-  if (priceId && pro && priceId === pro) return "pro";
-  if (priceId && basic && priceId === basic) return "basic";
+  if (target && pro && target === pro) return "pro";
+  if (target && basic && target === basic) return "basic";
   return "free";
 }
 
