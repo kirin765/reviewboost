@@ -1,0 +1,28 @@
+# Progress Log — run 45fba8bf-80b9-460f-a2b8-b0a23a06c386
+
+## Story US-02
+- Hardened `supabase/schema.sql` billing definitions for Paddle linkage fields:
+  - Preserved and documented required columns for `profiles.paddle_customer_id` and subscription billing fields (`paddle_subscription_id`, `paddle_price_id`, `plan_tier`, period boundaries, cancel flag).
+  - Added explicit semantic comments near `status` and `plan_tier` to clarify expected values and mapping behavior.
+- Added deterministic, idempotent billing indexes used by webhook/checkout lookups:
+  - `profiles_paddle_customer_id_idx`
+  - `subscriptions_user_id_idx`
+  - `subscriptions_customer_id_idx`
+  - `subscriptions_paddle_subscription_id_idx`
+  - plus unique indexes for `profiles.paddle_customer_id` (partial) and `subscriptions.paddle_subscription_id`.
+- Added migration-safe guards for existing installs:
+  - Additive `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` coverage for billing columns, including period fields.
+  - Backfill-friendly `DO $$ ... $$` guard that enforces NOT NULL on Paddle IDs only when no legacy null rows remain.
+- Added regression test coverage in `supabase/schema.test.ts` validating:
+  - Required billing columns are present.
+  - Idempotent index statements exist.
+  - Migration safety guards and conditional NOT NULL enforcement exist.
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run build`
+- ✅ `npm test`
+
+## Codebase Patterns
+- For SQL migrations that must be re-runnable and safe on legacy data, pair `ADD COLUMN IF NOT EXISTS` with conditional constraint hardening in a `DO $$` block instead of unconditional `ALTER COLUMN ... SET NOT NULL`.
+- Treat schema-level SQL as testable artifacts: a lightweight assertion suite over `schema.sql` prevents accidental drift/removal of critical indexes and migration guards.
