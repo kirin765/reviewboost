@@ -155,3 +155,26 @@
 ## Codebase Patterns
 - For cross-step workflow contracts, centralize required output keys as constants and share parser/validator helpers so both automation and tests enforce one source of truth.
 - Model non-critical handoff failures as explicit machine-readable statuses (e.g., `SKIPPED_WITH_WARNING`) instead of thrown errors to keep pipelines terminal and diagnosable.
+
+## Story US-10
+- Implemented reviewer-step resilient PR resolution in `src/lib/pr-handoff.ts`:
+  - Added `discoverPrMetadataFromOpenPullRequests` to perform fallback discovery from open PR payloads.
+  - Discovery strategy now supports:
+    - branch-based unique match (`branchHint` + open PR list)
+    - open-PR single-result recovery when branch hint is absent
+  - Kept strict metadata validation via required keys (`PR_NUMBER`, `PR_URL`, `PR_BRANCH`, `PR_BASE`) before marking review-ready.
+  - Extended `resolvePrMetadataForReview` to attempt fallback discovery after explicit output parsing/fallback lookup, and return terminal `SKIPPED_WITH_WARNING` when no unique PR can be resolved.
+- Expanded `src/lib/pr-handoff.test.ts` coverage for reviewer behavior paths:
+  - direct explicit PR identifiers (`source: step-output`)
+  - fallback discovery success from branch/open PR lookup (`source: fallback`)
+  - fallback miss (ambiguous results) returning `SKIPPED_WITH_WARNING`
+  - helper coverage for single-open-PR fallback without branch hint
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run build`
+- ✅ `npm test`
+
+## Codebase Patterns
+- For workflow handoff resilience, model reviewer context recovery as deterministic pure functions over parsed step output + open PR payloads.
+- When fallback discovery can return multiple candidates, require a unique resolution rule and emit an explicit machine-readable warning state (`SKIPPED_WITH_WARNING`) instead of throwing; this keeps workflows terminal and actionable.

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   assertValidPrHandoffMetadata,
+  discoverPrMetadataFromOpenPullRequests,
   formatPrHandoffOutput,
   metadataFromGhPullRequestPayload,
   parsePrHandoffOutput,
@@ -54,18 +55,51 @@ describe("pr-handoff contract", () => {
     });
   });
 
-  it("reviewer uses fallback discovery before skipping with warning", () => {
-    const fallbackReady = resolvePrMetadataForReview({
-      stepOutput: "PR_NUMBER: \nPR_URL: \n",
-      fallbackLookup: () => ({
-        PR_NUMBER: "789",
-        PR_URL: "https://github.com/kirin765/reviewboost/pull/789",
+  it("reviewer consumes explicit PR keys when present", () => {
+    const ready = resolvePrMetadataForReview({
+      stepOutput: [
+        "PR_NUMBER: 321",
+        "PR_URL: https://github.com/kirin765/reviewboost/pull/321",
+        "PR_BRANCH: feature-dev/reviewboost-uiux-spec",
+        "PR_BASE: main",
+      ].join("\n"),
+    });
+
+    expect(ready).toEqual({
+      status: "READY",
+      source: "step-output",
+      metadata: {
+        PR_NUMBER: "321",
+        PR_URL: "https://github.com/kirin765/reviewboost/pull/321",
         PR_BRANCH: "feature-dev/reviewboost-uiux-spec",
         PR_BASE: "main",
+      },
+    });
+  });
+
+  it("reviewer resolves missing PR keys via branch/open PR fallback discovery", () => {
+    const resolved = resolvePrMetadataForReview({
+      stepOutput: "PR_NUMBER: \nPR_URL: \nPR_BRANCH: feature-dev/reviewboost-uiux-spec\nPR_BASE: main",
+      fallbackDiscovery: () => ({
+        branchHint: "feature-dev/reviewboost-uiux-spec",
+        openPullRequests: [
+          {
+            number: 789,
+            url: "https://github.com/kirin765/reviewboost/pull/789",
+            headRefName: "feature-dev/reviewboost-uiux-spec",
+            baseRefName: "main",
+          },
+          {
+            number: 790,
+            url: "https://github.com/kirin765/reviewboost/pull/790",
+            headRefName: "other-branch",
+            baseRefName: "main",
+          },
+        ],
       }),
     });
 
-    expect(fallbackReady).toEqual({
+    expect(resolved).toEqual({
       status: "READY",
       source: "fallback",
       metadata: {
@@ -75,16 +109,55 @@ describe("pr-handoff contract", () => {
         PR_BASE: "main",
       },
     });
+  });
 
+  it("returns SKIPPED_WITH_WARNING when fallback discovery cannot resolve a unique PR", () => {
     const skipped = resolvePrMetadataForReview({
-      stepOutput: "PR_NUMBER: \nPR_URL: \n",
-      fallbackLookup: () => null,
+      stepOutput: "PR_NUMBER: \nPR_URL: \nPR_BRANCH: feature-dev/reviewboost-uiux-spec\nPR_BASE: main",
+      fallbackDiscovery: () => ({
+        branchHint: "feature-dev/reviewboost-uiux-spec",
+        openPullRequests: [
+          {
+            number: 800,
+            url: "https://github.com/kirin765/reviewboost/pull/800",
+            headRefName: "feature-dev/reviewboost-uiux-spec",
+            baseRefName: "main",
+          },
+          {
+            number: 801,
+            url: "https://github.com/kirin765/reviewboost/pull/801",
+            headRefName: "feature-dev/reviewboost-uiux-spec",
+            baseRefName: "main",
+          },
+        ],
+      }),
     });
 
     expect(skipped.status).toBe("SKIPPED_WITH_WARNING");
     if (skipped.status === "SKIPPED_WITH_WARNING") {
-      expect(skipped.reason).toContain("missing or empty");
+      expect(skipped.reason).toContain("fallback PR discovery did not resolve a unique open PR");
       expect(skipped.requiredFollowUp).toContain("PR_NUMBER");
     }
+  });
+
+  it("discovery helper can recover from single-open-PR lookup without branch hint", () => {
+    const discovered = discoverPrMetadataFromOpenPullRequests({
+      branchHint: null,
+      openPullRequests: [
+        {
+          number: 802,
+          url: "https://github.com/kirin765/reviewboost/pull/802",
+          headRefName: "feature-dev/reviewboost-uiux-spec",
+          baseRefName: "main",
+        },
+      ],
+    });
+
+    expect(discovered).toEqual({
+      PR_NUMBER: "802",
+      PR_URL: "https://github.com/kirin765/reviewboost/pull/802",
+      PR_BRANCH: "feature-dev/reviewboost-uiux-spec",
+      PR_BASE: "main",
+    });
   });
 });
