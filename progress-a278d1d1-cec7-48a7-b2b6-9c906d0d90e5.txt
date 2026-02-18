@@ -1,0 +1,17 @@
+# Progress Log - run a278d1d1-cec7-48a7-b2b6-9c906d0d90e5
+
+## Story US-01: 결제 도메인 DB 스키마 정비
+- Added idempotent billing schema migration at `supabase/migrations/20260218172500_us01_billing_schema.sql`.
+- Hardened `supabase/schema.sql` migration section to add missing subscription lifecycle columns (`status`, `current_period_start`, `current_period_end`, `created_at`) when backfilling existing installs.
+- Added explicit unique index for `subscriptions.paddle_subscription_id` for existing databases (`subscriptions_paddle_subscription_id_uniq`).
+- Confirmed `subscriptions_select_own` RLS policy SQL exists in both canonical schema and migration file.
+- Added billing schema regression test script: `scripts/test-billing-schema.mjs`.
+- Added npm scripts: `typecheck`, `test:billing-schema`, and default `test`.
+
+## Codebase Patterns
+- Keep Supabase schema changes in both places:
+  1) canonical `supabase/schema.sql` (fresh setup + backfill section), and
+  2) timestamped idempotent SQL under `supabase/migrations/` for replayability.
+- For uniqueness on nullable external IDs, use partial unique indexes:
+  `create unique index if not exists ... where <column> is not null`.
+- Lightweight schema tests can be repository-level SQL contract checks via Node scripts when DB integration test infra is not yet present.

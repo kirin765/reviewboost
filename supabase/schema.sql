@@ -59,9 +59,14 @@ alter table public.profiles add column if not exists updated_at timestamptz not 
 alter table public.subscriptions add column if not exists paddle_customer_id text null;
 alter table public.subscriptions add column if not exists paddle_subscription_id text null;
 alter table public.subscriptions add column if not exists paddle_price_id text null;
+alter table public.subscriptions add column if not exists status text not null default 'inactive';
 alter table public.subscriptions add column if not exists plan_tier text not null default 'free';
+alter table public.subscriptions add column if not exists current_period_start timestamptz null;
+alter table public.subscriptions add column if not exists current_period_end timestamptz null;
 alter table public.subscriptions add column if not exists cancel_at_period_end boolean not null default false;
+alter table public.subscriptions add column if not exists created_at timestamptz not null default now();
 alter table public.subscriptions add column if not exists updated_at timestamptz not null default now();
+create unique index if not exists subscriptions_paddle_subscription_id_uniq on public.subscriptions (paddle_subscription_id) where paddle_subscription_id is not null;
 
 -- RLS: users can only see/delete their own analyses.
 alter table public.analyses enable row level security;
