@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/keys";
+import { normalizeCookieOptions } from "@/lib/security";
 
 function createSupabaseClient(allowSetCookies: boolean) {
   const cookieStore = cookies();
@@ -12,7 +13,10 @@ function createSupabaseClient(allowSetCookies: boolean) {
       setAll(cookiesToSet: any[]) {
         // Server Components cannot set cookies; do session refresh in middleware.
         if (!allowSetCookies) return;
-        for (const { name, value, options } of cookiesToSet) cookieStore.set(name, value, options);
+        const secureContext = process.env.NODE_ENV === "production";
+        for (const { name, value, options } of cookiesToSet) {
+          cookieStore.set(name, value, normalizeCookieOptions(options, secureContext));
+        }
       }
     }
   });

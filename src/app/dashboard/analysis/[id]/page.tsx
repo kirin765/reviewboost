@@ -42,6 +42,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
     .from("analyses")
     .select("id, created_at, input_filename, stats, suggestions, priority_score")
     .eq("id", id)
+    .eq("user_id", userData.user.id)
     .single();
 
   if (error || !data) {
@@ -50,11 +51,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
         <div className="card">
           <h2>분석을 찾을 수 없음</h2>
           <p className="muted">권한이 없거나 삭제된 항목일 수 있습니다.</p>
-          {error ? (
-            <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
-              {error.message}
-            </p>
-          ) : null}
+          {error ? <p className="hint danger">오류가 발생했습니다.</p> : null}
           <div className="actionRow">
             <a className="btn" href="/dashboard/history">
               히스토리
