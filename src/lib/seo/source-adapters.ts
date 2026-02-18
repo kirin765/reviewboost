@@ -13,6 +13,7 @@ import {
   SeoListing,
   SeoTool,
   asContractError,
+  assignUniqueSlugs,
   ensureSlug,
   stableId,
 } from "@/lib/seo/data-contract";
@@ -68,9 +69,24 @@ function byName<T extends { name: string }>(items: T[], label: string): Map<stri
   return map;
 }
 
+function applyUniqueSlugs<T extends { id: string; slug: string }>(
+  items: T[],
+  fallbackPrefix: string
+): T[] {
+  const slugById = assignUniqueSlugs(
+    items.map((item) => ({ key: item.id, value: item.slug })),
+    fallbackPrefix
+  );
+
+  return items.map((item) => ({
+    ...item,
+    slug: slugById.get(item.id) ?? item.slug,
+  }));
+}
+
 export function normalizeSeoDirectoryData(payload: SeoSourcePayload): SeoDirectoryData {
-  const categories: SeoCategory[] = (payload.categories ?? []).map(loadCategory);
-  const tools: SeoTool[] = (payload.tools ?? []).map(loadTool);
+  const categories = applyUniqueSlugs((payload.categories ?? []).map(loadCategory), "category");
+  const tools = applyUniqueSlugs((payload.tools ?? []).map(loadTool), "tool");
 
   const categoriesByName = byName(categories, "categories");
   const toolsByName = byName(tools, "tools");
@@ -139,12 +155,16 @@ export function normalizeSeoDirectoryData(payload: SeoSourcePayload): SeoDirecto
     };
   });
 
+  const countries = applyUniqueSlugs(Array.from(countriesByName.values()), "country");
+  const cities = applyUniqueSlugs(Array.from(citiesByCountryAndName.values()), "city");
+  const uniqueListings = applyUniqueSlugs(listings, "listing");
+
   return {
-    listings,
+    listings: uniqueListings,
     categories,
     tools,
-    countries: Array.from(countriesByName.values()),
-    cities: Array.from(citiesByCountryAndName.values()),
+    countries,
+    cities,
   };
 }
 

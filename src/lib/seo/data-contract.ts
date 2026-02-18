@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 
+export { assignUniqueSlugs, buildCanonicalUrl, canonicalizePath, ensureSlug, slugify } from "@/lib/seo/url";
+
 const nonEmptyString = z.string().trim().min(1);
 
 export const RawListingSchema = z
@@ -89,16 +91,6 @@ export class SeoDataContractError extends Error {
   }
 }
 
-export function slugify(input: string): string {
-  return input
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-}
-
 export function stableId(prefix: string, ...parts: Array<string | number | undefined>): string {
   const payload = parts
     .filter((part): part is string | number => part !== undefined)
@@ -107,13 +99,6 @@ export function stableId(prefix: string, ...parts: Array<string | number | undef
 
   const hash = createHash("sha1").update(payload).digest("hex").slice(0, 12);
   return `${prefix}_${hash}`;
-}
-
-export function ensureSlug(name: string, fallbackPrefix: string): string {
-  const slug = slugify(name);
-  if (slug) return slug;
-
-  return `${fallbackPrefix}-${stableId("slug", name).slice(-6)}`;
 }
 
 export function asContractError(scope: string, err: unknown): never {
