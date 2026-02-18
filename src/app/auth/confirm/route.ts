@@ -19,13 +19,28 @@ function safeNextPath(raw: string | null, fallback: string) {
   return raw;
 }
 
+function getBaseUrl(request: NextRequest) {
+  // Use APP_BASE_URL if set, otherwise try to detect from request
+  const appBaseUrl = process.env.APP_BASE_URL;
+  if (appBaseUrl) return appBaseUrl;
+  
+  // Fallback: try to get from request headers
+  const host = request.headers.get("host");
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  if (host) {
+    return forwardedProto ? `${forwardedProto}://${host}` : `https://${host}`;
+  }
+  return "http://localhost:3000";
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type");
   const next = safeNextPath(requestUrl.searchParams.get("next"), "/dashboard");
 
-  const loginUrl = new URL("/login", request.url);
+  const baseUrl = getBaseUrl(request);
+  const loginUrl = new URL("/login", baseUrl);
   loginUrl.searchParams.set("next", next);
 
   if (!tokenHash || !type || !OTP_TYPES.has(type as EmailOtpType)) {
