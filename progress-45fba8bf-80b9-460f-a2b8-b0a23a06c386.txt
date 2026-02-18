@@ -26,3 +26,27 @@
 ## Codebase Patterns
 - For SQL migrations that must be re-runnable and safe on legacy data, pair `ADD COLUMN IF NOT EXISTS` with conditional constraint hardening in a `DO $$` block instead of unconditional `ALTER COLUMN ... SET NOT NULL`.
 - Treat schema-level SQL as testable artifacts: a lightweight assertion suite over `schema.sql` prevents accidental drift/removal of critical indexes and migration guards.
+
+## Story US-03
+- Finalized `src/lib/paddle.ts` to centralize strict Paddle configuration behavior:
+  - Added strict `PADDLE_ENV` validation (`sandbox|live`) with a controlled default to `sandbox` only when env is missing/blank.
+  - Added trimmed env utility helpers and explicit required-env errors for API key and plan price IDs.
+  - Hardened plan↔price mapping behavior:
+    - `paddlePriceIdForPlan` now throws explicit configuration errors when price IDs are missing.
+    - `paddlePlanForPriceId` normalizes input and deterministically falls back to `free` for unknown/blank IDs.
+  - Hardened request wrapper behavior:
+    - Validates API path begins with `/`.
+    - Preserves explicit API error detail/message and consistent fallback status errors for non-JSON failures.
+  - Hardened base URL resolution:
+    - `appBaseUrl` now validates `APP_BASE_URL` as absolute URL and strips a trailing slash.
+    - Falls back to request origin when env is unset.
+- Added unit test suite in `src/lib/paddle.test.ts` covering env validation, mapping edge-cases, URL normalization, and request wrapper failure/success paths.
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run build`
+- ✅ `npm test`
+
+## Codebase Patterns
+- For env-driven integrations, centralize parsing through small trim/require helpers to prevent whitespace-only misconfiguration from silently passing boolean checks.
+- For request wrappers around third-party APIs, validate path shape up front and always emit a deterministic fallback error when upstream returns non-JSON error bodies.
