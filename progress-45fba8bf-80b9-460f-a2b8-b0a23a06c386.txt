@@ -1,0 +1,52 @@
+# Progress Log — run 45fba8bf-80b9-460f-a2b8-b0a23a06c386
+
+## Story US-04
+- Hardened `src/lib/billing.ts` billing persistence helpers:
+  - Added `normalizeBillingTimestamp` to safely normalize ISO strings, unix seconds, unix milliseconds, numeric strings, and invalid/null values.
+  - Refined plan resolution to deterministically choose the latest active paid subscription using stable in-memory ranking by `current_period_end`, then `updated_at`, then `paddle_subscription_id`.
+  - Kept paid-tier gating strict (`basic`/`pro`) and active-equivalent status filtering.
+  - Updated `upsertSubscription` to use normalized timestamps for period boundaries.
+  - Preserved idempotent upsert conflict keys:
+    - `profiles` upsert on `user_id`
+    - `subscriptions` upsert on `paddle_subscription_id`
+- Added focused unit tests in `src/lib/billing.test.ts` with mocked Supabase admin client behavior covering:
+  - timestamp normalization edge cases
+  - deterministic plan tier resolution behavior
+  - idempotent profile upsert conflict behavior
+  - idempotent subscription upsert + timestamp normalization behavior
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run build`
+- ✅ `npm test`
+
+## Story US-06
+- Hardened `src/app/api/billing/webhook/route.ts` webhook verification and payload handling:
+  - Signature parser now validates both `ts` (digits only) and `h1` (sha256 hex) formats.
+  - HMAC verification now compares raw hex bytes (`Buffer(..., "hex")`) with constant-time comparison.
+  - Added malformed payload guard to reject non-object JSON payloads with `400 invalid payload`.
+- Preserved single idempotent subscription lifecycle funnel through `handleSubscriptionEvent` for:
+  - `subscription.created`
+  - `subscription.updated`
+  - `subscription.canceled`
+  - `subscription.paused`
+  - `subscription.resumed`
+- Verified persistence behavior:
+  - `transaction.completed` maps `custom_data.user_id` + Paddle customer ID via `upsertProfileCustomer`
+  - subscription lifecycle events upsert subscription rows with mapped plan tier (`paddlePlanForPriceId`), status, billing period, and cancel-at-period-end flag
+- Added dedicated webhook tests in `src/app/api/billing/webhook/route.test.ts` covering:
+  - invalid signature (400)
+  - missing webhook secret (500)
+  - transaction.completed profile mapping
+  - subscription lifecycle upsert payload mapping
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run build`
+- ✅ `npm test`
+
+## Codebase Patterns
+- For webhook-retry-safe billing logic, normalize all incoming temporal fields at the boundary (utility function) before persistence/comparison.
+- When DB ordering may be impacted by null/invalid values, apply deterministic in-memory sort with explicit tie-breakers to keep plan resolution stable under repeated events.
+- Unit-test Supabase query/upsert flows with lightweight chainable mocks to validate conflict keys and payload normalization without requiring a real DB.
+- For cryptographic webhook verification, validate signature header shape before HMAC work and compare decoded bytes in constant time; this avoids malformed-header edge cases and keeps failures deterministic.
