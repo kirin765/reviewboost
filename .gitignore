@@ -15,3 +15,5 @@ yarn-error.log*
 node_modules/
 *.log
 *.pdf
+*.key
+*.pem
