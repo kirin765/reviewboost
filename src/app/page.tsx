@@ -1,6 +1,27 @@
-export default function HomePage() {
+import FeedbackModal from "@/components/FeedbackModal";
+
+export default function HomePage(props: { searchParams?: Record<string, string | string[] | undefined> }) {
+  const sp = props.searchParams ?? {};
+  const err = typeof sp.error === "string" ? sp.error : "";
+  const errCode = typeof sp.error_code === "string" ? sp.error_code : "";
+  const errDesc = typeof sp.error_description === "string" ? sp.error_description : "";
+  const notice = typeof sp.notice === "string" ? sp.notice : "";
+
+  // Build friendly error message based on error code
+  let errorMessage = err;
+  if (errCode === "otp_expired" || errDesc.includes("expired")) {
+    errorMessage = "이메일 인증 링크가 만료되었습니다. 다시 회원가입을 시도해주세요.";
+  } else if (errCode === "access_denied") {
+    errorMessage = "이메일 인증에 실패했습니다. 링크가 이미 사용되었거나 유효하지 않을 수 있습니다.";
+  } else if (errDesc) {
+    // Use error_description if available
+    errorMessage = errDesc.replace(/\+/g, ' ');
+  }
+
   return (
     <main className="pageMain">
+      {errorMessage ? <FeedbackModal title="오류" message={errorMessage} tone="error" /> : null}
+      {!errorMessage && notice ? <FeedbackModal title="안내" message={notice} /> : null}
       <div className="card heroCard">
         <a href="/help" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
           <h1 className="heroTitle">리뷰로 매출 올릴 포인트, 자동으로 뽑아드립니다</h1>
