@@ -97,3 +97,32 @@
 ## Codebase Patterns
 - For plan gating regressions, keep tests split by layer: resolver-unit tests for billing status semantics and plan-module tests for integration handoff (fallback construction + delegation).
 - When mocking hoisted modules in Vitest, use `vi.hoisted(...)` to define shared mocks safely before `vi.mock(...)` factories.
+
+## Story US-08
+- Added deterministic pricing checkout UX regression coverage for success/failure states.
+- Updated `src/components/PricingActions.tsx` testability/runtime compatibility:
+  - Added explicit React import for Vitest JSX runtime compatibility.
+  - Preserved checkout behavior with loading state, server-error surfacing, and redirect via returned checkout URL.
+- Updated `src/app/pricing/page.tsx` typing to safely accept additional query params while still keying UI hints off `billing` only.
+- Added client/component regression tests:
+  - `src/components/PricingActions.test.tsx`
+    - verifies loading label/disabled state during checkout request
+    - verifies redirect to returned Paddle checkout URL
+    - verifies API error message rendering and loading reset on failure
+  - `src/app/pricing/page.test.tsx`
+    - verifies billing success hint rendering
+    - verifies billing cancel hint rendering
+    - verifies unrelated query params (including `payment_success`) do not incorrectly trigger billing hints
+  - `src/components/AnalyticsQueryEvents.test.tsx`
+    - verifies `payment_success=1` analytics event emission and query cleanup behavior remain intact
+- Updated `vitest.config.ts` include glob to run `*.test.tsx` files.
+- Added test dependencies for client-side rendering tests: `jsdom`, `@testing-library/react`, `@testing-library/dom`.
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run build`
+- ✅ `npm test`
+
+## Codebase Patterns
+- For Next.js client-component regressions in Vitest, prefer focused jsdom tests (`/** @vitest-environment jsdom */`) plus lightweight module mocks for app-specific UI wrappers.
+- Keep pricing query semantics explicit: billing UX hints should depend on `billing` only, while analytics query keys (e.g. `payment_success`) should be handled in dedicated analytics components and tested independently.
