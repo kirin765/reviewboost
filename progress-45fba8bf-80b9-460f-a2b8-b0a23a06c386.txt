@@ -50,3 +50,28 @@
 ## Codebase Patterns
 - For env-driven integrations, centralize parsing through small trim/require helpers to prevent whitespace-only misconfiguration from silently passing boolean checks.
 - For request wrappers around third-party APIs, validate path shape up front and always emit a deterministic fallback error when upstream returns non-JSON error bodies.
+
+## Story US-05
+- Finalized `src/app/api/billing/checkout/route.ts` for production-safe checkout initiation:
+  - Enforced auth-first handling: unauthenticated requests now consistently return `401` JSON before integration checks.
+  - Added explicit Paddle configuration guard returning `503` when integration env is incomplete.
+  - Added price mapping failure handling: missing plan price ID now returns deterministic `500` JSON (`요금제 가격 ID가 설정되지 않았습니다.`) instead of bubbling uncaught config exceptions.
+  - Preserved authenticated customer reuse by sending `customer_id` when a known Paddle customer exists; otherwise falls back to `customer_email`.
+  - Preserved required checkout payload fields: `items`, `custom_data.user_id`, `custom_data.plan_tier`, and success/cancel redirect URLs derived from app base URL.
+  - Added top-level defensive error handling with stable JSON error response for unexpected runtime failures.
+- Added dedicated route tests in `src/app/api/billing/checkout/route.test.ts` covering:
+  - 401 unauthenticated rejection
+  - 503 incomplete Paddle configuration
+  - 500 plan price mapping failure
+  - successful checkout creation with known `customer_id`
+  - successful fallback checkout creation with `customer_email`
+
+## Verification
+- ✅ `npm run typecheck`
+- ✅ `npm run build`
+- ✅ `npm test`
+
+## Codebase Patterns
+- For authenticated billing endpoints, perform auth checks before third-party config checks so client-facing auth semantics remain consistent and do not leak integration state.
+- Convert known integration/config exceptions into explicit API-layer status codes (`503` for integration unavailable, `500` for invalid internal mapping) instead of allowing thrown errors to surface as generic failures.
+- In checkout/session creation payloads, encode customer identity with a deterministic preference order (`customer_id` then `customer_email`) and assert both paths in unit tests.
