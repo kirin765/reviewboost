@@ -43,6 +43,37 @@ describe("normalizeSeoDirectoryData", () => {
     expect(first.cities[0].slug).toBe("austin");
   });
 
+  it("assigns unique listing slugs when normalized values collide", () => {
+    const payload = {
+      categories: [{ name: "Automation" }],
+      tools: [],
+      listings: [
+        {
+          sourceId: "listing-1",
+          name: "São Paulo Experts",
+          country: "Brazil",
+          city: "São Paulo",
+          categoryNames: ["Automation"],
+          toolNames: [],
+        },
+        {
+          sourceId: "listing-2",
+          name: "Sao Paulo Experts",
+          country: "Brazil",
+          city: "Sao Paulo",
+          categoryNames: ["Automation"],
+          toolNames: [],
+        },
+      ],
+    };
+
+    const normalized = normalizeSeoDirectoryData(payload);
+    expect(normalized.listings.map((listing) => listing.slug)).toEqual([
+      "sao-paulo-experts",
+      "sao-paulo-experts-2",
+    ]);
+  });
+
   it("throws actionable errors for malformed records", () => {
     expect(() =>
       normalizeSeoDirectoryData({

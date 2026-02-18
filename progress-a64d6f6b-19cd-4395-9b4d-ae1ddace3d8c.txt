@@ -14,14 +14,25 @@
   - dev dependency: `vitest`
 - Added technical note: `docs/seo-data-contract.md`.
 
+## Story SEO-002
+- Added `src/lib/seo/url.ts` with deterministic SEO URL utilities:
+  - `slugify` with non-ASCII normalization + transliteration fallbacks (`ß`, `æ`, `œ`, `ø`, `đ`, `ł`, `þ`).
+  - `assignUniqueSlugs` for deterministic collision handling using stable `-2`, `-3` suffixing independent of input order.
+  - `canonicalizePath` + `buildCanonicalUrl` for canonical URL construction with path normalization.
+- Re-exported URL utilities from `src/lib/seo/data-contract.ts` for shared use by SEO routing modules.
+- Updated `src/lib/seo/source-adapters.ts` to apply collision-safe slug assignment across categories, tools, countries, cities, and listings.
+- Expanded tests:
+  - New `src/lib/seo/url.test.ts` covering non-ASCII slugification, collision determinism, and canonical URL generation.
+  - Added listing-slug collision coverage in `src/lib/seo/source-adapters.test.ts`.
+
 ## Verification
 - ✅ `npm run typecheck`
 - ✅ `npm run test`
 - ⚠️ `npm run build` failed due to existing project setup issue:
-  - `PageNotFoundError: Cannot find module for page: /_not-found`
-  - `PageNotFoundError: Cannot find module for page: /_document`
+  - `Type error: File '.next/types/app/(auth)/forgot-password/page.ts' not found.`
 
 ## Codebase Patterns
 - Prefer a dedicated normalization layer for SEO/static-build data (`raw` -> `normalized`) so route generation/sitemaps operate on one trusted in-memory contract.
 - Use deterministic IDs derived from source identity and canonical text keys to keep static path output stable between builds.
 - Surface schema errors with `[collection][index].[field]` paths for fast data-fix loops during CI/build-time validation.
+- For static SEO routes, resolve slug collisions in a post-processing pass (`assignUniqueSlugs`) keyed by stable entity IDs so route output remains deterministic even if source ordering changes.
