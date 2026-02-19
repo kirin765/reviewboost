@@ -1,12 +1,15 @@
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { appBaseUrl, isPaddleConfigured, paddlePriceIdForPlan, paddleRequest } from "@/lib/paddle";
 import { findPaddleCustomerIdByUserId } from "@/lib/billing";
+import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
 export const runtime = "nodejs";
 
 type Body = { plan?: "basic" | "pro" };
 
 export async function POST(req: Request) {
+  if (!isSameOriginRequest(req)) return csrfErrorResponse();
+
   try {
     const supabase = createSupabaseServerActionClient();
     const { data } = await supabase.auth.getUser();

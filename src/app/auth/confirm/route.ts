@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/keys";
+import { applySecurityHeaders, normalizeCookieOptions } from "@/lib/security";
 
 const OTP_TYPES: ReadonlySet<EmailOtpType> = new Set([
   "signup",
@@ -45,9 +46,12 @@ export async function GET(request: NextRequest) {
 
   if (!tokenHash || !type || !OTP_TYPES.has(type as EmailOtpType)) {
     loginUrl.searchParams.set("error", "유효하지 않은 이메일 인증 링크입니다.");
-    return NextResponse.redirect(loginUrl);
+    const res = NextResponse.redirect(loginUrl);
+    applySecurityHeaders(res.headers);
+    return res;
   }
 
+  const secureContext = requestUrl.protocol === "https:" || process.env.NODE_ENV === "production";
   let response = NextResponse.next({ request });
   const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
     cookies: {
@@ -56,8 +60,9 @@ export async function GET(request: NextRequest) {
       },
       setAll(cookiesToSet: any[]) {
         for (const { name, value, options } of cookiesToSet) {
+          const hardenedOptions = normalizeCookieOptions(options, secureContext);
           request.cookies.set(name, value);
-          response.cookies.set(name, value, options);
+          response.cookies.set(name, value, hardenedOptions);
         }
       }
     }
@@ -70,9 +75,13 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     loginUrl.searchParams.set("error", "이메일 인증에 실패했습니다. 링크가 만료되었거나 이미 사용되었을 수 있습니다.");
-    return NextResponse.redirect(loginUrl);
+    const res = NextResponse.redirect(loginUrl);
+    applySecurityHeaders(res.headers);
+    return res;
   }
 
   loginUrl.searchParams.set("notice", "이메일 인증이 완료되었습니다. 로그인해주세요.");
-  return NextResponse.redirect(loginUrl);
+  const res = NextResponse.redirect(loginUrl);
+  applySecurityHeaders(res.headers);
+  return res;
 }

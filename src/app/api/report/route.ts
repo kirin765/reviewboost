@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { renderReportHtml } from "@/lib/report_html";
 import { renderReportPdfBuffer } from "@/lib/report_pdfkit";
+import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,8 @@ function safeHeaderValue(value: unknown) {
 }
 
 export async function POST(req: Request) {
+  if (!isSameOriginRequest(req)) return csrfErrorResponse();
+
   let body: unknown;
   try {
     body = await req.json();
