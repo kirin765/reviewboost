@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { applySecurityHeaders, normalizeCookieOptions } from "@/lib/security";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/keys";
 
 export async function middleware(request: NextRequest) {
   // Handle auth callback redirects at root
@@ -31,9 +32,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseAnonKey) {
+  let supabaseUrl: string;
+  let supabaseAnonKey: string;
+
+  try {
+    supabaseUrl = getSupabaseUrl();
+    supabaseAnonKey = getSupabaseAnonKey();
+  } catch {
     const passthrough = NextResponse.next();
     applySecurityHeaders(passthrough.headers);
     return passthrough;

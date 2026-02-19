@@ -1,87 +1,140 @@
-import { NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { verifyWebhookSignature } from '@/lib/toss';
 import { createHmac, timingSafeEqual } from "crypto";
 import { findUserIdByPaddleCustomerId, upsertProfileCustomer, upsertSubscription } from "@/lib/billing";
 import { paddlePlanForPriceId } from "@/lib/paddle";
+import { logApiError } from "@/lib/api_log";
 
 export const runtime = "nodejs";
 
 function getWebhookSecret() {
-  const v = process.env.PADDLE_WEBHOOK_SECRET;
-  if (!v) throw new Error("PADDLE_WEBHOOK_SECRET is not set");
-  return v;
+  const value = String(process.env.PADDLE_WEBHOOK_SECRET ?? "").trim();
+  if (!value) {
+    throw new Error("PADDLE_WEBHOOK_SECRET is not set");
+  }
+  return value;
 }
 
-function parsePaddleSignature(sigHeader: string | null) {
-  const header = String(sigHeader ?? "").replace(/;/g, ",");
+function parsePaddleSignature(signatureHeader: string | null) {
+  const header = String(signatureHeader ?? "").replace(/;/g, ",");
   const parts = header
     .split(",")
-    .map((v) => v.trim())
+    .map((part) => part.trim())
     .filter(Boolean);
 
-  const tsRaw = parts.find((p) => p.startsWith("ts="))?.slice(3) ?? "";
-  const h1Raw = parts.find((p) => p.startsWith("h1="))?.slice(3) ?? "";
-  const ts = tsRaw.trim();
-  const h1 = h1Raw.trim().toLowerCase();
+  const ts = parts.find((part) => part.startsWith("ts="))?.slice(3) ?? "";
+  const h1 = parts.find((part) => part.startsWith("h1="))?.slice(3) ?? "";
 
-  if (!ts || !h1) return null;
-  if (!/^\d+$/.test(ts)) return null;
-  if (!/^[a-f0-9]{64}$/.test(h1)) return null;
+  if (!/^[0-9]+$/.test(ts) || !/^[a-f0-9]{64}$/i.test(h1)) {
+    return null;
+  }
 
-  return { ts, h1 };
+  return {
+    ts,
+    h1: h1.toLowerCase()
+  };
 }
 
-function verifySignature(payload: string, sigHeader: string | null): boolean {
-  const parsed = parsePaddleSignature(sigHeader);
+function verifyWebhookSignature(payload: string, signatureHeader: string | null): boolean {
+  const parsed = parsePaddleSignature(signatureHeader);
   if (!parsed) return false;
 
-  const signedPayload = `${parsed.ts}:${payload}`;
-  const digestHex = createHmac("sha256", getWebhookSecret()).update(signedPayload, "utf8").digest("hex");
+  const secret = getWebhookSecret();
+  const expected = createHmac("sha256", secret).update(`${parsed.ts}:${payload}`, "utf8").digest("hex");
+  const expectedBytes = Buffer.from(expected, "hex");
+  const actualBytes = Buffer.from(parsed.h1, "hex");
 
-  const expected = Buffer.from(digestHex, "hex");
-  const actual = Buffer.from(parsed.h1, "hex");
-  if (expected.length !== actual.length || expected.length === 0) return false;
-  return timingSafeEqual(expected, actual);
+  if (expectedBytes.length !== actualBytes.length || expectedBytes.length === 0) {
+    return false;
+  }
+
+  return timingSafeEqual(expectedBytes, actualBytes);
 }
 
-function extractPriceIdFromSubscription(subscription: any): string | null {
-  return (
-    subscription?.items?.[0]?.price?.id ?? subscription?.items?.[0]?.price_id ?? subscription?.items?.data?.[0]?.price?.id ?? null
-  );
+function extractCustomerId(data: unknown): string | null {
+  const raw = data as {
+    customer_id?: string;
+    customer?: {
+      id?: string;
+    } | string | null;
+  };
+
+  const value = String(
+    raw?.customer_id ??
+      (typeof raw?.customer === "string" ? raw.customer : raw?.customer?.id) ??
+      ""
+  ).trim();
+
+  return value || null;
 }
 
-function extractCustomerId(data: any): string | null {
-  const id = data?.customer_id ?? data?.customer?.id ?? data?.customer;
-  const v = String(id ?? "").trim();
-  return v || null;
+type SubscriptionData = {
+  id?: string;
+  customer_id?: string;
+  customer?: { id?: string };
+  status?: string;
+  custom_data?: { user_id?: string; [key: string]: unknown };
+  metadata?: { user_id?: string; [key: string]: unknown };
+  items?: Array<{
+    price?: { id?: string };
+    price_id?: string;
+  }>;
+  current_billing_period?: {
+    starts_at?: string;
+    ends_at?: string;
+  };
+  scheduled_change?: {
+    action?: string;
+  };
+};
+
+function extractUserId(data: unknown): string | null {
+  const value = String(
+    (data as { custom_data?: { user_id?: string }; metadata?: { user_id?: string } }).custom_data?.user_id ??
+      (data as { metadata?: { user_id?: string } }).metadata?.user_id ??
+      ""
+  ).trim();
+
+  return value || null;
 }
 
-function extractUserId(data: any): string | null {
-  const v = String(data?.custom_data?.user_id ?? data?.metadata?.user_id ?? "").trim();
-  return v || null;
+function extractPriceIdFromSubscription(data: unknown): string | null {
+  const value = String(
+    (data as SubscriptionData).items?.[0]?.price?.id ??
+      (data as SubscriptionData).items?.[0]?.price_id ??
+      ""
+  ).trim();
+  return value || null;
 }
 
-async function handleSubscriptionEvent(subscription: any) {
-  const paddleSubscriptionId = String(subscription?.id ?? "").trim();
-  const paddleCustomerId = extractCustomerId(subscription);
-  if (!paddleSubscriptionId || !paddleCustomerId) return;
+async function handleTransactionCompleted(data: unknown) {
+  const customerId = extractCustomerId(data);
+  if (!customerId) return;
 
-  const status = String(subscription?.status ?? "");
-  const metadataUserId = extractUserId(subscription);
-  const mappedUserId = metadataUserId ?? (await findUserIdByPaddleCustomerId(paddleCustomerId));
-  if (!mappedUserId) return;
+  const userId = extractUserId(data) || (await findUserIdByPaddleCustomerId(customerId));
+  if (!userId) return;
 
-  await upsertProfileCustomer(mappedUserId, paddleCustomerId);
+  await upsertProfileCustomer(userId, customerId);
+}
+
+async function handleSubscriptionEvent(data: unknown) {
+  const subscription = data as SubscriptionData;
+  const subscriptionId = String(subscription?.id ?? "").trim();
+  const customerId = extractCustomerId(subscription);
+
+  if (!subscriptionId || !customerId) return;
+
+  const status = String(subscription?.status ?? "").trim();
+  const userId = extractUserId(subscription) || (await findUserIdByPaddleCustomerId(customerId));
+  if (!userId) return;
+
+  await upsertProfileCustomer(userId, customerId);
 
   const priceId = extractPriceIdFromSubscription(subscription);
   const planTier = paddlePlanForPriceId(priceId);
 
   await upsertSubscription({
-    userId: mappedUserId,
-    paddleSubscriptionId,
-    paddleCustomerId,
+    userId,
+    paddleSubscriptionId: subscriptionId,
+    paddleCustomerId: customerId,
     paddlePriceId: priceId,
     status,
     planTier,
@@ -91,95 +144,108 @@ async function handleSubscriptionEvent(subscription: any) {
   });
 }
 
-export async function POST(req: Request) {
-  const rawBody = await req.text();
-  const signature = req.headers.get("paddle-signature");
+const KNOWN_TRANSACTION_EVENTS = new Set(["transaction.completed", "transaction.updated", "transaction.failed"]);
+const KNOWN_SUBSCRIPTION_EVENTS = new Set([
+  "subscription.created",
+  "subscription.updated",
+  "subscription.canceled",
+  "subscription.trialing",
+  "subscription.paused",
+  "subscription.resumed"
+]);
 
 export async function POST(request: Request) {
-  try {
-    const bodyText = await request.text();
-    const signature = request.headers.get('x-toss-signature') || '';
+  let bodyText = "";
+  const method = request.method;
 
-    // Verify webhook signature
+  try {
+    bodyText = await request.text();
+    const signature = request.headers.get("paddle-signature");
+
     try {
-      if (!verifyWebhookSignature(bodyText, signature)) {
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      const verified = verifyWebhookSignature(bodyText, signature);
+      if (!verified) {
+        await logApiError({
+          route: "/api/billing/webhook",
+          method,
+          status: 400,
+          code: "INTERNAL_ERROR",
+          message: "웹훅 서명 검증에 실패했습니다.",
+          details: "invalid signature",
+          request,
+          extra: { signatureHeader: signature || "missing" }
+        });
+        return Response.json({ error: "invalid signature" }, { status: 400 });
       }
-    } catch (err) {
-      // If webhook secret not set, log and continue for development
-      console.log('Webhook signature verification skipped:', err);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (message === "PADDLE_WEBHOOK_SECRET is not set") {
+        await logApiError({
+          route: "/api/billing/webhook",
+          method,
+          status: 500,
+          code: "INTERNAL_ERROR",
+          message: "웹훅 시크릿이 설정되지 않았습니다.",
+          details: message,
+          request,
+          error
+        });
+        return Response.json({ error: "webhook secret missing" }, { status: 500 });
+      }
+      await logApiError({
+        route: "/api/billing/webhook",
+        method,
+        status: 400,
+        code: "INTERNAL_ERROR",
+        message: "웹훅 서명 처리 중 오류가 발생했습니다.",
+        details: message,
+        request,
+        error
+      });
+      console.error("Webhook signature check failed:", error);
+      return Response.json({ error: "invalid signature" }, { status: 400 });
     }
 
-    const event = JSON.parse(bodyText);
-    const eventType = event.eventType;
-    const data = event.data;
-
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { get(name: string) { return cookieStore.get(name)?.value; } } }
-    );
-
-    switch (eventType) {
-      case 'PAYMENT_COMPLETED': {
-        const { orderId, paymentKey, amount } = data;
-        
-        // Find payment record
-        const { data: payment } = await supabase
-          .from('payments')
-          .select('user_id, status')
-          .eq('toss_order_id', orderId)
-          .single();
-
-        if (payment && payment.status === 'pending') {
-          // Update payment status
-          await supabase
-            .from('payments')
-            .update({ status: 'completed', payment_method: 'EASY_PAYMENT' })
-            .eq('toss_order_id', orderId);
-
-          // Add credits to user
-          await supabase.rpc('add_credits', {
-            p_user_id: payment.user_id,
-            p_amount: amount,
-          });
-
-          // Record transaction
-          await supabase.from('credit_transactions').insert({
-            user_id: payment.user_id,
-            amount,
-            type: 'purchase',
-            description: '크레딧 구매',
-          });
-        }
-        break;
-      }
-  if (!event || typeof event !== "object" || Array.isArray(event)) {
-    return Response.json({ error: "invalid payload" }, { status: 400 });
-  }
-
-  try {
-    const type = String(event?.event_type ?? "");
-    const data = event?.data;
-
-      case 'PAYMENT_FAILED':
-      case 'PAYMENT_CANCELLED': {
-        const { orderId } = data;
-        await supabase
-          .from('payments')
-          .update({ status: eventType === 'PAYMENT_CANCELLED' ? 'cancelled' : 'failed' })
-          .eq('toss_order_id', orderId);
-        break;
-      }
-
-      default:
-        console.log('Unhandled Toss event:', eventType);
+    const payload = JSON.parse(bodyText);
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      await logApiError({
+        route: "/api/billing/webhook",
+        method,
+        status: 400,
+        code: "INTERNAL_ERROR",
+        message: "웹훅 페이로드 형식이 유효하지 않습니다.",
+        details: "payload must be a non-array object",
+        request
+      });
+      return Response.json({ error: "invalid payload" }, { status: 400 });
     }
 
-    return NextResponse.json({ received: true });
+    const eventType = String((payload as { event_type?: string }).event_type ?? "").trim();
+    const data = (payload as { data?: unknown }).data;
+
+    if (KNOWN_TRANSACTION_EVENTS.has(eventType)) {
+      await handleTransactionCompleted(data);
+      return Response.json({ received: true });
+    }
+
+    if (KNOWN_SUBSCRIPTION_EVENTS.has(eventType)) {
+      await handleSubscriptionEvent(data);
+      return Response.json({ received: true });
+    }
+
+    return Response.json({ received: true, ignored: true });
   } catch (error) {
-    console.error('Webhook error:', error);
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
+    await logApiError({
+      route: "/api/billing/webhook",
+      method,
+      status: 500,
+      code: "INTERNAL_ERROR",
+      message: "웹훅 처리 중 오류가 발생했습니다.",
+      details: error instanceof Error ? error.message : String(error ?? "unknown"),
+      request,
+      error
+    });
+    console.error("Webhook error:", error);
+    return Response.json({ error: "webhook processing failed" }, { status: 500 });
   }
 }

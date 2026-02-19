@@ -123,6 +123,17 @@ describe("paddleRequest", () => {
     await expect(paddleRequest("/transactions")).rejects.toThrow("Invalid payload");
   });
 
+  it("uses top-level string error message when error field is string", async () => {
+    vi.stubEnv("PADDLE_API_KEY", "key_test");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => JSON.stringify({ error: "URL called is invalid." })
+    } as Response);
+
+    await expect(paddleRequest("/transactions")).rejects.toThrow("URL called is invalid.");
+  });
+
   it("throws fallback status error for invalid json error bodies", async () => {
     vi.stubEnv("PADDLE_API_KEY", "key_test");
     vi.spyOn(globalThis, "fetch").mockResolvedValue({

@@ -6,6 +6,15 @@ type PaddleRequestOpts = {
   body?: Record<string, unknown>;
 };
 
+type PaddleRequestErrorInfo = {
+  status: number;
+  code: string;
+  message: string;
+  detail?: string;
+  raw?: unknown;
+  rawText?: string;
+};
+
 function trimEnv(name: string): string {
   return String(process.env[name] ?? "").trim();
 }
@@ -45,12 +54,6 @@ function paddleApiBase() {
 }
 
 export function isPaddleConfigured() {
-<<<<<<< HEAD
-  const apiKey = String(process.env.PADDLE_API_KEY ?? "").trim();
-  const basic = String(process.env.PADDLE_BASIC_PRICE_ID ?? "").trim();
-  const pro = String(process.env.PADDLE_PRO_PRICE_ID ?? "").trim();
-  return Boolean(apiKey && basic && pro);
-=======
   try {
     paddleEnv();
   } catch {
@@ -58,22 +61,18 @@ export function isPaddleConfigured() {
   }
 
   return Boolean(trimEnv("PADDLE_API_KEY") && trimEnv("PADDLE_BASIC_PRICE_ID") && trimEnv("PADDLE_PRO_PRICE_ID"));
->>>>>>> 1dcf99940a0ffb7ec8aecdb9ca23158232723b32
 }
 
 export function paddlePriceIdForPlan(plan: "basic" | "pro") {
   const name = plan === "pro" ? "PADDLE_PRO_PRICE_ID" : "PADDLE_BASIC_PRICE_ID";
-  return requireEnv(name, `${name} is not set for plan '${plan}'`);
+  const priceId = requireEnv(name, `${name} is not set for plan '${plan}'`);
+  if (!priceId.startsWith("pri_")) {
+    throw new Error(`${name} must be a Paddle price id (usually starts with 'pri_')`);
+  }
+  return priceId;
 }
 
 export function paddlePlanForPriceId(priceId: string | null | undefined): "free" | "basic" | "pro" {
-<<<<<<< HEAD
-  const target = String(priceId ?? "").trim();
-  const basic = String(process.env.PADDLE_BASIC_PRICE_ID ?? "").trim();
-  const pro = String(process.env.PADDLE_PRO_PRICE_ID ?? "").trim();
-  if (target && pro && target === pro) return "pro";
-  if (target && basic && target === basic) return "basic";
-=======
   const normalizedPriceId = String(priceId ?? "").trim();
   if (!normalizedPriceId) return "free";
 
@@ -81,7 +80,6 @@ export function paddlePlanForPriceId(priceId: string | null | undefined): "free"
   const pro = trimEnv("PADDLE_PRO_PRICE_ID");
   if (pro && normalizedPriceId === pro) return "pro";
   if (basic && normalizedPriceId === basic) return "basic";
->>>>>>> 1dcf99940a0ffb7ec8aecdb9ca23158232723b32
   return "free";
 }
 
@@ -104,15 +102,56 @@ export async function paddleRequest(path: string, opts?: PaddleRequestOpts): Pro
 
   const text = await res.text();
   let json: any = null;
+  let parsed = false;
   try {
     json = text ? JSON.parse(text) : null;
+    parsed = true;
   } catch {
     // ignore invalid json; use fallback error
   }
 
   if (!res.ok) {
-    const msg = json?.error?.detail || json?.error?.message || `Paddle request failed (${res.status})`;
-    throw new Error(String(msg));
+    const nestedError = json && typeof json === "object" ? json.error : undefined;
+    const nestedDetail =
+      nestedError && typeof nestedError === "object" ? nestedError.detail : undefined;
+    const nestedMessage =
+      nestedError && typeof nestedError === "object" ? nestedError.message : undefined;
+    const topErrorMessage = typeof json?.message === "string" ? json.message : undefined;
+    const topError = typeof json?.error === "string" ? json.error : undefined;
+
+    const detail =
+      typeof nestedDetail === "string"
+        ? nestedDetail
+        : typeof nestedMessage === "string"
+          ? nestedMessage
+          : typeof topErrorMessage === "string"
+            ? topErrorMessage
+            : typeof topError === "string"
+              ? topError
+              : undefined;
+
+    const code = String(
+      nestedError && typeof nestedError === "object" && typeof nestedError.code === "string"
+        ? nestedError.code
+        : "paddle_request_failed"
+    );
+
+    const message = String(
+      detail ?? `Paddle request failed (${res.status})`
+    );
+
+    const info: PaddleRequestErrorInfo = {
+      status: res.status,
+      code,
+      message,
+      detail: typeof detail === "string" ? detail : undefined,
+      raw: parsed ? json : text,
+      rawText: parsed ? undefined : text
+    };
+
+    const error = new Error(message) as Error & { info: PaddleRequestErrorInfo };
+    error.info = info;
+    throw error;
   }
 
   return json?.data ?? json;

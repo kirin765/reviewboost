@@ -7,6 +7,7 @@ export type ApiErrorCode =
   | "CSV_TOO_LARGE"
   | "CSV_ENCODING"
   | "CSV_PARSE_FAILED"
+  | "INTERNAL_ERROR"
   | "PLAN_UPGRADE_REQUIRED"
   | "MONTHLY_LIMIT_EXCEEDED";
 

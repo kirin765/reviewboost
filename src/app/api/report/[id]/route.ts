@@ -1,6 +1,7 @@
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { renderReportHtml } from "@/lib/report_html";
 import { renderReportPdfBuffer } from "@/lib/report_pdfkit";
+import { logApiError } from "@/lib/api_log";
 
 export const runtime = "nodejs";
 
@@ -38,7 +39,18 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
 
     if (error || !data) return textError(404, "분석을 찾을 수 없습니다.");
     analysis = data;
-  } catch {
+  } catch (error: any) {
+    await logApiError({
+      route: "/api/report/[id]",
+      method: req.method,
+      status: 500,
+      code: "INTERNAL_ERROR",
+      message: "리포트 조회 중 오류가 발생했습니다.",
+      details: error?.message ?? String(error ?? "unknown"),
+      request: req,
+      error,
+      extra: { analysisId: id }
+    });
     return textError(500, "리포트 생성 중 오류가 발생했습니다.");
   }
 
@@ -93,6 +105,17 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
         }
       });
     } catch (e2: any) {
+      await logApiError({
+        route: "/api/report/[id]",
+        method: req.method,
+        status: 501,
+        code: "INTERNAL_ERROR",
+        message: "PDF 생성에 실패했습니다.",
+        details: e2?.message ?? String(e2),
+        request: req,
+        error: e2,
+        extra: { analysisId: analysis.id, renderer: "pdfkit" }
+      });
       return textError(501, `PDF 생성 실패(Puppeteer 실패 + PDFKit fallback 실패):\n${String(e2?.message ?? e2 ?? "")}`);
     }
   }

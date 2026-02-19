@@ -26,8 +26,6 @@ export default function LoginPage() {
     return typeof v === "string" && v.startsWith("/") && !v.startsWith("//") ? v : "/dashboard";
   }, [searchParams]);
 
-  const supabaseConfigured = typeof process.env.NEXT_PUBLIC_SUPABASE_URL === "string" && typeof process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY === "string";
-
   function handleErrorClose() {
     router.replace(`/login${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`);
   }
@@ -66,31 +64,31 @@ export default function LoginPage() {
           {/* Right: Login form */}
           <div>
             <h3 style={{ marginTop: 0, marginBottom: 16 }}>로그인</h3>
-            {supabaseConfigured ? (
-              <form action={signInAction} style={{ display: "grid", gap: 12 }}>
-                <input type="hidden" name="next" value={next} />
-                <div>
-                  <label className="muted" style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>이메일</label>
-                  <input className="input" name="email" type="email" placeholder="email@example.com" required />
-                </div>
-                <div>
-                  <label className="muted" style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>비밀번호</label>
-                  <input className="input" name="password" type="password" placeholder="비밀번호" required />
-                </div>
-                <button className="btn btnPrimary" type="submit" style={{ marginTop: 8 }}>
-                  로그인
-                </button>
-                <div style={{ marginTop: 8 }}>
-                  <a className="link" href={`/forgot-password?next=${encodeURIComponent(next)}`} style={{ fontSize: 13 }}>
-                    비밀번호를 잊으셨나요?
-                  </a>
-                </div>
-              </form>
-            ) : (
-              <p className="hint muted">
-                현재는 로그인 기능이 꺼져 있습니다. CSV 분석은 바로 사용할 수 있어요.
-              </p>
-            )}
+            <form action={signInAction} style={{ display: "grid", gap: 12 }}>
+              <input type="hidden" name="next" value={next} />
+              <div>
+                <label className="muted" style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>이메일</label>
+                <input className="input" name="email" type="email" placeholder="email@example.com" required />
+              </div>
+              <div>
+                <label className="muted" style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>비밀번호</label>
+                <input
+                  className="input"
+                  name="password"
+                  type="password"
+                  placeholder="비밀번호"
+                  required
+                />
+              </div>
+              <button className="btn btnPrimary" type="submit" style={{ marginTop: 8 }}>
+                로그인
+              </button>
+              <div style={{ marginTop: 8 }}>
+                <a className="link" href={`/forgot-password?next=${encodeURIComponent(next)}`} style={{ fontSize: 13 }}>
+                  비밀번호를 잊으셨나요?
+                </a>
+              </div>
+            </form>
             <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--color-border)' }}>
               <p className="muted" style={{ fontSize: 13, marginBottom: 8 }}>계정이 없으신가요?</p>
               <div style={{ display: 'flex', gap: 8 }}>

@@ -9,6 +9,7 @@ import { getCapabilitiesBase } from "@/lib/capabilities";
 import { devForcedAnalysisMode, devAllowAdvancedAiBypass } from "@/lib/dev_flags";
 import { getGatesForPlan } from "@/lib/plan_gates";
 import { runAnalysisPipeline } from "@/lib/analysis_pipeline";
+import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
 export const runtime = "nodejs";
@@ -64,9 +65,21 @@ export async function POST(req: Request) {
     csvText = uploaded.csvText;
     form = uploaded.form;
   } catch (e: any) {
+    const status = e instanceof ApiError ? e.status : 500;
+    await logApiError({
+      route: "/api/analyze",
+      method: req.method,
+      status,
+      code: e instanceof ApiError ? e.code : "INTERNAL_ERROR",
+      message: e instanceof ApiError ? e.message : "CSV 업로드 처리 중 오류가 발생했습니다.",
+      details: e?.message ?? String(e),
+      request: req,
+      error: e
+    });
+
     if (e instanceof ApiError) return apiErrorResponse(e);
     return apiErrorResponse(
-      new ApiError(500, "CSV_PARSE_FAILED", "처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", {
+      new ApiError(status, status === 500 ? "INTERNAL_ERROR" : "CSV_PARSE_FAILED", "처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", {
         details: e?.message ?? String(e)
       })
     );
@@ -154,15 +167,36 @@ export async function POST(req: Request) {
   }
 
   // Run analysis pipeline
-  const { payload, classified } = await runAnalysisPipeline({
-    csvText,
-    headerMode,
-    textCol,
-    ratingCol,
-    dateCol,
-    plan,
-    useLLM: effectiveUseLLM
-  });
+  let payload: Awaited<ReturnType<typeof runAnalysisPipeline>>["payload"];
+  let classified: Awaited<ReturnType<typeof runAnalysisPipeline>>["classified"];
+  try {
+    ({ payload, classified } = await runAnalysisPipeline({
+      csvText,
+      headerMode,
+      textCol,
+      ratingCol,
+      dateCol,
+      plan,
+      useLLM: effectiveUseLLM
+    }));
+  } catch (e: any) {
+    await logApiError({
+      route: "/api/analyze",
+      method: req.method,
+      status: 500,
+      code: "INTERNAL_ERROR",
+      message: "분석 파이프라인 처리 중 오류가 발생했습니다.",
+      details: e?.message ?? String(e),
+      request: req,
+      error: e,
+      extra: { plan, stage: "run_analysis_pipeline" }
+    });
+    return apiErrorResponse(
+      new ApiError(500, "INTERNAL_ERROR", "분석 처리 중 내부 오류가 발생했습니다.", {
+        details: e?.message ?? String(e)
+      })
+    );
+  }
 
   // Update filename in payload
   payload.meta.filename = filename;

@@ -42,13 +42,18 @@ npm run dev
 
 4. 운영 서버
 
-pm2를 사용한 배포 (처음 실행 시):
+PM2 배포(권장):
+```bash
+npm run deploy
+```
+
+레거시 수동 명령(참고):
 ```bash
 npm run build
 pm2 start reviewboost
 ```
 
-코드 변경 후 재배포:
+코드 변경 후 재배포(레거시):
 ```bash
 npm run build
 pm2 restart reviewboost --update-env

@@ -3,22 +3,17 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "next dev -H 0.0.0.0 -p 3001",
     "build": "next build",
+    "deploy:clean": "pm2 delete reviewboost || true; pgrep -f \"next-server \\(v14.2.35\\)\" | xargs -r kill -9 || true; fuser -k 3000/tcp 2>/dev/null || true",
+    "deploy": "npm run deploy:clean && rm -rf .next && npm run build && if pm2 describe reviewboost >/dev/null 2>&1; then pm2 restart reviewboost --update-env; else pm2 start npm --name reviewboost -- run start; fi",
     "start": "next start -p 3000 -H 0.0.0.0",
     "start:3000": "next start -p 3000 -H 0.0.0.0",
     "lint": "next lint",
-<<<<<<< HEAD
     "typecheck": "tsc --noEmit",
     "test:billing-schema": "node scripts/test-billing-schema.mjs",
     "test:paddle-utils": "node scripts/test-paddle-utils.mjs",
     "test": "npm run test:billing-schema && npm run test:paddle-utils"
-=======
-    "test": "playwright test",
-    "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed"
-    "test": "vitest run --environment jsdom"
->>>>>>> 1dcf99940a0ffb7ec8aecdb9ca23158232723b32
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

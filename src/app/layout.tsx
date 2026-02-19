@@ -1,5 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import Script from "next/script";
+import { getCapabilitiesBase } from "@/lib/capabilities";
 import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 import { signOutAction } from "@/app/(auth)/actions";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
@@ -11,9 +13,10 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
+const paddleToken = process.env.NEXT_PUBLIC_PADDLE_TOKEN;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const supabaseConfigured = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
+  const { supabaseConfigured } = getCapabilitiesBase();
   let email: string | null = null;
   try {
     if (supabaseConfigured) {
@@ -29,6 +32,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="ko">
       <head>
         <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet" />
+        <Script src="https://cdn.paddle.com/paddle/v2/paddle.js" strategy="beforeInteractive" />
+        {paddleToken ? (
+          <Script id="paddle-init" strategy="afterInteractive">
+            {`if (window.Paddle) { Paddle.Environment.set("sandbox"); Paddle.Initialize({ token: ${JSON.stringify(paddleToken)} }); }`}
+          </Script>
+        ) : null}
       </head>
       <body>
         <GoogleAnalytics />
@@ -49,7 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <a className="navLink" href="/dashboard">
                   분석하기
                 </a>
-                {!email && supabaseConfigured ? (
+                {!email ? (
                   <a className="navLink" href="/login">
                     로그인
                   </a>
