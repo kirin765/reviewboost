@@ -2,6 +2,7 @@ import { inferDelimiter, previewReviewCsv } from "@/lib/csv";
 import { ApiError, apiErrorResponse } from "@/lib/api_error";
 import { CSV_PARSE_FAILED_HELP } from "@/lib/csv_errors";
 import { readUploadedCsvText } from "@/lib/upload_csv";
+import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,8 @@ function delimiterHint(csvText: string): string[] {
 }
 
 export async function POST(req: Request) {
+  if (!isSameOriginRequest(req)) return csrfErrorResponse();
+
   try {
     const { filename, csvText } = await readUploadedCsvText(req, MAX_BYTES);
     try {
