@@ -141,5 +141,11 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 
 ## CI (GitHub Actions)
 
-- `main` 푸시 / PR 시 자동으로 `npm ci` → `lint` → `build`를 실행합니다.
+- `main`, `staging` 푸시 / PR 시 자동으로 `npm ci` → `lint` → `typecheck` → `test` → `build`를 실행합니다.
 - CI에서는 `PUPPETEER_SKIP_DOWNLOAD=1`로 Chromium 다운로드를 생략합니다(빌드/정적 검사 목적).
+
+## Deployment 운영 문서
+
+- 체크리스트: `docs/deployment-checklist.md`
+- 브랜치/배포 플로우: `docs/branch-deployment-flow.md`
+- CI/CD 가드레일: `docs/ci-cd-guardrails.md`

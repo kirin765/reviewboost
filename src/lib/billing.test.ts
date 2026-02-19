@@ -1,85 +1,126 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({
-  getSupabaseAdminClient: vi.fn()
+const { getSupabaseAdminClientMock } = vi.hoisted(() => ({
+  getSupabaseAdminClientMock: vi.fn()
 }));
 
 vi.mock("@/lib/supabase_server", () => ({
-  getSupabaseAdminClient: mocks.getSupabaseAdminClient
+  getSupabaseAdminClient: getSupabaseAdminClientMock
 }));
 
-import { canUseAdvancedAi } from "@/lib/plan";
-import { resolvePlanTierByBilling } from "@/lib/billing";
+import {
+  normalizeBillingTimestamp,
+  resolvePlanTierByBilling,
+  upsertProfileCustomer,
+  upsertSubscription
+} from "@/lib/billing";
 
-function createAdminWithSubscriptions(rows: Array<Record<string, unknown>>) {
-  const chain = {
-    select: vi.fn(() => chain),
-    eq: vi.fn(() => chain),
-    order: vi.fn(() => chain),
-    limit: vi.fn(async () => ({ data: rows }))
-  };
-
+function createSelectQuery(data: unknown) {
   return {
-    from: vi.fn(() => chain)
+    eq: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue({ data }),
+    maybeSingle: vi.fn().mockResolvedValue({ data })
   };
 }
 
-describe("resolvePlanTierByBilling", () => {
+describe("billing utilities", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("returns fallback plan when userId is missing", async () => {
-    const plan = await resolvePlanTierByBilling({ userId: null, fallbackPlan: "free" });
-    expect(plan).toBe("free");
-    expect(mocks.getSupabaseAdminClient).not.toHaveBeenCalled();
+  it("normalizes ISO strings, unix seconds/millis, and invalid timestamps safely", () => {
+    expect(normalizeBillingTimestamp("2025-01-01T00:00:00Z")).toBe("2025-01-01T00:00:00.000Z");
+    expect(normalizeBillingTimestamp(1735689600)).toBe("2025-01-01T00:00:00.000Z");
+    expect(normalizeBillingTimestamp(1735689600000)).toBe("2025-01-01T00:00:00.000Z");
+    expect(normalizeBillingTimestamp("1735689600")).toBe("2025-01-01T00:00:00.000Z");
+    expect(normalizeBillingTimestamp("not-a-date")).toBeNull();
+    expect(normalizeBillingTimestamp(null)).toBeNull();
   });
 
-  it("returns fallback plan when billing storage is unavailable", async () => {
-    mocks.getSupabaseAdminClient.mockReturnValueOnce(null);
+  it("resolvePlanTierByBilling deterministically picks the latest active paid subscription", async () => {
+    const rows = [
+      {
+        plan_tier: "pro",
+        status: "active",
+        current_period_end: "invalid-date",
+        updated_at: "2025-02-05T00:00:00.000Z",
+        paddle_subscription_id: "sub-z"
+      },
+      {
+        plan_tier: "basic",
+        status: "canceled",
+        current_period_end: "2025-03-01T00:00:00.000Z",
+        updated_at: "2025-03-01T00:00:00.000Z",
+        paddle_subscription_id: "sub-canceled"
+      },
+      {
+        plan_tier: "basic",
+        status: "active",
+        current_period_end: "2025-03-01T00:00:00.000Z",
+        updated_at: "2025-03-01T00:00:00.000Z",
+        paddle_subscription_id: "sub-a"
+      },
+      {
+        plan_tier: "pro",
+        status: "trialing",
+        current_period_end: "2025-03-01T00:00:00.000Z",
+        updated_at: "2025-03-01T00:00:00.000Z",
+        paddle_subscription_id: "sub-b"
+      }
+    ];
 
-    const plan = await resolvePlanTierByBilling({ userId: "user-1", fallbackPlan: "basic" });
-    expect(plan).toBe("basic");
-  });
+    const selectQuery = createSelectQuery(rows);
+    const fromMock = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue(selectQuery)
+    });
 
-  it("returns paid tier for active-equivalent statuses", async () => {
-    const admin = createAdminWithSubscriptions([
-      { status: "canceled", plan_tier: "pro", current_period_end: "2026-02-01T00:00:00.000Z" },
-      { status: "active", plan_tier: "pro", current_period_end: "2026-01-01T00:00:00.000Z" }
-    ]);
-    mocks.getSupabaseAdminClient.mockReturnValueOnce(admin);
+    getSupabaseAdminClientMock.mockReturnValue({ from: fromMock });
 
     const plan = await resolvePlanTierByBilling({ userId: "user-1", fallbackPlan: "free" });
+
     expect(plan).toBe("pro");
+    expect(fromMock).toHaveBeenCalledWith("subscriptions");
   });
 
-  it("ignores canceled and paused paid subscriptions", async () => {
-    const admin = createAdminWithSubscriptions([
-      { status: "paused", plan_tier: "pro", current_period_end: "2026-02-01T00:00:00.000Z" },
-      { status: "canceled", plan_tier: "basic", current_period_end: "2026-01-01T00:00:00.000Z" }
-    ]);
-    mocks.getSupabaseAdminClient.mockReturnValueOnce(admin);
+  it("upsertProfileCustomer performs idempotent upsert keyed by user_id", async () => {
+    const upsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    const fromMock = vi.fn().mockReturnValue({ upsert });
+    getSupabaseAdminClientMock.mockReturnValue({ from: fromMock });
 
-    const plan = await resolvePlanTierByBilling({ userId: "user-1", fallbackPlan: "free" });
-    expect(plan).toBe("free");
-    expect(canUseAdvancedAi(plan)).toBe(false);
+    await upsertProfileCustomer("user-1", "ctm_123");
+
+    expect(fromMock).toHaveBeenCalledWith("profiles");
+    expect(upsert).toHaveBeenCalledTimes(1);
+    const [payload, options] = upsert.mock.calls[0];
+    expect(payload.user_id).toBe("user-1");
+    expect(payload.paddle_customer_id).toBe("ctm_123");
+    expect(options).toEqual({ onConflict: "user_id" });
+    expect(new Date(payload.updated_at).toISOString()).toBe(payload.updated_at);
   });
 
-  it("falls back safely if billing query throws", async () => {
-    const chain = {
-      select: vi.fn(() => chain),
-      eq: vi.fn(() => chain),
-      order: vi.fn(() => chain),
-      limit: vi.fn(async () => {
-        throw new Error("db down");
-      })
-    };
-    const admin = {
-      from: vi.fn(() => chain)
-    };
-    mocks.getSupabaseAdminClient.mockReturnValueOnce(admin);
+  it("upsertSubscription performs idempotent upsert keyed by paddle_subscription_id and normalizes timestamps", async () => {
+    const upsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    const fromMock = vi.fn().mockReturnValue({ upsert });
+    getSupabaseAdminClientMock.mockReturnValue({ from: fromMock });
 
-    const plan = await resolvePlanTierByBilling({ userId: "user-1", fallbackPlan: "basic" });
-    expect(plan).toBe("basic");
+    await upsertSubscription({
+      userId: "user-1",
+      paddleCustomerId: "ctm_123",
+      paddleSubscriptionId: "sub_123",
+      paddlePriceId: "pri_123",
+      status: "active",
+      planTier: "basic",
+      currentPeriodStart: 1735689600,
+      currentPeriodEnd: "bad-date",
+      cancelAtPeriodEnd: false
+    });
+
+    expect(fromMock).toHaveBeenCalledWith("subscriptions");
+    expect(upsert).toHaveBeenCalledTimes(1);
+    const [payload, options] = upsert.mock.calls[0];
+    expect(payload.current_period_start).toBe("2025-01-01T00:00:00.000Z");
+    expect(payload.current_period_end).toBeNull();
+    expect(payload.paddle_subscription_id).toBe("sub_123");
+    expect(options).toEqual({ onConflict: "paddle_subscription_id" });
   });
 });

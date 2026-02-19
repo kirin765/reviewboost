@@ -33,12 +33,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       .from("analyses")
       .select("id, created_at, input_filename, stats, suggestions")
       .eq("id", id)
+      .eq("user_id", userData.user.id)
       .single();
 
     if (error || !data) return textError(404, "분석을 찾을 수 없습니다.");
     analysis = data;
-  } catch (e: any) {
-    return textError(500, e?.message ?? String(e));
+  } catch {
+    return textError(500, "리포트 생성 중 오류가 발생했습니다.");
   }
 
   const html = renderReportHtml({

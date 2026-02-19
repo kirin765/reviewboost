@@ -16,9 +16,16 @@ function parsePaddleSignature(sigHeader: string | null) {
     .split(",")
     .map((v) => v.trim())
     .filter(Boolean);
-  const ts = parts.find((p) => p.startsWith("ts="))?.slice(3) ?? "";
-  const h1 = parts.find((p) => p.startsWith("h1="))?.slice(3) ?? "";
+
+  const tsRaw = parts.find((p) => p.startsWith("ts="))?.slice(3) ?? "";
+  const h1Raw = parts.find((p) => p.startsWith("h1="))?.slice(3) ?? "";
+  const ts = tsRaw.trim();
+  const h1 = h1Raw.trim().toLowerCase();
+
   if (!ts || !h1) return null;
+  if (!/^\d+$/.test(ts)) return null;
+  if (!/^[a-f0-9]{64}$/.test(h1)) return null;
+
   return { ts, h1 };
 }
 
@@ -27,12 +34,12 @@ function verifySignature(payload: string, sigHeader: string | null): boolean {
   if (!parsed) return false;
 
   const signedPayload = `${parsed.ts}:${payload}`;
-  const digest = createHmac("sha256", getWebhookSecret()).update(signedPayload, "utf8").digest("hex");
+  const digestHex = createHmac("sha256", getWebhookSecret()).update(signedPayload, "utf8").digest("hex");
 
-  const a = Buffer.from(digest, "utf8");
-  const b = Buffer.from(parsed.h1, "utf8");
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
+  const expected = Buffer.from(digestHex, "hex");
+  const actual = Buffer.from(parsed.h1, "hex");
+  if (expected.length !== actual.length || expected.length === 0) return false;
+  return timingSafeEqual(expected, actual);
 }
 
 function extractPriceIdFromSubscription(subscription: any): string | null {
@@ -96,6 +103,10 @@ export async function POST(req: Request) {
   try {
     event = JSON.parse(rawBody);
   } catch {
+    return Response.json({ error: "invalid payload" }, { status: 400 });
+  }
+
+  if (!event || typeof event !== "object" || Array.isArray(event)) {
     return Response.json({ error: "invalid payload" }, { status: 400 });
   }
 

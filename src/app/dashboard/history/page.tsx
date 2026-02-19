@@ -47,6 +47,7 @@ export default async function HistoryPage() {
   const { data, error } = await supabase
     .from("analyses")
     .select("id, created_at, input_filename, priority_score, stats")
+    .eq("user_id", userData.user.id)
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -55,9 +56,7 @@ export default async function HistoryPage() {
       <main className="pageMain">
         <div className="card">
           <h2>히스토리 로드 실패</h2>
-          <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
-            {error.message}
-          </p>
+          <p className="hint danger">오류가 발생했습니다. 잠시 후 다시 시도해주세요.</p>
           <div className="actionRow">
             <a className="btn" href="/dashboard">
               대시보드
