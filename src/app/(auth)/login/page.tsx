@@ -1,19 +1,45 @@
+"use client";
+
+import { useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signInAction } from "@/app/(auth)/actions";
 import FeedbackModal from "@/components/FeedbackModal";
 
 export const dynamic = "force-dynamic";
 
-export default function LoginPage(props: { searchParams?: Record<string, string | string[] | undefined> }) {
-  const sp = props.searchParams ?? {};
-  const err = typeof sp.error === "string" ? sp.error : "";
-  const notice = typeof sp.notice === "string" ? sp.notice : "";
-  const next = typeof sp.next === "string" && sp.next.startsWith("/") && !sp.next.startsWith("//") ? sp.next : "/dashboard";
-  const supabaseConfigured = typeof process.env.SUPABASE_URL === "string" && typeof process.env.SUPABASE_ANON_KEY === "string";
+export default function LoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const err = useMemo(() => {
+    const v = searchParams.get("error");
+    return typeof v === "string" ? v : "";
+  }, [searchParams]);
+
+  const notice = useMemo(() => {
+    const v = searchParams.get("notice");
+    return typeof v === "string" ? v : "";
+  }, [searchParams]);
+
+  const next = useMemo(() => {
+    const v = searchParams.get("next");
+    return typeof v === "string" && v.startsWith("/") && !v.startsWith("//") ? v : "/dashboard";
+  }, [searchParams]);
+
+  const supabaseConfigured = typeof process.env.NEXT_PUBLIC_SUPABASE_URL === "string" && typeof process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY === "string";
+
+  function handleErrorClose() {
+    router.replace(`/login${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`);
+  }
+
+  function handleNoticeClose() {
+    router.replace(`/login${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`);
+  }
 
   return (
     <main className="pageMain">
-      {err ? <FeedbackModal title="로그인 실패" message={err} tone="error" /> : null}
-      {!err && notice ? <FeedbackModal title="안내" message={notice} /> : null}
+      {err ? <FeedbackModal key={err} title="로그인 실패" message={err} tone="error" onClose={handleErrorClose} /> : null}
+      {!err && notice ? <FeedbackModal key={notice} title="안내" message={notice} onClose={handleNoticeClose} /> : null}
       <div className="card" style={{ maxWidth: 900, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 32 }}>
           {/* Left: Value proposition */}

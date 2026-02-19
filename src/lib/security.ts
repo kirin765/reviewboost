@@ -1,0 +1,22 @@
+type CookieOptions = Record<string, any> | undefined;
+
+export function normalizeCookieOptions(options: CookieOptions, secureContext: boolean) {
+  return {
+    ...options,
+    sameSite: options?.sameSite ?? "lax",
+    secure: options?.secure ?? secureContext,
+    httpOnly: options?.httpOnly ?? true
+  };
+}
+
+export function applySecurityHeaders(headers: Headers) {
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+
+  if (process.env.NODE_ENV === "production") {
+    headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  }
+}
