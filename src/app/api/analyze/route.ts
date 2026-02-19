@@ -9,6 +9,7 @@ import { getCapabilitiesBase } from "@/lib/capabilities";
 import { devForcedAnalysisMode, devAllowAdvancedAiBypass } from "@/lib/dev_flags";
 import { getGatesForPlan } from "@/lib/plan_gates";
 import { runAnalysisPipeline } from "@/lib/analysis_pipeline";
+import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
 export const runtime = "nodejs";
 
@@ -52,6 +53,8 @@ function delimiterHint(csvText: string): string[] {
 }
 
 export async function POST(req: Request) {
+  if (!isSameOriginRequest(req)) return csrfErrorResponse();
+
   let form: FormData;
   let filename: string | null;
   let csvText: string;

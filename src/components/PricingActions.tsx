@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import FeedbackModal from "@/components/FeedbackModal";
 
 type Props = {
@@ -12,6 +12,10 @@ export default function PricingActions({ plan }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const buttonText = useMemo(() => (plan === "pro" ? "Pro 시작하기" : "Basic 시작하기"), [plan]);
+
+  function handleErrorClose() {
+    setError(null);
+  }
 
   async function startCheckout() {
     setBusy(true);
@@ -41,7 +45,7 @@ export default function PricingActions({ plan }: Props) {
 
   return (
     <>
-      {error ? <FeedbackModal title="결제 오류" message={error} tone="error" onClose={() => setError(null)} /> : null}
+      {error ? <FeedbackModal title="결제 오류" message={error} tone="error" onClose={handleErrorClose} /> : null}
       <div className="actionRow">
         <button className="btn btnPrimary" disabled={busy} onClick={startCheckout}>
           {busy ? "연결 중..." : buttonText}
