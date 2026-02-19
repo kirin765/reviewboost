@@ -1,9 +1,10 @@
+import React from "react";
 import PricingActions from "@/components/PricingActions";
 
 export default function PricingPage({
   searchParams
 }: {
-  searchParams?: { billing?: string };
+  searchParams?: { billing?: string; [key: string]: string | string[] | undefined };
 }) {
   const billing = searchParams?.billing;
   return (

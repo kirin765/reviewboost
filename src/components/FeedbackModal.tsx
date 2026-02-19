@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 type Tone = "info" | "error";
 
@@ -11,14 +11,13 @@ export default function FeedbackModal(props: {
   onClose?: () => void;
 }) {
   const { title, message, tone = "info", onClose } = props;
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(message));
 
-  // message가 있을 때 항상 열기 (message가 변경되면 상태 초기화)
+  // 메시지/제목/톤이 바뀌면 모달 표시 상태를 재동기화해서
+  // 동일한 컴포넌트 인스턴스에서도 다시 열릴 수 있게 한다.
   useEffect(() => {
-    if (message) {
-      setOpen(true);
-    }
-  }, [message]);
+    setOpen(Boolean(message));
+  }, [title, message, tone]);
 
   if (!open || !message) return null;
 
