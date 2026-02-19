@@ -5,9 +5,12 @@ import FeedbackModal from "@/components/FeedbackModal";
 
 type Props = {
   plan: "basic" | "pro";
+  priceId?: string;
+  userId?: string;
+  userEmail?: string;
 };
 
-export default function PricingActions({ plan }: Props) {
+export default function PricingActions({ plan, priceId, userId, userEmail }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,20 +24,46 @@ export default function PricingActions({ plan }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan })
-      });
-
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(String(json?.error ?? "결제 연결에 실패했습니다."));
+      const trimmedPriceId = String(priceId ?? "").trim();
+      if (!trimmedPriceId.startsWith("pri_")) {
+        throw new Error("요금제 가격 ID가 아직 설정되지 않았습니다.");
       }
 
-      const url = String(json?.url ?? "").trim();
-      if (!url) throw new Error("결제 페이지 URL을 받지 못했습니다.");
-      window.location.href = url;
+      if (!userId) {
+        throw new Error("로그인이 필요합니다.");
+      }
+
+      const checkoutOpen = (window as Window & {
+        Paddle?: {
+          Checkout?: {
+            open: (options: {
+              items: Array<{ priceId: string; quantity: number }>;
+              customData?: { user_id: string; plan_tier: string };
+              customer?: { email: string };
+              settings?: { successUrl: string};
+            }) => void;
+          };
+        };
+      }).Paddle?.Checkout?.open;
+      if (typeof checkoutOpen !== "function") {
+        throw new Error("Paddle 결제 모듈이 아직 준비되지 않았습니다.");
+      }
+
+      const origin = window.location.origin;
+      const buildCallbackUrl = (type: "success" | "cancel") =>
+        `${origin}/pricing?billing=${type}&plan=${plan}`;
+
+      checkoutOpen({
+        items: [{ priceId: trimmedPriceId, quantity: 1 }],
+        customData: {
+          user_id: userId,
+          plan_tier: plan
+        },
+        ...(userEmail ? { customer: { email: userEmail } } : {}),
+        settings: {
+          successUrl: buildCallbackUrl("success")
+        }
+      });
     } catch (e: any) {
       const msg = String(e?.message ?? "결제 연결 중 오류가 발생했습니다.").trim();
       setError(msg);

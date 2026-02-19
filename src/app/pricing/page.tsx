@@ -1,11 +1,34 @@
 import React from "react";
 import PricingActions from "@/components/PricingActions";
+import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
+import { paddlePriceIdForPlan } from "@/lib/paddle";
 
-export default function PricingPage({
+export default async function PricingPage({
   searchParams
 }: {
   searchParams?: { billing?: string; [key: string]: string | string[] | undefined };
 }) {
+  let userId: string | null = null;
+  let userEmail: string | null = null;
+  const safePlanPriceId = (plan: "basic" | "pro") => {
+    try {
+      return paddlePriceIdForPlan(plan);
+    } catch {
+      return undefined;
+    }
+  };
+
+  try {
+    const supabase = createSupabaseServerComponentClient();
+    const result = await supabase.auth.getUser();
+    userId = result?.data?.user?.id ?? null;
+    userEmail = result?.data?.user?.email ?? null;
+  } catch {
+    // ignore and keep unauthenticated state
+  }
+
+  const basicPriceId = safePlanPriceId("basic");
+  const proPriceId = safePlanPriceId("pro");
   const billing = searchParams?.billing;
   return (
     <main className="pageMain">
@@ -102,7 +125,12 @@ export default function PricingPage({
               <div className="right">우선 이메일</div>
             </div>
           </div>
-          <PricingActions plan="basic" />
+          <PricingActions
+            plan="basic"
+            priceId={basicPriceId}
+            userId={userId ?? undefined}
+            userEmail={userEmail ?? undefined}
+          />
         </div>
       </div>
 
@@ -168,7 +196,12 @@ export default function PricingPage({
               <div className="right">최우선 지원</div>
             </div>
           </div>
-          <PricingActions plan="pro" />
+          <PricingActions
+            plan="pro"
+            priceId={proPriceId}
+            userId={userId ?? undefined}
+            userEmail={userEmail ?? undefined}
+          />
         </div>
 
         <div className="card">

@@ -16,27 +16,30 @@ vi.mock("@/components/FeedbackModal", () => ({
 import PricingActions from "./PricingActions";
 
 describe("PricingActions", () => {
+  const openMock = vi.fn();
+
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.stubGlobal(
+      "Paddle",
+      {
+        Checkout: {
+          open: openMock
+        }
+      }
+    );
+    openMock.mockReset();
   });
 
-  it("shows loading during checkout and redirects to returned url", async () => {
-    const originalLocation = window.location;
-    Object.defineProperty(window, "location", {
-      value: { href: "https://reviewboost.app/pricing" },
-      writable: true,
-      configurable: true
-    });
-
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ url: "https://checkout.paddle.com/c/test" })
-      })
+  it("opens Paddle checkout directly with plan + callback urls", async () => {
+    render(
+      <PricingActions
+        plan="basic"
+        priceId="pri_basic"
+        userId="usr_123"
+        userEmail="basic@example.com"
+      />
     );
-
-    render(<PricingActions plan="basic" />);
 
     const button = screen.getByRole("button", { name: "Basic 시작하기" });
     fireEvent.click(button);
@@ -44,36 +47,50 @@ describe("PricingActions", () => {
     expect(screen.getByRole("button", { name: "연결 중..." }).hasAttribute("disabled")).toBe(true);
 
     await waitFor(() => {
-      expect(window.location.href).toBe("https://checkout.paddle.com/c/test");
+      expect(openMock).toHaveBeenCalledWith({
+        items: [{ priceId: "pri_basic", quantity: 1 }],
+        customData: { user_id: "usr_123", plan_tier: "basic" },
+        customer: { email: "basic@example.com" },
+        settings: {
+          successUrl: expect.stringContaining("/pricing?billing=success&plan=basic"),
+          cancelUrl: expect.stringContaining("/pricing?billing=cancel&plan=basic")
+        }
+      });
     });
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Basic 시작하기" }).hasAttribute("disabled")).toBe(false);
     });
-
-    Object.defineProperty(window, "location", {
-      value: originalLocation,
-      configurable: true
-    });
   });
 
-  it("renders api error messages and resets loading state", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        json: async () => ({ error: "결제 설정이 아직 완료되지 않았습니다." })
-      })
-    );
-
-    render(<PricingActions plan="pro" />);
+  it("renders missing plan config error and resets loading state", async () => {
+    render(<PricingActions plan="pro" priceId="" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Pro 시작하기" }));
 
     expect(screen.getByRole("button", { name: "연결 중..." }).hasAttribute("disabled")).toBe(true);
 
     await waitFor(() => {
-      expect(screen.getByRole("alert").textContent ?? "").toContain("결제 설정이 아직 완료되지 않았습니다.");
+      expect(screen.getByRole("alert").textContent ?? "").toContain("요금제 가격 ID가 아직 설정되지 않았습니다.");
+    });
+
+    expect(screen.getByRole("button", { name: "Pro 시작하기" }).hasAttribute("disabled")).toBe(false);
+  });
+
+  it("renders auth error when user is not signed in", async () => {
+    render(
+      <PricingActions
+        plan="pro"
+        priceId="pri_pro"
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Pro 시작하기" }));
+
+    expect(screen.getByRole("button", { name: "연결 중..." }).hasAttribute("disabled")).toBe(true);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent ?? "").toContain("로그인이 필요합니다.");
     });
 
     expect(screen.getByRole("button", { name: "Pro 시작하기" }).hasAttribute("disabled")).toBe(false);

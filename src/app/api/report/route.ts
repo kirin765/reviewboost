@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { renderReportHtml } from "@/lib/report_html";
 import { renderReportPdfBuffer } from "@/lib/report_pdfkit";
+import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
 export const runtime = "nodejs";
@@ -33,11 +34,20 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
+    await logApiError({
+      route: "/api/report",
+      method: req.method,
+      status: 400,
+      code: "INTERNAL_ERROR",
+      message: "JSON 파싱에 실패했습니다.",
+      details: "요청 바디를 파싱할 수 없습니다.",
+      request: req
+    });
     return textError(400, "JSON 바디가 필요합니다.");
   }
 
-  const parsed = AnalysisSchema.safeParse(body);
-  if (!parsed.success) return textError(400, "요청 형식이 올바르지 않습니다.");
+    const parsed = AnalysisSchema.safeParse(body);
+    if (!parsed.success) return textError(400, "요청 형식이 올바르지 않습니다.");
 
   const { stats, suggestions, meta } = parsed.data;
   const html = renderReportHtml({
@@ -94,6 +104,17 @@ export async function POST(req: Request) {
         }
       });
     } catch (e2: any) {
+      await logApiError({
+        route: "/api/report",
+        method: req.method,
+        status: 501,
+        code: "INTERNAL_ERROR",
+        message: "PDF 생성에 실패했습니다.",
+        details: e2?.message ?? String(e2),
+        request: req,
+        error: e2,
+        extra: { renderer: "pdfkit" }
+      });
       return textError(501, `PDF 생성 실패(Puppeteer 실패 + PDFKit fallback 실패):\n${String(e2?.message ?? e2 ?? "")}`);
     }
   }

@@ -21,8 +21,6 @@ export default function SignupPage() {
     return typeof v === "string" && v.startsWith("/") && !v.startsWith("//") ? v : "/dashboard";
   }, [searchParams]);
 
-  const supabaseConfigured = typeof process.env.NEXT_PUBLIC_SUPABASE_URL === "string" && typeof process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY === "string";
-
   function handleErrorClose() {
     router.replace(`/signup${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`);
   }
@@ -56,58 +54,52 @@ export default function SignupPage() {
           {/* Right: Signup form */}
           <div>
             <h3 style={{ marginTop: 0, marginBottom: 16 }}>회원가입</h3>
-            {supabaseConfigured ? (
-              <form action={signUpAction} style={{ display: "grid", gap: 12 }}>
-                <input type="hidden" name="next" value={next} />
-                <div>
-                  <label className="muted" style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>이메일</label>
-                  <input className="input" name="email" type="email" placeholder="email@example.com" required />
-                </div>
-                <div>
-                  <label className="muted" style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>비밀번호</label>
-                  <input
-                    className="input"
-                    name="password"
-                    type="password"
-                    placeholder="비밀번호 (8자 이상 권장)"
-                    minLength={6}
-                    required
-                  />
-                </div>
-                <label className="consentRow">
-                  <input type="checkbox" name="agreeTerms" value="yes" required />
-                  <span>
-                    [필수] 이용약관 동의{" "}
-                    <a className="link" href="/terms" target="_blank" rel="noreferrer" style={{ fontSize: 12 }}>
-                      자세히 보기
-                    </a>
-                  </span>
-                </label>
-                <label className="consentRow">
-                  <input type="checkbox" name="agreePrivacy" value="yes" required />
-                  <span>
-                    [필수] 개인정보 수집·이용 동의{" "}
-                    <a className="link" href="/privacy" target="_blank" rel="noreferrer" style={{ fontSize: 12 }}>
-                      자세히 보기
-                    </a>
-                  </span>
-                </label>
-                <div className="consentSummary">
-                  목적: 회원 식별/로그인/계정관리 | 항목: 이메일 | 보유기간: 회원 탈퇴 시까지(법령 보관 제외) | 거부 시: 회원가입 불가
-                </div>
-                <label className="consentRow optional">
-                  <input type="checkbox" name="agreeMarketing" value="yes" />
-                  <span>[선택] 광고성 정보(이벤트/혜택) 이메일 수신 동의</span>
-                </label>
-                <button className="btn btnPrimary" type="submit" style={{ marginTop: 8 }}>
-                  회원가입
-                </button>
-              </form>
-            ) : (
-              <p className="hint muted">
-                현재는 회원가입 기능이 꺼져 있습니다. CSV 분석은 바로 사용할 수 있어요.
-              </p>
-            )}
+            <form action={signUpAction} style={{ display: "grid", gap: 12 }}>
+              <input type="hidden" name="next" value={next} />
+              <div>
+                <label className="muted" style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>이메일</label>
+                <input className="input" name="email" type="email" placeholder="email@example.com" required />
+              </div>
+              <div>
+                <label className="muted" style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>비밀번호</label>
+                <input
+                  className="input"
+                  name="password"
+                  type="password"
+                  placeholder="비밀번호 (8자 이상 권장)"
+                  minLength={6}
+                  required
+                />
+              </div>
+              <label className="consentRow">
+                <input type="checkbox" name="agreeTerms" value="yes" required />
+                <span>
+                  [필수] 이용약관 동의{" "}
+                  <a className="link" href="/terms" target="_blank" rel="noreferrer" style={{ fontSize: 12 }}>
+                    자세히 보기
+                  </a>
+                </span>
+              </label>
+              <label className="consentRow">
+                <input type="checkbox" name="agreePrivacy" value="yes" required />
+                <span>
+                  [필수] 개인정보 수집·이용 동의{" "}
+                  <a className="link" href="/privacy" target="_blank" rel="noreferrer" style={{ fontSize: 12 }}>
+                    자세히 보기
+                  </a>
+                </span>
+              </label>
+              <div className="consentSummary">
+                목적: 회원 식별/로그인/계정관리 | 항목: 이메일 | 보유기간: 회원 탈퇴 시까지(법령 보관 제외) | 거부 시: 회원가입 불가
+              </div>
+              <label className="consentRow optional">
+                <input type="checkbox" name="agreeMarketing" value="yes" />
+                <span>[선택] 광고성 정보(이벤트/혜택) 이메일 수신 동의</span>
+              </label>
+              <button className="btn btnPrimary" type="submit" style={{ marginTop: 8 }}>
+                회원가입
+              </button>
+            </form>
             <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--color-border)' }}>
               <p className="muted" style={{ fontSize: 13, marginBottom: 8 }}>이미 계정이 있으신가요?</p>
               <div style={{ display: 'flex', gap: 8 }}>

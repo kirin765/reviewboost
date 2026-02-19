@@ -57,7 +57,18 @@ describe("POST /api/billing/checkout", () => {
     const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", { method: "POST" }));
 
     expect(res.status).toBe(503);
-    await expect(res.json()).resolves.toEqual({ error: "결제 설정이 아직 완료되지 않았습니다." });
+    const body = await res.json();
+    expect(body).toMatchObject({
+      error: "결제 설정이 아직 완료되지 않았습니다.",
+      code: "paddle_not_configured",
+      debug: {
+        env: "test",
+        baseUrl: "unknown",
+        paddleEnv: "unknown",
+        plan: "basic",
+        priceId: ""
+      }
+    });
   });
 
   it("returns 500 when selected plan has no mapped price id", async () => {
@@ -74,7 +85,18 @@ describe("POST /api/billing/checkout", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(500);
-    await expect(res.json()).resolves.toEqual({ error: "요금제 가격 ID가 설정되지 않았습니다." });
+    const body = await res.json();
+    expect(body).toMatchObject({
+      error: "요금제 가격 ID가 설정되지 않았습니다.",
+      code: "missing_price_id",
+      debug: {
+        env: "test",
+        baseUrl: "unknown",
+        paddleEnv: "unknown",
+        plan: "basic",
+        priceId: ""
+      }
+    });
   });
 
   it("creates checkout with known paddle customer id when available", async () => {
@@ -98,8 +120,8 @@ describe("POST /api/billing/checkout", () => {
           user_id: "user-1",
           plan_tier: "pro"
         },
-        success_url: "https://reviewboost.app/pricing?billing=success",
-        cancel_url: "https://reviewboost.app/pricing?billing=cancel",
+        success_url: "https://reviewboost.app/pricing?billing=success&plan=pro",
+        cancel_url: "https://reviewboost.app/pricing?billing=cancel&plan=pro",
         customer_id: "ctm_123"
       }
     });
@@ -126,8 +148,8 @@ describe("POST /api/billing/checkout", () => {
           user_id: "user-1",
           plan_tier: "basic"
         },
-        success_url: "https://reviewboost.app/pricing?billing=success",
-        cancel_url: "https://reviewboost.app/pricing?billing=cancel",
+        success_url: "https://reviewboost.app/pricing?billing=success&plan=basic",
+        cancel_url: "https://reviewboost.app/pricing?billing=cancel&plan=basic",
         customer_email: "user@example.com"
       }
     });
