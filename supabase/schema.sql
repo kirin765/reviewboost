@@ -27,7 +27,8 @@ create index if not exists reviews_analysis_id_idx on public.reviews (analysis_i
 
 create table if not exists public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  paddle_customer_id text unique null,
+  -- Paddle customer identifier. Nullable for pre-billing users.
+  paddle_customer_id text null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -36,9 +37,11 @@ create table if not exists public.subscriptions (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
   paddle_customer_id text not null,
-  paddle_subscription_id text not null unique,
+  paddle_subscription_id text not null,
   paddle_price_id text null,
+  -- Paddle subscription status values (active, trialing, past_due, canceled, paused, etc).
   status text not null,
+  -- Internal entitlement tier derived from Paddle price mapping (free, pro, team, enterprise, ...).
   plan_tier text not null default 'free',
   current_period_start timestamptz null,
   current_period_end timestamptz null,
@@ -51,6 +54,8 @@ create index if not exists profiles_paddle_customer_id_idx on public.profiles (p
 create unique index if not exists profiles_paddle_customer_id_uniq on public.profiles (paddle_customer_id) where paddle_customer_id is not null;
 create index if not exists subscriptions_user_id_idx on public.subscriptions (user_id);
 create index if not exists subscriptions_customer_id_idx on public.subscriptions (paddle_customer_id);
+create index if not exists subscriptions_paddle_subscription_id_idx on public.subscriptions (paddle_subscription_id);
+create unique index if not exists subscriptions_paddle_subscription_id_uniq on public.subscriptions (paddle_subscription_id);
 
 -- Migrations for existing installs (safe to re-run)
 alter table public.reviews add column if not exists reviewed_at timestamptz null;
@@ -60,8 +65,25 @@ alter table public.subscriptions add column if not exists paddle_customer_id tex
 alter table public.subscriptions add column if not exists paddle_subscription_id text null;
 alter table public.subscriptions add column if not exists paddle_price_id text null;
 alter table public.subscriptions add column if not exists plan_tier text not null default 'free';
+alter table public.subscriptions add column if not exists current_period_start timestamptz null;
+alter table public.subscriptions add column if not exists current_period_end timestamptz null;
 alter table public.subscriptions add column if not exists cancel_at_period_end boolean not null default false;
 alter table public.subscriptions add column if not exists updated_at timestamptz not null default now();
+
+-- Backfill-friendly constraints: only enforce NOT NULL after legacy rows are populated.
+do $$
+begin
+  if not exists (
+    select 1 from public.subscriptions
+    where paddle_customer_id is null
+      or paddle_subscription_id is null
+  ) then
+    alter table public.subscriptions alter column paddle_customer_id set not null;
+    alter table public.subscriptions alter column paddle_subscription_id set not null;
+  else
+    raise notice 'Skipping NOT NULL enforcement on subscriptions Paddle IDs until legacy null rows are backfilled.';
+  end if;
+end $$;
 
 -- RLS: users can only see/delete their own analyses.
 alter table public.analyses enable row level security;
