@@ -5,12 +5,15 @@ create extension if not exists "uuid-ossp";
 create table if not exists public.analyses (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid null,
+  client_ip inet null,
   created_at timestamptz not null default now(),
   input_filename text null,
   stats jsonb not null,
   suggestions jsonb not null,
   priority_score numeric not null default 0
 );
+
+create index if not exists analyses_client_ip_created_at_idx on public.analyses (client_ip, created_at);
 
 create table if not exists public.reviews (
   id uuid primary key default uuid_generate_v4(),
