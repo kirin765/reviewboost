@@ -8,7 +8,10 @@
       "Bash(git add package-lock.json src/app/api/analyze/route.ts src/app/api/capabilities/route.ts src/app/dashboard/page.tsx src/app/pricing/page.tsx src/lib/openai_classify.ts src/lib/openai_suggestions.ts src/lib/plan.ts CLAUDE.md)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)"
     ]
   }
 }

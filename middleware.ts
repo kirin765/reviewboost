@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { applySecurityHeaders, normalizeCookieOptions } from "@/lib/security";
 
 export async function middleware(request: NextRequest) {
   // Handle auth callback redirects at root
@@ -32,8 +33,13 @@ export async function middleware(request: NextRequest) {
 
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseAnonKey) return NextResponse.next();
+  if (!supabaseUrl || !supabaseAnonKey) {
+    const passthrough = NextResponse.next();
+    applySecurityHeaders(passthrough.headers);
+    return passthrough;
+  }
 
+  const secureContext = request.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production";
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -43,8 +49,9 @@ export async function middleware(request: NextRequest) {
       },
       setAll(cookiesToSet: any[]) {
         for (const { name, value, options } of cookiesToSet) {
+          const hardenedOptions = normalizeCookieOptions(options, secureContext);
           request.cookies.set(name, value);
-          response.cookies.set(name, value, options);
+          response.cookies.set(name, value, hardenedOptions);
         }
       }
     }
@@ -53,6 +60,7 @@ export async function middleware(request: NextRequest) {
   // Refresh session cookies (no-op if session is valid/absent).
   await supabase.auth.getUser();
 
+  applySecurityHeaders(response.headers);
   return response;
 }
 

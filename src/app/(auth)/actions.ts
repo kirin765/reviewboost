@@ -68,7 +68,9 @@ function detectOriginFromHeaders() {
   const origin = h.get("origin");
   if (origin) return origin;
   const host = h.get("host");
-  return host ? `https://${host}` : null;
+  if (host) return `https://${host}`;
+  // Fallback to environment variable for proper production URLs
+  return process.env.APP_BASE_URL || null;
 }
 
 export async function signUpAction(formData: FormData) {
