@@ -9,18 +9,45 @@ type SubscriptionStatus =
   | "paused"
   | "inactive";
 
+type BillingSubscriptionRow = {
+  plan_tier?: string | null;
+  status?: string | null;
+  current_period_start?: string | null;
+  current_period_end?: string | null;
+  updated_at?: string | null;
+  paddle_subscription_id?: string | null;
+};
+
 const ACTIVE_STATUSES = new Set<SubscriptionStatus>(["trialing", "active", "past_due"]);
 
-function toIso(v?: string | number | null): string | null {
-  if (typeof v === "string" && v.trim()) {
-    const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+export function normalizeBillingTimestamp(v?: string | number | null): string | null {
+  if (typeof v === "string") {
+    const trimmed = v.trim();
+    if (!trimmed) return null;
+
+    if (/^\d+$/.test(trimmed)) {
+      const numeric = Number(trimmed);
+      return Number.isFinite(numeric) ? normalizeBillingTimestamp(numeric) : null;
+    }
+
+    const parsed = new Date(trimmed);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
   }
+
   if (typeof v === "number" && Number.isFinite(v)) {
-    // Unix seconds support
-    return new Date(v * 1000).toISOString();
+    const millis = v > 1_000_000_000_000 ? v : v * 1000;
+    const parsed = new Date(millis);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
   }
+
   return null;
+}
+
+function timestampToMillis(v?: string | number | null): number {
+  const iso = normalizeBillingTimestamp(v);
+  if (!iso) return 0;
+  const parsed = Date.parse(iso);
+  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 export function isBillingActiveStatus(status: string | null | undefined): boolean {
@@ -40,15 +67,33 @@ export async function resolvePlanTierByBilling(args: {
   try {
     const { data } = await admin
       .from("subscriptions")
-      .select("plan_tier,status,current_period_end")
+      .select("plan_tier,status,current_period_start,current_period_end,updated_at,paddle_subscription_id")
       .eq("user_id", userId)
-      .order("current_period_end", { ascending: false, nullsFirst: false })
-      .limit(10);
+      .limit(50);
 
-    for (const row of data ?? []) {
-      const status = String(row.status ?? "");
-      const tier = String(row.plan_tier ?? "free");
-      if (isBillingActiveStatus(status) && (tier === "basic" || tier === "pro")) return tier;
+    const activePaidSubscriptions = (data ?? [])
+      .filter((row: BillingSubscriptionRow) => {
+        const tier = String(row.plan_tier ?? "");
+        return isBillingActiveStatus(row.status) && (tier === "basic" || tier === "pro");
+      })
+      .sort((a: BillingSubscriptionRow, b: BillingSubscriptionRow) => {
+        const periodEndDiff =
+          timestampToMillis(b.current_period_end) - timestampToMillis(a.current_period_end);
+        if (periodEndDiff !== 0) return periodEndDiff;
+
+        const updatedDiff = timestampToMillis(b.updated_at) - timestampToMillis(a.updated_at);
+        if (updatedDiff !== 0) return updatedDiff;
+
+        return String(b.paddle_subscription_id ?? "").localeCompare(
+          String(a.paddle_subscription_id ?? "")
+        );
+      });
+
+    if (activePaidSubscriptions.length > 0) {
+      const tier = String(activePaidSubscriptions[0].plan_tier);
+      if (tier === "basic" || tier === "pro") {
+        return tier;
+      }
     }
   } catch {
     // keep fallback
@@ -116,8 +161,8 @@ export async function upsertSubscription(args: {
       paddle_price_id: args.paddlePriceId ?? null,
       status: args.status,
       plan_tier: args.planTier,
-      current_period_start: toIso(args.currentPeriodStart),
-      current_period_end: toIso(args.currentPeriodEnd),
+      current_period_start: normalizeBillingTimestamp(args.currentPeriodStart),
+      current_period_end: normalizeBillingTimestamp(args.currentPeriodEnd),
       cancel_at_period_end: Boolean(args.cancelAtPeriodEnd),
       updated_at: new Date().toISOString()
     },
