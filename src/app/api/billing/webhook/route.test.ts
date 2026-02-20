@@ -131,6 +131,49 @@ describe("POST /api/billing/webhook", () => {
     });
   });
 
+  it("backfills entitlement when subscription event arrives before customer mapping", async () => {
+    mocks.findUserIdByPaddleCustomerId.mockResolvedValueOnce(null);
+
+    const earlySubscription = signedRequest({
+      event_type: "subscription.updated",
+      data: {
+        id: "sub_early",
+        customer_id: "ctm_race",
+        status: "active",
+        items: [{ price: { id: "pri_pro" } }]
+      }
+    });
+
+    const earlyRes = await POST(earlySubscription);
+    expect(earlyRes.status).toBe(200);
+    expect(mocks.upsertSubscription).not.toHaveBeenCalled();
+
+    const laterOrder = signedRequest({
+      event_type: "order.completed",
+      data: {
+        custom_data: { user_id: "user-race" },
+        customer_id: "ctm_race",
+        subscription: { id: "sub_early", status: "active" },
+        items: [{ price: { id: "pri_pro" } }]
+      }
+    });
+
+    const orderRes = await POST(laterOrder);
+    expect(orderRes.status).toBe(200);
+    expect(mocks.upsertProfileCustomer).toHaveBeenCalledWith("user-race", "ctm_race");
+    expect(mocks.upsertSubscription).toHaveBeenCalledWith({
+      userId: "user-race",
+      paddleSubscriptionId: "sub_early",
+      paddleCustomerId: "ctm_race",
+      paddlePriceId: "pri_pro",
+      status: "active",
+      planTier: "pro",
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false
+    });
+  });
+
   it("upserts subscription lifecycle events with mapped billing fields", async () => {
     const req = signedRequest({
       event_type: "subscription.updated",
