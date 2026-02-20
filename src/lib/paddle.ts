@@ -49,6 +49,27 @@ export function paddleEnv(): "sandbox" | "live" {
   throw new Error("PADDLE_ENV must be either 'sandbox' or 'live'");
 }
 
+export function paddleBrowserEnv(): "sandbox" | "live" {
+  try {
+    return paddleEnv();
+  } catch {
+    return "sandbox";
+  }
+}
+
+export function paddleBrowserToken(): string | null {
+  const env = paddleBrowserEnv();
+  const sandboxToken = trimEnv("NEXT_PUBLIC_PADDLE_TOKEN_SANDBOX");
+  const liveToken = trimEnv("NEXT_PUBLIC_PADDLE_TOKEN_LIVE");
+  if (env === "sandbox" && sandboxToken) return sandboxToken;
+  if (env === "live" && liveToken) return liveToken;
+
+  const legacyToken = trimEnv("NEXT_PUBLIC_PADDLE_TOKEN");
+  if (legacyToken) return legacyToken;
+
+  return null;
+}
+
 function paddleApiBase() {
   return paddleEnv() === "live" ? LIVE_API_BASE : SANDBOX_API_BASE;
 }

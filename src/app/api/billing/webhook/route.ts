@@ -5,6 +5,11 @@ import { logApiError } from "@/lib/api_log";
 
 export const runtime = "nodejs";
 
+function debugWebhookLog(message: string) {
+  if (process.env.NODE_ENV === "test") return;
+  console.log(`[billing/webhook] ${message}`);
+}
+
 function getWebhookSecret() {
   const value = String(process.env.PADDLE_WEBHOOK_SECRET ?? "").trim();
   if (!value) {
@@ -66,6 +71,63 @@ function extractCustomerId(data: unknown): string | null {
   return value || null;
 }
 
+async function logSkipReason(request: Request, eventType: string, reason: string) {
+  debugWebhookLog(`skip: eventType=${eventType}, reason=${reason}`);
+  await logApiError({
+    route: "/api/billing/webhook",
+    method: request.method,
+    status: 200,
+    code: "webhook_payload_skip",
+    message: "웹훅 이벤트 처리 건너뛰기",
+    details: reason,
+    request,
+    extra: { eventType }
+  });
+}
+
+type BillingItem = {
+  price?: { id?: string };
+  price_id?: string;
+};
+
+type BillingPeriod = {
+  starts_at?: string;
+  ends_at?: string;
+};
+
+type RawBillingPeriod = {
+  [key: string]: unknown;
+  starts_at?: unknown;
+  ends_at?: unknown;
+  start_at?: unknown;
+  end_at?: unknown;
+  start?: unknown;
+  end?: unknown;
+  startsAt?: unknown;
+  endsAt?: unknown;
+  startTime?: unknown;
+  endTime?: unknown;
+  start_time?: unknown;
+  end_time?: unknown;
+};
+
+type BillingPeriodCarrier = {
+  current_billing_period?: RawBillingPeriod | null;
+  billing_period?: RawBillingPeriod | null;
+  current_period?: RawBillingPeriod | null;
+  period?: RawBillingPeriod | null;
+  current_billing_period_starts_at?: unknown;
+  current_billing_period_ends_at?: unknown;
+  starts_at?: unknown;
+  ends_at?: unknown;
+  start_at?: unknown;
+  end_at?: unknown;
+  startsAt?: unknown;
+  endsAt?: unknown;
+  start_time?: unknown;
+  end_time?: unknown;
+};
+
 type SubscriptionData = {
   id?: string;
   customer_id?: string;
@@ -73,10 +135,7 @@ type SubscriptionData = {
   status?: string;
   custom_data?: { user_id?: string; [key: string]: unknown };
   metadata?: { user_id?: string; [key: string]: unknown };
-  items?: Array<{
-    price?: { id?: string };
-    price_id?: string;
-  }>;
+  items?: BillingItem[];
   current_billing_period?: {
     starts_at?: string;
     ends_at?: string;
@@ -85,6 +144,107 @@ type SubscriptionData = {
     action?: string;
   };
 };
+
+type TransactionData = {
+  id?: string;
+  customer_id?: string;
+  customer?: { id?: string };
+  subscription_id?: string;
+  subscription?: { id?: string; status?: string };
+  status?: string;
+  custom_data?: { user_id?: string; [key: string]: unknown };
+  metadata?: { user_id?: string; [key: string]: unknown };
+  items?: BillingItem[];
+  current_billing_period?: BillingPeriod;
+  subscription?: {
+    id?: string;
+    status?: string;
+    current_billing_period?: BillingPeriod;
+  };
+};
+
+function readDateValue(record: unknown, keys: string[]): string {
+  if (!record || typeof record !== "object") return "";
+  const raw = record as Record<string, unknown>;
+
+  for (const key of keys) {
+    const value = raw[key];
+    const normalized = String(value ?? "").trim();
+    if (normalized) return normalized;
+  }
+
+  return "";
+}
+
+function resolvePeriodFromCarrier(periodData: unknown): BillingPeriod | null {
+  if (!periodData || typeof periodData !== "object") return null;
+  const startsAt = readDateValue(periodData, [
+    "starts_at",
+    "start_at",
+    "startsAt",
+    "start",
+    "startTime",
+    "start_time"
+  ]);
+  const endsAt = readDateValue(periodData, [
+    "ends_at",
+    "end_at",
+    "endsAt",
+    "end",
+    "endTime",
+    "end_time"
+  ]);
+
+  if (!startsAt && !endsAt) return null;
+
+  return {
+    starts_at: startsAt || undefined,
+    ends_at: endsAt || undefined
+  };
+}
+
+function resolveCurrentBillingPeriod(periodData?: BillingPeriodCarrier | null): BillingPeriod | null {
+  const data = periodData as BillingPeriodCarrier | null | undefined;
+
+  const direct = resolvePeriodFromCarrier(data);
+  if (direct) return direct;
+
+  const candidates = [
+    data?.current_billing_period,
+    data?.billing_period,
+    data?.current_period,
+    data?.period
+  ] as unknown[];
+
+  for (const candidate of candidates) {
+    const resolved = resolvePeriodFromCarrier(candidate);
+    if (resolved) return resolved;
+  }
+
+  const startsAt = readDateValue(data, [
+    "current_billing_period_starts_at",
+    "starts_at",
+    "start_at",
+    "startsAt",
+    "start",
+    "start_time"
+  ]);
+  const endsAt = readDateValue(data, [
+    "current_billing_period_ends_at",
+    "ends_at",
+    "end_at",
+    "endsAt",
+    "end",
+    "end_time"
+  ]);
+
+  if (!startsAt && !endsAt) return null;
+
+  return {
+    starts_at: startsAt || undefined,
+    ends_at: endsAt || undefined
+  };
+}
 
 function extractUserId(data: unknown): string | null {
   const value = String(
@@ -96,40 +256,53 @@ function extractUserId(data: unknown): string | null {
   return value || null;
 }
 
-function extractPriceIdFromSubscription(data: unknown): string | null {
+function extractPriceId(data: { items?: BillingItem[] } | null | undefined): string | null {
+  const value = String(data?.items?.[0]?.price?.id ?? data?.items?.[0]?.price_id ?? "").trim();
+  return value || null;
+}
+
+function extractSubscriptionId(data: unknown): string | null {
   const value = String(
-    (data as SubscriptionData).items?.[0]?.price?.id ??
-      (data as SubscriptionData).items?.[0]?.price_id ??
-      ""
+    (data as TransactionData).subscription_id ?? (data as TransactionData).subscription?.id ?? ""
   ).trim();
   return value || null;
 }
 
-async function handleTransactionCompleted(data: unknown) {
-  const customerId = extractCustomerId(data);
-  if (!customerId) return;
+async function handleTransactionCompleted(request: Request, data: unknown, eventType: string) {
+  const transaction = data as TransactionData;
+  const customerId = extractCustomerId(transaction);
+  if (!customerId) {
+    debugWebhookLog(`transaction event missing customer_id, eventType=${eventType}`);
+    await logSkipReason(request, eventType, "missing customer_id/customer in transaction payload");
+    return;
+  }
 
-  const userId = extractUserId(data) || (await findUserIdByPaddleCustomerId(customerId));
-  if (!userId) return;
-
-  await upsertProfileCustomer(userId, customerId);
-}
-
-async function handleSubscriptionEvent(data: unknown) {
-  const subscription = data as SubscriptionData;
-  const subscriptionId = String(subscription?.id ?? "").trim();
-  const customerId = extractCustomerId(subscription);
-
-  if (!subscriptionId || !customerId) return;
-
-  const status = String(subscription?.status ?? "").trim();
-  const userId = extractUserId(subscription) || (await findUserIdByPaddleCustomerId(customerId));
-  if (!userId) return;
+  const userId = extractUserId(transaction) || (await findUserIdByPaddleCustomerId(customerId));
+  if (!userId) {
+    debugWebhookLog(`transaction event missing user mapping, eventType=${eventType}, customer_id=${customerId}`);
+    await logSkipReason(request, eventType, `user_id not found for customer_id=${customerId}`);
+    return;
+  }
 
   await upsertProfileCustomer(userId, customerId);
 
-  const priceId = extractPriceIdFromSubscription(subscription);
+  if (eventType !== "transaction.completed" && eventType !== "order.completed") {
+    return;
+  }
+
+  const subscriptionId = extractSubscriptionId(transaction);
+  if (!subscriptionId) {
+    debugWebhookLog(`transaction event missing subscription_id, eventType=${eventType}, customer_id=${customerId}`);
+    await logSkipReason(request, eventType, "missing subscription_id in transaction payload");
+    return;
+  }
+
+  const priceId = extractPriceId(transaction);
   const planTier = paddlePlanForPriceId(priceId);
+  const status = String(transaction?.subscription?.status ?? transaction?.status ?? "active").trim() || "active";
+  const currentBillingPeriod =
+    resolveCurrentBillingPeriod(transaction) ??
+    resolveCurrentBillingPeriod(transaction?.subscription ?? null);
 
   await upsertSubscription({
     userId,
@@ -138,29 +311,93 @@ async function handleSubscriptionEvent(data: unknown) {
     paddlePriceId: priceId,
     status,
     planTier,
-    currentPeriodStart: subscription?.current_billing_period?.starts_at ?? null,
-    currentPeriodEnd: subscription?.current_billing_period?.ends_at ?? null,
-    cancelAtPeriodEnd: Boolean(subscription?.scheduled_change?.action === "cancel")
+    currentPeriodStart: currentBillingPeriod?.starts_at ?? null,
+    currentPeriodEnd: currentBillingPeriod?.ends_at ?? null,
+    cancelAtPeriodEnd: false
   });
+
+  debugWebhookLog(`upserted subscription from transaction: eventType=${eventType}, subscription_id=${subscriptionId}, customer_id=${customerId}, user_id=${userId}`);
 }
 
-const KNOWN_TRANSACTION_EVENTS = new Set(["transaction.completed", "transaction.updated", "transaction.failed"]);
+async function handleSubscriptionEvent(request: Request, data: unknown) {
+  const subscription = data as SubscriptionData;
+  const subscriptionId = String(subscription?.id ?? "").trim();
+  const customerId = extractCustomerId(subscription);
+
+  if (!subscriptionId || !customerId) {
+    await logSkipReason(
+      request,
+      `subscription.${subscription?.status ?? "unknown"}`,
+      `missing subscription id or customer id (subscription_id=${subscriptionId || "missing"}, customer_id=${customerId || "missing"})`
+    );
+    return;
+  }
+
+  const status = String(subscription?.status ?? "").trim();
+  const userId = extractUserId(subscription) || (await findUserIdByPaddleCustomerId(customerId));
+  if (!userId) {
+    debugWebhookLog(`subscription event missing user mapping, status=${subscription?.status ?? "unknown"}, customer_id=${customerId}`);
+    await logSkipReason(
+      request,
+      `subscription.${subscription?.status ?? "unknown"}`,
+      `user_id not found for customer_id=${customerId}`
+    );
+    return;
+  }
+
+  await upsertProfileCustomer(userId, customerId);
+
+  const priceId = extractPriceId(subscription);
+  const planTier = paddlePlanForPriceId(priceId);
+  const currentBillingPeriod = resolveCurrentBillingPeriod(subscription);
+
+  await upsertSubscription({
+    userId,
+    paddleSubscriptionId: subscriptionId,
+    paddleCustomerId: customerId,
+    paddlePriceId: priceId,
+    status,
+    planTier,
+    currentPeriodStart: currentBillingPeriod?.starts_at ?? null,
+    currentPeriodEnd: currentBillingPeriod?.ends_at ?? null,
+    cancelAtPeriodEnd: Boolean(subscription?.scheduled_change?.action === "cancel")
+  });
+
+  debugWebhookLog(
+    `upserted subscription from subscription event: status=${status || "unknown"}, subscription_id=${subscriptionId}, customer_id=${customerId}, user_id=${userId}`
+  );
+}
+
+const KNOWN_TRANSACTION_EVENTS = new Set([
+  "transaction.created",
+  "transaction.updated",
+  "transaction.paid",
+  "transaction.completed",
+  "transaction.failed",
+  "order.completed"
+]);
 const KNOWN_SUBSCRIPTION_EVENTS = new Set([
   "subscription.created",
+  "subscription.activated",
   "subscription.updated",
   "subscription.canceled",
   "subscription.trialing",
   "subscription.paused",
-  "subscription.resumed"
+  "subscription.resumed",
+  "subscription.cancelled",
+  "subscription.past_due"
 ]);
 
 export async function POST(request: Request) {
   let bodyText = "";
   const method = request.method;
 
+  debugWebhookLog(`incoming request method=${method} path=${new URL(request.url).pathname}`);
+
   try {
     bodyText = await request.text();
     const signature = request.headers.get("paddle-signature");
+    debugWebhookLog(`signature header present=${Boolean(signature)}`);
 
     try {
       const verified = verifyWebhookSignature(bodyText, signature);
@@ -221,17 +458,32 @@ export async function POST(request: Request) {
     }
 
     const eventType = String((payload as { event_type?: string }).event_type ?? "").trim();
+    debugWebhookLog(`payload parsed event_type=${eventType || "empty"}`);
     const data = (payload as { data?: unknown }).data;
 
     if (KNOWN_TRANSACTION_EVENTS.has(eventType)) {
-      await handleTransactionCompleted(data);
+      await handleTransactionCompleted(request, data, eventType);
       return Response.json({ received: true });
     }
 
     if (KNOWN_SUBSCRIPTION_EVENTS.has(eventType)) {
-      await handleSubscriptionEvent(data);
+      await handleSubscriptionEvent(request, data);
       return Response.json({ received: true });
     }
+
+    debugWebhookLog(`ignored unknown event_type=${eventType || "empty"}`);
+    await logApiError({
+      route: "/api/billing/webhook",
+      method,
+      status: 200,
+      code: "webhook_payload_skip",
+      message: "알 수 없는 이벤트 타입",
+      details: `unhandled event_type=${eventType}`,
+      request,
+      extra: {
+        payloadType: eventType ? "known" : "empty"
+      }
+    });
 
     return Response.json({ received: true, ignored: true });
   } catch (error) {
