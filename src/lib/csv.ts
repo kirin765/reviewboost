@@ -1,7 +1,23 @@
 import { parse } from "csv-parse/sync";
 import type { ReviewRow } from "@/lib/types";
 
-const TEXT_KEYS = ["text", "review", "content", "comment", "리뷰", "내용", "후기", "텍스트", "리뷰내용", "후기내용"];
+const TEXT_KEYS = [
+  "text",
+  "review",
+  "content",
+  "comment",
+  "review_text",
+  "reviewtext",
+  "review content",
+  "content_text",
+  "comment_text",
+  "review_content",
+  "후기내용",
+  "리뷰내용",
+  "리뷰본문",
+  "텍스트",
+  "내용"
+];
 const RATING_KEYS = ["rating", "score", "star", "별점", "평점", "점수", "별", "stars"];
 const DATE_KEYS = ["date", "created", "created_at", "time", "작성일", "등록일", "날짜", "일자"];
 
@@ -10,6 +26,7 @@ export type CsvHeaderMode = "header" | "headerless";
 export type CsvMapping = {
   headerMode: CsvHeaderMode;
   textCol: string;
+  textColSource?: "explicit" | "fallback";
   ratingCol?: string | null;
   dateCol?: string | null;
 };
@@ -41,6 +58,21 @@ export function inferDelimiter(csvText: string): "," | ";" | "\t" {
 
 function normalizeKey(k: string) {
   return k.trim().toLowerCase();
+}
+
+function isLikelyReviewTextColumn(name: string) {
+  const key = normalizeKey(name);
+  return (
+    TEXT_KEYS.map((k) => normalizeKey(k)).includes(key) ||
+    /리뷰|후기|내용|텍스트/.test(name) ||
+    /review.?text|review.?content|comment.?text|review/.test(normalizeKey(name))
+  );
+}
+
+function isLikelyIdColumn(name: string) {
+  const normalized = normalizeKey(name);
+  if (!normalized) return false;
+  return normalized === "id" || /(^|[._\-\s])id$|[._\-\s]id([._\-\s]|$)/.test(normalized);
 }
 
 function toNumberOrNull(v: unknown): number | null {
@@ -92,11 +124,14 @@ function inferMappingFromColumns(columns: string[], headerMode: CsvHeaderMode): 
   const headerMap = new Map<string, string>();
   for (const h of columns) headerMap.set(normalizeKey(h), h);
 
+  const textColExplicit = TEXT_KEYS.map((k) => headerMap.get(normalizeKey(k))).find(Boolean);
   const textCol =
-    TEXT_KEYS.map((k) => headerMap.get(normalizeKey(k))).find(Boolean) ??
-    // fallback: first column
+    textColExplicit ??
+    // fallback: first non-id column, then first column
+    columns.filter((c) => !isLikelyIdColumn(c))[0] ??
     columns[0] ??
     "col1";
+  const textColSource: CsvMapping["textColSource"] = textColExplicit ? "explicit" : "fallback";
 
   const ratingCol =
     RATING_KEYS.map((k) => headerMap.get(normalizeKey(k))).find(Boolean) ??
@@ -108,7 +143,7 @@ function inferMappingFromColumns(columns: string[], headerMode: CsvHeaderMode): 
     // fallback: third column if exists
     (columns.length >= 3 ? columns[2] : null);
 
-  return { headerMode, textCol, ratingCol, dateCol };
+  return { headerMode, textCol, textColSource, ratingCol, dateCol };
 }
 
 function synthColumnsFromWidth(width: number): string[] {
@@ -158,6 +193,20 @@ export function previewReviewCsv(csvText: string, filename: string | null = null
       for (const c of headerColumns) out[c] = String(r[c] ?? "");
       return out;
     });
+
+    if (inferred.textColSource === "fallback") {
+      if (isLikelyIdColumn(inferred.textCol)) {
+        warnings.push(
+          `리뷰 본문 열을 자동 감지하지 못해 '${inferred.textCol}'(ID/코드형) 컬럼을 임시로 선택했습니다. 샘플처럼 'review_text' 같은 열이 보이면 반드시 텍스트 열로 변경해 주세요.`
+        );
+      } else {
+        const likelyTextHint = headerColumns.find((c) => isLikelyReviewTextColumn(c));
+        warnings.push(
+          `리뷰 내용 열을 자동으로 찾지 못해 '${inferred.textCol}'을 임시 선택했습니다. ${likelyTextHint ? `'${likelyTextHint}'` : "컬럼"}가 리뷰 본문일 수 있으니 꼭 확인해주세요.`
+        );
+      }
+    }
+
     if (!hasKnownHeader(headerColumns)) {
       warnings.push("컬럼 이름을 자동으로 찾지 못해 1열=리뷰 내용, 2열=별점(있으면)으로 추정했습니다. 화면에서 확인해주세요.");
     }

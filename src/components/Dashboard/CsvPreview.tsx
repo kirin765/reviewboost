@@ -45,6 +45,16 @@ function renderCellPreview(v: unknown) {
   return truncated ? `${out}…` : out;
 }
 
+function normalizeColumnKey(c: string) {
+  return c.trim().toLowerCase();
+}
+
+function isLikelyReviewTextColumn(c: string) {
+  const normalized = normalizeColumnKey(c);
+  if (!normalized) return false;
+  return /review|comment|content|리뷰|후기|내용|텍스트/.test(normalized);
+}
+
 export default function CsvPreview({
   preview,
   busy,
@@ -68,12 +78,30 @@ export default function CsvPreview({
     return Math.max(520, previewCols.length * 140);
   }, [previewCols.length]);
 
+  const textColNeedsReview = useMemo(() => {
+    const fallback = preview.inferred.textColSource === "fallback";
+    return fallback;
+  }, [preview.columns, preview.inferred.textColSource, textCol]);
+
+  const reviewTextHint = useMemo(() => {
+    if (textCol === "") return "";
+    const candidates = preview.columns.filter((c) => isLikelyReviewTextColumn(c) && c !== textCol);
+    return candidates.slice(0, 3).join(", ");
+  }, [preview.columns, textCol]);
+
   return (
     <div style={{ marginTop: 12 }}>
       <div className="pill">
         행 {preview.totalRows} · 컬럼 {preview.columns.length} · {preview.headerMode === "header" ? "헤더 있음" : "헤더 없음"}
       </div>
       <div className="hint" style={{ marginTop: 10 }}>
+        {textColNeedsReview ? (
+          <p className="hint danger" style={{ whiteSpace: "pre-wrap", marginTop: 0, marginBottom: 8 }}>
+            리뷰 내용 열이 자동으로 추론되었으나 확실하지 않습니다. 현재 선택: <strong>{textCol}</strong>
+            {reviewTextHint ? `\n다음 열에 리뷰 텍스트가 있을 가능성이 있어요: ${reviewTextHint}` : ""}  
+            <br />원하는 열로 변경해 주세요.
+          </p>
+        ) : null}
         <div style={{ display: "grid", gap: 10 }}>
           <label>
             <span className="muted">리뷰 내용(텍스트) 열</span>
