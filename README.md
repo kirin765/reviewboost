@@ -40,11 +40,23 @@ cp .env.example .env.local
 npm run dev
 ```
 
+- env 빠른 전환:
+```bash
+npm run dev:sandbox   # PADDLE_ENV=sandbox
+npm run dev:live      # PADDLE_ENV=live
+```
+
 4. 운영 서버
 
 PM2 배포(권장):
 ```bash
 npm run deploy
+```
+
+- 배포 모드별 실행:
+```bash
+npm run deploy:staging
+npm run deploy:prod
 ```
 
 레거시 수동 명령(참고):
@@ -80,6 +92,9 @@ pm2 restart reviewboost --update-env
 - Paddle 월결제(선택):
   - `APP_BASE_URL`: 앱 도메인(예: `https://reviewboost.co.kr`)
   - `PADDLE_ENV` (`sandbox` 또는 `live`)
+  - `NEXT_PUBLIC_PADDLE_TOKEN_SANDBOX`: sandbox용 Paddle 클라이언트 토큰
+  - `NEXT_PUBLIC_PADDLE_TOKEN_LIVE`: live용 Paddle 클라이언트 토큰
+  - `NEXT_PUBLIC_PADDLE_TOKEN`: 레거시 호환용(권장: 위 env별 키 우선)
   - `PADDLE_API_KEY`
   - `PADDLE_WEBHOOK_SECRET`
   - `PADDLE_BASIC_PRICE_ID`, `PADDLE_PRO_PRICE_ID`

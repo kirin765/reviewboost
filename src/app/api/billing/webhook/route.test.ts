@@ -103,6 +103,73 @@ describe("POST /api/billing/webhook", () => {
     });
   });
 
+  it("maps transaction.completed with nested subscription.billing_period to upsert payload", async () => {
+    const req = signedRequest({
+      event_type: "transaction.completed",
+      data: {
+        custom_data: { user_id: "user-period" },
+        customer_id: "ctm_period",
+        subscription_id: "sub_period",
+        status: "active",
+        items: [{ price: { id: "pri_pro" } }],
+        subscription: {
+          id: "sub_period",
+          current_billing_period: {
+            starts_at: "2026-02-01T00:00:00Z",
+            ends_at: "2026-03-01T00:00:00Z"
+          }
+        }
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.upsertSubscription).toHaveBeenCalledWith({
+      userId: "user-period",
+      paddleSubscriptionId: "sub_period",
+      paddleCustomerId: "ctm_period",
+      paddlePriceId: "pri_pro",
+      status: "active",
+      planTier: "pro",
+      currentPeriodStart: "2026-02-01T00:00:00Z",
+      currentPeriodEnd: "2026-03-01T00:00:00Z",
+      cancelAtPeriodEnd: false
+    });
+  });
+
+  it("maps transaction.completed with root billing_period to upsert payload", async () => {
+    const req = signedRequest({
+      event_type: "transaction.completed",
+      data: {
+        custom_data: { user_id: "user-period-root" },
+        customer_id: "ctm_period_root",
+        subscription_id: "sub_period_root",
+        status: "active",
+        items: [{ price: { id: "pri_pro" } }],
+        billing_period: {
+          starts_at: "2026-02-10T00:00:00Z",
+          ends_at: "2026-03-10T00:00:00Z"
+        }
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.upsertSubscription).toHaveBeenCalledWith({
+      userId: "user-period-root",
+      paddleSubscriptionId: "sub_period_root",
+      paddleCustomerId: "ctm_period_root",
+      paddlePriceId: "pri_pro",
+      status: "active",
+      planTier: "pro",
+      currentPeriodStart: "2026-02-10T00:00:00Z",
+      currentPeriodEnd: "2026-03-10T00:00:00Z",
+      cancelAtPeriodEnd: false
+    });
+  });
+
   it("handles order.completed by applying entitlement from transaction payload", async () => {
     const req = signedRequest({
       event_type: "order.completed",
@@ -122,6 +189,66 @@ describe("POST /api/billing/webhook", () => {
       userId: "user-456",
       paddleSubscriptionId: "sub_456",
       paddleCustomerId: "ctm_456",
+      paddlePriceId: "pri_pro",
+      status: "active",
+      planTier: "pro",
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false
+    });
+  });
+
+  it("handles transaction.updated by upserting from completed transaction payload", async () => {
+    const req = signedRequest({
+      event_type: "transaction.updated",
+      data: {
+        custom_data: { user_id: "user-updated" },
+        customer_id: "ctm_updated",
+        subscription_id: "sub_updated",
+        status: "completed",
+        items: [{ price: { id: "pri_basic" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.upsertProfileCustomer).toHaveBeenCalledWith("user-updated", "ctm_updated");
+    expect(mocks.paddlePlanForPriceId).toHaveBeenCalledWith("pri_basic");
+    expect(mocks.upsertSubscription).toHaveBeenCalledWith({
+      userId: "user-updated",
+      paddleSubscriptionId: "sub_updated",
+      paddleCustomerId: "ctm_updated",
+      paddlePriceId: "pri_basic",
+      status: "completed",
+      planTier: "basic",
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false
+    });
+  });
+
+  it("handles subscription.activated as a lifecycle event", async () => {
+    const req = signedRequest({
+      event_type: "subscription.activated",
+      data: {
+        id: "sub_act",
+        customer_id: "ctm_act",
+        status: "active",
+        custom_data: { user_id: "user-act" },
+        items: [{ price: { id: "pri_pro" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.upsertProfileCustomer).toHaveBeenCalledWith("user-act", "ctm_act");
+    expect(mocks.paddlePlanForPriceId).toHaveBeenCalledWith("pri_pro");
+    expect(mocks.upsertSubscription).toHaveBeenCalledWith({
+      userId: "user-act",
+      paddleSubscriptionId: "sub_act",
+      paddleCustomerId: "ctm_act",
       paddlePriceId: "pri_pro",
       status: "active",
       planTier: "pro",

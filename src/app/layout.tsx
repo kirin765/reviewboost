@@ -7,6 +7,7 @@ import { signOutAction } from "@/app/(auth)/actions";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
 import { planLabel, resolvePlanTierForUser, type PlanTier } from "@/lib/plan";
+import { paddleBrowserEnv, paddleBrowserToken } from "@/lib/paddle";
 
 export const metadata: Metadata = {
   title: "ReviewBoost",
@@ -14,7 +15,8 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-const paddleToken = process.env.NEXT_PUBLIC_PADDLE_TOKEN;
+const paddleToken = paddleBrowserToken();
+const paddleEnvForClient = paddleBrowserEnv();
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { supabaseConfigured } = getCapabilitiesBase();
@@ -41,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Script src="https://cdn.paddle.com/paddle/v2/paddle.js" strategy="beforeInteractive" />
         {paddleToken ? (
           <Script id="paddle-init" strategy="afterInteractive">
-            {`if (window.Paddle) { Paddle.Environment.set("sandbox"); Paddle.Initialize({ token: ${JSON.stringify(paddleToken)} }); }`}
+            {`if (window.Paddle) { Paddle.Environment.set(${JSON.stringify(paddleEnvForClient)}); Paddle.Initialize({ token: ${JSON.stringify(paddleToken)} }); }`}
           </Script>
         ) : null}
       </head>
