@@ -73,12 +73,15 @@ describe("POST /api/billing/webhook", () => {
     await expect(res.json()).resolves.toEqual({ error: "webhook secret missing" });
   });
 
-  it("maps transaction.completed user_id and customer_id to profile", async () => {
+  it("maps transaction.completed user_id and customer_id to profile and backfills subscription entitlement", async () => {
     const req = signedRequest({
       event_type: "transaction.completed",
       data: {
         custom_data: { user_id: "user-123" },
-        customer_id: "ctm_123"
+        customer_id: "ctm_123",
+        subscription_id: "sub_123",
+        status: "completed",
+        items: [{ price: { id: "pri_basic" } }]
       }
     });
 
@@ -86,7 +89,46 @@ describe("POST /api/billing/webhook", () => {
 
     expect(res.status).toBe(200);
     expect(mocks.upsertProfileCustomer).toHaveBeenCalledWith("user-123", "ctm_123");
-    expect(mocks.upsertSubscription).not.toHaveBeenCalled();
+    expect(mocks.paddlePlanForPriceId).toHaveBeenCalledWith("pri_basic");
+    expect(mocks.upsertSubscription).toHaveBeenCalledWith({
+      userId: "user-123",
+      paddleSubscriptionId: "sub_123",
+      paddleCustomerId: "ctm_123",
+      paddlePriceId: "pri_basic",
+      status: "completed",
+      planTier: "basic",
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false
+    });
+  });
+
+  it("handles order.completed by applying entitlement from transaction payload", async () => {
+    const req = signedRequest({
+      event_type: "order.completed",
+      data: {
+        custom_data: { user_id: "user-456" },
+        customer_id: "ctm_456",
+        subscription: { id: "sub_456", status: "active" },
+        items: [{ price_id: "pri_pro" }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.upsertProfileCustomer).toHaveBeenCalledWith("user-456", "ctm_456");
+    expect(mocks.upsertSubscription).toHaveBeenCalledWith({
+      userId: "user-456",
+      paddleSubscriptionId: "sub_456",
+      paddleCustomerId: "ctm_456",
+      paddlePriceId: "pri_pro",
+      status: "active",
+      planTier: "pro",
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false
+    });
   });
 
   it("upserts subscription lifecycle events with mapped billing fields", async () => {

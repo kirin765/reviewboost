@@ -66,6 +66,11 @@ function extractCustomerId(data: unknown): string | null {
   return value || null;
 }
 
+type BillingItem = {
+  price?: { id?: string };
+  price_id?: string;
+};
+
 type SubscriptionData = {
   id?: string;
   customer_id?: string;
@@ -73,10 +78,7 @@ type SubscriptionData = {
   status?: string;
   custom_data?: { user_id?: string; [key: string]: unknown };
   metadata?: { user_id?: string; [key: string]: unknown };
-  items?: Array<{
-    price?: { id?: string };
-    price_id?: string;
-  }>;
+  items?: BillingItem[];
   current_billing_period?: {
     starts_at?: string;
     ends_at?: string;
@@ -84,6 +86,18 @@ type SubscriptionData = {
   scheduled_change?: {
     action?: string;
   };
+};
+
+type TransactionData = {
+  id?: string;
+  customer_id?: string;
+  customer?: { id?: string };
+  subscription_id?: string;
+  subscription?: { id?: string; status?: string };
+  status?: string;
+  custom_data?: { user_id?: string; [key: string]: unknown };
+  metadata?: { user_id?: string; [key: string]: unknown };
+  items?: BillingItem[];
 };
 
 function extractUserId(data: unknown): string | null {
@@ -96,23 +110,50 @@ function extractUserId(data: unknown): string | null {
   return value || null;
 }
 
-function extractPriceIdFromSubscription(data: unknown): string | null {
+function extractPriceId(data: { items?: BillingItem[] } | null | undefined): string | null {
+  const value = String(data?.items?.[0]?.price?.id ?? data?.items?.[0]?.price_id ?? "").trim();
+  return value || null;
+}
+
+function extractSubscriptionId(data: unknown): string | null {
   const value = String(
-    (data as SubscriptionData).items?.[0]?.price?.id ??
-      (data as SubscriptionData).items?.[0]?.price_id ??
-      ""
+    (data as TransactionData).subscription_id ?? (data as TransactionData).subscription?.id ?? ""
   ).trim();
   return value || null;
 }
 
-async function handleTransactionCompleted(data: unknown) {
-  const customerId = extractCustomerId(data);
+async function handleTransactionCompleted(data: unknown, eventType: string) {
+  const transaction = data as TransactionData;
+  const customerId = extractCustomerId(transaction);
   if (!customerId) return;
 
-  const userId = extractUserId(data) || (await findUserIdByPaddleCustomerId(customerId));
+  const userId = extractUserId(transaction) || (await findUserIdByPaddleCustomerId(customerId));
   if (!userId) return;
 
   await upsertProfileCustomer(userId, customerId);
+
+  if (eventType !== "transaction.completed" && eventType !== "order.completed") {
+    return;
+  }
+
+  const subscriptionId = extractSubscriptionId(transaction);
+  if (!subscriptionId) return;
+
+  const priceId = extractPriceId(transaction);
+  const planTier = paddlePlanForPriceId(priceId);
+  const status = String(transaction?.subscription?.status ?? transaction?.status ?? "active").trim() || "active";
+
+  await upsertSubscription({
+    userId,
+    paddleSubscriptionId: subscriptionId,
+    paddleCustomerId: customerId,
+    paddlePriceId: priceId,
+    status,
+    planTier,
+    currentPeriodStart: null,
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false
+  });
 }
 
 async function handleSubscriptionEvent(data: unknown) {
@@ -128,7 +169,7 @@ async function handleSubscriptionEvent(data: unknown) {
 
   await upsertProfileCustomer(userId, customerId);
 
-  const priceId = extractPriceIdFromSubscription(subscription);
+  const priceId = extractPriceId(subscription);
   const planTier = paddlePlanForPriceId(priceId);
 
   await upsertSubscription({
@@ -144,7 +185,12 @@ async function handleSubscriptionEvent(data: unknown) {
   });
 }
 
-const KNOWN_TRANSACTION_EVENTS = new Set(["transaction.completed", "transaction.updated", "transaction.failed"]);
+const KNOWN_TRANSACTION_EVENTS = new Set([
+  "transaction.completed",
+  "transaction.updated",
+  "transaction.failed",
+  "order.completed"
+]);
 const KNOWN_SUBSCRIPTION_EVENTS = new Set([
   "subscription.created",
   "subscription.updated",
@@ -224,7 +270,7 @@ export async function POST(request: Request) {
     const data = (payload as { data?: unknown }).data;
 
     if (KNOWN_TRANSACTION_EVENTS.has(eventType)) {
-      await handleTransactionCompleted(data);
+      await handleTransactionCompleted(data, eventType);
       return Response.json({ received: true });
     }
 
