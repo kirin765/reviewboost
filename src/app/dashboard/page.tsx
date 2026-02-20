@@ -19,6 +19,9 @@ type AnalysisResult = AnalysisOutput & {
     stored: boolean;
     analysisId?: string;
     truncated?: boolean;
+    storageAttempted?: boolean;
+    storageError?: string | null;
+    storageStep?: string | null;
   };
 };
 
@@ -263,6 +266,10 @@ function DashboardContent() {
           {result?.meta?.stored ? (
             <p className="hint">
               저장됨: 나중에 &ldquo;저장된 리포트&rdquo;에서 다시 볼 수 있습니다.
+            </p>
+          ) : result?.meta?.storageError ? (
+            <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
+              히스토리 저장 실패: {result.meta.storageError}
             </p>
           ) : caps?.supabaseConfigured === false ? (
             <>
