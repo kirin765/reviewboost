@@ -16,32 +16,40 @@ export const runtime = "nodejs";
 
 const MAX_BYTES = 6 * 1024 * 1024;
 
+type StorageStatus = {
+  attempted: boolean;
+  success: boolean;
+  analysisId?: string;
+  step?: string;
+  error: string | null;
+};
+
 /**
  * Extract client IP address from request headers.
  * Handles proxies and load balancers (x-forwarded-for, etc.)
  */
 function getClientIp(req: Request): string | null {
   const headers = req.headers;
-  
+
   // Check x-forwarded-for header (common for proxies/load balancers)
   const forwarded = headers.get("x-forwarded-for");
   if (forwarded) {
     // x-forwarded-for can contain multiple IPs, take the first one (original client)
     return forwarded.split(",")[0].trim();
   }
-  
+
   // Check x-real-ip header (commonly set by nginx, etc.)
   const realIp = headers.get("x-real-ip");
   if (realIp) {
     return realIp.trim();
   }
-  
+
   // Check cf-connecting-ip (Cloudflare)
   const cfIp = headers.get("cf-connecting-ip");
   if (cfIp) {
     return cfIp.trim();
   }
-  
+
   return null;
 }
 
@@ -51,6 +59,33 @@ function delimiterHint(csvText: string): string[] {
   return [
     `구분자가 '${delimiter === "\t" ? "TAB" : delimiter}' 로 감지되었습니다. 엑셀에서 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'로 저장하면 가장 안정적입니다.`
   ];
+}
+
+function toStorageError(message?: string | null) {
+  return message && String(message).trim() ? String(message).trim() : "저장에 실패했습니다.";
+}
+
+function extractErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error) || String(error);
+  } catch {
+    return String(error);
+  }
+}
+
+function buildStorageMeta(base: any, storage: StorageStatus) {
+  return {
+    ...base,
+    filename: base?.filename ?? null,
+    stored: storage.success,
+    analysisId: storage.analysisId,
+    truncated: base?.truncated,
+    storageAttempted: storage.attempted,
+    storageError: storage.success ? null : storage.error,
+    storageStep: storage.step ?? null
+  };
 }
 
 export async function POST(req: Request) {
@@ -201,47 +236,76 @@ export async function POST(req: Request) {
   // Update filename in payload
   payload.meta.filename = filename;
 
+  const storageStatus: StorageStatus = {
+    attempted: false,
+    success: false,
+    error: null
+  };
+
   // Optional persistence (Supabase)
   try {
     const admin = getSupabaseAdminClient();
     if (admin) {
-      const insertAnalysis = await admin
-        .from("analyses")
-        .insert({
-          user_id: userId,
-          client_ip: clientIp,
-          input_filename: filename,
-          stats: payload.stats,
-          suggestions: payload.suggestions,
-          priority_score: payload.stats.priorityScore
-        })
-        .select("id")
-        .single();
+      storageStatus.attempted = true;
+      storageStatus.step = "analyses_insert_admin";
 
-      const analysisId = insertAnalysis.data?.id as string | undefined;
-      if (analysisId) {
-        const reviews = classified.slice(0, 5000).map((r) => ({
-          analysis_id: analysisId,
-          rating: r.rating,
-          text: r.text,
-          sentiment: r.sentiment,
-          category: r.category,
-          reviewed_at: r.reviewedAt ?? null
-        }));
-        if (reviews.length) await admin.from("reviews").insert(reviews);
-        return Response.json({
-          ...payload,
-          meta: {
-            filename,
-            stored: true as const,
-            analysisId,
-            truncated: payload.meta.truncated
+      if (!userId) {
+        storageStatus.attempted = false;
+        storageStatus.error = "로그인 후 히스토리에 저장됩니다.";
+      } else {
+        const insertAnalysis = await admin
+          .from("analyses")
+          .insert({
+            user_id: userId,
+            client_ip: clientIp,
+            input_filename: filename,
+            stats: payload.stats,
+            suggestions: payload.suggestions,
+            priority_score: payload.stats.priorityScore
+          })
+          .select("id")
+          .single();
+
+        if (insertAnalysis.error) {
+          storageStatus.error = toStorageError(`analyses_insert_admin_failed: ${insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)}`);
+          throw new Error(storageStatus.error);
+        }
+
+        const analysisId = insertAnalysis.data?.id as string | undefined;
+        if (analysisId) {
+          const reviews = classified.slice(0, 5000).map((r) => ({
+            analysis_id: analysisId,
+            rating: r.rating,
+            text: r.text,
+            sentiment: r.sentiment,
+            category: r.category,
+            reviewed_at: r.reviewedAt ?? null
+          }));
+          if (reviews.length) {
+            storageStatus.step = "reviews_insert_admin";
+            const insertReviews = await admin.from("reviews").insert(reviews);
+            if (insertReviews.error) {
+              storageStatus.error = toStorageError(`reviews_insert_admin_failed: ${insertReviews.error.message ?? JSON.stringify(insertReviews.error)}`);
+              throw new Error(storageStatus.error);
+            }
           }
-        });
+
+          storageStatus.success = true;
+          storageStatus.analysisId = analysisId;
+          storageStatus.error = null;
+          return Response.json({
+            ...payload,
+            meta: buildStorageMeta(payload.meta, storageStatus)
+          });
+        }
+
+        storageStatus.error = "analyses_insert_admin_no_id";
       }
     }
 
     if (userId && supabaseAuth) {
+      storageStatus.attempted = true;
+      storageStatus.step = "analyses_insert_auth";
       const insertAnalysis = await supabaseAuth
         .from("analyses")
         .insert({
@@ -255,22 +319,53 @@ export async function POST(req: Request) {
         .select("id")
         .single();
 
+      if (insertAnalysis.error) {
+        storageStatus.error = toStorageError(`analyses_insert_auth_failed: ${insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)}`);
+        throw new Error(storageStatus.error);
+      }
+
       const analysisId = insertAnalysis.data?.id as string | undefined;
       if (analysisId) {
+        storageStatus.success = true;
+        storageStatus.analysisId = analysisId;
+        storageStatus.error = null;
         return Response.json({
           ...payload,
-          meta: {
-            filename,
-            stored: true as const,
-            analysisId,
-            truncated: payload.meta.truncated
-          }
+          meta: buildStorageMeta(payload.meta, storageStatus)
         });
       }
+
+      storageStatus.error = "analyses_insert_auth_no_id";
     }
-  } catch {
-    // 저장 실패는 분석 결과 반환을 막지 않음
+
+    if (!storageStatus.error) {
+      storageStatus.error = userId ? "저장 기능을 사용할 수 없는 상태입니다." : "로그인 후 히스토리에 저장됩니다.";
+    }
+  } catch (e: unknown) {
+    if (!storageStatus.error) storageStatus.error = toStorageError(extractErrorMessage(e));
+
+    await logApiError({
+      route: "/api/analyze",
+      method: req.method,
+      status: 500,
+      code: "ANALYZE_PERSISTENCE_FAILED",
+      message: "분석 저장 중 오류가 발생했습니다.",
+      details: storageStatus.error,
+      request: req,
+      error: e,
+      extra: {
+        route: "/api/analyze",
+        userId,
+        step: storageStatus.step,
+        filename,
+        attempted: storageStatus.attempted,
+        analysisId: storageStatus.analysisId
+      }
+    });
   }
 
-  return Response.json(payload);
+  return Response.json({
+    ...payload,
+    meta: buildStorageMeta(payload.meta, storageStatus)
+  });
 }
