@@ -6,6 +6,8 @@ import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 import { signOutAction } from "@/app/(auth)/actions";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
+import { planLabel, resolvePlanTierForUser, type PlanTier } from "@/lib/plan";
+import { paddleBrowserEnv, paddleBrowserToken } from "@/lib/paddle";
 
 export const metadata: Metadata = {
   title: "ReviewBoost",
@@ -13,20 +15,26 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-const paddleToken = process.env.NEXT_PUBLIC_PADDLE_TOKEN;
+const paddleToken = paddleBrowserToken();
+const paddleEnvForClient = paddleBrowserEnv();
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { supabaseConfigured } = getCapabilitiesBase();
   let email: string | null = null;
+  let userId: string | null = null;
+  let plan: PlanTier = "free";
   try {
     if (supabaseConfigured) {
       const supabase = createSupabaseServerComponentClient();
       const { data } = await supabase.auth.getUser();
       email = data.user?.email ?? null;
+      userId = data.user?.id ?? null;
+      plan = await resolvePlanTierForUser({ userId, email });
     }
   } catch {
     // Supabase env missing: keep header minimal.
   }
+  const planText = planLabel(plan);
 
   return (
     <html lang="ko">
@@ -35,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Script src="https://cdn.paddle.com/paddle/v2/paddle.js" strategy="beforeInteractive" />
         {paddleToken ? (
           <Script id="paddle-init" strategy="afterInteractive">
-            {`if (window.Paddle) { Paddle.Environment.set("sandbox"); Paddle.Initialize({ token: ${JSON.stringify(paddleToken)} }); }`}
+            {`if (window.Paddle) { Paddle.Environment.set(${JSON.stringify(paddleEnvForClient)}); Paddle.Initialize({ token: ${JSON.stringify(paddleToken)} }); }`}
           </Script>
         ) : null}
       </head>
@@ -66,6 +74,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </nav>
             </div>
             <div className="headerRight">
+              <span className={`badge ${plan === "free" ? "badgeWarning" : plan === "basic" ? "badgePrimary" : "badgeSuccess"}`} title={`현재 플랜: ${planText}`}>
+                현재 플랜: {planText}
+              </span>
+              {plan !== "pro" ? (
+                <a className="btn btnSmall btnOutline" href="/pricing">
+                  업그레이드
+                </a>
+              ) : null}
               {email ? (
                 <>
                   <a className="btn" href="/dashboard/history">

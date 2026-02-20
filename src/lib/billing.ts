@@ -5,6 +5,8 @@ type SubscriptionStatus =
   | "trialing"
   | "active"
   | "past_due"
+  | "completed"
+  | "paid"
   | "canceled"
   | "paused"
   | "inactive";
@@ -18,7 +20,7 @@ type BillingSubscriptionRow = {
   paddle_subscription_id?: string | null;
 };
 
-const ACTIVE_STATUSES = new Set<SubscriptionStatus>(["trialing", "active", "past_due"]);
+const ACTIVE_STATUSES = new Set<SubscriptionStatus>(["trialing", "active", "past_due", "completed", "paid"]);
 
 export function normalizeBillingTimestamp(v?: string | number | null): string | null {
   if (typeof v === "string") {
@@ -51,7 +53,8 @@ function timestampToMillis(v?: string | number | null): number {
 }
 
 export function isBillingActiveStatus(status: string | null | undefined): boolean {
-  return ACTIVE_STATUSES.has(String(status ?? "") as SubscriptionStatus);
+  const normalized = String(status ?? "").toLowerCase();
+  return ACTIVE_STATUSES.has(normalized as SubscriptionStatus);
 }
 
 export async function resolvePlanTierByBilling(args: {
@@ -65,13 +68,35 @@ export async function resolvePlanTierByBilling(args: {
   if (!admin) return args.fallbackPlan;
 
   try {
-    const { data } = await admin
+    const { data: userSubscriptions } = await admin
       .from("subscriptions")
       .select("plan_tier,status,current_period_start,current_period_end,updated_at,paddle_subscription_id")
       .eq("user_id", userId)
       .limit(50);
 
-    const activePaidSubscriptions = (data ?? [])
+    let dataToEvaluate = userSubscriptions ?? [];
+
+    if (dataToEvaluate.length === 0) {
+      const paddleCustomerId = await findPaddleCustomerIdByUserId(userId);
+      if (paddleCustomerId) {
+        const { data: customerSubscriptions } = await admin
+          .from("subscriptions")
+          .select("plan_tier,status,current_period_start,current_period_end,updated_at,paddle_subscription_id")
+          .eq("paddle_customer_id", paddleCustomerId)
+          .limit(50);
+        dataToEvaluate = customerSubscriptions ?? [];
+
+        if (dataToEvaluate.length > 0) {
+          await admin
+            .from("subscriptions")
+            .update({ user_id: userId, updated_at: new Date().toISOString() })
+            .eq("paddle_customer_id", paddleCustomerId)
+            .is("user_id", null);
+        }
+      }
+    }
+
+    const activePaidSubscriptions = dataToEvaluate
       .filter((row: BillingSubscriptionRow) => {
         const tier = String(row.plan_tier ?? "");
         return isBillingActiveStatus(row.status) && (tier === "basic" || tier === "pro");

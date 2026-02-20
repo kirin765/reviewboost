@@ -82,6 +82,30 @@ describe("billing utilities", () => {
     expect(fromMock).toHaveBeenCalledWith("subscriptions");
   });
 
+  it("treats completed status as active entitlement", async () => {
+    const rows = [
+      {
+        plan_tier: "basic",
+        status: "completed",
+        current_period_end: "2025-03-01T00:00:00.000Z",
+        updated_at: "2025-03-01T00:00:00.000Z",
+        paddle_subscription_id: "sub-basic-completed"
+      }
+    ];
+
+    const selectQuery = createSelectQuery(rows);
+    const fromMock = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue(selectQuery)
+    });
+
+    getSupabaseAdminClientMock.mockReturnValue({ from: fromMock });
+
+    const plan = await resolvePlanTierByBilling({ userId: "user-2", fallbackPlan: "free" });
+
+    expect(plan).toBe("basic");
+    expect(fromMock).toHaveBeenCalledWith("subscriptions");
+  });
+
   it("upsertProfileCustomer performs idempotent upsert keyed by user_id", async () => {
     const upsert = vi.fn().mockResolvedValue({ data: null, error: null });
     const fromMock = vi.fn().mockReturnValue({ upsert });
