@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { renderReportHtml } from "@/lib/report_html";
-import { renderReportPdfBuffer } from "@/lib/report_pdfkit";
 import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
@@ -69,53 +68,41 @@ export async function POST(req: Request) {
     try {
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "networkidle0" });
-      const pdf = await page.pdf({
-        format: "A4",
-        printBackground: true,
-        margin: { top: "12mm", bottom: "12mm", left: "10mm", right: "10mm" }
-      });
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "12mm", bottom: "12mm", left: "10mm", right: "10mm" }
+    });
       return new Response(pdf as any, {
         status: 200,
         headers: {
           "content-type": "application/pdf",
-          "content-disposition": `attachment; filename="reviewboost-report.pdf"`
+          "content-disposition": `attachment; filename="reviewboost-report.pdf"`,
+          "x-report-renderer": "puppeteer"
         }
       });
     } finally {
       await browser.close();
     }
   } catch (e: any) {
-    // Fallback: PDFKit (no headless browser dependency).
-    try {
-      const buf = await renderReportPdfBuffer({
-        title: "ReviewBoost 요약 리포트",
-        stats,
-        suggestions,
-        meta: { filename: meta?.filename ?? null, createdAt: new Date().toISOString() },
-        requireKoreanFont: false
-      });
-      return new Response(buf as any, {
-        status: 200,
-        headers: {
-          "content-type": "application/pdf",
-          "content-disposition": `attachment; filename="reviewboost-report.pdf"`,
-          "x-report-renderer": "pdfkit",
-          "x-puppeteer-error": safeHeaderValue(e?.message ?? e ?? "")
-        }
-      });
-    } catch (e2: any) {
-      await logApiError({
-        route: "/api/report",
-        method: req.method,
-        status: 501,
-        code: "INTERNAL_ERROR",
-        message: "PDF 생성에 실패했습니다.",
-        details: e2?.message ?? String(e2),
-        request: req,
-        error: e2,
-        extra: { renderer: "pdfkit" }
-      });
-      return textError(501, `PDF 생성 실패(Puppeteer 실패 + PDFKit fallback 실패):\n${String(e2?.message ?? e2 ?? "")}`);
-    }
+    await logApiError({
+      route: "/api/report",
+      method: req.method,
+      status: 501,
+      code: "INTERNAL_ERROR",
+      message: "PDF 생성 실패(브라우저 렌더링 실패).",
+      details: e?.message ?? String(e ?? ""),
+      request: req,
+      error: e
+    });
+
+    return new Response(`PDF 생성에 실패했습니다.\n원인: Puppeteer 브라우저 실행 실패.\n${String(e?.message ?? e ?? "")}`, {
+      status: 501,
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "x-report-renderer": "puppeteer-failed",
+        "x-puppeteer-error": safeHeaderValue(e?.message ?? e ?? "")
+      }
+    });
   }
 }
