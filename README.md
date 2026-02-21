@@ -20,8 +20,8 @@
   - FAQ 추천
 - 요약 리포트 PDF 다운로드
   - 기본: Puppeteer(HTML 렌더링)
-  - 환경 의존성 문제 시: PDFKit으로 자동 fallback
-  - PDFKit에서 한글이 깨지면 한글 폰트를 제공해야 합니다(아래 참고).
+  - 최근 이슈 대응: Puppeteer 렌더 실패 시 명확한 에러 반환(텍스트 전용 fallback 없음)
+  - 브라우저 렌더링에서 한글/아이콘/그래픽 보존이 핵심입니다.
 
 ## 실행
 
@@ -141,6 +141,31 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 2) 시스템 폰트 설치(리눅스)
 - `sudo apt-get update && sudo apt-get install -y fonts-noto-cjk`
 - 또는 환경변수 `REPORT_FONT_PATH`에 한글 폰트 파일 경로를 지정
+
+## PDF 생성 운영 가이드
+
+최근 배포는 브라우저 렌더링(Puppeteer) 실패 시에도 리포트 다운로드를 계속 진행했으나, 그래픽이 사라진 텍스트 전용 PDF가 내려오던 이슈가 있었습니다. 현재는 `Puppeteer`만 사용하고, 실패 시 명확한 에러를 반환합니다.
+
+- 응답 헤더 `x-report-renderer`가 `puppeteer-failed`면 Puppeteer 실행 실패입니다.
+- 에러 원문은 `x-puppeteer-error` 헤더에서 확인할 수 있습니다.
+- `PDFKit` fallback은 더 이상 사용하지 않습니다.
+
+### 서버에서 자주 나오는 Puppeteer 에러
+
+- `libatk-1.0.so.0`가 없다는 에러
+  - Ubuntu/Debian 기준:
+    ```bash
+    sudo apt-get update
+    sudo apt-get install -y \
+      fonts-noto-cjk \
+      libatk1.0-0 libatk-bridge2.0-0 libnss3 libx11-xcb1 libxcomposite1 \
+      libxdamage1 libxrandr2 libgbm1 libasound2 libxshmfence1 libxss1 \
+      libx11-6 libxext6 libgtk-3-0
+    ```
+  - 컨테이너(예: Debian slim)에서는 위 패키지명이 다를 수 있으므로 base image에 맞춰 조정하세요.
+
+- `PUPPETEER_SKIP_DOWNLOAD=1`가 운영 컨테이너에도 적용되어 있으면 브라우저 바이너리가 없을 수 있습니다.
+  - 운영에서는 `puppeteer`의 번들 Chrome 사용을 허용하거나, 시스템 Chrome 경로를 `PUPPETEER_EXECUTABLE_PATH`로 지정하세요.
 
 ## Auth (로그인/회원가입)
 
