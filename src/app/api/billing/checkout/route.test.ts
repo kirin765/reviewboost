@@ -38,7 +38,11 @@ describe("POST /api/billing/checkout", () => {
     mocks.paddlePriceIdForPlan.mockReturnValue("pri_123");
     mocks.appBaseUrl.mockReturnValue("https://reviewboost.app");
     mocks.findPaddleCustomerIdByUserId.mockResolvedValue("ctm_123");
-    mocks.paddleRequest.mockResolvedValue({ url: "https://checkout.paddle.com/c/test" });
+    mocks.paddleRequest.mockResolvedValue({
+      checkout: {
+        url: "https://checkout.paddle.com/c/test"
+      }
+    });
   });
 
   it("returns 401 when user is not authenticated", async () => {
@@ -112,7 +116,7 @@ describe("POST /api/billing/checkout", () => {
     await expect(res.json()).resolves.toEqual({ url: "https://checkout.paddle.com/c/test" });
     expect(mocks.paddlePriceIdForPlan).toHaveBeenCalledWith("pro");
     expect(mocks.findPaddleCustomerIdByUserId).toHaveBeenCalledWith("user-1");
-    expect(mocks.paddleRequest).toHaveBeenCalledWith("/checkouts", {
+    expect(mocks.paddleRequest).toHaveBeenCalledWith("/transactions", {
       method: "POST",
       body: {
         items: [{ price_id: "pri_123", quantity: 1 }],
@@ -120,14 +124,16 @@ describe("POST /api/billing/checkout", () => {
           user_id: "user-1",
           plan_tier: "pro"
         },
-        success_url: "https://reviewboost.app/pricing?billing=success&plan=pro",
-        cancel_url: "https://reviewboost.app/pricing?billing=cancel&plan=pro",
+        checkout: {
+          url: "https://reviewboost.app/pricing?billing=success&plan=pro"
+        },
+        collection_mode: "automatic",
         customer_id: "ctm_123"
       }
     });
   });
 
-  it("falls back to customer_email when known customer id is absent", async () => {
+  it("creates checkout without customer fields when customer id is absent", async () => {
     mocks.findPaddleCustomerIdByUserId.mockResolvedValue(null);
 
     const req = new Request("https://reviewboost.app/api/billing/checkout", {
@@ -140,7 +146,7 @@ describe("POST /api/billing/checkout", () => {
 
     expect(res.status).toBe(200);
     expect(mocks.paddlePriceIdForPlan).toHaveBeenCalledWith("basic");
-    expect(mocks.paddleRequest).toHaveBeenCalledWith("/checkouts", {
+    expect(mocks.paddleRequest).toHaveBeenCalledWith("/transactions", {
       method: "POST",
       body: {
         items: [{ price_id: "pri_123", quantity: 1 }],
@@ -148,9 +154,10 @@ describe("POST /api/billing/checkout", () => {
           user_id: "user-1",
           plan_tier: "basic"
         },
-        success_url: "https://reviewboost.app/pricing?billing=success&plan=basic",
-        cancel_url: "https://reviewboost.app/pricing?billing=cancel&plan=basic",
-        customer_email: "user@example.com"
+        checkout: {
+          url: "https://reviewboost.app/pricing?billing=success&plan=basic"
+        },
+        collection_mode: "automatic"
       }
     });
   });

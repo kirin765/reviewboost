@@ -43,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Script src="https://cdn.paddle.com/paddle/v2/paddle.js" strategy="beforeInteractive" />
         {paddleToken ? (
           <Script id="paddle-init" strategy="afterInteractive">
-            {`if (window.Paddle) { Paddle.Environment.set(${JSON.stringify(paddleEnvForClient)}); Paddle.Initialize({ token: ${JSON.stringify(paddleToken)} }); }`}
+            {`if (window.Paddle) { ${paddleEnvForClient === "sandbox" ? 'Paddle.Environment.set("sandbox");' : ""} Paddle.Initialize({ token: ${JSON.stringify(paddleToken)} }); }`}
           </Script>
         ) : null}
       </head>

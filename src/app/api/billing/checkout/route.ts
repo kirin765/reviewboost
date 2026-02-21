@@ -234,12 +234,10 @@ export async function POST(req: Request) {
       return errorResponse(payload, 500);
     }
 
-    const successUrl = buildCheckoutUrl(baseUrl, plan, "success");
-    const cancelUrl = buildCheckoutUrl(baseUrl, plan, "cancel");
+    const checkoutUrl = buildCheckoutUrl(baseUrl, plan, "success");
 
     try {
-      new URL(successUrl);
-      new URL(cancelUrl);
+      new URL(checkoutUrl);
     } catch {
       const payload = {
         error: "결제 콜백 URL을 생성하지 못했습니다.",
@@ -253,7 +251,7 @@ export async function POST(req: Request) {
 
     const knownCustomerId = await findPaddleCustomerIdByUserId(user.id);
 
-    const checkout = await paddleRequest("/checkouts", {
+    const checkout = await paddleRequest("/transactions", {
       method: "POST",
       body: {
         items: [{ price_id: priceId, quantity: 1 }],
@@ -261,13 +259,20 @@ export async function POST(req: Request) {
           user_id: user.id,
           plan_tier: plan
         },
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        ...(knownCustomerId ? { customer_id: knownCustomerId } : { customer_email: user.email })
+        collection_mode: "automatic",
+        checkout: {
+          url: checkoutUrl
+        },
+        ...(knownCustomerId ? { customer_id: knownCustomerId } : {})
       }
     });
 
-    const url = String(checkout?.url ?? "").trim();
+    const url = String(
+      checkout?.checkout?.url
+        ?? checkout?.data?.checkout?.url
+        ?? checkout?.url
+        ?? ""
+    ).trim();
     if (!url) {
       const payload = {
         error: "결제 세션 생성에 실패했습니다.",

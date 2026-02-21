@@ -16,22 +16,29 @@ vi.mock("@/components/FeedbackModal", () => ({
 import PricingActions from "./PricingActions";
 
 describe("PricingActions", () => {
-  const openMock = vi.fn();
+  let checkoutOpenMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.stubGlobal(
-      "Paddle",
-      {
+    checkoutOpenMock = vi.fn();
+    Object.defineProperty(window, "Paddle", {
+      value: {
         Checkout: {
-          open: openMock
+          open: checkoutOpenMock
         }
-      }
-    );
-    openMock.mockReset();
+      },
+      configurable: true
+    });
   });
 
-  it("opens Paddle checkout directly with plan + callback urls", async () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("opens Paddle checkout with required args", async () => {
+    const origin = "https://reviewboost.app";
+    vi.stubGlobal("location", { origin } as Location);
+
     render(
       <PricingActions
         plan="basic"
@@ -47,13 +54,17 @@ describe("PricingActions", () => {
     expect(screen.getByRole("button", { name: "연결 중..." }).hasAttribute("disabled")).toBe(true);
 
     await waitFor(() => {
-      expect(openMock).toHaveBeenCalledWith({
+      expect(checkoutOpenMock).toHaveBeenCalledWith({
         items: [{ priceId: "pri_basic", quantity: 1 }],
-        customData: { user_id: "usr_123", plan_tier: "basic" },
-        customer: { email: "basic@example.com" },
+        customData: {
+          user_id: "usr_123",
+          plan_tier: "basic"
+        },
+        customer: {
+          email: "basic@example.com"
+        },
         settings: {
-          successUrl: expect.stringContaining("/pricing?billing=success&plan=basic"),
-          cancelUrl: expect.stringContaining("/pricing?billing=cancel&plan=basic")
+          successUrl: `${origin}/pricing?billing=success&plan=basic`
         }
       });
     });
@@ -61,6 +72,54 @@ describe("PricingActions", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Basic 시작하기" }).hasAttribute("disabled")).toBe(false);
     });
+  });
+
+  it("shows module-not-ready error when Paddle SDK is unavailable", async () => {
+    Object.defineProperty(window, "Paddle", {
+      value: undefined,
+      configurable: true
+    });
+
+    render(
+      <PricingActions
+        plan="basic"
+        priceId="pri_basic"
+        userId="usr_123"
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Basic 시작하기" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent ?? "").toContain("Paddle 결제 모듈이 아직 준비되지 않았습니다.");
+    });
+  });
+
+  it("shows module-not-ready error when Paddle SDK exists but is not initialized", async () => {
+    Object.defineProperty(window, "Paddle", {
+      value: {
+        Initialized: false,
+        Checkout: {
+          open: checkoutOpenMock
+        }
+      },
+      configurable: true
+    });
+
+    render(
+      <PricingActions
+        plan="basic"
+        priceId="pri_basic"
+        userId="usr_123"
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Basic 시작하기" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent ?? "").toContain("Paddle 결제 모듈이 아직 준비되지 않았습니다.");
+    });
+    expect(checkoutOpenMock).not.toHaveBeenCalled();
   });
 
   it("renders missing plan config error and resets loading state", async () => {
