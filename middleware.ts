@@ -47,23 +47,29 @@ export async function middleware(request: NextRequest) {
   const secureContext = request.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production";
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet: any[]) {
-        for (const { name, value, options } of cookiesToSet) {
-          const hardenedOptions = normalizeCookieOptions(options, secureContext);
-          request.cookies.set(name, value);
-          response.cookies.set(name, value, hardenedOptions);
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet: any[]) {
+          for (const { name, value, options } of cookiesToSet) {
+            const hardenedOptions = normalizeCookieOptions(options, secureContext);
+            request.cookies.set(name, value);
+            response.cookies.set(name, value, hardenedOptions);
+          }
         }
       }
-    }
-  });
+    });
 
-  // Refresh session cookies (no-op if session is valid/absent).
-  await supabase.auth.getUser();
+    // Refresh session cookies (no-op if session is valid/absent).
+    await supabase.auth.getUser();
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[middleware] supabase session refresh failed:", error);
+    }
+  }
 
   applySecurityHeaders(response.headers);
   return response;
