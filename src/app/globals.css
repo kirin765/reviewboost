@@ -1453,3 +1453,128 @@ a {
   margin-left: 6px;
   background: var(--color-bg-soft);
 }
+
+.btnGhost {
+  background: transparent;
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.btnGhost:hover {
+  background: rgba(37, 99, 235, 0.06);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.heroLandscape {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.heroText {
+  display: grid;
+  gap: 12px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.trustStrip {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.trustItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.uploadBlock {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  background: var(--color-bg-soft);
+}
+
+.uploadStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: var(--color-muted);
+  background: var(--bg-soft);
+  font-size: 13px;
+}
+
+.mappingPanel {
+  display: grid;
+  gap: 16px;
+}
+
+.tableHint {
+  margin-top: -4px;
+}
+
+.summaryBanner {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: rgba(37, 99, 235, 0.06);
+  padding: 10px 12px;
+}
+
+.resultsBlock {
+  display: grid;
+  gap: 12px;
+}
+
+.simulationGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.kpiCard .value {
+  line-height: 1.1;
+}
+
+.kpiCard .subtext {
+  margin-top: 6px;
+}
+
+@media (max-width: 900px) {
+  .heroLandscape {
+    grid-template-columns: 1fr;
+  }
+
+  .heroLandscape > .btn.btnPrimary.btnGhost {
+    width: 100%;
+    justify-self: start;
+  }
+
+  .trustStrip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .simulationGrid {
+    grid-template-columns: 1fr;
+  }
+}
