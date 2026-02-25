@@ -151,12 +151,31 @@ export async function POST(req: Request) {
   const gates = getGatesForPlan(plan);
   const devBypass = devAllowAdvancedAiBypass();
 
+  let aiDecisionTag = "AI_DECISION:ENABLED";
+
   // Check if LLM is allowed for this plan
   let effectiveUseLLM = useLLM;
   if (!gates.allowLLM && !devBypass) {
     effectiveUseLLM = false;
+    aiDecisionTag = "AI_DECISION:SKIPPED_PLANK";
     console.log(`[LLM:analyze] LLM 비활성화 — plan=${plan}, allowLLM=${gates.allowLLM}`);
+  } else if (forcedMode === "heuristic") {
+    aiDecisionTag = "AI_DECISION:FORCED_HEURISTIC";
+  } else if (forcedMode === "llm") {
+    aiDecisionTag = "AI_DECISION:FORCED_LLM";
   }
+
+  console.log(
+    `[LLM:analyze:decision] ${aiDecisionTag} payload=${JSON.stringify({
+      useLLM,
+      effectiveUseLLM,
+      plan,
+      allowLLM: gates.allowLLM,
+      devBypass,
+      openaiConfigured: openaiAvailable,
+      forcedMode
+    })}`
+  );
 
   if (monthlyLimit !== null && userId && supabaseAuth) {
     try {

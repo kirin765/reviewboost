@@ -149,31 +149,49 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
   let llmApplied = false;
 
   // 2) Optional: LLM classification for sentiment/category
+  let aiDiagnosticReason: "LLM_NOT_REQUESTED" | "LLM_REQUESTED_NO_TARGET" | "LLM_CLASSIFY_OK" | "LLM_CLASSIFY_LEN_MISMATCH" | "LLM_CLASSIFY_ERROR" = "LLM_NOT_REQUESTED";
+  console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan}, 총건=${classified.length}, target=${Math.min(classified.length, maxLlmReviews)}, maxLlmReviews=${maxLlmReviews}`);
+
   if (useLLM) {
     try {
       const targetIdx = pickLlmTargetIndicesByHeuristic(classified, maxLlmReviews);
-      console.log(`[LLM:analyze] 분류 요청 — plan=${plan}, 전체=${classified.length}건, LLM대상=${targetIdx.length}건`);
-      const targetTexts = targetIdx.map((i) => classified[i]!.text);
-      const llm = await classifyReviewsWithOpenAI({ texts: targetTexts });
-      if (llm && llm.length === targetTexts.length) {
-        for (let i = 0; i < targetIdx.length; i++) {
-          const idx = targetIdx[i]!;
-          const item = llm[i]!;
-          classified[idx] = {
-            ...classified[idx]!,
-            sentiment: item.sentiment,
-            category: item.category
-          };
-        }
-        llmApplied = true;
-        console.log(`[LLM:analyze] 분류 적용 완료 — ${targetIdx.length}건 LLM 반영`);
+      if (targetIdx.length === 0) {
+        aiDiagnosticReason = "LLM_REQUESTED_NO_TARGET";
+        console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} maxLlmReviews=${maxLlmReviews}`);
       } else {
-        console.warn(`[LLM:analyze] 분류 결과 null 또는 길이 불일치 — heuristic 유지`);
+        console.log(`[LLM:analyze] 분류 요청 — plan=${plan}, 전체=${classified.length}건, LLM대상=${targetIdx.length}건`);
+        const targetTexts = targetIdx.map((i) => classified[i]!.text);
+        const llm = await classifyReviewsWithOpenAI({ texts: targetTexts });
+        if (llm && llm.length === targetTexts.length) {
+          for (let i = 0; i < targetIdx.length; i++) {
+            const idx = targetIdx[i]!;
+            const item = llm[i]!;
+            classified[idx] = {
+              ...classified[idx]!,
+              sentiment: item.sentiment,
+              category: item.category
+            };
+          }
+          llmApplied = true;
+          aiDiagnosticReason = "LLM_CLASSIFY_OK";
+          console.log(`[LLM:analyze] 분류 적용 완료 — ${targetIdx.length}건 LLM 반영`);
+          console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 대상=${targetIdx.length} maxLlmReviews=${maxLlmReviews}`);
+        } else {
+          aiDiagnosticReason = "LLM_CLASSIFY_LEN_MISMATCH";
+          console.warn(`[LLM:analyze] 분류 결과 null 또는 길이 불일치 — heuristic 유지`);
+          console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 대상=${targetIdx.length} 최대=${maxLlmReviews}`);
+        }
       }
     } catch (err) {
+      aiDiagnosticReason = "LLM_CLASSIFY_ERROR";
       console.error(`[LLM:analyze] 분류 중 예외 — error=${err instanceof Error ? err.message : String(err)} → heuristic 유지`);
+      console.error(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 최대=${maxLlmReviews} error=${err instanceof Error ? err.message : String(err)}`);
     }
+  } else {
+    console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 최대=${maxLlmReviews}`);
   }
+
+  console.log(`[LLM:analyze] finalDiagnostic=${aiDiagnosticReason}`);
 
   const { stats } = computeAnalysisFromClassified(classified);
 
