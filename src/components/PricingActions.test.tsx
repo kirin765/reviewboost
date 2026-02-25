@@ -2,7 +2,7 @@
 
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/FeedbackModal", () => ({
   default: ({ title, message }: { title: string; message: string }) => (

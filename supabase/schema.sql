@@ -31,7 +31,7 @@ create index if not exists reviews_analysis_id_idx on public.reviews (analysis_i
 create table if not exists public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   -- Paddle customer identifier. Nullable for pre-billing users.
-  paddle_customer_id text null,
+  paddle_customer_id text unique null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -40,7 +40,7 @@ create table if not exists public.subscriptions (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
   paddle_customer_id text not null,
-  paddle_subscription_id text not null,
+  paddle_subscription_id text not null unique,
   paddle_price_id text null,
   -- Paddle subscription status values (active, trialing, past_due, canceled, paused, etc).
   status text not null,
