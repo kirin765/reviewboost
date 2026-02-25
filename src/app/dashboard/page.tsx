@@ -102,7 +102,7 @@ function DashboardContent() {
     setTextCol(json.inferred.textCol ?? "");
     setRatingCol((json.inferred.ratingCol ?? "") || "");
     setDateCol((json.inferred.dateCol ?? "") || "");
-    setAnalysisDoneNotice("미리보기가 준비되었습니다. 다음은 분석을 진행해주세요.");
+    setAnalysisDoneNotice("미리보기가 준비되었습니다. 다음은 분석을 진행해 주세요.");
 
     gtagEvent("csv_upload", {
       file_name: f.name,
@@ -303,14 +303,14 @@ function DashboardContent() {
           <section id="results-panel" role="tabpanel" aria-labelledby="results-tab" className="dashboardEmptyResult">
             <div className="card">
               <h2>아직 분석 결과가 없습니다</h2>
-              <p className="hint">CSV를 업로드하고 분석을 완료하면 결과가 이곳에 표시됩니다.</p>
+              <p className="hint">CSV를 업로드하고 분석을 완료하면, 리포트가 이곳에 표시됩니다.</p>
               <button
                 type="button"
                 className="btn btnPrimary"
                 onClick={() => setActiveTab("analysis")}
                 aria-label="분석하기 탭으로 이동"
               >
-                분석하기 이동
+                분석하기로 이동
               </button>
             </div>
           </section>
