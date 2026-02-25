@@ -8,19 +8,43 @@ import { useEffect, useMemo, useRef, useState } from "react";
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const hasMounted = useRef(false);
   const drawerFirstLinkRef = useRef<HTMLAnchorElement | null>(null);
   const toggleButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     document.body.classList.add("dashboardMode");
+
+    const getIsMobile = () => (typeof window === "undefined" ? false : window.innerWidth < 1100);
+
+    const updateDeviceMode = () => {
+      const nextIsMobile = getIsMobile();
+      setIsMobile((prevIsMobile) => {
+        if (prevIsMobile === nextIsMobile) return prevIsMobile;
+
+        if (nextIsMobile) {
+          setOpen(false);
+        } else {
+          setOpen(true);
+        }
+
+        return nextIsMobile;
+      });
+    };
+
+    updateDeviceMode();
+
+    window.addEventListener("resize", updateDeviceMode);
+
     return () => {
+      window.removeEventListener("resize", updateDeviceMode);
       document.body.classList.remove("dashboardMode");
     };
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !isMobile) return;
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -30,7 +54,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [open, isMobile]);
 
   useEffect(() => {
     if (!hasMounted.current) {
@@ -99,7 +123,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     aria-current={isActive(item.href) ? "page" : undefined}
                     ref={item.href === "/dashboard" ? drawerFirstLinkRef : null}
                     onClick={() => {
-                      if (typeof window !== "undefined" && window.innerWidth < 1100) {
+                      if (isMobile) {
                         setOpen(false);
                       }
                     }}
@@ -124,8 +148,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               setOpen(false);
             }
           }}
-          hidden={!open}
-          aria-hidden={!open}
+          hidden={!isMobile || !open}
+          aria-hidden={!isMobile || !open}
           aria-label="대시보드 내비게이션 닫기"
           tabIndex={open ? -1 : -1}
         />
