@@ -50,56 +50,74 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <GoogleAnalytics />
         <AnalyticsQueryEvents />
-        <div className="container">
-          <div className="header">
-            <div className="headerLeft">
-              <div className="brand">
-                <strong>📊 ReviewBoost</strong>
-              </div>
-              <nav className="topNav" aria-label="주요 메뉴">
-                <a className="navLink" href="/help">
-                  사용법
-                </a>
-                <a className="navLink" href="/pricing">
-                  요금제
-                </a>
-                <a className="navLink" href="/dashboard">
-                  분석하기
-                </a>
-                {!email ? (
-                  <a className="navLink" href="/login">
-                    로그인
-                  </a>
-                ) : null}
-              </nav>
+        <div className="appShell">
+          <aside className="leftNav" aria-label="주요 메뉴">
+            <div className="leftNavBrand">
+              <strong>📊 ReviewBoost</strong>
+              <span>Review Analysis</span>
             </div>
-            <div className="headerRight">
-              <span className={`badge ${plan === "free" ? "badgeWarning" : plan === "basic" ? "badgePrimary" : "badgeSuccess"}`} title={`현재 플랜: ${planText}`}>
-                현재 플랜: {planText}
+            <nav aria-label="주요 메뉴">
+              <ul className="leftNavList">
+                <li>
+                  <a className="leftNavLink" href="/help">
+                    <span className="leftNavIcon">?</span>
+                    <span className="leftNavText">사용법</span>
+                  </a>
+                </li>
+                <li>
+                  <a className="leftNavLink" href="/pricing">
+                    <span className="leftNavIcon">💎</span>
+                    <span className="leftNavText">요금제</span>
+                  </a>
+                </li>
+                <li>
+                  <a className="leftNavLink" href="/dashboard">
+                    <span className="leftNavIcon">⚙</span>
+                    <span className="leftNavText">분석하기</span>
+                  </a>
+                </li>
+                {!email ? (
+                  <li>
+                    <a className="leftNavLink" href="/login">
+                      <span className="leftNavIcon">🔐</span>
+                      <span className="leftNavText">로그인</span>
+                    </a>
+                  </li>
+                ) : null}
+              </ul>
+            </nav>
+
+            <div className="leftNavFooter">
+              <span className={`leftNavBadge ${plan === "free" ? "badgeWarning" : plan === "basic" ? "badgePrimary" : "badgeSuccess"}`} title={`현재 플랜: ${planText}`}>
+                {planText}
               </span>
+
               {plan !== "pro" ? (
-                <a className="btn btnSmall btnOutline" href="/pricing">
+                <a className="leftNavButton" href="/pricing">
                   업그레이드
                 </a>
               ) : null}
+
               {email ? (
                 <>
-                  <a className="btn" href="/dashboard/history">
+                  <a className="leftNavButton" href="/dashboard/history">
                     저장된 리포트
                   </a>
-                  <span className="pill" title={email}>
+                  <span className="leftNavTextMuted" title={email}>
                     {email}
                   </span>
-                  <form action={signOutAction}>
-                    <button className="btn" type="submit">
+                  <form action={signOutAction} className="leftNavForm">
+                    <button className="leftNavButton" type="submit">
                       로그아웃
                     </button>
                   </form>
                 </>
               ) : null}
             </div>
-          </div>
-          {children}
+          </aside>
+
+          <div className="container">
+            {children}
           <footer className="siteFooterV2" aria-label="사이트 정보">
             <div className="footerSection">
               <h4>ReviewBoost</h4>
@@ -123,6 +141,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </ul>
             </div>
           </footer>
+          </div>
         </div>
       </body>
     </html>
