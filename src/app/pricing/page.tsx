@@ -39,7 +39,7 @@ export default async function PricingPage({
         {billing === "cancel" ? <p className="hint">결제가 취소되었습니다. 다시 시도하실 수 있습니다.</p> : null}
       </div>
 
-      <div className="grid">
+      <div className="pricingCardGrid">
         <div className="card">
           <h2>무료</h2>
           <p className="muted">체험/초기 유입용 (베타 기간)</p>
@@ -79,7 +79,7 @@ export default async function PricingPage({
           </div>
         </div>
 
-        <div className="card" style={{ borderColor: 'var(--color-primary)', position: 'relative' }}>
+        <div className="card" style={{ borderColor: "var(--color-primary)", position: "relative" }}>
           <span className="badge badgePrimary" style={{ position: 'absolute', top: -10, right: 16 }}>추천</span>
           <h2>Basic</h2>
           <p className="muted">월 39,000원 (1인 실사용 추천, 초기 검증 가격)</p>
@@ -132,9 +132,7 @@ export default async function PricingPage({
             userEmail={userEmail ?? undefined}
           />
         </div>
-      </div>
 
-      <div className="grid">
         <div className="card">
           <h2>Pro</h2>
           <p className="muted">월 89,000원 (팀/에이전시용)</p>
@@ -203,16 +201,16 @@ export default async function PricingPage({
             userEmail={userEmail ?? undefined}
           />
         </div>
+      </div>
 
-        <div className="card">
-          <h2>안내</h2>
-          <p className="muted">Basic 가격은 초기 검증 구간(39,000원)이며 운영 지표에 따라 49,000원으로 조정될 수 있습니다.</p>
-          <p className="muted">대용량 업로드 시 안정성을 위해 일부 리뷰를 샘플링하여 분석할 수 있습니다.</p>
-          <div className="actionRow">
-            <a className="btn btnPrimary" href="/dashboard">
-              지금 분석하기
-            </a>
-          </div>
+      <div className="card">
+        <h2>안내</h2>
+        <p className="muted">Basic 가격은 초기 검증 구간(39,000원)이며 운영 지표에 따라 49,000원으로 조정될 수 있습니다.</p>
+        <p className="muted">대용량 업로드 시 안정성을 위해 일부 리뷰를 샘플링하여 분석할 수 있습니다.</p>
+        <div className="actionRow">
+          <a className="btn btnPrimary" href="/dashboard">
+            지금 분석하기
+          </a>
         </div>
       </div>
     </main>

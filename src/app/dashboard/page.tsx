@@ -253,7 +253,7 @@ function DashboardContent() {
   const handleErrorClose = () => setError(null);
 
   return (
-    <main className="pageMain">
+    <main className="pageMain analysisWorkspace">
       {error ? <FeedbackModal title="분석 처리 오류" message={error} tone="error" onClose={handleErrorClose} /> : null}
       {!error && analysisDoneNotice ? (
         <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
