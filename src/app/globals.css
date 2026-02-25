@@ -89,14 +89,20 @@ body {
   border-bottom: 1px solid var(--color-border);
 }
 
-.leftNavBrand strong {
+.leftNavBrandTitle {
   font-size: 18px;
   line-height: 1.2;
 }
 
-.leftNavBrand span {
+.leftNavBrandSub {
   font-size: 12px;
   color: var(--color-muted);
+  line-height: 1.35;
+}
+
+.leftNavBrand strong,
+.leftNavBrand span {
+  font-size: inherit;
 }
 
 .leftNavList {
@@ -297,9 +303,10 @@ a {
 }
 
 .drawerToggle {
+  display: none;
   position: fixed;
   left: 16px;
-  top: 130px;
+  top: 18px;
   z-index: 40;
   width: 38px;
   height: 38px;
@@ -409,6 +416,7 @@ a {
   inset: 0;
   z-index: 15;
   background: rgba(10, 14, 25, 0.32);
+  display: none;
 }
 
 .drawerBackdrop[hidden] {
@@ -465,6 +473,43 @@ a {
 
   .leftNavText {
     display: inline;
+  }
+}
+
+@media (max-width: 1100px) {
+  .drawerToggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .dashboardShellInner {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardShell.isClosed .dashboardShellInner {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardDrawer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 30;
+    width: 290px;
+    height: 100vh;
+  }
+
+  .dashboardShell.isClosed .dashboardDrawer {
+    transform: translateX(-100%);
+    width: 290px;
+    min-width: 290px;
+    border-right-color: transparent;
+  }
+
+  .drawerBackdrop {
+    display: block;
   }
 }
 
@@ -654,6 +699,57 @@ a {
   gap: 14px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 20px;
+}
+
+.pricingCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 100%;
+}
+
+.pricingCardHeader {
+  display: grid;
+  gap: 6px;
+}
+
+.pricingCardHeaderRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pricingCardHeader h2 {
+  margin-bottom: 0;
+}
+
+.pricingCardBody {
+  display: grid;
+  gap: 10px;
+}
+
+.pricingCardFooter {
+  margin-top: auto;
+  padding-top: 8px;
+  min-height: 64px;
+}
+
+.pricingCardActionRow {
+  margin-top: 0;
+}
+
+.pricingCardActionRow .actionRow {
+  margin-top: 0;
+}
+
+.pricingBadge {
+  flex: 0 0 auto;
+  font-size: 11px;
+}
+
+.pricingCardPopular {
+  border-color: var(--color-primary);
 }
 
 .stack {

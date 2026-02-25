@@ -53,8 +53,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="appShell">
           <aside className="leftNav" aria-label="주요 메뉴">
             <div className="leftNavBrand">
-              <strong>📊 ReviewBoost</strong>
-              <span>Review Analysis</span>
+              <strong className="leftNavBrandTitle">📊 ReviewBoost</strong>
+              <span className="leftNavBrandSub">AI 리뷰 분석 · 우선순위 액션 제안</span>
             </div>
             <nav aria-label="주요 메뉴">
               <ul className="leftNavList">
