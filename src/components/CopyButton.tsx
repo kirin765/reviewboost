@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useEffect, useRef, useState } from "react";
 
 async function copyToClipboard(text: string) {
@@ -29,6 +30,7 @@ async function copyToClipboard(text: string) {
 type CopyButtonProps = {
   text: string;
   className?: string;
+  ariaLabel?: string;
   children?: React.ReactNode;
   copiedLabel?: string;
   errorLabel?: string;
@@ -38,6 +40,7 @@ type CopyButtonProps = {
 export default function CopyButton({
   text,
   className = "btn btnSmall",
+  ariaLabel,
   children = "복사",
   copiedLabel = "복사됨",
   errorLabel = "복사 실패",
@@ -69,7 +72,7 @@ export default function CopyButton({
 
   return (
     <>
-      <button className={className} onClick={onClick}>
+      <button className={className} onClick={onClick} aria-label={ariaLabel}>
         {label}
       </button>
       {toastMessage ? (
