@@ -22,14 +22,28 @@ export default function FeedbackModal(props: {
   if (!open || !message) return null;
 
   return (
-    <div className="modalOverlay" role="dialog" aria-modal="true" aria-label={title}>
+    <div
+      className="modalOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      aria-live="polite"
+    >
       <div className={`modal feedbackModal ${tone === "error" ? "feedbackModalError" : "feedbackModalInfo"}`}>
         <div className="modalHeader">
           <div>
             <div className="muted">안내</div>
             <div className="feedbackModalTitle">{title}</div>
           </div>
-          <button type="button" className="btn btnSmall" onClick={() => { setOpen(false); onClose?.(); }}>
+          <button
+            type="button"
+            className="btn btnSmall"
+            aria-label="안내 닫기"
+            onClick={() => {
+              setOpen(false);
+              onClose?.();
+            }}
+          >
             닫기
           </button>
         </div>

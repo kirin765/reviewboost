@@ -1,8 +1,45 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
-import CopyButton from "@/components/CopyButton";
+import type { AnalysisOutput } from "@/lib/types";
+import AnalysisResultDigest from "@/components/Analysis/AnalysisResultDigest";
 
 export const dynamic = "force-dynamic";
+
+type AnalysisRow = {
+  id: string;
+  created_at: string;
+  input_filename: string | null;
+  priority_score: number;
+  stats: AnalysisOutput["stats"] | null;
+  suggestions: AnalysisOutput["suggestions"] | null;
+};
+
+const EMPTY_ANALYSIS_RESULT: Pick<AnalysisOutput, "stats" | "suggestions"> = {
+  stats: {
+    total: 0,
+    positive: 0,
+    negative: 0,
+    neutral: 0,
+    positiveRatio: 0,
+    negativeRatio: 0,
+    avgRating: null,
+    negativeKeywordsTop10: [],
+    categoryCounts: {} as AnalysisOutput["stats"]["categoryCounts"],
+    priorityScore: 0,
+    recentness: {
+      hasDates: false,
+      last30Share: 0,
+      last90Share: 0,
+      last30NegativeRatio: null
+    }
+  },
+  suggestions: {
+    detailPageCopy: [],
+    csResponseTemplates: [],
+    faqRecommendations: [],
+    notes: []
+  }
+};
 
 export default async function AnalysisDetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
@@ -62,21 +99,21 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
     );
   }
 
-  const stats: any = data.stats;
-  const suggestions: any = data.suggestions;
-  const created = new Date(data.created_at).toLocaleString("ko-KR");
-  const priorityScore = Number(data.priority_score ?? 0);
-  const recent30Share =
-    stats?.recentness?.hasDates && typeof stats?.recentness?.last30Share === "number"
-      ? `${Math.round(stats.recentness.last30Share * 100)}%`
-      : null;
+  const row = data as AnalysisRow;
+  const created = new Date(row.created_at).toLocaleString("ko-KR");
+  const priorityScore = Number(row.priority_score ?? 0);
+
+  const result: Pick<AnalysisOutput, "stats" | "suggestions"> = {
+    stats: row.stats ?? EMPTY_ANALYSIS_RESULT.stats,
+    suggestions: row.suggestions ?? EMPTY_ANALYSIS_RESULT.suggestions
+  };
 
   return (
     <main className="pageMain">
       <div className="card">
         <h2>분석 상세</h2>
         <p className="muted">
-          {data.input_filename ?? "CSV"} · {created} · 우선순위 {priorityScore.toFixed(1)}
+          {row.input_filename ?? "CSV"} · {created} · 우선순위 {priorityScore.toFixed(1)}
         </p>
         <div className="actionRow">
           <a className="btn" href="/dashboard/history">
@@ -85,157 +122,13 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
           <a className="btn btnPrimary" href="/dashboard">
             새 분석
           </a>
-          <a className="btn" href={`/api/report/${data.id}`}>
+          <a className="btn" href={`/api/report/${row.id}`}>
             PDF 다운로드
           </a>
         </div>
       </div>
 
-      <div className="grid">
-        <div className="card">
-          <h2>핵심 지표</h2>
-          <div className="kpiRow">
-            <div className="kpi">
-              <div className="label">리뷰 수</div>
-              <div className="value">{stats?.total ?? "-"}</div>
-            </div>
-            <div className="kpi">
-              <div className="label">부정 비율</div>
-              <div className="value" style={{ color: "var(--warn)" }}>
-                {typeof stats?.negativeRatio === "number" ? `${Math.round(stats.negativeRatio * 100)}%` : "-"}
-              </div>
-            </div>
-            <div className="kpi">
-              <div className="label">평균 별점</div>
-              <div className="value">{typeof stats?.avgRating === "number" ? stats.avgRating.toFixed(2) : "-"}</div>
-            </div>
-            <div className="kpi">
-              <div className="label">우선순위 점수</div>
-              <div className="value" style={{ color: "var(--accent)" }}>
-                {priorityScore.toFixed(1)}
-              </div>
-            </div>
-            <div className="kpi">
-              <div className="label">최근 이슈(최근30일 비중)</div>
-              <div className="value" style={{ color: "var(--warn)" }}>
-                {recent30Share ?? "-"}
-              </div>
-            </div>
-          </div>
-          <p className="hint">
-            우선순위 점수는 부정 비율(부정/전체), 별점 하락, 문제 카테고리 영향도, 리뷰 수, 최근성(작성일 기준)을 합쳐 “지금
-            먼저 손봐야 할 정도”를 0~100으로 만든 값입니다.
-          </p>
-          {!stats?.recentness?.hasDates ? (
-            <p className="hint muted">작성일 컬럼이 없으면 최근성/최근 이슈는 계산되지 않거나 약하게만 반영됩니다.</p>
-          ) : null}
-        </div>
-
-        <div className="card">
-          <h2>부정 키워드 TOP10</h2>
-          <div className="list">
-            {(stats?.negativeKeywordsTop10 ?? []).map((k: any) => (
-              <div className="row" key={k.keyword}>
-                <div className="left">
-                  <strong>{k.keyword}</strong>
-                </div>
-                <div className="right" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span>{k.count}</span>
-                  <CopyButton text={k.keyword} />
-                </div>
-              </div>
-            ))}
-          </div>
-          {(!stats?.negativeKeywordsTop10 || stats.negativeKeywordsTop10.length === 0) && (
-            <p className="muted">키워드가 없습니다.</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid">
-        <div className="card">
-          <h2>문제 카테고리</h2>
-          {stats?.categoryCounts && Object.keys(stats.categoryCounts).length > 0 ? (
-            <div className="list">
-              {Object.entries(stats.categoryCounts as Record<string, number>)
-                .sort((a, b) => b[1] - a[1])
-                .map(([cat, count]) => (
-                  <div className="row" key={cat}>
-                    <div className="left">{cat}</div>
-                    <div className="right" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <span>{count}</span>
-                      <CopyButton text={cat} />
-                    </div>
-                  </div>
-                ))}
-            </div>
-          ) : (
-            <p className="muted">카테고리가 없습니다.</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid">
-        <div className="card">
-          <h2>개선 제안: 상세페이지</h2>
-          <div className="list">
-            {(suggestions?.detailPageCopy ?? []).map((s: string, idx: number) => (
-              <div className="row" key={idx} style={{ alignItems: "flex-start" }}>
-                <div className="left" style={{ whiteSpace: "pre-wrap" }}>
-                  {s}
-                </div>
-                <div className="right">
-                  <CopyButton text={s} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="card">
-          <h2>개선 제안: CS/FAQ</h2>
-          <div className="list">
-            {(suggestions?.csResponseTemplates ?? []).map((s: string, idx: number) => (
-              <div className="row" key={`cs-${idx}`} style={{ alignItems: "flex-start" }}>
-                <div className="left" style={{ whiteSpace: "pre-wrap" }}>
-                  {s}
-                </div>
-                <div className="right">
-                  <CopyButton text={s} />
-                </div>
-              </div>
-            ))}
-            {(suggestions?.faqRecommendations ?? []).map((s: string, idx: number) => (
-              <div className="row" key={`faq-${idx}`} style={{ alignItems: "flex-start" }}>
-                <div className="left" style={{ whiteSpace: "pre-wrap" }}>
-                  {s}
-                </div>
-                <div className="right">
-                  <CopyButton text={s} />
-                </div>
-              </div>
-            ))}
-          </div>
-          {(suggestions?.notes ?? []).length > 0 ? (
-            <>
-              <p className="hint" style={{ marginBottom: 0 }}>
-                메모
-              </p>
-              <div className="list">
-                {(suggestions.notes ?? []).map((n: string, i: number) => (
-                  <div className="row" key={`note-${i}`} style={{ alignItems: "flex-start" }}>
-                    <div className="left" style={{ whiteSpace: "pre-wrap" }}>
-                      {n}
-                    </div>
-                    <div className="right">
-                      <CopyButton text={n} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : null}
-        </div>
-      </div>
+      <AnalysisResultDigest result={result} />
     </main>
   );
 }

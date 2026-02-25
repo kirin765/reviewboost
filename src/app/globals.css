@@ -70,6 +70,185 @@ a {
   padding: 30px 20px 72px;
 }
 
+.dashboardMode .container {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dashboardMode .topNav {
+  display: none;
+}
+
+.dashboardMode .header {
+  margin: 0 20px;
+  border-radius: 0;
+  box-shadow: none;
+  position: static;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-panel);
+}
+
+.dashboardShell {
+  position: relative;
+  min-height: calc(100vh - 74px);
+}
+
+.dashboardShellInner {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  min-height: calc(100vh - 74px);
+  align-items: stretch;
+}
+
+.dashboardDrawer {
+  width: 290px;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.07), rgba(255, 255, 255, 0));
+  border-right: 1px solid var(--color-border);
+  border-top-right-radius: 18px;
+  padding: 16px;
+  transition: width 200ms ease, transform 200ms ease;
+}
+
+.dashboardShell.isClosed .dashboardDrawer {
+  transform: translateX(-100%);
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border-right-color: transparent;
+}
+
+.dashboardMain {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.drawerToggle {
+  position: fixed;
+  left: 16px;
+  top: 130px;
+  z-index: 40;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.drawerToggle:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.4);
+  outline-offset: 2px;
+}
+
+.drawerBrand {
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 4px 0 2px;
+}
+
+.drawerSubtext {
+  margin: 0 0 12px;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.drawerNav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.drawerLink {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.drawerLink:hover,
+.drawerLink:focus-visible {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.drawerLink span:first-child {
+  font-weight: 700;
+}
+
+.drawerLink span:last-child {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.drawerLinkActive {
+  border-color: rgba(37, 99, 235, 0.36);
+  background: rgba(37, 99, 235, 0.14);
+}
+
+.dashboardTabs {
+  display: inline-flex;
+  gap: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  padding: 6px;
+  background: var(--color-surface);
+}
+
+.dashboardTab {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  min-width: 120px;
+  min-height: 38px;
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.dashboardTab.isActive {
+  border-color: var(--color-border);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboardEmptyResult {
+  padding: 28px;
+}
+
+.dashboardMode .siteFooterV2 {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: rgba(10, 14, 25, 0.32);
+}
+
+.drawerBackdrop[hidden] {
+  display: none;
+}
+
+.dashboardShell.isClosed .drawerBackdrop {
+  display: none;
+}
+
 .siteFooter {
   margin-top: 26px;
   padding-top: 14px;
@@ -403,6 +582,22 @@ a {
   color: #1a4fc2;
 }
 
+.dashboardAnalysisPanel {
+  border: 0;
+}
+
+.dashboardPanelTimeline {
+  margin-bottom: 12px;
+}
+
+.dashboardPanelHint {
+  margin-top: 6px;
+}
+
+.dashboardPanelActionRow {
+  margin-top: 10px;
+}
+
 .list {
   display: grid;
   gap: 8px;
@@ -450,6 +645,67 @@ a {
   margin-top: 8px;
   font-size: 13px;
   color: var(--muted);
+}
+
+.fileUploaderBusy {
+  margin-top: 6px;
+}
+
+.csvPreview {
+  margin-top: 12px;
+}
+
+.csvPreviewHint {
+  margin-top: 10px;
+}
+
+.csvPreviewWarning {
+  white-space: pre-wrap;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.csvPreviewColumnGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.csvPreviewPreviewSection {
+  margin-top: 12px;
+}
+
+.csvPreviewPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.csvPreviewHintBottom {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.csvPreviewTableWrap {
+  margin-top: 8px;
+}
+
+.csvPreviewTextWrap {
+  white-space: pre-wrap;
+}
+
+.csvPreviewModalCol {
+  font-weight: 800;
+}
+
+.csvPreviewModalActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.csvModalBody {
+  white-space: pre-wrap;
 }
 
 .danger {
@@ -1130,4 +1386,70 @@ a {
   font-size: 12px;
   color: var(--color-muted);
   margin-top: 8px;
+}
+
+.rowActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.analysisResultDigestNote {
+  white-space: pre-wrap;
+}
+
+.analysisResultDigest {
+  display: grid;
+  gap: 16px;
+}
+
+.kpiMetaTags {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.urgentReviewMeta {
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+}
+
+.urgentText {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.analysisNoticeCard {
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+
+.analysisNoticeCardText {
+  margin: 0;
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.analysisResultsWarning {
+  margin-top: -8px;
+}
+
+.analysisResultsHintMuted {
+  color: var(--color-muted);
+}
+
+.analysisResultsSubText {
+  margin-top: -4px;
+  margin-bottom: 12px;
+}
+
+.urgentReviewCategory {
+  margin-left: 6px;
+  background: var(--color-bg-soft);
 }

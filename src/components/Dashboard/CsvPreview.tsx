@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useMemo } from "react";
 import type { CsvPreview as CsvPreviewType } from "@/lib/csv";
 import CopyButton from "@/components/CopyButton";
@@ -81,7 +82,7 @@ export default function CsvPreview({
   const textColNeedsReview = useMemo(() => {
     const fallback = preview.inferred.textColSource === "fallback";
     return fallback;
-  }, [preview.columns, preview.inferred.textColSource, textCol]);
+  }, [preview.inferred.textColSource]);
 
   const reviewTextHint = useMemo(() => {
     if (textCol === "") return "";
@@ -90,19 +91,19 @@ export default function CsvPreview({
   }, [preview.columns, textCol]);
 
   return (
-    <div style={{ marginTop: 12 }}>
+    <div className="csvPreview">
       <div className="pill">
         행 {preview.totalRows} · 컬럼 {preview.columns.length} · {preview.headerMode === "header" ? "헤더 있음" : "헤더 없음"}
       </div>
-      <div className="hint" style={{ marginTop: 10 }}>
+      <div className="csvPreviewHint">
         {textColNeedsReview ? (
-          <p className="hint danger" style={{ whiteSpace: "pre-wrap", marginTop: 0, marginBottom: 8 }}>
+          <p className="hint danger csvPreviewWarning">
             리뷰 내용 열이 자동으로 추론되었으나 확실하지 않습니다. 현재 선택: <strong>{textCol}</strong>
             {reviewTextHint ? `\n다음 열에 리뷰 텍스트가 있을 가능성이 있어요: ${reviewTextHint}` : ""}  
             <br />원하는 열로 변경해 주세요.
           </p>
         ) : null}
-        <div style={{ display: "grid", gap: 10 }}>
+        <div className="csvPreviewColumnGrid">
           <label>
             <span className="muted">리뷰 내용(텍스트) 열</span>
             <select className="input" value={textCol} onChange={(e) => onTextColChange(e.target.value)} disabled={busy}>
@@ -137,8 +138,8 @@ export default function CsvPreview({
           </label>
         </div>
       </div>
-      <div style={{ marginTop: 12 }}>
-        <div className="muted" style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+      <div className="csvPreviewPreviewSection">
+        <div className="csvPreviewPanelHeader">
           <span>미리보기 (처음 몇 줄)</span>
           {preview.columns.length > 6 ? (
             <button
@@ -152,10 +153,10 @@ export default function CsvPreview({
             </button>
           ) : null}
         </div>
-        <p className="hint muted" style={{ marginTop: 6, marginBottom: 0 }}>
+        <p className="hint muted csvPreviewHintBottom">
           셀을 클릭하면 전체 내용을 볼 수 있습니다.
         </p>
-        <div className="tableWrap" style={{ marginTop: 8 }}>
+        <div className="tableWrap csvPreviewTableWrap">
           <table className="table" style={{ minWidth: previewTableMinWidth }}>
             <thead>
               <tr>
@@ -189,7 +190,7 @@ export default function CsvPreview({
         ) : null}
       </div>
       {preview.warnings?.length ? (
-        <p className="hint muted" style={{ whiteSpace: "pre-wrap" }}>
+        <p className="hint muted csvPreviewTextWrap">
           {preview.warnings.join("\n")}
         </p>
       ) : null}
@@ -200,22 +201,31 @@ export default function CsvPreview({
             <div className="modalHeader">
               <div>
                 <div className="muted">전체보기</div>
-                <div style={{ fontWeight: 800 }}>{cellModal.col}</div>
+                <div className="csvPreviewModalCol">{cellModal.col}</div>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <CopyButton text={cellModal.value} className="btn btnSmall btnPrimary">
+              <div className="csvPreviewModalActions">
+                <CopyButton
+                  text={cellModal.value}
+                  className="btn btnSmall btnPrimary"
+                  ariaLabel="셀 내용 전체 복사"
+                >
                   전체 복사
                 </CopyButton>
-                <button type="button" className="btn btnSmall" onClick={onCellModalClose}>
+                <button
+                  type="button"
+                  className="btn btnSmall"
+                  onClick={onCellModalClose}
+                  aria-label="셀 모달 닫기"
+                >
                   닫기
                 </button>
               </div>
             </div>
-            <div className="modalBody" style={{ whiteSpace: "pre-wrap" }}>
+            <div className="modalBody csvModalBody">
               {cellModal.value || <span className="muted">(빈 값)</span>}
             </div>
           </div>
-          <button type="button" className="modalBackdrop" aria-label="닫기" onClick={onCellModalClose} />
+          <button type="button" className="modalBackdrop" aria-label="모달 배경 닫기" onClick={onCellModalClose} />
         </div>
       ) : null}
     </div>

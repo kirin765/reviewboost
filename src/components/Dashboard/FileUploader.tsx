@@ -39,11 +39,16 @@ export default function FileUploader({
           새로 시작
         </button>
       </div>
+      <label htmlFor="dashboardCsvInput">
+        CSV 파일 업로드
+      </label>
       <input
+        id="dashboardCsvInput"
         ref={fileInputRef}
         className="input"
         type="file"
         accept=".csv,text/csv"
+        aria-label="CSV 파일 업로드"
         onChange={(e) => {
           const f = e.target.files?.[0] ?? null;
           onFileSelect(f);
@@ -65,7 +70,7 @@ export default function FileUploader({
         </button>
       </div>
       {busy ? (
-        <p className="hint" style={{ marginTop: 6 }}>
+        <p className="hint fileUploaderBusy">
           {preview ? "리뷰를 분석 중입니다. 잠시만 기다려주세요." : "CSV 미리보기를 준비하고 있습니다."}
         </p>
       ) : null}
