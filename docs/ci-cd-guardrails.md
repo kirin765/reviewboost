@@ -27,6 +27,11 @@ For feature PR previews:
 - No production secrets in preview environment
 - Optional E2E smoke (if available)
 
+Vercel Git Integration notes:
+- PRs to `staging` or `main` automatically get Preview deployments.
+- `main` PR merges are production-gated.
+- `staging` changes should only use staging/sandbox secrets.
+
 ## Production gate recommendations
 
 Before merging `staging` into `main`:

@@ -6,6 +6,12 @@
 - `staging` → **staging** deployment
 - `feature/*` (PRs) → **preview** deployment (ephemeral)
 
+Vercel integration is responsible for deployment execution:
+
+- `main` push/merge creates/updates Production.
+- `staging` push/merge creates/updates the Staging URL (or alias).
+- PRs to `staging` or `main` create Preview URLs automatically.
+
 ## Standard development flow
 
 1. Create feature branch from `staging`.

@@ -48,28 +48,12 @@ npm run dev:live      # PADDLE_ENV=live
 
 4. 운영 서버
 
-PM2 배포(권장):
-```bash
-npm run deploy
-```
+Vercel 배포:
+- GitHub 연동으로 `staging`/`main` 브랜치 push 시 Vercel이 자동으로 배포합니다.
+- PR 생성 시 Preview 배포 URL이 자동 생성됩니다.
+- 환경은 Vercel 콘솔에서 `Production`(main)와 `Preview/Staging`(staging)로 분리합니다.
 
-- 배포 모드별 실행:
-```bash
-npm run deploy:staging
-npm run deploy:prod
-```
-
-레거시 수동 명령(참고):
-```bash
-npm run build
-pm2 start reviewboost
-```
-
-코드 변경 후 재배포(레거시):
-```bash
-npm run build
-pm2 restart reviewboost --update-env
-```
+필요 시 Vercel CLI 또는 GitHub Action 기반 수동 배포 절차는 별도 운영 가이드에 추가하세요.
 
 - `npm run dev`: `3001`
 - `npm run start`: `3000`
@@ -188,6 +172,12 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 
 - `main`, `staging` 푸시 / PR 시 자동으로 `npm ci` → `lint` → `typecheck` → `test` → `build`를 실행합니다.
 - CI에서는 `PUPPETEER_SKIP_DOWNLOAD=1`로 Chromium 다운로드를 생략합니다(빌드/정적 검사 목적).
+- 배포는 GitHub Actions가 아니라 Vercel Git Integration이 담당합니다.
+- 수동 배포가 필요할 때는 `.github/workflows/vercel-manual-deploy.yml`의 `workflow_dispatch`를 사용하세요.
+- 수동 배포 시 필요한 Secret:
+  - `VERCEL_TOKEN`
+  - `VERCEL_ORG_ID`
+  - `VERCEL_PROJECT_ID`
 
 ## Deployment 운영 문서
 
