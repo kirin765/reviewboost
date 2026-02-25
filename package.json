@@ -2,16 +2,15 @@
   "name": "reviewboost",
   "private": true,
   "version": "0.1.0",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3001",
     "dev:sandbox": "PADDLE_ENV=sandbox APP_ENV=local npm run dev",
     "dev:live": "PADDLE_ENV=live APP_ENV=production npm run dev",
     "build": "next build",
     "build:prod": "APP_ENV=production NODE_ENV=production npm run build",
-    "deploy:clean": "pm2 delete reviewboost || true; pgrep -f \"next-server \\(v14.2.35\\)\" | xargs -r kill -9 || true; fuser -k 3000/tcp 2>/dev/null || true",
-    "deploy:staging": "APP_ENV=staging NODE_ENV=production PADDLE_ENV=sandbox npm run deploy",
-    "deploy:prod": "APP_ENV=production NODE_ENV=production PADDLE_ENV=live npm run deploy",
-    "deploy": "npm run deploy:clean && rm -rf .next && npm run build && if pm2 describe reviewboost >/dev/null 2>&1; then pm2 restart reviewboost --update-env; else pm2 start npm --name reviewboost -- run start; fi",
     "start": "next start -p 3000 -H 0.0.0.0",
     "start:3000": "next start -p 3000 -H 0.0.0.0",
     "start:dev": "APP_ENV=staging NODE_ENV=production PADDLE_ENV=sandbox APP_BASE_URL=https://dev.reviewboost.co.kr next start -p 3001 -H 0.0.0.0",
@@ -22,7 +21,9 @@
     "typecheck": "tsc --noEmit",
     "test:billing-schema": "node scripts/test-billing-schema.mjs",
     "test:paddle-utils": "node scripts/test-paddle-utils.mjs",
-    "test": "npm run test:billing-schema && npm run test:paddle-utils"
+    "test": "npm run test:billing-schema && npm run test:paddle-utils",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
@@ -31,7 +32,6 @@
     "next": "^14.2.0",
     "openai": "^4.86.1",
     "pdfkit": "^0.15.0",
-    "pm2": "^6.0.14",
     "puppeteer": "^23.11.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -47,6 +47,10 @@
     "eslint-config-next": "^14.2.0",
     "jsdom": "^26.0.0",
     "typescript": "^5.6.3",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.5",
+    "@storybook/addon-essentials": "^8.6.12",
+    "@storybook/nextjs": "^8.6.12",
+    "@storybook/react": "^8.6.12",
+    "@storybook/test": "^8.6.12"
   }
 }
