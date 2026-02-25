@@ -4,9 +4,9 @@ This checklist is for maintainers to operate **separated staging and production 
 
 ## 1) One-time environment separation setup
 
-- [ ] Create two app runtimes:
-  - [ ] `reviewboost-staging`
-  - [ ] `reviewboost-prod`
+- [ ] Configure one Vercel project with separate environments:
+  - [ ] Production for `main`
+  - [ ] Preview/Staging for `staging` (alias optional)
 - [ ] Create two domains:
   - [ ] `staging.<your-domain>` for staging
   - [ ] `<your-domain>` for production
