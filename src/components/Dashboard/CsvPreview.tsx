@@ -91,7 +91,7 @@ export default function CsvPreview({
   }, [preview.columns, textCol]);
 
   return (
-    <section className="mappingPanel">
+    <section className="mappingPanel mappingPanelBounded">
       <div className="rowActions" style={{ justifyContent: "space-between", marginBottom: 12 }}>
         <span>매핑 상태: {preview.totalRows}행 / {preview.columns.length}컬럼</span>
         <span className={`pill ${preview.headerMode === "header" ? "pillActive" : ""}`}>헤더 {preview.headerMode === "header" ? "있음" : "없음"}</span>
