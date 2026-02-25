@@ -86,14 +86,14 @@ export async function generateSuggestions(
   opts?: SuggestionOptions
 ): Promise<Suggestions> {
   if (!opts?.useAiNarrative) {
-    console.log("[LLM:suggest] AI 제안 미사용 — 템플릿 폴백");
+    console.log("[LLM:suggest][SUGGEST_DECISION_OFF_NOT_USABLE] AI 제안 미사용 — 템플릿 폴백");
     return fallbackSuggestions(stats, opts);
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
   if (!apiKey) {
-    console.warn("[LLM:suggest] OPENAI_API_KEY 미설정 — 템플릿 폴백");
+    console.warn("[LLM:suggest][SUGGEST_KEY_MISSING] OPENAI_API_KEY 미설정 — 템플릿 폴백");
     return fallbackSuggestions(stats, opts);
   }
 
@@ -165,7 +165,7 @@ export async function generateSuggestions(
       { timeout: 180000 }
     );
   } catch (err) {
-    console.error(`[LLM:suggest] API 호출 실패 — error=${err instanceof Error ? err.message : String(err)} → 템플릿 폴백`);
+    console.error(`[LLM:suggest][SUGGEST_API_FAILED] error=${err instanceof Error ? err.message : String(err)} → 템플릿 폴백`);
     return fallbackSuggestions(stats, opts);
   }
 
@@ -173,13 +173,13 @@ export async function generateSuggestions(
   try {
     const parsed = JSON.parse(text) as Suggestions;
     if (!parsed.detailPageCopy || !parsed.csResponseTemplates || !parsed.faqRecommendations || !parsed.notes) {
-      console.error(`[LLM:suggest] 응답 필드 누락 — keys=${Object.keys(parsed ?? {}).join(",")} → 템플릿 폴백`);
+      console.error(`[LLM:suggest][SUGGEST_FIELDS_MISSING] keys=${Object.keys(parsed ?? {}).join(",")} → 템플릿 폴백`);
       return fallbackSuggestions(stats, opts);
     }
-    console.log(`[LLM:suggest] 성공 — detail=${parsed.detailPageCopy.length}건, cs=${parsed.csResponseTemplates.length}건, faq=${parsed.faqRecommendations.length}건`);
+    console.log(`[LLM:suggest][SUGGEST_OK] detail=${parsed.detailPageCopy.length}건, cs=${parsed.csResponseTemplates.length}건, faq=${parsed.faqRecommendations.length}건`);
     return parsed;
   } catch (err) {
-    console.error(`[LLM:suggest] JSON 파싱 실패 — response=${text.slice(0, 200)} → 템플릿 폴백`);
+    console.error(`[LLM:suggest][SUGGEST_PARSE_INVALID] response=${text.slice(0, 200)} → 템플릿 폴백`);
     return fallbackSuggestions(stats, opts);
   }
 }
