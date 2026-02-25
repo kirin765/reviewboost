@@ -155,6 +155,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         />
 
         <main className="dashboardMain" role="main">
+          <div className="dashboardTopBar">
+            <a className="dashboardTopHome" href="/" onClick={() => setOpen(false)}>
+              <span aria-hidden>↩︎</span>
+              <span>리뷰분석 홈으로 이동</span>
+            </a>
+            <span className="dashboardTopHint">대시보드 작업 후에도 원래 화면으로 바로 복귀</span>
+          </div>
           {children}
         </main>
       </div>
