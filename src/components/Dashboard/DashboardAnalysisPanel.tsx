@@ -69,9 +69,9 @@ export default function DashboardAnalysisPanel({
               return (
                 <div className={`step ${isDone ? "completed" : ""} ${isCurrent ? "active" : ""}`} key={item.label} role="listitem">
                   <span className="stepNumber">{item.n}</span>
-                  <span>
-                    <div>{item.label}</div>
-                    <div style={{ fontSize: 12, color: "var(--color-muted)" }}>{item.desc}</div>
+                  <span className="stepBody">
+                    <span className="stepTitle">{item.label}</span>
+                    <span className="stepDesc">{item.desc}</span>
                   </span>
                 </div>
               );

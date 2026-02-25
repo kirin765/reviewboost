@@ -76,7 +76,7 @@ export default function CsvPreview({
   }, [preview.columns, showAllPreviewCols]);
 
   const previewTableMinWidth = useMemo(() => {
-    return Math.max(520, previewCols.length * 160);
+    return Math.max(520, Math.min(previewCols.length * 140, 1100));
   }, [previewCols.length]);
 
   const textColNeedsReview = useMemo(() => {
