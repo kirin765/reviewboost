@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Capabilities } from "@/lib/capabilities";
 import type { AnalysisOutput } from "@/lib/types";
 import type { CsvPreview } from "@/lib/csv";
@@ -9,11 +10,11 @@ import { gtagEvent } from "@/lib/analytics";
 import FeedbackModal from "@/components/FeedbackModal";
 import { PlanProvider, useGates } from "@/contexts/PlanContext";
 import type { PlanTier } from "@/lib/types";
-import FileUploader from "@/components/Dashboard/FileUploader";
-import CsvPreviewComponent from "@/components/Dashboard/CsvPreview";
+import DashboardTabs, { type DashboardTab } from "@/components/Dashboard/DashboardTabs";
+import DashboardAnalysisPanel from "@/components/Dashboard/DashboardAnalysisPanel";
 import AnalysisResults from "@/components/Dashboard/AnalysisResults";
 
-type AnalysisResult = AnalysisOutput & {
+type DashboardResult = AnalysisOutput & {
   meta: {
     filename: string | null;
     stored: boolean;
@@ -26,11 +27,10 @@ type AnalysisResult = AnalysisOutput & {
 };
 
 function DashboardContent() {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [result, setResult] = useState<DashboardResult | null>(null);
   const [preview, setPreview] = useState<CsvPreview | null>(null);
   const [cellModal, setCellModal] = useState<{ col: string; value: string } | null>(null);
   const [showAllPreviewCols, setShowAllPreviewCols] = useState(false);
@@ -39,6 +39,9 @@ function DashboardContent() {
   const [dateCol, setDateCol] = useState<string>("");
   const [caps, setCaps] = useState<Capabilities | null>(null);
   const [analysisDoneNotice, setAnalysisDoneNotice] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<DashboardTab>("analysis");
+
+  const gates = useGates();
 
   const step = useMemo(() => {
     if (!file) return 1;
@@ -57,7 +60,6 @@ function DashboardContent() {
     setTextCol("");
     setRatingCol("");
     setDateCol("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function friendlyErrorMessage(raw: string) {
@@ -75,7 +77,11 @@ function DashboardContent() {
         const json = await res.json();
         if (isApiErrorBody(json)) {
           const msg = String(json.error.message ?? "").trim();
-          const help = Array.isArray(json.error.help) ? json.error.help.map((h) => String(h).trim()).filter(Boolean) : [];
+          const help = Array.isArray(json.error.help)
+            ? json.error.help
+                .map((h) => String(h).trim())
+                .filter(Boolean)
+            : [];
           const lines = [msg, ...help.map((h) => `- ${h}`)].filter(Boolean);
           return lines.join("\n");
         }
@@ -96,6 +102,7 @@ function DashboardContent() {
     setTextCol(json.inferred.textCol ?? "");
     setRatingCol((json.inferred.ratingCol ?? "") || "");
     setDateCol((json.inferred.dateCol ?? "") || "");
+    setAnalysisDoneNotice("미리보기가 준비되었습니다. 다음은 분석을 진행해 주세요.");
 
     gtagEvent("csv_upload", {
       file_name: f.name,
@@ -117,6 +124,7 @@ function DashboardContent() {
         await loadPreview(file);
         return;
       }
+
       const fd = new FormData();
       fd.set("file", file);
       fd.set("headerMode", preview.headerMode);
@@ -125,13 +133,16 @@ function DashboardContent() {
       if (dateCol) fd.set("dateCol", dateCol);
       const res = await fetch("/api/analyze", { method: "POST", body: fd });
       if (!res.ok) throw new Error(await readErrorText(res));
-      const json = (await res.json()) as AnalysisResult;
+      const json = (await res.json()) as DashboardResult;
+
       setResult(json);
+      setAnalysisDoneNotice("분석이 완료되었습니다.");
       gtagEvent("analysis_complete", {
         total_reviews: json.stats.total,
         priority_score: Number(json.stats.priorityScore.toFixed(1)),
         negative_ratio: Number(json.stats.negativeRatio.toFixed(4))
       });
+      setActiveTab("results");
     } catch (e: any) {
       setError(friendlyErrorMessage(e?.message ?? String(e)));
     } finally {
@@ -155,8 +166,8 @@ function DashboardContent() {
       setTextCol("");
       setRatingCol("");
       setDateCol("");
-      if (fileInputRef.current) fileInputRef.current.value = "";
       await loadPreview(f);
+      setAnalysisDoneNotice("샘플 파일이 업로드되어 미리보기가 준비되었습니다.");
     } catch (e: any) {
       setError(friendlyErrorMessage(e?.message ?? String(e)));
     } finally {
@@ -197,9 +208,32 @@ function DashboardContent() {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setCellModal(null);
     }
-    if (cellModal) window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+
+    if (cellModal) {
+      window.addEventListener("keydown", onKeyDown);
+      return () => window.removeEventListener("keydown", onKeyDown);
+    }
+
+    return undefined;
   }, [cellModal]);
+
+  useEffect(() => {
+    if (result && result.stats && gates.maxReviewsPerAnalysis > 0 && result.stats.total === 0) {
+      setAnalysisDoneNotice("분석 결과가 없습니다. 데이터 행을 확인해주세요.");
+    }
+  }, [result, gates.maxReviewsPerAnalysis]);
+
+  useEffect(() => {
+    if (result && !caps?.supabaseConfigured) {
+      setAnalysisDoneNotice("분석이 완료되었습니다. 저장 기능이 비활성 상태여서 PDF로만 보관 가능합니다.");
+    }
+  }, [result, caps?.supabaseConfigured]);
+
+  useEffect(() => {
+    if (result) {
+      setActiveTab("results");
+    }
+  }, [result]);
 
   const handleFileSelect = (newFile: File | null) => {
     setFile(newFile);
@@ -217,101 +251,71 @@ function DashboardContent() {
   };
 
   const handleErrorClose = () => setError(null);
-  const handleAnalysisDoneClose = () => setAnalysisDoneNotice(null);
 
   return (
-    <main className="pageMain">
+    <main className="pageMain analysisWorkspace">
       {error ? <FeedbackModal title="분석 처리 오류" message={error} tone="error" onClose={handleErrorClose} /> : null}
       {!error && analysisDoneNotice ? (
-        <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={handleAnalysisDoneClose} />
+        <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
       ) : null}
-      <div className="grid">
-        <div className="card heroCard">
-          <h1 className="heroTitle">리뷰 CSV 분석</h1>
-          <div className="pillRow" style={{ marginBottom: 10 }}>
-            <span className={`pill ${step === 1 ? "pillActive" : ""}`}>1. 파일 선택</span>
-            <span className={`pill ${step === 2 ? "pillActive" : ""}`}>2. 미리보기</span>
-            <span className={`pill ${step === 3 ? "pillActive" : ""}`}>3. 분석</span>
-            <span className={`pill ${step === 4 ? "pillActive" : ""}`}>4. 결과</span>
-          </div>
 
-          <FileUploader
+      <DashboardTabs
+        activeTab={activeTab}
+        onChange={(next) => {
+          setActiveTab(next);
+        }}
+      />
+
+      <div className="card heroCard">
+        {activeTab === "analysis" ? (
+          <DashboardAnalysisPanel
             file={file}
             busy={busy}
-            preview={!!preview}
+            preview={preview}
+            caps={caps}
+            step={step}
+            textCol={textCol}
+            ratingCol={ratingCol}
+            dateCol={dateCol}
+            showAllPreviewCols={showAllPreviewCols}
+            cellModal={cellModal}
             onFileSelect={handleFileSelect}
             onReset={resetAll}
             onSample={onSample}
             onAnalyze={onAnalyze}
+            onTextColChange={setTextCol}
+            onRatingColChange={setRatingCol}
+            onDateColChange={setDateCol}
+            onTogglePreviewCols={() => setShowAllPreviewCols((v) => !v)}
+            onCellClick={handleCellClick}
+            onCellModalClose={() => setCellModal(null)}
           />
-
-          {preview ? (
-            <CsvPreviewComponent
-              preview={preview}
+        ) : result ? (
+          <section id="results-panel" role="tabpanel" aria-labelledby="results-tab">
+            <AnalysisResults
+              result={result}
+              caps={caps}
               busy={busy}
-              textCol={textCol}
-              ratingCol={ratingCol}
-              dateCol={dateCol}
-              showAllPreviewCols={showAllPreviewCols}
-              cellModal={cellModal}
-              onTextColChange={setTextCol}
-              onRatingColChange={setRatingCol}
-              onDateColChange={setDateCol}
-              onTogglePreviewCols={() => setShowAllPreviewCols((v) => !v)}
-              onCellClick={handleCellClick}
-              onCellModalClose={() => setCellModal(null)}
+              onDownloadPdf={onDownloadPdf}
             />
-          ) : null}
-
-          {result?.meta?.stored ? (
-            <p className="hint">
-              저장됨: 나중에 &ldquo;저장된 리포트&rdquo;에서 다시 볼 수 있습니다.
-            </p>
-          ) : result?.meta?.storageError ? (
-            <p className="hint danger" style={{ whiteSpace: "pre-wrap" }}>
-              히스토리 저장 실패: {result.meta.storageError}
-            </p>
-          ) : caps?.supabaseConfigured === false ? (
-            <>
-              <p className="hint muted">
-                지금은 저장 기능이 꺼져 있어 저장되지 않습니다. 대신 <strong>PDF 다운로드</strong>로 공유할 수 있어요.
-              </p>
-              <p className="hint muted" style={{ marginTop: 6 }}>
-                현재 플랜: <strong>{caps.planLabel}</strong> · 이번 달 사용량: {caps.monthlyUsed}
-                {typeof caps.monthlyLimit === "number" ? ` / ${caps.monthlyLimit}` : ""}
-              </p>
-            </>
-          ) : caps ? (
-            <p className="hint muted">
-              현재 플랜: <strong>{caps.planLabel}</strong> · 이번 달 사용량: {caps.monthlyUsed}
-              {typeof caps.monthlyLimit === "number" ? ` / ${caps.monthlyLimit}` : ""}
-            </p>
-          ) : (
-            <p className="hint muted">지금은 저장 없이 분석만 진행됩니다. (저장 기능은 로그인 기능을 켜면 사용할 수 있어요.)</p>
-          )}
-          <div className="actionRow">
-            {caps?.supabaseConfigured === false ? null : (
-              <a className="btn" href="/dashboard/history">
-                저장된 리포트
-              </a>
-            )}
-            {result?.meta?.stored && result.meta.analysisId ? (
-              <a className="btn" href={`/dashboard/analysis/${result.meta.analysisId}`}>
-                저장된 분석 보기
-              </a>
-            ) : null}
-          </div>
-        </div>
+          </section>
+        ) : (
+          <section id="results-panel" role="tabpanel" aria-labelledby="results-tab" className="dashboardEmptyResult">
+            <div className="card">
+              <h2>아직 분석 결과가 없습니다</h2>
+              <p className="hint">CSV를 업로드하고 분석을 완료하면, 리포트가 이곳에 표시됩니다.</p>
+              <button
+                type="button"
+                className="btn btnPrimary"
+                onClick={() => setActiveTab("analysis")}
+                aria-label="분석하기 탭으로 이동"
+              >
+                분석하기로 이동
+              </button>
+            </div>
+          </section>
+        )}
       </div>
-
-      {result && (
-        <AnalysisResults
-          result={result}
-          caps={caps}
-          busy={busy}
-          onDownloadPdf={onDownloadPdf}
-        />
-      )}
     </main>
   );
 }
@@ -333,6 +337,7 @@ export default function DashboardPage() {
       .catch(() => {
         // ignore
       });
+
     return () => {
       cancelled = true;
     };
