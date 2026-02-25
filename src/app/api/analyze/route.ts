@@ -13,6 +13,7 @@ import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
 export const runtime = "nodejs";
+export const maxDuration = 120;
 
 const MAX_BYTES = 6 * 1024 * 1024;
 
