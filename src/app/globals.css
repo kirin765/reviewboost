@@ -215,6 +215,12 @@ a {
   display: grid;
   gap: 14px;
   grid-template-columns: 1fr;
+  align-items: start;
+  min-width: 0;
+}
+
+.analysisFlowGrid > * {
+  min-width: 0;
 }
 
 .analysisWorkspace .resultsBlock,
@@ -1025,6 +1031,9 @@ a {
 
 .csvPreviewTableWrap {
   margin-top: 8px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .csvPreviewTextWrap {
@@ -1165,10 +1174,13 @@ a {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #fff;
+  width: 100%;
+  max-width: 100%;
 }
 
 .table {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   min-width: 520px;
 }
@@ -1574,20 +1586,43 @@ a {
 /* Stepper */
 .stepper {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 8px;
+  width: 100%;
   margin-bottom: 20px;
 }
 
 .step {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+  flex: 1 1 220px;
+  min-width: 0;
   padding: 8px 12px;
   border-radius: var(--radius-md);
   font-size: 14px;
   color: var(--color-muted);
   background: var(--color-bg);
+}
+
+.stepBody {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stepTitle {
+  font-weight: 600;
+  line-height: 1.32;
+}
+
+.stepDesc {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--color-muted);
+  white-space: normal;
 }
 
 .step.active {
@@ -1598,6 +1633,11 @@ a {
 .step.completed {
   background: var(--color-success);
   color: white;
+}
+
+.step.active .stepDesc,
+.step.completed .stepDesc {
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .stepNumber {
