@@ -162,7 +162,7 @@ export async function POST(req: Request) {
 
   try {
     debug.paddleEnv = paddleEnv();
-    const supabase = createSupabaseServerActionClient();
+    const supabase = await createSupabaseServerActionClient();
     const { data } = await supabase.auth.getUser();
     const user = data.user;
 

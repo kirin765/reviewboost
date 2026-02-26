@@ -3,8 +3,9 @@ import { cookies } from "next/headers";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/keys";
 import { normalizeCookieOptions } from "@/lib/security";
 
-function createSupabaseClient(allowSetCookies: boolean) {
-  const cookieStore = cookies();
+async function createSupabaseClient(allowSetCookies: boolean) {
+  const cookieStore = await (cookies() as any);
+
   return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
     cookies: {
       getAll() {

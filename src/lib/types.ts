@@ -20,6 +20,28 @@ export type PlanGates = {
   shareableLinks: boolean;
 };
 
+export type ApiErrorCode =
+  | "UPLOAD_BAD_CONTENT_TYPE"
+  | "UPLOAD_MISSING_FILE"
+  | "UPLOAD_UNREADABLE_FILE"
+  | "CSV_NOT_CSV"
+  | "CSV_EMPTY"
+  | "CSV_TOO_LARGE"
+  | "CSV_ENCODING"
+  | "CSV_PARSE_FAILED"
+  | "INTERNAL_ERROR"
+  | "PLAN_UPGRADE_REQUIRED"
+  | "MONTHLY_LIMIT_EXCEEDED";
+
+export type ApiErrorBody = {
+  error: {
+    code: ApiErrorCode;
+    message: string;
+    help?: string[];
+    details?: string;
+  };
+};
+
 export type ReviewRow = {
   text: string;
   rating: number | null;

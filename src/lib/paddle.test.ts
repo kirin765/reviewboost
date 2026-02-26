@@ -49,10 +49,10 @@ describe("paddle config", () => {
 
   it("throws explicit errors for missing plan price ids", () => {
     vi.stubEnv("PADDLE_BASIC_PRICE_ID", "");
-    vi.stubEnv("PADDLE_PRO_PRICE_ID", "pro_01");
+    vi.stubEnv("PADDLE_PRO_PRICE_ID", "pri_pro_01");
 
     expect(() => paddlePriceIdForPlan("basic")).toThrow("PADDLE_BASIC_PRICE_ID is not set for plan 'basic'");
-    expect(paddlePriceIdForPlan("pro")).toBe("pro_01");
+    expect(paddlePriceIdForPlan("pro")).toBe("pri_pro_01");
   });
 
   it("maps price ids to plans and unknown values to free", () => {

@@ -20,7 +20,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
 
   let analysis: any;
   try {
-    const supabase = createSupabaseServerActionClient();
+    const supabase = await createSupabaseServerActionClient();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) {
       const url = new URL(req.url);

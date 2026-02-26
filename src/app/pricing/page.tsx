@@ -6,7 +6,7 @@ import { paddlePriceIdForPlan } from "@/lib/paddle";
 export default async function PricingPage({
   searchParams
 }: {
-  searchParams?: { billing?: string; [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ billing?: string; [key: string]: string | string[] | undefined }>;
 }) {
   let userId: string | null = null;
   let userEmail: string | null = null;
@@ -19,7 +19,7 @@ export default async function PricingPage({
   };
 
   try {
-    const supabase = createSupabaseServerComponentClient();
+    const supabase = await createSupabaseServerComponentClient();
     const result = await supabase.auth.getUser();
     userId = result?.data?.user?.id ?? null;
     userEmail = result?.data?.user?.email ?? null;
@@ -29,7 +29,7 @@ export default async function PricingPage({
 
   const basicPriceId = safePlanPriceId("basic");
   const proPriceId = safePlanPriceId("pro");
-  const billing = searchParams?.billing;
+  const billing = (await searchParams)?.billing;
   return (
     <main className="pageMain">
       <div className="card">

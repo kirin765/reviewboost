@@ -1,7 +1,7 @@
 import FeedbackModal from "@/components/FeedbackModal";
 
-export default function HomePage(props: { searchParams?: Record<string, string | string[] | undefined> }) {
-  const sp = props.searchParams ?? {};
+export default async function HomePage(props: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = (await props.searchParams) ?? {};
   const err = typeof sp.error === "string" ? sp.error : "";
   const errCode = typeof sp.error_code === "string" ? sp.error_code : "";
   const errDesc = typeof sp.error_description === "string" ? sp.error_description : "";

@@ -43,9 +43,9 @@ const EMPTY_ANALYSIS_RESULT: Pick<AnalysisOutput, "stats" | "suggestions"> = {
 
 export default async function AnalysisDetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  let supabase: ReturnType<typeof createSupabaseServerComponentClient> | null = null;
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerComponentClient>> | null = null;
   try {
-    supabase = createSupabaseServerComponentClient();
+    supabase = await createSupabaseServerComponentClient();
   } catch {
     // Supabase not configured.
   }

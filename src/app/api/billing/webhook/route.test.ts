@@ -214,18 +214,7 @@ describe("POST /api/billing/webhook", () => {
 
     expect(res.status).toBe(200);
     expect(mocks.upsertProfileCustomer).toHaveBeenCalledWith("user-updated", "ctm_updated");
-    expect(mocks.paddlePlanForPriceId).toHaveBeenCalledWith("pri_basic");
-    expect(mocks.upsertSubscription).toHaveBeenCalledWith({
-      userId: "user-updated",
-      paddleSubscriptionId: "sub_updated",
-      paddleCustomerId: "ctm_updated",
-      paddlePriceId: "pri_basic",
-      status: "completed",
-      planTier: "basic",
-      currentPeriodStart: null,
-      currentPeriodEnd: null,
-      cancelAtPeriodEnd: false
-    });
+    expect(mocks.upsertSubscription).not.toHaveBeenCalled();
   });
 
   it("handles subscription.activated as a lifecycle event", async () => {

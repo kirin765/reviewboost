@@ -133,12 +133,12 @@ export async function POST(req: Request) {
   const useLLM = forcedMode === "llm" ? true : forcedMode === "heuristic" ? false : openaiAvailable;
   const baseCaps = getCapabilitiesBase();
 
-  let supabaseAuth: ReturnType<typeof createSupabaseServerActionClient> | null = null;
+  let supabaseAuth: Awaited<ReturnType<typeof createSupabaseServerActionClient>> | null = null;
   let userId: string | null = null;
   let userEmail: string | null = null;
   if (baseCaps.supabaseConfigured) {
     try {
-      supabaseAuth = createSupabaseServerActionClient();
+      supabaseAuth = await createSupabaseServerActionClient();
       const { data } = await supabaseAuth.auth.getUser();
       userId = data.user?.id ?? null;
       userEmail = data.user?.email ?? null;

@@ -11,7 +11,7 @@ export async function GET() {
 
   if (base.supabaseConfigured) {
     try {
-      const supabase = createSupabaseServerActionClient();
+      const supabase = await createSupabaseServerActionClient();
       const { data } = await supabase.auth.getUser();
       email = data.user?.email ?? null;
       userId = data.user?.id ?? null;
@@ -26,7 +26,7 @@ export async function GET() {
 
   if (base.supabaseConfigured && userId) {
     try {
-      const supabase = createSupabaseServerActionClient();
+      const supabase = await createSupabaseServerActionClient();
       const { count } = await supabase
         .from("analyses")
         .select("id", { count: "exact", head: true })
