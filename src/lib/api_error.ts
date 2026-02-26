@@ -1,23 +1,19 @@
-export type ApiErrorCode =
-  | "UPLOAD_BAD_CONTENT_TYPE"
-  | "UPLOAD_MISSING_FILE"
-  | "UPLOAD_UNREADABLE_FILE"
-  | "CSV_NOT_CSV"
-  | "CSV_EMPTY"
-  | "CSV_TOO_LARGE"
-  | "CSV_ENCODING"
-  | "CSV_PARSE_FAILED"
-  | "INTERNAL_ERROR"
-  | "PLAN_UPGRADE_REQUIRED"
-  | "MONTHLY_LIMIT_EXCEEDED";
+import { ApiErrorBody, ApiErrorCode } from "@/lib/types";
 
-export type ApiErrorBody = {
-  error: {
-    code: ApiErrorCode;
-    message: string;
-    help?: string[];
-    details?: string;
-  };
+export type ApiErrorStatusMap = Record<ApiErrorCode, number>;
+
+export const apiErrorStatus: ApiErrorStatusMap = {
+  UPLOAD_BAD_CONTENT_TYPE: 415,
+  UPLOAD_MISSING_FILE: 400,
+  UPLOAD_UNREADABLE_FILE: 400,
+  CSV_NOT_CSV: 400,
+  CSV_EMPTY: 400,
+  CSV_TOO_LARGE: 413,
+  CSV_ENCODING: 400,
+  CSV_PARSE_FAILED: 400,
+  INTERNAL_ERROR: 500,
+  PLAN_UPGRADE_REQUIRED: 402,
+  MONTHLY_LIMIT_EXCEEDED: 429
 };
 
 export class ApiError extends Error {

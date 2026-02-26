@@ -25,7 +25,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   let plan: PlanTier = "free";
   try {
     if (supabaseConfigured) {
-      const supabase = createSupabaseServerComponentClient();
+      const supabase = await createSupabaseServerComponentClient();
       const { data } = await supabase.auth.getUser();
       email = data.user?.email ?? null;
       userId = data.user?.id ?? null;

@@ -162,7 +162,7 @@ export async function generateSuggestions(
         temperature: 0.4,
         response_format: { type: "json_object" }
       },
-      { timeout: 180000 }
+      { timeout: timeoutMs }
     );
   } catch (err) {
     console.error(`[LLM:suggest][SUGGEST_API_FAILED] error=${err instanceof Error ? err.message : String(err)} → 템플릿 폴백`);

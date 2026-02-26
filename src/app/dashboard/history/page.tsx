@@ -12,9 +12,9 @@ type AnalysisRow = {
 };
 
 export default async function HistoryPage() {
-  let supabase: ReturnType<typeof createSupabaseServerComponentClient> | null = null;
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerComponentClient>> | null = null;
   try {
-    supabase = createSupabaseServerComponentClient();
+    supabase = await createSupabaseServerComponentClient();
   } catch {
     // Supabase is not configured.
   }

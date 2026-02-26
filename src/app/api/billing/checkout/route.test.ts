@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   isPaddleConfigured: vi.fn(),
   paddlePriceIdForPlan: vi.fn(),
+  paddleEnv: vi.fn(),
   appBaseUrl: vi.fn(),
   paddleRequest: vi.fn(),
   findPaddleCustomerIdByUserId: vi.fn()
@@ -20,6 +21,7 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/paddle", () => ({
   isPaddleConfigured: mocks.isPaddleConfigured,
   paddlePriceIdForPlan: mocks.paddlePriceIdForPlan,
+  paddleEnv: mocks.paddleEnv,
   appBaseUrl: mocks.appBaseUrl,
   paddleRequest: mocks.paddleRequest
 }));
@@ -36,6 +38,7 @@ describe("POST /api/billing/checkout", () => {
     mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "user@example.com" } } });
     mocks.isPaddleConfigured.mockReturnValue(true);
     mocks.paddlePriceIdForPlan.mockReturnValue("pri_123");
+    mocks.paddleEnv.mockReturnValue("sandbox");
     mocks.appBaseUrl.mockReturnValue("https://reviewboost.app");
     mocks.findPaddleCustomerIdByUserId.mockResolvedValue("ctm_123");
     mocks.paddleRequest.mockResolvedValue({
@@ -51,7 +54,7 @@ describe("POST /api/billing/checkout", () => {
     const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", { method: "POST" }));
 
     expect(res.status).toBe(401);
-    await expect(res.json()).resolves.toEqual({ error: "로그인이 필요합니다." });
+    await expect(res.json()).resolves.toMatchObject({ error: "로그인이 필요합니다.", code: "checkout_error" });
     expect(mocks.isPaddleConfigured).not.toHaveBeenCalled();
   });
 
@@ -68,7 +71,7 @@ describe("POST /api/billing/checkout", () => {
       debug: {
         env: "test",
         baseUrl: "unknown",
-        paddleEnv: "unknown",
+        paddleEnv: "sandbox",
         plan: "basic",
         priceId: ""
       }
@@ -96,8 +99,8 @@ describe("POST /api/billing/checkout", () => {
       debug: {
         env: "test",
         baseUrl: "unknown",
-        paddleEnv: "unknown",
-        plan: "basic",
+        paddleEnv: "sandbox",
+        plan: "pro",
         priceId: ""
       }
     });

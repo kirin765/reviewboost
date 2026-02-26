@@ -218,7 +218,7 @@ function printMatrix(stories = userStories) {
 }
 
 function printUsage() {
-  console.log("USAGE: node --experimental-strip-types scripts/ci/user-story-matrix.ts [옵션]");
+  console.log("USAGE: npx tsx scripts/ci/user-story-matrix.ts [옵션]");
   console.log("  --run-all                모든 스토리 테스트 실행");
   console.log("  --story <slug|id>        특정 스토리만 실행 (예: us-01)");
   console.log("  --gate <merge-blocking|non-blocking|nightly|all>  스토리 게이트로 필터링");

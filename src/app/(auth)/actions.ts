@@ -60,8 +60,8 @@ function mapAuthError(raw: string, mode: "login" | "signup" | "reset") {
   return message;
 }
 
-function detectOriginFromHeaders() {
-  const h = headers();
+async function detectOriginFromHeaders() {
+  const h = await (headers() as any);
   const forwardedProto = h.get("x-forwarded-proto");
   const forwardedHost = h.get("x-forwarded-host");
   if (forwardedProto && forwardedHost) return `${forwardedProto}://${forwardedHost}`;
@@ -88,8 +88,8 @@ export async function signUpAction(formData: FormData) {
   let hasSession = false;
   let signUpError: string | null = null;
   try {
-    const supabase = createSupabaseServerActionClient();
-    const origin = detectOriginFromHeaders();
+    const supabase = await createSupabaseServerActionClient();
+    const origin = await detectOriginFromHeaders();
     const emailRedirectTo = origin
       ? `${origin}/auth/confirm?next=${encodeURIComponent(next)}`
       : undefined;
@@ -125,7 +125,7 @@ export async function signInAction(formData: FormData) {
 
   let signInError: string | null = null;
   try {
-    const supabase = createSupabaseServerActionClient();
+    const supabase = await createSupabaseServerActionClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     signInError = error?.message ?? null;
   } catch (e: any) {
@@ -142,8 +142,8 @@ export async function requestPasswordResetAction(formData: FormData) {
 
   let resetError: string | null = null;
   try {
-    const supabase = createSupabaseServerActionClient();
-    const origin = detectOriginFromHeaders();
+    const supabase = await createSupabaseServerActionClient();
+    const origin = await detectOriginFromHeaders();
     const redirectTo = origin
       ? `${origin}/reset-password?next=${encodeURIComponent(next)}`
       : undefined;
@@ -163,7 +163,7 @@ export async function requestPasswordResetAction(formData: FormData) {
 
 export async function signOutAction() {
   try {
-    const supabase = createSupabaseServerActionClient();
+    const supabase = await createSupabaseServerActionClient();
     await supabase.auth.signOut();
   } finally {
     redirect("/login");
