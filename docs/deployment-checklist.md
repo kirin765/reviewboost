@@ -1,103 +1,68 @@
 # ReviewBoost Deployment Checklist (Staging / Production)
 
-This checklist is for maintainers to operate **separated staging and production environments** safely.
+## 1) 환경 분리 확인
 
-## 1) One-time environment separation setup
+- [ ] Vercel project/environment 분리
+  - [ ] `main` → production
+  - [ ] `staging` → preview/staging
+- [ ] 도메인 분리
+  - [ ] `staging.<your-domain>`
+  - [ ] `<your-domain>`
+- [ ] TLS 구성
+- [ ] Secrets 분리 저장 (APP_ENV/API key/webhook secret)
 
-- [ ] Configure one Vercel project with separate environments:
-  - [ ] Production for `main`
-  - [ ] Preview/Staging for `staging` (alias optional)
-- [ ] Create two domains:
-  - [ ] `staging.<your-domain>` for staging
-  - [ ] `<your-domain>` for production
-- [ ] Configure TLS certificates for each domain.
-- [ ] Configure independent secrets per environment (never shared).
+## 2) 저장소/인증 분리
 
-## 2) Database and auth separation
+- [ ] Staging용 Supabase 연결 검증
+- [ ] Production용 Supabase 연결 검증
+- [ ] Staging/Production 키 교차 사용 여부 확인
 
-- [ ] Create separate Supabase projects (or separate isolated stacks):
-  - [ ] staging DB/Auth project
-  - [ ] production DB/Auth project
-- [ ] Apply schema/migrations to staging first (`supabase/schema.sql` + migrations policy).
-- [ ] Verify staging app points to staging Supabase keys.
-- [ ] Verify production app points to production Supabase keys.
-- [ ] Confirm no cross-environment credentials are reused.
+## 3) 결제 분리
 
-Validation commands:
+- [ ] Paddle `sandbox`(staging) / `live`(prod) 분리
+- [ ] staging/prod webhook secret 분리
+- [ ] 프로덕션 price-id가 staging에 미적용
 
-```bash
-# From each deployed environment shell/log context
-echo "$APP_ENV $APP_BASE_URL"
-# Inspect masked secret names in deployment platform
-```
+## 4) CI/CD 게이트 (배포 전 필수)
 
-## 3) Payment and webhook separation
+- [ ] PR merge-blocking pass
+  - [ ] `quality` (lint/typecheck/test)
+  - [ ] `build`
+  - [ ] `user-story-core`
+- [ ] Main / Staging merge-blocking pass
+  - [ ] `contracts`
+  - [ ] `security-basic`
+  - [ ] `integration-smoke`
+- [ ] Optional checks (권장)
+  - [ ] `security-deep` (수동/스케줄, non-blocking)
+  - [ ] `e2e-smoke` (main/staging push 또는 수동)
+  - [ ] `perf-smoke` (수동/스케줄)
 
-- [ ] Use Paddle `sandbox` for staging and `live` for production.
-- [ ] Set distinct webhook secrets:
-  - [ ] `PADDLE_WEBHOOK_SECRET` (staging)
-  - [ ] `PADDLE_WEBHOOK_SECRET` (prod)
-- [ ] Register two webhook endpoints in Paddle:
-  - [ ] `https://staging.<your-domain>/api/billing/webhook`
-  - [ ] `https://<your-domain>/api/billing/webhook`
-- [ ] Confirm staging price IDs are not used in production.
+### 실패 재현/추적
 
-## 4) Domain, callback, and auth URL checks
+- [ ] CI 실패 job 이름 및 로그 링크 기록: `gh run view <run_id> --log`
+- [ ] 재현 커맨드 첨부 (예: `npm run test:user-story:us-02`, `npm run ci:contracts`, `npm run ci:security`)
+- [ ] 롤백 기준/범위 문서화
 
-- [ ] `APP_BASE_URL` matches actual runtime URL in each environment.
-- [ ] Auth redirect/callback URLs configured for both domains.
-- [ ] No prod callback URL appears in staging env vars (and vice versa).
+## 5) 배포 전 건강점검
 
-## 5) Monitoring and logging separation
+- [ ] `/api/health` 응답이 200이고 `status: "ok"`인지 확인
+- [ ] 배포 노트에 다음 항목 반영
+  - [ ] user-story 상태 (`npm run test:user-story:smoke`)
+  - [ ] 계약/보안/통합 smoke 결과
 
-- [ ] Separate dashboards/alerts for staging and production.
-- [ ] Include `APP_ENV` label in log/trace metadata.
-- [ ] Alert routing:
-  - [ ] staging alerts → dev channel
-  - [ ] production alerts → on-call/incident channel
+## 6) 사용자 스토리 기반 운영 점검 (릴리스 후)
 
-## 6) Healthcheck verification
+- US-01 업로드/미리보기: 샘플 CSV 업로드/preview
+- US-02 분석 실행 기본: plan/한도 동작 확인
+- US-03 LLM 장애 시나리오: 로컬 fallback 검증
+- US-04 저장 실패 회복: 분석 응답 유지 동작 확인
+- US-05 결제 안정성: webhook 정상/중복 이벤트 처리 확인
+- US-06 리포트 생성: `/api/report` 및 `/api/report/[id]` 응답 및 header 점검
 
-ReviewBoost provides:
+## 7) 배포 후
 
-- `GET /api/health` → `200` with JSON `{ status: "ok", service, timestamp }`
+- [ ] 배포 후 30분 내 에러율/지연률 모니터링
+- [ ] 스테이징/프로덕션 공지 체계 확인
+- [ ] 문제 발생 시 rollback/복구 경로 실행
 
-Checks:
-
-```bash
-curl -sS https://staging.<your-domain>/api/health | jq .
-curl -sS https://<your-domain>/api/health | jq .
-```
-
-Expected: HTTP 200 and `status: "ok"`.
-
-## 7) Post-deploy smoke tests (every release)
-
-- [ ] Open landing page `/`
-- [ ] Sign in/sign up flow works (`/login`, `/signup`)
-- [ ] Upload sample CSV and run analysis
-- [ ] Report generation endpoint works (`/api/report`)
-- [ ] Pricing page loads (`/pricing`)
-- [ ] Billing checkout request returns expected response in target env
-- [ ] Webhook endpoint returns expected status for signed test event
-- [ ] Dashboard/history route access works (`/dashboard`, `/dashboard/history`)
-
-## 8) Rollback basics
-
-When a deploy fails in staging/prod:
-
-1. Pause further deployments.
-2. Roll back to the last known-good artifact/commit.
-3. Re-verify healthcheck + smoke tests.
-4. If DB migration caused issue:
-   - apply tested rollback migration (or restore from backup)
-   - verify schema compatibility with rolled-back app version.
-5. Post incident note in `/docs` (impact, root cause, prevention).
-
-## 9) Incident response minimum
-
-- [ ] Define severity levels (SEV1/SEV2/SEV3)
-- [ ] Record owner/on-call contact
-- [ ] Communicate status every 30 minutes for SEV1
-- [ ] Keep timeline: detect → mitigate → recover → review
-- [ ] Capture action items with owner and due date

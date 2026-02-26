@@ -22,6 +22,22 @@
     "test:billing-schema": "node scripts/test-billing-schema.mjs",
     "test:paddle-utils": "node scripts/test-paddle-utils.mjs",
     "test": "npm run test:billing-schema && npm run test:paddle-utils",
+    "test:user-story:smoke": "node --experimental-strip-types scripts/ci/user-story-matrix.ts --run-all --validate",
+    "test:user-story:us-01": "node --experimental-strip-types scripts/ci/user-story-matrix.ts --story us-01 --validate",
+    "test:user-story:us-02": "node --experimental-strip-types scripts/ci/user-story-matrix.ts --story us-02 --validate",
+    "test:user-story:us-03": "node --experimental-strip-types scripts/ci/user-story-matrix.ts --story us-03 --validate",
+    "test:user-story:us-04": "node --experimental-strip-types scripts/ci/user-story-matrix.ts --story us-04 --validate",
+    "test:user-story:us-05": "node --experimental-strip-types scripts/ci/user-story-matrix.ts --story us-05 --validate",
+    "test:user-story:us-06": "node --experimental-strip-types scripts/ci/user-story-matrix.ts --story us-06 --validate",
+    "test:contracts": "vitest run src/lib/contracts.test.ts",
+    "test:perf-smoke": "vitest run src/lib/analysis_pipeline.perf.test.ts",
+    "ci:contracts": "node --experimental-strip-types scripts/ci/contracts.ts",
+    "ci:user-story-matrix": "node --experimental-strip-types scripts/ci/user-story-matrix.ts --run-all --validate",
+    "ci:security": "node --experimental-strip-types scripts/ci/security.ts",
+    "ci:security:deep": "node --experimental-strip-types scripts/ci/security.ts --deep",
+    "ci:report-smoke": "node --experimental-strip-types scripts/ci/report-smoke.ts",
+    "ci:perf-smoke": "node --experimental-strip-types scripts/ci/perf-smoke.ts",
+    "test:e2e:smoke": "playwright test",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -31,7 +47,6 @@
     "csv-parse": "^5.6.0",
     "next": "^14.2.0",
     "openai": "^4.86.1",
-    "pdfkit": "^0.15.0",
     "puppeteer": "^23.11.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -39,6 +54,10 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "@storybook/addon-essentials": "^8.6.12",
+    "@storybook/nextjs": "^8.6.12",
+    "@storybook/react": "^8.6.12",
+    "@storybook/test": "^8.6.12",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^20.11.30",
     "@types/react": "^18.3.5",
@@ -47,10 +66,6 @@
     "eslint-config-next": "^14.2.0",
     "jsdom": "^26.0.0",
     "typescript": "^5.6.3",
-    "vitest": "^3.0.5",
-    "@storybook/addon-essentials": "^8.6.12",
-    "@storybook/nextjs": "^8.6.12",
-    "@storybook/react": "^8.6.12",
-    "@storybook/test": "^8.6.12"
+    "vitest": "^3.0.5"
   }
 }

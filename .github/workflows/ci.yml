@@ -5,12 +5,22 @@ on:
     branches: [main, staging]
   pull_request:
     branches: [main, staging]
+  workflow_dispatch:
+  schedule:
+    # 매일 야간/수동 보강 점검용. 주요 경량/중간 체크는 push/PR에서 병렬 실행
+    - cron: "0 3 * * *"
+
+concurrency:
+  group: reviewboost-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PUPPETEER_SKIP_DOWNLOAD: 1
 
 jobs:
-  build:
+  quality:
+    name: Quality (lint, typecheck, test)
     runs-on: ubuntu-latest
-    env:
-      PUPPETEER_SKIP_DOWNLOAD: 1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,4 +31,129 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
+
+  build:
+    name: Build
+    needs: [quality]
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
       - run: npm run build
+
+  user-story-core:
+    name: User Story Core Suite
+    needs: [quality]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run test:user-story:smoke
+
+  # merge-blocking on default CI paths only; not required for PR merge checks
+  contracts:
+    name: Contract & Response Schema Checks
+    if: github.event_name != 'pull_request'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run ci:user-story-matrix
+      - run: npm run ci:contracts
+
+  # merge-blocking on main/staging pushes only. validates baseline dependency risk and secret leakage policy.
+  security-basic:
+    name: Security and Dependency Guards
+    if: github.event_name != 'pull_request'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run ci:security
+
+  # Optional deep security pass (non-blocking): run only during scheduled/manual runs
+  security-deep:
+    name: Security Deep Scan (non-blocking)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: [security-basic]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run ci:security:deep
+
+  integration-smoke:
+    name: API Integration Smoke
+    if: github.event_name != 'pull_request'
+    needs: [build]
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run ci:report-smoke
+      - run: node --experimental-strip-types scripts/ci/user-story-matrix.ts --story us-03 --validate
+
+  e2e-smoke:
+    name: E2E Smoke (staging/main only)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name != 'pull_request' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main'))
+    needs: [build]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # E2E smoke includes report path for extended verification on heavier runs.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:smoke
+
+  perf-smoke:
+    name: Performance Smoke (nightly/dispatch)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: [quality]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node --experimental-strip-types scripts/ci/user-story-matrix.ts --story us-03 --validate
+      - run: npm run ci:perf-smoke
