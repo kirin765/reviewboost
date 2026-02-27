@@ -22,8 +22,8 @@ function safeNextPath(raw: string, fallback: string): string {
   return raw;
 }
 
-function withQuery(path: string | undefined, key: string, value: string) {
-  const [pathname, query = ""] = (path ?? "/dashboard").split("?");
+function withQuery(path: string, key: string, value: string) {
+  const [pathname, query = ""] = path.split("?");
   const params = new URLSearchParams(query);
   params.set(key, value);
   const nextQuery = params.toString();
@@ -123,7 +123,7 @@ export async function signUpAction(formData: FormData) {
   }
 
   if (signUpError) redirect(`/signup?error=${encodeURIComponent(mapAuthError(signUpError, "signup"))}`);
-  if (hasSession) redirect(withQuery(String(next ?? "/dashboard"), "signup_success", "1"));
+  if (hasSession) redirect(withQuery(next, "signup_success", "1"));
   const loginPath = `/login?notice=${encodeURIComponent("회원가입 완료. 이메일 확인 후 로그인해주세요.")}`;
   redirect(withQuery(loginPath, "signup_success", "1"));
 }
