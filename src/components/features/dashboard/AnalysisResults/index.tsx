@@ -5,12 +5,12 @@ import AnalysisResultDigest from "@/components/Analysis/AnalysisResultDigest";
 import { useGates } from "@/contexts/PlanContext";
 import {
   ActionItemsSection,
-  AnalysisResultsSummary,
   PriorityMatrixSection,
   PositiveKeywordsSection,
   RatingSimulationSection,
   UrgentReviewsSection
 } from "./analysis-results-sections";
+import { AnalysisResultsSummary } from "./analysis-results-summary";
 
 interface AnalysisResultsProps {
   result: AnalysisOutput & {

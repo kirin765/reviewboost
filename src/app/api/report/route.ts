@@ -127,7 +127,7 @@ export async function POST(req: Request) {
         margin: { top: "12mm", bottom: "12mm", left: "10mm", right: "10mm" }
       });
       const pdfBuffer = asPdfBuffer(pdf);
-      return new Response(pdfBuffer, {
+      return new Response(new Uint8Array(pdfBuffer), {
         status: 200,
         headers: {
           "content-type": "application/pdf",

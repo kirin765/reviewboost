@@ -1,4 +1,6 @@
-export type { PlanTier } from "@/types/user";
+import type { PlanTier } from "@/types/user";
+
+export type { PlanTier };
 export * from "@/types/common";
 export * from "@/types/review";
 

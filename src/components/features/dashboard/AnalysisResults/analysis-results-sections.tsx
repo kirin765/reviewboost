@@ -4,9 +4,9 @@ import BlurGate from "@/components/BlurGate";
 
 export { AnalysisResultsSummary } from "./analysis-results-summary";
 
-type UrgentReview = AnalysisOutput["urgentReviews"] extends readonly (infer T)[] ? T : never;
-type PriorityMatrix = AnalysisOutput["priorityMatrix"] extends readonly (infer T)[] ? T : never;
-type ActionItem = NonNullable<AnalysisOutput["actionItems"]> extends readonly (infer T)[] ? T : never;
+type UrgentReview = NonNullable<AnalysisOutput["urgentReviews"]>[number];
+type PriorityMatrix = NonNullable<AnalysisOutput["priorityMatrix"]>[number];
+type ActionItem = NonNullable<AnalysisOutput["actionItems"]>[number];
 
 export function UrgentReviewsSection({ result, gates }: { result: AnalysisOutput; gates: { urgentReviewVisibleCount: number } }) {
   if (!result.urgentReviews || result.urgentReviews.length === 0) return null;
