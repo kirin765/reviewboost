@@ -59,7 +59,7 @@ export default function AnalysisResultDigest({ result }: { result: Pick<Analysis
   const items = getAnalysisResultDigestItems(result);
 
   return (
-    <div className="analysisResultDigest" aria-label="분석 요약">
+    <div className="analysisResultDigest" id="digest-section" aria-label="분석 요약">
       <AnalysisKpiGrid stats={result.stats} includeRecentness={Boolean(result.stats.recentness?.hasDates)} />
       <p className="hint">
         우선순위 점수는 &ldquo;지금 먼저 개선할 가치&rdquo;를 0~100으로 요약한 값입니다. 부정 비율(부정/전체), 최근성(작성일 기준),
