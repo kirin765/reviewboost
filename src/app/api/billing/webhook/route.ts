@@ -150,7 +150,6 @@ type TransactionData = {
   customer_id?: string;
   customer?: { id?: string };
   subscription_id?: string;
-  subscription?: { id?: string; status?: string };
   status?: string;
   custom_data?: { user_id?: string; [key: string]: unknown };
   metadata?: { user_id?: string; [key: string]: unknown };

@@ -1,5 +1,6 @@
 import { getSupabaseAdminClient } from "@/lib/supabase_server";
 import type { PlanTier } from "@/lib/plan";
+import { logApiError } from "@/lib/api_log";
 
 type SubscriptionStatus =
   | "trialing"
@@ -50,6 +51,20 @@ function timestampToMillis(v?: string | number | null): number {
   if (!iso) return 0;
   const parsed = Date.parse(iso);
   return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function logBillingDisabled(operation: string) {
+  if (process.env.NODE_ENV === "test") return;
+  console.error(`[billing] ${operation}: SUPABASE_SERVICE_ROLE_KEY is missing`);
+
+  void logApiError({
+    route: "/api/billing/webhook",
+    method: "POST",
+    status: 503,
+    code: "billing_storage_unavailable",
+    message: "결제 데이터 저장에 필요한 service role key가 없습니다.",
+    details: operation
+  });
 }
 
 export function isBillingActiveStatus(status: string | null | undefined): boolean {
@@ -129,7 +144,10 @@ export async function resolvePlanTierByBilling(args: {
 
 export async function upsertProfileCustomer(userId: string, paddleCustomerId: string) {
   const admin = getSupabaseAdminClient();
-  if (!admin) return;
+  if (!admin) {
+    logBillingDisabled("upsertProfileCustomer");
+    return;
+  }
 
   await admin.from("profiles").upsert(
     {
@@ -143,7 +161,10 @@ export async function upsertProfileCustomer(userId: string, paddleCustomerId: st
 
 export async function findUserIdByPaddleCustomerId(paddleCustomerId: string): Promise<string | null> {
   const admin = getSupabaseAdminClient();
-  if (!admin) return null;
+  if (!admin) {
+    logBillingDisabled("findUserIdByPaddleCustomerId");
+    return null;
+  }
 
   const { data } = await admin
     .from("profiles")
@@ -156,7 +177,10 @@ export async function findUserIdByPaddleCustomerId(paddleCustomerId: string): Pr
 
 export async function findPaddleCustomerIdByUserId(userId: string): Promise<string | null> {
   const admin = getSupabaseAdminClient();
-  if (!admin) return null;
+  if (!admin) {
+    logBillingDisabled("findPaddleCustomerIdByUserId");
+    return null;
+  }
 
   const { data } = await admin.from("profiles").select("paddle_customer_id").eq("user_id", userId).maybeSingle();
 
@@ -176,7 +200,10 @@ export async function upsertSubscription(args: {
   cancelAtPeriodEnd?: boolean | null;
 }) {
   const admin = getSupabaseAdminClient();
-  if (!admin) return;
+  if (!admin) {
+    logBillingDisabled("upsertSubscription");
+    return;
+  }
 
   await admin.from("subscriptions").upsert(
     {
