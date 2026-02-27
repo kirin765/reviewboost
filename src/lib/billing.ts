@@ -1,4 +1,4 @@
-import { getSupabaseAdminClient } from "@/lib/supabase_server";
+﻿import { getSupabaseAdminClient } from "@/lib/supabase_server";
 import type { PlanTier } from "@/lib/plan";
 
 type SubscriptionStatus =
@@ -21,15 +21,25 @@ type BillingSubscriptionRow = {
 };
 
 const ACTIVE_STATUSES = new Set<SubscriptionStatus>(["trialing", "active", "past_due", "completed", "paid"]);
+const KNOWN_STATUSES = new Set<SubscriptionStatus>([
+  "trialing",
+  "active",
+  "past_due",
+  "completed",
+  "paid",
+  "canceled",
+  "paused",
+  "inactive"
+]);
 
-export function normalizeBillingTimestamp(v?: string | number | null): string | null {
+export function billingToIso(v?: string | number | null): string | null {
   if (typeof v === "string") {
     const trimmed = v.trim();
     if (!trimmed) return null;
 
     if (/^\d+$/.test(trimmed)) {
       const numeric = Number(trimmed);
-      return Number.isFinite(numeric) ? normalizeBillingTimestamp(numeric) : null;
+      return Number.isFinite(numeric) ? billingToIso(numeric) : null;
     }
 
     const parsed = new Date(trimmed);
@@ -37,7 +47,7 @@ export function normalizeBillingTimestamp(v?: string | number | null): string | 
   }
 
   if (typeof v === "number" && Number.isFinite(v)) {
-    const millis = v > 1_000_000_000_000 ? v : v * 1000;
+    const millis = Math.abs(v) >= 1_000_000_000_000 ? v : v * 1000;
     const parsed = new Date(millis);
     return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
   }
@@ -45,16 +55,24 @@ export function normalizeBillingTimestamp(v?: string | number | null): string | 
   return null;
 }
 
+export function normalizeBillingTimestamp(v?: string | number | null): string | null {
+  return billingToIso(v);
+}
+
 function timestampToMillis(v?: string | number | null): number {
-  const iso = normalizeBillingTimestamp(v);
+  const iso = billingToIso(v);
   if (!iso) return 0;
   const parsed = Date.parse(iso);
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+export function normalizeSubscriptionStatus(status: string | null | undefined): SubscriptionStatus {
+  const normalized = String(status ?? "").trim().toLowerCase() as SubscriptionStatus;
+  return KNOWN_STATUSES.has(normalized) ? normalized : "inactive";
+}
+
 export function isBillingActiveStatus(status: string | null | undefined): boolean {
-  const normalized = String(status ?? "").toLowerCase();
-  return ACTIVE_STATUSES.has(normalized as SubscriptionStatus);
+  return ACTIVE_STATUSES.has(normalizeSubscriptionStatus(status));
 }
 
 export async function resolvePlanTierByBilling(args: {
@@ -184,10 +202,10 @@ export async function upsertSubscription(args: {
       paddle_customer_id: args.paddleCustomerId,
       paddle_subscription_id: args.paddleSubscriptionId,
       paddle_price_id: args.paddlePriceId ?? null,
-      status: args.status,
+      status: normalizeSubscriptionStatus(args.status),
       plan_tier: args.planTier,
-      current_period_start: normalizeBillingTimestamp(args.currentPeriodStart),
-      current_period_end: normalizeBillingTimestamp(args.currentPeriodEnd),
+      current_period_start: billingToIso(args.currentPeriodStart),
+      current_period_end: billingToIso(args.currentPeriodEnd),
       cancel_at_period_end: Boolean(args.cancelAtPeriodEnd),
       updated_at: new Date().toISOString()
     },
