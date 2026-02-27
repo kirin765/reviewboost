@@ -14,21 +14,25 @@ const steps: Array<{ n: 1 | 2 | 3 | 4; label: string; desc: string }> = [
 export default function AnalysisStepList({ step }: AnalysisStepperProps) {
   return (
     <div className="stepper" role="list" aria-label="분석 단계">
-      {steps.map((item) => {
+      {steps.map((item, idx) => {
         const isDone = step > item.n;
         const isCurrent = step === item.n;
         return (
-          <div
-            className={`step ${isDone ? "completed" : ""} ${isCurrent ? "active" : ""}`}
-            key={item.label}
-            role="listitem"
-          >
-            <span className="stepNumber">{item.n}</span>
-            <span className="stepBody">
-              <span className="stepTitle">{item.label}</span>
-              <span className="stepDesc">{item.desc}</span>
-            </span>
-          </div>
+          <React.Fragment key={item.label}>
+            {idx > 0 ? (
+              <div className={`stepConnector ${step > item.n ? "stepConnectorDone" : step === item.n ? "stepConnectorActive" : ""}`} aria-hidden="true" />
+            ) : null}
+            <div
+              className={`step ${isDone ? "completed" : ""} ${isCurrent ? "active" : ""}`}
+              role="listitem"
+            >
+              <span className="stepNumber">{isDone ? "\u2713" : item.n}</span>
+              <span className="stepBody">
+                <span className="stepTitle">{item.label}</span>
+                <span className="stepDesc">{item.desc}</span>
+              </span>
+            </div>
+          </React.Fragment>
         );
       })}
     </div>

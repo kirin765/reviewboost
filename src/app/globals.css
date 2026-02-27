@@ -1042,6 +1042,66 @@ a {
   box-sizing: border-box;
 }
 
+/* Mapping status badges */
+.mappingStatus {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.mappingStatusDone {
+  background: rgba(5, 150, 105, 0.1);
+  color: var(--color-success);
+}
+
+.mappingStatusRequired {
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--color-danger);
+}
+
+.mappingStatusRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Table header column highlights */
+.thMappedText { background: rgba(37, 99, 235, 0.06); }
+.thMappedRating { background: rgba(5, 150, 105, 0.06); }
+.thMappedDate { background: rgba(217, 119, 6, 0.06); }
+
+.thMappedLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-top: 2px;
+}
+
+.thMappedLabelRating { color: var(--color-success); }
+.thMappedLabelDate { color: var(--color-warning); }
+
+/* Table scroll gradient overlay */
+.csvPreviewTableContainer {
+  position: relative;
+}
+
+.csvPreviewTableContainer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, var(--color-surface));
+  pointer-events: none;
+}
+
 .csvPreviewPreviewSection {
   margin-top: 12px;
 }
@@ -1272,6 +1332,50 @@ a {
     opacity: 0;
     transform: translateX(-50%) translateY(8px);
   }
+}
+
+/* Spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* Indeterminate loading bar */
+@keyframes loadingSlide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+.loadingBar {
+  height: 3px;
+  background: var(--color-bg-soft);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.loadingBarFill {
+  width: 33%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), rgba(37, 99, 235, 0.4));
+  border-radius: 2px;
+  animation: loadingSlide 1.5s ease-in-out infinite;
+}
+
+.btnLoading {
+  pointer-events: none;
+  opacity: 0.85;
 }
 
 .cellBtn {
@@ -1561,11 +1665,15 @@ a {
 .dropZone {
   border: 2px dashed var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 32px;
+  padding: 40px 32px;
   text-align: center;
   background: var(--color-bg);
-  transition: border-color 200ms ease, background 200ms ease;
+  transition: border-color 200ms ease, background 200ms ease, transform 200ms ease;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .dropZone:hover,
@@ -1574,10 +1682,25 @@ a {
   background: rgba(37, 99, 235, 0.04);
 }
 
+.dropZoneDragActive {
+  border-color: var(--color-primary);
+  background: rgba(37, 99, 235, 0.06);
+  transform: scale(1.01);
+}
+
 .dropZoneIcon {
-  font-size: 40px;
-  margin-bottom: 12px;
-  opacity: 0.6;
+  color: var(--color-primary);
+  opacity: 0.5;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.dropZone:hover .dropZoneIcon {
+  opacity: 0.8;
+}
+
+.dropZoneDragActive .dropZoneIcon {
+  opacity: 1;
+  transform: translateY(-4px);
 }
 
 .dropZoneText {
@@ -1615,24 +1738,41 @@ a {
 /* Stepper */
 .stepper {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0;
   width: 100%;
   margin-bottom: 20px;
+}
+
+.stepConnector {
+  flex: 0 0 auto;
+  height: 2px;
+  width: 20px;
+  background: var(--color-border);
+  transition: background 300ms ease;
+}
+
+.stepConnectorDone {
+  background: var(--color-success);
+}
+
+.stepConnectorActive {
+  background: var(--color-primary);
 }
 
 .step {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  flex: 1 1 220px;
+  flex: 1 1 0;
   min-width: 0;
   padding: 8px 12px;
   border-radius: var(--radius-md);
   font-size: 14px;
   color: var(--color-muted);
   background: var(--color-bg);
+  transition: background 300ms ease, color 300ms ease;
 }
 
 .stepBody {
@@ -1760,6 +1900,30 @@ a {
 .actionItem.impactHigh { border-left: 3px solid var(--color-danger); }
 .actionItem.impactMedium { border-left: 3px solid var(--color-warning); }
 .actionItem.impactLow { border-left: 3px solid var(--color-success); }
+
+.actionItemBody { flex: 1; }
+.actionItemBadges { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.actionItemText { font-size: 14px; }
+.actionItemKeyword { font-size: 12px; color: var(--color-muted); margin-top: 4px; }
+.actionItemCount { font-size: 20px; font-weight: 700; color: var(--color-muted); }
+
+/* Result section hint (shared) */
+.analysisResultsSectionHint { margin-top: -4px; margin-bottom: 16px; }
+
+/* Priority matrix detail classes */
+.quadrantImpact { font-size: 13px; color: var(--color-muted); }
+.quadrantAction { font-size: 12px; margin-top: 6px; color: #555; }
+.quadrantActionBlurred {
+  font-size: 12px;
+  margin-top: 6px;
+  color: #555;
+  filter: blur(4px);
+  opacity: 0.5;
+  user-select: none;
+}
+
+/* Simulation resolved count */
+.simulationResolvedCount { font-size: 12px; color: var(--color-muted); margin-left: 6px; }
 
 /* Rating simulation */
 .simulationCard {
@@ -1998,6 +2162,66 @@ a {
 
 .kpiCard .subtext {
   margin-top: 6px;
+}
+
+/* Results section navigation */
+.resultsNav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+}
+
+.resultsNavLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-soft);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 200ms ease, background 200ms ease, color 200ms ease;
+}
+
+.resultsNavLink:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+/* Scroll offset for sticky nav */
+[id$="-section"] {
+  scroll-margin-top: 60px;
+}
+
+/* Tab panel transition */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.heroCard > section[role="tabpanel"],
+.heroCard > .dashboardPanel {
+  animation: fadeIn 250ms ease-out;
+}
+
+/* Modal footer for action buttons */
+.modalFooter {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--color-border);
 }
 
 @media (max-width: 900px) {
