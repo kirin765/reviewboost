@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { DragEvent } from "react";
 import Button from "@/components/ui/Button";
 
@@ -24,9 +24,11 @@ export default function FileUploader({
   onAnalyze
 }: FileUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   function onDropFile(e: DragEvent<HTMLLabelElement>) {
     e.preventDefault();
+    setDragActive(false);
     if (busy) return;
     const dropped = e.dataTransfer?.files?.[0] ?? null;
     onFileSelect(dropped);
@@ -42,13 +44,19 @@ export default function FileUploader({
 
       <label
         htmlFor="dashboardCsvInput"
-        className="dropZone"
+        className={`dropZone ${dragActive ? "dropZoneDragActive" : ""}`}
         onDrop={onDropFile}
         onDragOver={onDragOver}
+        onDragEnter={() => setDragActive(true)}
+        onDragLeave={() => setDragActive(false)}
         role="button"
         aria-label="CSV 파일 업로드 영역"
       >
-        <div className="dropZoneIcon">⇪</div>
+        <svg className="dropZoneIcon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
         <p className="dropZoneText">클릭 또는 파일을 이곳에 드롭하세요</p>
         <p className="hint">지원 형식: .csv</p>
       </label>
@@ -69,7 +77,7 @@ export default function FileUploader({
       />
 
       <div className="actionRow">
-        <Button variant="danger" onClick={onSample} disabled={busy}>
+        <Button variant="ghost" onClick={onSample} disabled={busy}>
           샘플로 테스트
         </Button>
         <Button onClick={onReset} disabled={busy}>
@@ -88,15 +96,20 @@ export default function FileUploader({
       </div>
 
       <div className="toolbar">
-        <Button variant="primary" onClick={onAnalyze} disabled={!file || busy}>
-          {busy ? "처리 중..." : preview ? "분석 시작" : "다음: 미리보기"}
+        <Button variant="primary" onClick={onAnalyze} disabled={!file || busy} className={busy ? "btnLoading" : undefined}>
+          {busy ? (
+            <>
+              <span className="spinner" aria-hidden="true" />
+              {preview ? "분석 중..." : "미리보기 준비 중..."}
+            </>
+          ) : preview ? "분석 시작" : "다음: 미리보기"}
         </Button>
       </div>
 
       {busy ? (
-        <p className="hint fileUploaderBusy">
-          {preview ? "리뷰를 분석 중입니다. 잠시만 기다려주세요." : "CSV 미리보기를 준비하고 있습니다."}
-        </p>
+        <div className="loadingBar" role="progressbar" aria-label="처리 중">
+          <div className="loadingBarFill" />
+        </div>
       ) : null}
     </div>
   );

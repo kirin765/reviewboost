@@ -92,8 +92,8 @@ export default function CsvPreview({
 
   return (
     <section className="mappingPanel mappingPanelBounded">
-      <div className="rowActions" style={{ justifyContent: "space-between", marginBottom: 12 }}>
-        <span>매핑 상태: {preview.totalRows}행 / {preview.columns.length}컬럼</span>
+      <div className="mappingStatusRow">
+        <span className="pill">{preview.totalRows}행 / {preview.columns.length}컬럼</span>
         <span className={`pill ${preview.headerMode === "header" ? "pillActive" : ""}`}>헤더 {preview.headerMode === "header" ? "있음" : "없음"}</span>
       </div>
 
@@ -109,7 +109,10 @@ export default function CsvPreview({
           ) : null}
           <div className="csvPreviewColumnGrid">
             <label>
-              <span className="muted">리뷰 내용(텍스트) 열</span>
+              <span className="muted">
+                리뷰 내용(텍스트) 열
+                {textCol ? <span className="mappingStatus mappingStatusDone">설정됨</span> : <span className="mappingStatus mappingStatusRequired">필수</span>}
+              </span>
               <select className="input" value={textCol} onChange={(e) => onTextColChange(e.target.value)} disabled={busy}>
                 {preview.columns.map((c) => (
                   <option key={c} value={c}>
@@ -119,7 +122,10 @@ export default function CsvPreview({
               </select>
             </label>
             <label>
-              <span className="muted">별점 열 (선택)</span>
+              <span className="muted">
+                별점 열 (선택)
+                {ratingCol ? <span className="mappingStatus mappingStatusDone">설정됨</span> : null}
+              </span>
               <select className="input" value={ratingCol} onChange={(e) => onRatingColChange(e.target.value)} disabled={busy}>
                 <option value="">(없음)</option>
                 {preview.columns.map((c) => (
@@ -130,7 +136,10 @@ export default function CsvPreview({
               </select>
             </label>
             <label>
-              <span className="muted">작성일 열 (선택)</span>
+              <span className="muted">
+                작성일 열 (선택)
+                {dateCol ? <span className="mappingStatus mappingStatusDone">설정됨</span> : null}
+              </span>
               <select className="input" value={dateCol} onChange={(e) => onDateColChange(e.target.value)} disabled={busy}>
                 <option value="">(없음)</option>
                 {preview.columns.map((c) => (
@@ -158,14 +167,18 @@ export default function CsvPreview({
               </button>
             ) : null}
           </div>
-          <p className="hint muted tableHint">가로 스크롤 시 전체 열을 좌우로 확인하세요.</p>
-
+          <div className="csvPreviewTableContainer">
           <div className="tableWrap csvPreviewTableWrap">
             <table className="table" style={{ minWidth: previewTableMinWidth }}>
               <thead>
                 <tr>
                   {previewCols.map((c) => (
-                    <th key={c}>{c}</th>
+                    <th key={c} className={c === textCol ? "thMappedText" : c === ratingCol ? "thMappedRating" : c === dateCol ? "thMappedDate" : ""}>
+                      {c}
+                      {c === textCol ? <span className="thMappedLabel">텍스트</span> : null}
+                      {c === ratingCol ? <span className="thMappedLabel thMappedLabelRating">별점</span> : null}
+                      {c === dateCol ? <span className="thMappedLabel thMappedLabelDate">날짜</span> : null}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -188,6 +201,7 @@ export default function CsvPreview({
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
           {preview.columns.length > 6 && !showAllPreviewCols ? (
             <p className="hint muted">컬럼이 많아 앞의 6개만 표시합니다. (전체 컬럼 보기 가능)</p>

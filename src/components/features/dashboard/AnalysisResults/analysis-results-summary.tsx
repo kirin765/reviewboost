@@ -23,12 +23,6 @@ export function AnalysisResultsSummary({ result, onDownloadPdf, busy, caps, gate
 
   return (
     <section className="resultsBlock analysisResultsPrimary">
-      <div className="kpiMetaTags" aria-label="분류 지표 요약">
-        <span className="pill">긍정 {Math.round(result.stats.positiveRatio * 100)}%</span>
-        <span className="pill">중립 {Math.round(result.stats.negativeRatio * 100)}%</span>
-        <span className="pill">평균 별점 {result.stats.avgRating === null ? "-" : result.stats.avgRating.toFixed(2)}</span>
-      </div>
-
       {result.meta.truncated ? (
         <p className="hint danger analysisResultsWarning">
           리뷰 수가 플랜 한도를 초과하여 {gates.maxReviewsPerAnalysis}개만 분석되었습니다. 전체 분석은 Basic 이상으로 업그레이드 후 이용하세요.

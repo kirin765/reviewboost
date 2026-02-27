@@ -113,7 +113,18 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
 
   return (
     <main className="pageMain analysisWorkspace">
-      {shownError ? <FeedbackModal title="분석 처리 오류" message={shownError} tone="error" onClose={() => setLocalError(null)} /> : null}
+      {shownError ? (
+        <FeedbackModal
+          title="분석 처리 오류"
+          message={shownError}
+          tone="error"
+          onClose={() => setLocalError(null)}
+          actions={[
+            { label: "다시 시도", onClick: handleAnalyze, variant: "primary" },
+            { label: "새로 시작", onClick: actions.onReset }
+          ]}
+        />
+      ) : null}
       {!shownError && analysisDoneNotice ? (
         <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
       ) : null}
