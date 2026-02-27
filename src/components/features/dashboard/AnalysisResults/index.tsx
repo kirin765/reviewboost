@@ -3,9 +3,9 @@ import type { AnalysisOutput, PlanGates } from "@/lib/types";
 import type { Capabilities } from "@/lib/capabilities";
 import AnalysisResultDigest from "@/components/Analysis/AnalysisResultDigest";
 import { useGates } from "@/contexts/PlanContext";
+import { AnalysisResultsSummary } from "./analysis-results-summary";
 import {
   ActionItemsSection,
-  AnalysisResultsSummary,
   PriorityMatrixSection,
   PositiveKeywordsSection,
   RatingSimulationSection,
@@ -48,6 +48,15 @@ export default function AnalysisResults({ result, caps, busy, onDownloadPdf }: A
       <section ref={summaryCardRef}>
         <AnalysisResultsSummary result={result} onDownloadPdf={onDownloadPdf} busy={busy} caps={caps} gates={gates} />
       </section>
+
+      <nav className="resultsNav" aria-label="결과 섹션 바로가기">
+        <a href="#digest-section" className="resultsNavLink">핵심 지표</a>
+        {result.urgentReviews?.length ? <a href="#urgent-section" className="resultsNavLink">긴급 리뷰</a> : null}
+        {result.priorityMatrix?.length ? <a href="#priority-section" className="resultsNavLink">우선순위</a> : null}
+        {result.ratingSimulation?.scenarios?.length ? <a href="#simulation-section" className="resultsNavLink">시뮬레이션</a> : null}
+        {result.positiveKeywords?.length ? <a href="#positive-section" className="resultsNavLink">긍정 키워드</a> : null}
+        {result.actionItems?.length ? <a href="#action-section" className="resultsNavLink">액션 아이템</a> : null}
+      </nav>
 
       <AnalysisResultDigest result={result} />
 
