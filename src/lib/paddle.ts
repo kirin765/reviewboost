@@ -173,7 +173,8 @@ export async function paddleRequest<TResponse = unknown>(path: string, opts?: Pa
     throw error;
   }
 
-  return (json?.data ?? json) as TResponse;
+  const responseObject = typeof json === "object" && json !== null ? (json as { data?: unknown }) : null;
+  return (responseObject?.data ?? json) as TResponse;
 }
 
 export function appBaseUrl(req: Request): string {

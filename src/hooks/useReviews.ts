@@ -9,7 +9,7 @@ export type UseReviewsResult<TItem extends ReviewListItem> = {
   reviews: TItem[];
   loading: boolean;
   error: string | null;
-  refresh: (next: TItem[]) => void;
+  refresh: (query?: string) => Promise<void>;
   append: (item: TItem) => void;
 };
 
@@ -42,8 +42,6 @@ export function useReviews<TItem extends ReviewListItem>(initial: TItem[] = [], 
     loading,
     error,
     refresh: refresh,
-    append: (item: TItem) => setReviews((prev) => [...prev, item]),
-    setReviews
+    append: (item: TItem) => setReviews((prev) => [...prev, item])
   } satisfies UseReviewsResult<TItem>;
 }
-
