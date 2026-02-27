@@ -15,7 +15,7 @@ function readCheckbox(fd: FormData, key: string) {
   return v === "yes" || v === "on" || v === "true";
 }
 
-function safeNextPath(raw: string, fallback: string) {
+function safeNextPath(raw: string, fallback: string): string {
   if (!raw) return fallback;
   if (!raw.startsWith("/")) return fallback;
   if (raw.startsWith("//")) return fallback;
@@ -77,7 +77,7 @@ async function detectOriginFromHeaders() {
 export async function signUpAction(formData: FormData) {
   const email = readString(formData, "email");
   const password = readString(formData, "password");
-  const next = safeNextPath(readString(formData, "next"), "/dashboard");
+  const next: string = safeNextPath(readString(formData, "next"), "/dashboard");
   const agreeTerms = readCheckbox(formData, "agreeTerms");
   const agreePrivacy = readCheckbox(formData, "agreePrivacy");
   const agreeMarketing = readCheckbox(formData, "agreeMarketing");
