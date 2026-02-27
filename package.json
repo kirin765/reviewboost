@@ -21,6 +21,7 @@
     "typecheck": "next typegen && tsc --incremental false --noEmit -p tsconfig.typecheck.json",
     "test:billing-schema": "node scripts/test-billing-schema.mjs",
     "test:paddle-utils": "node scripts/test-paddle-utils.mjs",
+    "test:webhook-hardening": "vitest run tests/paddleWebhook.test.ts",
     "test": "npm run test:billing-schema && npm run test:paddle-utils",
     "test:user-story:smoke": "tsx scripts/ci/user-story-matrix.ts --run-all --validate",
     "test:user-story:us-01": "tsx scripts/ci/user-story-matrix.ts --story us-01 --validate",
