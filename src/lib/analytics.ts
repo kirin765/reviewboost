@@ -1,8 +1,10 @@
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-67KE33WR4M";
 
 declare global {
+  type Gtag = (...args: unknown[]) => void;
+
   interface Window {
-    gtag?: (...args: any[]) => void;
+    gtag?: Gtag;
   }
 }
 
@@ -15,4 +17,3 @@ export function gtagEvent(eventName: string, params: Record<string, unknown> = {
   if (typeof window === "undefined" || typeof window.gtag !== "function") return;
   window.gtag("event", eventName, params);
 }
-

@@ -3,6 +3,7 @@
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { CsvPreview as CsvPreviewType } from "@/lib/csv";
 
 const previewData = {
   columns: ["content", "rating", "date"],
@@ -97,7 +98,7 @@ vi.mock("@/components/Dashboard/DashboardAnalysisPanel", () => ({
   }: {
     file: File | null;
     busy: boolean;
-    preview: any;
+    preview: CsvPreviewType | null;
     onFileSelect: (file: File | null) => void;
     onAnalyze: () => void;
   }) => (

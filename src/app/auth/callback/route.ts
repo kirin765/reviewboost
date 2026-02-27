@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet: any[]) {
+      setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
         for (const { name, value, options } of cookiesToSet) {
           request.cookies.set(name, value);
           response.cookies.set(name, value, options);

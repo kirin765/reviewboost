@@ -4,6 +4,7 @@ import { CSV_PARSE_FAILED_HELP } from "@/lib/csv_errors";
 import { readUploadedCsvText } from "@/lib/upload_csv";
 import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
+import { getErrorMessage } from "@/types/common";
 
 export const runtime = "nodejs";
 
@@ -25,7 +26,8 @@ export async function POST(req: Request) {
     try {
       const preview = previewReviewCsv(csvText, filename);
       return Response.json(preview);
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const message = getErrorMessage(e);
       // Most failures here are user-facing CSV syntax issues (quotes/newlines/delimiter).
       await logApiError({
         route: "/api/preview",
@@ -33,7 +35,7 @@ export async function POST(req: Request) {
         status: 400,
         code: "CSV_PARSE_FAILED",
         message: "CSV 파싱에 실패했습니다.",
-        details: e?.message ?? String(e),
+        details: message,
         request: req,
         error: e,
         extra: { filename, stage: "parse_preview" }
@@ -41,25 +43,26 @@ export async function POST(req: Request) {
       return apiErrorResponse(
         new ApiError(400, "CSV_PARSE_FAILED", "CSV를 읽지 못했어요.", {
           help: [...delimiterHint(csvText), ...CSV_PARSE_FAILED_HELP],
-          details: e?.message ?? String(e)
+          details: message
         })
       );
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const message = getErrorMessage(e);
     await logApiError({
       route: "/api/preview",
       method: req.method,
       status: e instanceof ApiError ? e.status : 500,
       code: e instanceof ApiError ? e.code : "INTERNAL_ERROR",
       message: e instanceof ApiError ? e.message : "CSV 업로드 미리보기 처리 중 오류가 발생했습니다.",
-      details: e?.message ?? String(e),
+      details: message,
       request: req,
       error: e
     });
     if (e instanceof ApiError) return apiErrorResponse(e);
     return apiErrorResponse(
       new ApiError(e instanceof ApiError ? e.status : 500, "INTERNAL_ERROR", "처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", {
-        details: e?.message ?? String(e)
+        details: message
       })
     );
   }

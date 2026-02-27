@@ -8,6 +8,13 @@ type SuggestionOptions = {
   totalCount?: number;
 };
 
+type SuggestionRaw = {
+  detailPageCopy?: unknown;
+  csResponseTemplates?: unknown;
+  faqRecommendations?: unknown;
+  notes?: unknown;
+};
+
 const CATEGORY_SUGGESTIONS: Record<string, { detail: string; cs: string; faq: string }> = {
   "배송": {
     detail: "배송 안내: 주문 후 평균 발송일, 택배사, 추적 방법을 상세페이지에 명시하고 있습니다.",
@@ -36,6 +43,21 @@ const CATEGORY_SUGGESTIONS: Record<string, { detail: string; cs: string; faq: st
   }
 };
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((v) => typeof v === "string");
+}
+
+function isSuggestions(value: unknown): value is Suggestions {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as SuggestionRaw;
+  return (
+    isStringArray(candidate.detailPageCopy) &&
+    isStringArray(candidate.csResponseTemplates) &&
+    isStringArray(candidate.faqRecommendations) &&
+    isStringArray(candidate.notes)
+  );
+}
+
 function fallbackSuggestions(stats: AnalysisStats, opts?: SuggestionOptions): Suggestions {
   const sortedCats = Object.entries(stats.categoryCounts).sort((a, b) => b[1] - a[1]);
   const topKw = (opts?.topKeywords ?? stats.negativeKeywordsTop10).slice(0, 5);
@@ -57,7 +79,6 @@ function fallbackSuggestions(stats: AnalysisStats, opts?: SuggestionOptions): Su
     }
   }
 
-  // Padding if insufficient categories
   while (detailPageCopy.length < 3) {
     detailPageCopy.push("구매 전 꼭 확인해주세요: 상세페이지의 사이즈/스펙/구성 안내를 참고해주세요.");
   }
@@ -75,16 +96,16 @@ function fallbackSuggestions(stats: AnalysisStats, opts?: SuggestionOptions): Su
     notes.push("부정 키워드가 충분히 추출되지 않았습니다.");
   }
   if (negCount > 0) {
-    notes.push(`부정 리뷰 ${negCount}건(${negPct}%) 중 주요 카테고리: ${sortedCats.slice(0, 3).map(([c, n]) => `${c}(${n}건)`).join(", ")}`);
+    notes.push(`부정 리뷰 ${negCount}건(${negPct}%) 중 주요 카테고리: ${sortedCats
+      .slice(0, 3)
+      .map(([c, n]) => `${c}(${n}건)`)
+      .join(", ")}`);
   }
 
   return { detailPageCopy, csResponseTemplates, faqRecommendations, notes };
 }
 
-export async function generateSuggestions(
-  stats: AnalysisStats,
-  opts?: SuggestionOptions
-): Promise<Suggestions> {
+export async function generateSuggestions(stats: AnalysisStats, opts?: SuggestionOptions): Promise<Suggestions> {
   if (!opts?.useAiNarrative) {
     console.log("[LLM:suggest][SUGGEST_DECISION_OFF_NOT_USABLE] AI 제안 미사용 — 템플릿 폴백");
     return fallbackSuggestions(stats, opts);
@@ -153,7 +174,7 @@ export async function generateSuggestions(
   const parsedTimeoutMs = Number(process.env.OPENAI_SUGGEST_TIMEOUT_MS ?? "6000");
   const timeoutMs = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs >= 3000 ? Math.floor(parsedTimeoutMs) : 6000;
 
-  let resp;
+  let resp: Awaited<ReturnType<typeof client.chat.completions.create>>;
   try {
     resp = await client.chat.completions.create(
       {
@@ -171,8 +192,8 @@ export async function generateSuggestions(
 
   const text = resp.choices?.[0]?.message?.content ?? "";
   try {
-    const parsed = JSON.parse(text) as Suggestions;
-    if (!parsed.detailPageCopy || !parsed.csResponseTemplates || !parsed.faqRecommendations || !parsed.notes) {
+    const parsed = JSON.parse(text) as SuggestionRaw;
+    if (!isSuggestions(parsed)) {
       console.error(`[LLM:suggest][SUGGEST_FIELDS_MISSING] keys=${Object.keys(parsed ?? {}).join(",")} → 템플릿 폴백`);
       return fallbackSuggestions(stats, opts);
     }

@@ -11,7 +11,8 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next/link", () => ({
   default: (() => {
-    const LinkComponent = React.forwardRef(({ href, children, ...props }: any, ref: any) => (
+    type MockLinkProps = React.ComponentPropsWithoutRef<"a"> & { href: string };
+    const LinkComponent = React.forwardRef<HTMLAnchorElement, MockLinkProps>(({ href, children, ...props }, ref) => (
       <a href={href} ref={ref} {...props}>
         {children}
       </a>

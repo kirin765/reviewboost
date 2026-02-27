@@ -31,6 +31,12 @@ type CheckoutErrorResponse = {
   };
 };
 
+type PaddleCheckoutResponse = {
+  checkout?: { url?: string };
+  data?: { checkout?: { url?: string } };
+  url?: string;
+};
+
 const CHECKOUT_ROUTE = "/api/billing/checkout";
 
 function normalizeCheckoutCode(details?: string, fallback?: string): CheckoutErrorCode {
@@ -251,7 +257,7 @@ export async function POST(req: Request) {
 
     const knownCustomerId = await findPaddleCustomerIdByUserId(user.id);
 
-    const checkout = await paddleRequest("/transactions", {
+    const checkout = await paddleRequest<PaddleCheckoutResponse>("/transactions", {
       method: "POST",
       body: {
         items: [{ price_id: priceId, quantity: 1 }],

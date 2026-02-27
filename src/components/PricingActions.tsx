@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import FeedbackModal from "@/components/FeedbackModal";
 import { paddleBrowserEnv } from "@/lib/paddle";
+import { getErrorMessage } from "@/types/common";
 
 type Props = {
   plan: "basic" | "pro";
@@ -148,15 +149,15 @@ export default function PricingActions({ plan, priceId, userId, userEmail }: Pro
             successUrl: callbackUrl
           }
         });
-      } catch (error) {
-        const message = String((error as Error)?.message ?? "").toLowerCase();
+      } catch (error: unknown) {
+        const message = getErrorMessage(error).toLowerCase();
         if (message.includes("checkoutfrontendbase")) {
           throw new Error("Paddle 결제 모듈이 아직 준비되지 않았습니다.");
         }
-        throw error;
+        throw new Error(message || "결제 모듈 실행 중 오류가 발생했습니다.");
       }
-    } catch (e: any) {
-      const msg = String(e?.message ?? "결제 연결 중 오류가 발생했습니다.").trim();
+    } catch (error: unknown) {
+      const msg = String(getErrorMessage(error) || "결제 연결 중 오류가 발생했습니다.").trim();
       setError(msg);
     } finally {
       setBusy(false);

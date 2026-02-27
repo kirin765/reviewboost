@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
+import { getErrorMessage } from "@/types/common";
 
 function readString(fd: FormData, key: string) {
   const v = fd.get(key);
@@ -108,8 +109,8 @@ export async function signUpAction(formData: FormData) {
     });
     hasSession = Boolean(signUpData.session);
     signUpError = error?.message ?? null;
-  } catch (e: any) {
-    signUpError = e?.message ?? String(e);
+  } catch (error: unknown) {
+    signUpError = getErrorMessage(error);
   }
 
   if (signUpError) redirect(`/signup?error=${encodeURIComponent(mapAuthError(signUpError, "signup"))}`);
@@ -128,8 +129,8 @@ export async function signInAction(formData: FormData) {
     const supabase = await createSupabaseServerActionClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     signInError = error?.message ?? null;
-  } catch (e: any) {
-    signInError = e?.message ?? String(e);
+  } catch (error: unknown) {
+    signInError = getErrorMessage(error);
   }
 
   if (signInError) redirect(`/login?error=${encodeURIComponent(mapAuthError(signInError, "login"))}`);
@@ -149,8 +150,8 @@ export async function requestPasswordResetAction(formData: FormData) {
       : undefined;
     const { error } = await supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined);
     resetError = error?.message ?? null;
-  } catch (e: any) {
-    resetError = e?.message ?? String(e);
+  } catch (error: unknown) {
+    resetError = getErrorMessage(error);
   }
 
   if (resetError) {
