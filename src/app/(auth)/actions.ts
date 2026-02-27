@@ -22,8 +22,8 @@ function safeNextPath(raw: string, fallback: string): string {
   return raw;
 }
 
-function withQuery(path: string, key: string, value: string) {
-  const [pathname, query = ""] = path.split("?");
+function withQuery(path: string | undefined, key: string, value: string) {
+  const [pathname, query = ""] = (path ?? "/dashboard").split("?");
   const params = new URLSearchParams(query);
   params.set(key, value);
   const nextQuery = params.toString();
