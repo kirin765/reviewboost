@@ -104,7 +104,7 @@ export function paddlePlanForPriceId(priceId: string | null | undefined): "free"
   return "free";
 }
 
-export async function paddleRequest(path: string, opts?: PaddleRequestOpts): Promise<any> {
+export async function paddleRequest<TResponse = unknown>(path: string, opts?: PaddleRequestOpts): Promise<TResponse> {
   if (!path || !path.startsWith("/")) {
     throw new Error("Paddle request path must start with '/'");
   }
@@ -122,7 +122,7 @@ export async function paddleRequest(path: string, opts?: PaddleRequestOpts): Pro
   });
 
   const text = await res.text();
-  let json: any = null;
+  let json: unknown = null;
   let parsed = false;
   try {
     json = text ? JSON.parse(text) : null;
@@ -132,13 +132,12 @@ export async function paddleRequest(path: string, opts?: PaddleRequestOpts): Pro
   }
 
   if (!res.ok) {
-    const nestedError = json && typeof json === "object" ? json.error : undefined;
-    const nestedDetail =
-      nestedError && typeof nestedError === "object" ? nestedError.detail : undefined;
-    const nestedMessage =
-      nestedError && typeof nestedError === "object" ? nestedError.message : undefined;
-    const topErrorMessage = typeof json?.message === "string" ? json.message : undefined;
-    const topError = typeof json?.error === "string" ? json.error : undefined;
+    const parsedJson = typeof json === "object" && json !== null ? (json as Record<string, unknown>) : null;
+    const nestedError = parsedJson?.error;
+    const nestedDetail = typeof nestedError === "object" && nestedError !== null ? String((nestedError as Record<string, unknown>).detail ?? "") : undefined;
+    const nestedMessage = typeof nestedError === "object" && nestedError !== null ? String((nestedError as Record<string, unknown>).message ?? "") : undefined;
+    const topErrorMessage = typeof parsedJson?.message === "string" ? String(parsedJson.message) : undefined;
+    const topError = typeof parsedJson?.error === "string" ? String(parsedJson.error) : undefined;
 
     const detail =
       typeof nestedDetail === "string"
@@ -151,11 +150,10 @@ export async function paddleRequest(path: string, opts?: PaddleRequestOpts): Pro
               ? topError
               : undefined;
 
-    const code = String(
-      nestedError && typeof nestedError === "object" && typeof nestedError.code === "string"
-        ? nestedError.code
-        : "paddle_request_failed"
-    );
+    const code =
+      typeof nestedError === "object" && nestedError !== null && typeof (nestedError as Record<string, unknown>).code === "string"
+        ? String((nestedError as Record<string, unknown>).code)
+        : "paddle_request_failed";
 
     const message = String(
       detail ?? `Paddle request failed (${res.status})`
@@ -175,7 +173,7 @@ export async function paddleRequest(path: string, opts?: PaddleRequestOpts): Pro
     throw error;
   }
 
-  return json?.data ?? json;
+  return (json?.data ?? json) as TResponse;
 }
 
 export function appBaseUrl(req: Request): string {

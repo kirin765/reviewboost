@@ -32,6 +32,12 @@ function looksLikeBadEncoding(s: string): boolean {
   return count / Math.max(1, s.length) > 0.001;
 }
 
+function isReadableFormFile(value: unknown): value is { text: () => Promise<string>; size?: unknown; name?: unknown; type?: unknown } {
+  if (!value || typeof value !== "object") return false;
+  const file = value as { text?: unknown };
+  return typeof file.text === "function";
+}
+
 export async function readUploadedCsvText(req: Request, maxBytes: number): Promise<UploadedCsv> {
   const ct = req.headers.get("content-type") ?? "";
   if (!ct.includes("multipart/form-data")) {
@@ -42,19 +48,13 @@ export async function readUploadedCsvText(req: Request, maxBytes: number): Promi
 
   const form = await req.formData();
   const file = form.get("file");
-  const f: any = file;
-  if (!f || typeof f !== "object") {
+  if (!isReadableFormFile(file)) {
     throw new ApiError(400, "UPLOAD_MISSING_FILE", "업로드할 파일이 필요합니다.", {
       help: UPLOAD_MISSING_FILE_HELP
     });
   }
-  if (typeof f.text !== "function") {
-    throw new ApiError(400, "UPLOAD_UNREADABLE_FILE", "업로드 파일을 읽을 수 없습니다.", {
-      help: UPLOAD_UNREADABLE_FILE_HELP
-    });
-  }
-
-  const size = typeof f.size === "number" ? f.size : null;
+  
+  const size = typeof file.size === "number" ? file.size : null;
   if (typeof size === "number" && size <= 0) {
     throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 CSV를 올려주세요.", { help: CSV_EMPTY_HELP });
   }
@@ -64,8 +64,8 @@ export async function readUploadedCsvText(req: Request, maxBytes: number): Promi
     });
   }
 
-  const filename = typeof f.name === "string" ? f.name : null;
-  const mime = typeof f.type === "string" ? f.type : null;
+  const filename = typeof file.name === "string" ? file.name : null;
+  const mime = typeof file.type === "string" ? file.type : null;
   const ext = fileExt(filename);
   if (ext && ext !== "csv") {
     throw new ApiError(400, "CSV_NOT_CSV", "CSV 파일(.csv)만 업로드할 수 있어요.", {
@@ -74,7 +74,7 @@ export async function readUploadedCsvText(req: Request, maxBytes: number): Promi
     });
   }
 
-  const csvText = await f.text();
+  const csvText = await file.text();
   if (csvText.trim().length === 0) {
     throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 CSV를 올려주세요.", { help: CSV_EMPTY_HELP });
   }

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import FeedbackModal from "@/components/FeedbackModal";
+import { getErrorMessage } from "@/types/common";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -61,8 +62,8 @@ export default function ResetPasswordPage() {
       }
       setNotice("비밀번호가 변경되었습니다. 다시 로그인해주세요.");
       router.replace(`/login?notice=${encodeURIComponent("비밀번호가 변경되었습니다. 다시 로그인해주세요.")}&next=${encodeURIComponent(next)}`);
-    } catch (e: any) {
-      setError(mapResetError(e?.message ?? String(e)));
+    } catch (error: unknown) {
+      setError(mapResetError(getErrorMessage(error)));
     } finally {
       setBusy(false);
     }

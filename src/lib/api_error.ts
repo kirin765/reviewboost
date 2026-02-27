@@ -1,4 +1,19 @@
-import { ApiErrorBody, ApiErrorCode } from "@/lib/types";
+export type ApiErrorCode =
+  | "UPLOAD_BAD_CONTENT_TYPE"
+  | "UPLOAD_MISSING_FILE"
+  | "UPLOAD_UNREADABLE_FILE"
+  | "CSV_NOT_CSV"
+  | "CSV_EMPTY"
+  | "CSV_TOO_LARGE"
+  | "CSV_ENCODING"
+  | "CSV_PARSE_FAILED"
+  | "CSV_PARSE_INVALID"
+  | "ANALYZE_PAYLOAD_INVALID"
+  | "LLM_TIMEOUT"
+  | "ANALYZE_PERSISTENCE_FAILED"
+  | "INTERNAL_ERROR"
+  | "PLAN_UPGRADE_REQUIRED"
+  | "MONTHLY_LIMIT_EXCEEDED";
 
 export type ApiErrorStatusMap = Record<ApiErrorCode, number>;
 
@@ -11,9 +26,22 @@ export const apiErrorStatus: ApiErrorStatusMap = {
   CSV_TOO_LARGE: 413,
   CSV_ENCODING: 400,
   CSV_PARSE_FAILED: 400,
+  CSV_PARSE_INVALID: 400,
+  ANALYZE_PAYLOAD_INVALID: 400,
+  LLM_TIMEOUT: 408,
+  ANALYZE_PERSISTENCE_FAILED: 500,
   INTERNAL_ERROR: 500,
-  PLAN_UPGRADE_REQUIRED: 402,
+  PLAN_UPGRADE_REQUIRED: 403,
   MONTHLY_LIMIT_EXCEEDED: 429
+} as const;
+
+export type ApiErrorBody = {
+  error: {
+    code: ApiErrorCode;
+    message: string;
+    help?: string[];
+    details?: string;
+  };
 };
 
 export class ApiError extends Error {
@@ -41,8 +69,8 @@ export function apiErrorResponse(e: ApiError): Response {
     error: {
       code: e.code,
       message: e.message,
-      ...(e.help?.length ? { help: e.help } : null),
-      ...(e.details ? { details: e.details } : null)
+      ...(e.help?.length ? { help: e.help } : {}),
+      ...(e.details ? { details: e.details } : {})
     }
   };
   return Response.json(body, { status: e.status, headers: { "cache-control": "no-store" } });
@@ -50,9 +78,13 @@ export function apiErrorResponse(e: ApiError): Response {
 
 export function isApiErrorBody(v: unknown): v is ApiErrorBody {
   if (!v || typeof v !== "object") return false;
-  const anyV = v as any;
-  if (!anyV.error || typeof anyV.error !== "object") return false;
-  if (typeof anyV.error.code !== "string") return false;
-  if (typeof anyV.error.message !== "string") return false;
+  const container = v as Record<string, unknown>;
+  const error = container.error;
+  if (!error || typeof error !== "object") return false;
+  const errorBody = error as Record<string, unknown>;
+  if (typeof errorBody.code !== "string") return false;
+  if (typeof errorBody.message !== "string") return false;
+  if (errorBody.help !== undefined && !Array.isArray(errorBody.help)) return false;
+  if (errorBody.details !== undefined && typeof errorBody.details !== "string") return false;
   return true;
 }

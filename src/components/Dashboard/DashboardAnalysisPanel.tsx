@@ -4,6 +4,7 @@ import type { Capabilities } from "@/lib/capabilities";
 import type { CsvPreview } from "@/lib/csv";
 import FileUploader from "./FileUploader";
 import CsvPreviewComponent from "./CsvPreview";
+import AnalysisStepList from "./AnalysisStepList";
 
 interface DashboardAnalysisPanelProps {
   file: File | null;
@@ -50,33 +51,12 @@ export default function DashboardAnalysisPanel({
   onCellClick,
   onCellModalClose
 }: DashboardAnalysisPanelProps) {
-  const steps = [
-    { n: 1, label: "파일 선택", desc: "CSV 업로드" },
-    { n: 2, label: "열 매핑", desc: "텍스트/별점/작성일" },
-    { n: 3, label: "분석 진행", desc: "우선순위·액션 자동 산출" },
-    { n: 4, label: "결과 확인", desc: "리포트 다운로드" }
-  ];
-
   return (
     <section className="dashboardPanel dashboardAnalysisPanel" id="analysis-panel" role="tabpanel" aria-labelledby="analysis-tab">
       <h1 className="heroTitle">리뷰 CSV 분석</h1>
       <div className="analysisFlowGrid">
         <div>
-          <div className="stepper" role="list" aria-label="분석 단계">
-            {steps.map((item) => {
-              const isDone = step > item.n;
-              const isCurrent = step === item.n;
-              return (
-                <div className={`step ${isDone ? "completed" : ""} ${isCurrent ? "active" : ""}`} key={item.label} role="listitem">
-                  <span className="stepNumber">{item.n}</span>
-                  <span className="stepBody">
-                    <span className="stepTitle">{item.label}</span>
-                    <span className="stepDesc">{item.desc}</span>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <AnalysisStepList step={step} />
 
           <FileUploader
             file={file}

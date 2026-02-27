@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import type { DragEvent } from "react";
+import Button from "@/components/ui/Button";
 
 interface FileUploaderProps {
   file: File | null;
@@ -68,12 +69,12 @@ export default function FileUploader({
       />
 
       <div className="actionRow">
-        <button className="btn btnWarn" onClick={onSample} disabled={busy}>
+        <Button variant="danger" onClick={onSample} disabled={busy}>
           샘플로 테스트
-        </button>
-        <button className="btn" onClick={onReset} disabled={busy}>
+        </Button>
+        <Button onClick={onReset} disabled={busy}>
           새로 시작
-        </button>
+        </Button>
       </div>
 
       <div className="uploadStatus" role="status" aria-live="polite">
@@ -87,9 +88,9 @@ export default function FileUploader({
       </div>
 
       <div className="toolbar">
-        <button className="btn btnPrimary" onClick={onAnalyze} disabled={!file || busy}>
+        <Button variant="primary" onClick={onAnalyze} disabled={!file || busy}>
           {busy ? "처리 중..." : preview ? "분석 시작" : "다음: 미리보기"}
-        </button>
+        </Button>
       </div>
 
       {busy ? (

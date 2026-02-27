@@ -1,4 +1,13 @@
-type CookieOptions = Record<string, any> | undefined;
+export type CookieOptions = {
+  domain?: string;
+  path?: string;
+  maxAge?: number;
+  expires?: Date;
+  sameSite?: "lax" | "strict" | "none" | boolean;
+  secure?: boolean;
+  httpOnly?: boolean;
+  partitioned?: boolean;
+} | undefined;
 
 export function normalizeCookieOptions(options: CookieOptions, secureContext: boolean) {
   return {

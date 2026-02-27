@@ -190,7 +190,9 @@ export function previewReviewCsv(csvText: string, filename: string | null = null
     const inferred = inferMappingFromColumns(headerColumns, "header");
     const sampleRows = headerRecords.slice(0, 5).map((r) => {
       const out: Record<string, string> = {};
-      for (const c of headerColumns) out[c] = String(r[c] ?? "");
+      for (const c of headerColumns) {
+        out[c] = String((r as Record<string, unknown>)[c] ?? "");
+      }
       return out;
     });
 
@@ -238,7 +240,12 @@ export function previewReviewCsv(csvText: string, filename: string | null = null
   const inferred = inferMappingFromColumns(columns, "headerless");
   const sampleRows = rows.slice(0, 5).map((r) => {
     const out: Record<string, string> = {};
-    for (let i = 0; i < columns.length; i++) out[columns[i]!] = String((r as any)?.[i] ?? "");
+    const values = Array.isArray(r) ? r : [];
+    for (let i = 0; i < columns.length; i++) {
+      const key = columns[i];
+      if (!key) continue;
+      out[key] = String(values[i] ?? "");
+    }
     return out;
   });
 
@@ -250,7 +257,7 @@ export function parseReviewCsvWithMapping(csvText: string, mapping?: Partial<Csv
   const m: CsvMapping = {
     ...preview.inferred,
     ...(mapping ?? {}),
-    headerMode: (mapping?.headerMode ?? preview.inferred.headerMode) as CsvHeaderMode,
+    headerMode: mapping?.headerMode ?? preview.inferred.headerMode,
     textCol: String(mapping?.textCol ?? preview.inferred.textCol)
   };
 
@@ -299,9 +306,10 @@ export function parseReviewCsvWithMapping(csvText: string, mapping?: Partial<Csv
 
   return rows
     .map((r) => {
-      const text = String((r as any)?.[textIdx] ?? "").trim();
-      const rating = ratingIdx >= 0 ? toNumberOrNull((r as any)?.[ratingIdx]) : null;
-      const reviewedAt = dateIdx >= 0 ? toIsoDateOrNull((r as any)?.[dateIdx]) : null;
+      const row = Array.isArray(r) ? r : [];
+      const text = String((textIdx >= 0 ? row[textIdx] : undefined) ?? "").trim();
+      const rating = ratingIdx >= 0 ? toNumberOrNull(row[ratingIdx]) : null;
+      const reviewedAt = dateIdx >= 0 ? toIsoDateOrNull(row[dateIdx]) : null;
       return { text, rating, reviewedAt };
     })
     .filter((r) => r.text.length > 0);

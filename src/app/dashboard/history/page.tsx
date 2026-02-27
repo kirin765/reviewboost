@@ -8,7 +8,13 @@ type AnalysisRow = {
   created_at: string;
   input_filename: string | null;
   priority_score: number;
-  stats: any;
+  stats: {
+    total: number;
+    positive?: number;
+    negative?: number;
+    negativeRatio?: number;
+    [key: string]: unknown;
+  } | null;
 };
 
 export default async function HistoryPage() {

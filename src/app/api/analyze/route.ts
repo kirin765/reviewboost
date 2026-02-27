@@ -11,6 +11,7 @@ import { getGatesForPlan } from "@/lib/plan_gates";
 import { runAnalysisPipeline } from "@/lib/analysis_pipeline";
 import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
+import { getErrorMessage } from "@/types/common";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -24,6 +25,8 @@ type StorageStatus = {
   step?: string;
   error: string | null;
 };
+
+type AnalysisPayload = Awaited<ReturnType<typeof runAnalysisPipeline>>["payload"];
 
 /**
  * Extract client IP address from request headers.
@@ -66,23 +69,13 @@ function toStorageError(message?: string | null) {
   return message && String(message).trim() ? String(message).trim() : "저장에 실패했습니다.";
 }
 
-function extractErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-  try {
-    return JSON.stringify(error) || String(error);
-  } catch {
-    return String(error);
-  }
-}
-
-function buildStorageMeta(base: any, storage: StorageStatus) {
+function buildStorageMeta(base: AnalysisPayload["meta"], storage: StorageStatus) {
   return {
     ...base,
-    filename: base?.filename ?? null,
+    filename: base.filename,
     stored: storage.success,
     analysisId: storage.analysisId,
-    truncated: base?.truncated,
+    truncated: base.truncated,
     storageAttempted: storage.attempted,
     storageError: storage.success ? null : storage.error,
     storageStep: storage.step ?? null
@@ -100,7 +93,8 @@ export async function POST(req: Request) {
     filename = uploaded.filename;
     csvText = uploaded.csvText;
     form = uploaded.form;
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const message = getErrorMessage(e);
     const status = e instanceof ApiError ? e.status : 500;
     await logApiError({
       route: "/api/analyze",
@@ -108,7 +102,7 @@ export async function POST(req: Request) {
       status,
       code: e instanceof ApiError ? e.code : "INTERNAL_ERROR",
       message: e instanceof ApiError ? e.message : "CSV 업로드 처리 중 오류가 발생했습니다.",
-      details: e?.message ?? String(e),
+      details: message,
       request: req,
       error: e
     });
@@ -116,7 +110,7 @@ export async function POST(req: Request) {
     if (e instanceof ApiError) return apiErrorResponse(e);
     return apiErrorResponse(
       new ApiError(status, status === 500 ? "INTERNAL_ERROR" : "CSV_PARSE_FAILED", "처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", {
-        details: e?.message ?? String(e)
+        details: message
       })
     );
   }
@@ -124,7 +118,7 @@ export async function POST(req: Request) {
   // Get client IP for usage tracking
   const clientIp = getClientIp(req);
 
-  const headerMode = (form.get("headerMode") as string | null) ?? null;
+  const headerMode = ((form.get("headerMode") as string | null) ?? null) === "headerless" ? "headerless" : "header";
   const textCol = (form.get("textCol") as string | null) ?? null;
   const ratingCol = (form.get("ratingCol") as string | null) ?? null;
   const dateCol = (form.get("dateCol") as string | null) ?? null;
@@ -234,21 +228,22 @@ export async function POST(req: Request) {
       plan,
       useLLM: effectiveUseLLM
     }));
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const message = getErrorMessage(e);
     await logApiError({
       route: "/api/analyze",
       method: req.method,
       status: 500,
       code: "INTERNAL_ERROR",
       message: "분석 파이프라인 처리 중 오류가 발생했습니다.",
-      details: e?.message ?? String(e),
+      details: message,
       request: req,
       error: e,
       extra: { plan, stage: "run_analysis_pipeline" }
     });
     return apiErrorResponse(
       new ApiError(500, "INTERNAL_ERROR", "분석 처리 중 내부 오류가 발생했습니다.", {
-        details: e?.message ?? String(e)
+        details: message
       })
     );
   }
@@ -362,7 +357,7 @@ export async function POST(req: Request) {
       storageStatus.error = userId ? "저장 기능을 사용할 수 없는 상태입니다." : "로그인 후 히스토리에 저장됩니다.";
     }
   } catch (e: unknown) {
-    if (!storageStatus.error) storageStatus.error = toStorageError(extractErrorMessage(e));
+    if (!storageStatus.error) storageStatus.error = toStorageError(getErrorMessage(e));
 
     await logApiError({
       route: "/api/analyze",

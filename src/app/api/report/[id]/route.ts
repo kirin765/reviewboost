@@ -1,8 +1,53 @@
+import { z } from "zod";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { renderReportHtml } from "@/lib/report_html";
 import { logApiError } from "@/lib/api_log";
+import { getErrorMessage } from "@/types/common";
 
 export const runtime = "nodejs";
+
+const AnalysisStatsSchema = z.object({
+  total: z.number().int().nonnegative(),
+  positive: z.number().int().nonnegative(),
+  negative: z.number().int().nonnegative(),
+  neutral: z.number().int().nonnegative(),
+  positiveRatio: z.number().finite(),
+  negativeRatio: z.number().finite(),
+  avgRating: z.number().finite().nullable(),
+  negativeKeywordsTop10: z.array(
+    z.object({
+      keyword: z.string(),
+      count: z.number().nonnegative()
+    })
+  ),
+  categoryCounts: z.record(z.number().finite().nonnegative()),
+  priorityScore: z.number().finite(),
+  recentness: z
+    .object({
+      hasDates: z.boolean(),
+      last30Share: z.number().finite(),
+      last90Share: z.number().finite(),
+      last30NegativeRatio: z.number().finite().nullable()
+    })
+    .optional()
+});
+
+const SuggestionsSchema = z.object({
+  detailPageCopy: z.array(z.string()),
+  csResponseTemplates: z.array(z.string()),
+  faqRecommendations: z.array(z.string()),
+  notes: z.array(z.string())
+});
+
+const AnalysisRecordSchema = z.object({
+  id: z.string(),
+  created_at: z.string(),
+  input_filename: z.string().nullable().optional(),
+  stats: AnalysisStatsSchema,
+  suggestions: SuggestionsSchema
+});
+
+type AnalysisRecord = z.infer<typeof AnalysisRecordSchema>;
 
 function textError(status: number, message: string) {
   return new Response(message, { status, headers: { "content-type": "text/plain; charset=utf-8" } });
@@ -15,10 +60,18 @@ function safeHeaderValue(value: unknown) {
     .slice(0, 400);
 }
 
+function asPdfBuffer(value: unknown): Buffer {
+  if (Buffer.isBuffer(value)) return value;
+  if (value instanceof Uint8Array) return Buffer.from(value);
+  if (value instanceof ArrayBuffer) return Buffer.from(value);
+  if (typeof value === "string") return Buffer.from(value);
+  throw new Error("Puppeteer가 PDF 바이트 배열을 반환하지 않았습니다.");
+}
+
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
 
-  let analysis: any;
+  let analysis: AnalysisRecord | null = null;
   try {
     const supabase = await createSupabaseServerActionClient();
     const { data: userData } = await supabase.auth.getUser();
@@ -37,15 +90,21 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       .single();
 
     if (error || !data) return textError(404, "분석을 찾을 수 없습니다.");
-    analysis = data;
-  } catch (error: any) {
+
+    const parsed = AnalysisRecordSchema.safeParse(data);
+    if (!parsed.success) {
+      throw new Error(parsed.error.message);
+    }
+
+    analysis = parsed.data;
+  } catch (error: unknown) {
     await logApiError({
       route: "/api/report/[id]",
       method: req.method,
       status: 500,
       code: "INTERNAL_ERROR",
       message: "리포트 조회 중 오류가 발생했습니다.",
-      details: error?.message ?? String(error ?? "unknown"),
+      details: getErrorMessage(error),
       request: req,
       error,
       extra: { analysisId: id }
@@ -75,7 +134,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
         printBackground: true,
         margin: { top: "12mm", bottom: "12mm", left: "10mm", right: "10mm" }
       });
-      return new Response(pdf as any, {
+      const pdfBuffer = asPdfBuffer(pdf);
+      return new Response(pdfBuffer, {
         status: 200,
         headers: {
           "content-type": "application/pdf",
@@ -86,25 +146,26 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     } finally {
       await browser.close();
     }
-  } catch (e: any) {
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
     await logApiError({
       route: "/api/report/[id]",
       method: req.method,
       status: 501,
       code: "INTERNAL_ERROR",
       message: "PDF 생성 실패(브라우저 렌더링 실패).",
-      details: e?.message ?? String(e ?? ""),
+      details: message,
       request: req,
-      error: e,
-      extra: { analysisId: analysis.id }
+      error,
+      extra: { analysisId: analysis?.id ?? id }
     });
 
-    return new Response(`PDF 생성에 실패했습니다.\n원인: Puppeteer 브라우저 실행 실패.\n${String(e?.message ?? e ?? "")}`, {
+    return new Response(`PDF 생성에 실패했습니다.\n원인: Puppeteer 브라우저 실행 실패.\n${message}`, {
       status: 501,
       headers: {
         "content-type": "text/plain; charset=utf-8",
         "x-report-renderer": "puppeteer-failed",
-        "x-puppeteer-error": safeHeaderValue(e?.message ?? e ?? "")
+        "x-puppeteer-error": safeHeaderValue(message)
       }
     });
   }

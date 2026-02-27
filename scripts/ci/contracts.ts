@@ -8,7 +8,6 @@ import { z } from "zod";
 const ROOT = process.cwd();
 const REQUIRED_TESTS = ["src/lib/contracts.test.ts"];
 
-const TYPES_PATH = path.resolve(ROOT, "src/lib/types.ts");
 const API_ERROR_PATH = path.resolve(ROOT, "src/lib/api_error.ts");
 
 const ApiErrorSchema = z.object({
@@ -215,10 +214,10 @@ function parseApiErrorStatusMapFromSource(text: string): Record<string, number> 
 }
 
 function assertContractParity() {
-  const apiTypesRaw = readFileSync(TYPES_PATH, "utf8");
   const apiErrorRaw = readFileSync(API_ERROR_PATH, "utf8");
 
-  const declaredCodes = parseApiErrorCodesFromTypes(apiTypesRaw).sort();
+  const declaredCodes = parseApiErrorCodesFromTypes(apiErrorRaw).sort();
+
   const statusMap = parseApiErrorStatusMapFromSource(apiErrorRaw);
   const mappedCodes = Object.keys(statusMap).sort();
 

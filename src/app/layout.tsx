@@ -6,6 +6,7 @@ import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 import { signOutAction } from "@/app/(auth)/actions";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { planLabel, resolvePlanTierForUser, type PlanTier } from "@/lib/plan";
 import { paddleBrowserEnv, paddleBrowserToken } from "@/lib/paddle";
 
@@ -48,6 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         ) : null}
       </head>
       <body>
+        <ErrorBoundary>
         <GoogleAnalytics />
         <AnalyticsQueryEvents />
         <div className="appShell">
@@ -143,6 +145,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </footer>
           </div>
         </div>
+        </ErrorBoundary>
       </body>
     </html>
   );

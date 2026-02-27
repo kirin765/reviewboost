@@ -5,8 +5,9 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import CsvPreview from "./CsvPreview";
+import type { CsvPreview as CsvPreviewType } from "@/lib/csv";
 
-const preview = {
+const preview: CsvPreviewType = {
   filename: "sample.csv",
   headerMode: "header",
   columns: ["content", "rating", "date"],
@@ -31,7 +32,7 @@ describe("CsvPreview", () => {
       const [cellModal, setCellModal] = useState<{ col: string; value: string } | null>(null);
       return (
         <CsvPreview
-          preview={preview as any}
+          preview={preview}
           busy={false}
           textCol="content"
           ratingCol="rating"

@@ -3,7 +3,11 @@ import type { AnalysisStats, Suggestions } from "@/lib/types";
 import fs from "node:fs";
 import path from "node:path";
 
-function line(doc: any, s: string) {
+type PdfChunk = Buffer | Uint8Array | string;
+
+type ReportPdfDocument = InstanceType<typeof PDFDocument>;
+
+function line(doc: ReportPdfDocument, s: string) {
   doc.text(s, { lineGap: 2 });
 }
 
@@ -54,7 +58,9 @@ export async function renderReportPdfBuffer(args: {
   });
 
   const chunks: Buffer[] = [];
-  doc.on("data", (c: any) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+  doc.on("data", (c: PdfChunk) => {
+    chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));
+  });
 
   const koFontPath = findKoreanFontPath();
   if (!koFontPath && (args.requireKoreanFont ?? false)) {

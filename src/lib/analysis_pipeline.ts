@@ -12,9 +12,10 @@
  */
 
 import { classifyHeuristic, computeAnalysisFromClassified } from "@/lib/analysis";
-import { parseReviewCsvWithMapping } from "@/lib/csv";
+import { parseReviewCsvWithMapping, type CsvHeaderMode } from "@/lib/csv";
 import { classifyReviewsWithOpenAI } from "@/lib/openai_classify";
 import { generateSuggestions } from "@/lib/openai_suggestions";
+import { env } from "@/lib/config";
 import { type PlanTier } from "@/lib/types";
 import { getGatesForPlan } from "@/lib/plan_gates";
 import {
@@ -26,15 +27,28 @@ import {
 } from "@/lib/v2/features";
 import type { ClassifiedReview, Suggestions, AnalysisStats } from "@/lib/types";
 
-const DEFAULT_MAX_LLM_REVIEWS = 180;
-const DEFAULT_MAX_LLM_REVIEWS_FREE = 60;
+const LLM_DIAGNOSTIC_REASONS = [
+  "LLM_NOT_REQUESTED",
+  "LLM_REQUESTED_NO_TARGET",
+  "LLM_CLASSIFY_OK",
+  "LLM_CLASSIFY_LEN_MISMATCH",
+  "LLM_CLASSIFY_ERROR"
+] as const;
+
+type LlmDiagnosticReason = (typeof LLM_DIAGNOSTIC_REASONS)[number];
+
+const FALLBACK_LLM_LIMITS: Record<PlanTier, number> = {
+  free: 60,
+  basic: 180,
+  pro: 180
+};
 
 /**
  * Input parameters for the analysis pipeline
  */
 export interface AnalysisPipelineInput {
   csvText: string;
-  headerMode: string | null;
+  headerMode: CsvHeaderMode | null;
   textCol: string | null;
   ratingCol: string | null;
   dateCol: string | null;
@@ -61,15 +75,21 @@ export interface AnalysisPipelineOutput {
   classified: ClassifiedReview[];
 }
 
+function normalizeHeaderMode(value: string | null | undefined): CsvHeaderMode {
+  return value === "headerless" ? "headerless" : "header";
+}
+
+function normalizeMaxCount(raw: number, fallback: number): number {
+  if (!Number.isFinite(raw)) return fallback;
+  const next = Math.floor(raw);
+  if (next < 1) return fallback;
+  return next;
+}
+
 function readMaxLlmReviews(plan: PlanTier): number {
-  if (plan === "free") {
-    const raw = Number(process.env.MAX_LLM_REVIEWS_FREE ?? String(DEFAULT_MAX_LLM_REVIEWS_FREE));
-    if (!Number.isFinite(raw) || raw < 10) return DEFAULT_MAX_LLM_REVIEWS_FREE;
-    return Math.floor(raw);
-  }
-  const raw = Number(process.env.MAX_LLM_REVIEWS ?? String(DEFAULT_MAX_LLM_REVIEWS));
-  if (!Number.isFinite(raw) || raw < 20) return DEFAULT_MAX_LLM_REVIEWS;
-  return Math.floor(raw);
+  const fallback = FALLBACK_LLM_LIMITS[plan];
+  const raw = plan === "free" ? env.analysis.maxLlmReviewsFree : env.analysis.maxLlmReviews;
+  return normalizeMaxCount(raw, fallback);
 }
 
 function pickLlmTargetIndicesByHeuristic(
@@ -129,7 +149,7 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
 
   // Parse CSV
   const rows = parseReviewCsvWithMapping(csvText, {
-    headerMode: headerMode === "headerless" ? "headerless" : "header",
+    headerMode: normalizeHeaderMode(headerMode),
     textCol: textCol || undefined,
     ratingCol: ratingCol || undefined,
     dateCol: dateCol || undefined
@@ -149,7 +169,7 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
   let llmApplied = false;
 
   // 2) Optional: LLM classification for sentiment/category
-  let aiDiagnosticReason: "LLM_NOT_REQUESTED" | "LLM_REQUESTED_NO_TARGET" | "LLM_CLASSIFY_OK" | "LLM_CLASSIFY_LEN_MISMATCH" | "LLM_CLASSIFY_ERROR" = "LLM_NOT_REQUESTED";
+  let aiDiagnosticReason: LlmDiagnosticReason = "LLM_NOT_REQUESTED";
   console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan}, 총건=${classified.length}, target=${Math.min(classified.length, maxLlmReviews)}, maxLlmReviews=${maxLlmReviews}`);
 
   if (useLLM) {
