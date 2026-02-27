@@ -23,7 +23,10 @@ function safeNextPath(raw: string, fallback: string): string {
 }
 
 function withQuery(path: string | undefined | null, key: string, value: string) {
-  const [pathname, query = ""] = (path ?? "/dashboard").split("?");
+  const safePath = path ?? "/dashboard";
+  const qIndex = safePath.indexOf("?");
+  const pathname = qIndex >= 0 ? safePath.slice(0, qIndex) : safePath;
+  const query = qIndex >= 0 ? safePath.slice(qIndex + 1) : "";
   const params = new URLSearchParams(query);
   params.set(key, value);
   const nextQuery = params.toString();
@@ -108,9 +111,9 @@ export async function signUpAction(formData: FormData) {
         agree_privacy: agreePrivacy,
         agree_marketing: agreeMarketing,
         agree_marketing_at: agreeMarketing ? new Date().toISOString() : null
-      },
-      ...(emailRedirectTo ? { emailRedirectTo } : {})
+      }
     };
+    if (emailRedirectTo) signUpOptions.emailRedirectTo = emailRedirectTo;
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
@@ -123,7 +126,7 @@ export async function signUpAction(formData: FormData) {
   }
 
   if (signUpError) redirect(`/signup?error=${encodeURIComponent(mapAuthError(signUpError, "signup"))}`);
-  if (hasSession) redirect(withQuery(String(next), "signup_success", "1"));
+  if (hasSession) redirect(withQuery(next, "signup_success", "1"));
   const loginPath = `/login?notice=${encodeURIComponent("회원가입 완료. 이메일 확인 후 로그인해주세요.")}`;
   redirect(withQuery(loginPath, "signup_success", "1"));
 }
