@@ -11,7 +11,6 @@ import {
   RatingSimulationSection,
   UrgentReviewsSection
 } from "./analysis-results-sections";
-import { AnalysisResultsSummary } from "./analysis-results-summary";
 
 interface AnalysisResultsProps {
   result: AnalysisOutput & {
