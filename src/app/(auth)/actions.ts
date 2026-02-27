@@ -94,18 +94,27 @@ export async function signUpAction(formData: FormData) {
     const emailRedirectTo = origin
       ? `${origin}/auth/confirm?next=${encodeURIComponent(next)}`
       : undefined;
+    const signUpOptions: {
+      data: {
+        agree_terms: boolean;
+        agree_privacy: boolean;
+        agree_marketing: boolean;
+        agree_marketing_at: string | null;
+      };
+      emailRedirectTo?: string;
+    } = {
+      data: {
+        agree_terms: agreeTerms,
+        agree_privacy: agreePrivacy,
+        agree_marketing: agreeMarketing,
+        agree_marketing_at: agreeMarketing ? new Date().toISOString() : null
+      },
+      ...(emailRedirectTo ? { emailRedirectTo } : {})
+    };
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo,
-        data: {
-          agree_terms: agreeTerms,
-          agree_privacy: agreePrivacy,
-          agree_marketing: agreeMarketing,
-          agree_marketing_at: agreeMarketing ? new Date().toISOString() : null
-        }
-      }
+      options: signUpOptions
     });
     hasSession = Boolean(signUpData.session);
     signUpError = error?.message ?? null;
