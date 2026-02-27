@@ -36,7 +36,7 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
   const [lastTextCol, setLastTextCol] = useLocalStorage("reviewboost:last-text-col", "");
   const previewModal = useModal<{ col: string; value: string }>();
 
-  const step = useMemo(() => {
+  const step = useMemo<1 | 2 | 3 | 4>(() => {
     if (!file) return 1;
     if (!preview) return 2;
     if (!result) return 3;

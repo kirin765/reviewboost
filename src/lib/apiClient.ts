@@ -74,8 +74,8 @@ type ApiCallOptions = Omit<RequestInit, "body" | "method"> & {
   params?: ApiParams;
 };
 
-async function requestJson<T>(method: string, path: string, init: RequestInit = {}): Promise<T> {
-  const { params, ...rest } = init as ApiCallOptions;
+async function requestJson<T>(method: string, path: string, init: ApiCallOptions & { body?: BodyInit } = {}): Promise<T> {
+  const { params, headers, ...rest } = init;
   const url = buildUrl(path, params);
 
   const response = await fetch(url, {
@@ -83,7 +83,7 @@ async function requestJson<T>(method: string, path: string, init: RequestInit = 
     ...rest,
     headers: {
       Accept: "application/json",
-      ...(init.headers ?? {})
+      ...(headers ?? {})
     }
   });
 
@@ -98,7 +98,7 @@ export function post<T>(path: string, body?: unknown, options?: Omit<ApiCallOpti
   const requestBody = body === undefined ? undefined : JSON.stringify(body);
   return requestJson<T>("POST", path, {
     ...options,
-    body: requestBody,
+    ...(requestBody === undefined ? {} : { body: requestBody }),
     headers: {
       "content-type": "application/json",
       ...(options?.headers ?? {})
@@ -112,17 +112,19 @@ export function postFormData<T>(path: string, formData: FormData): Promise<T> {
   });
 }
 
-export async function postBlob<T>(path: string, body: unknown, options?: Omit<ApiCallOptions, "params">): Promise<T> {
+export async function postBlob<T>(path: string, body: unknown, options?: ApiCallOptions): Promise<T> {
   const requestBody = body === undefined ? undefined : JSON.stringify(body);
+  const { params, headers, ...rest } = options ?? {};
 
-  const response = await fetch(buildUrl(path, options?.params), {
+  const response = await fetch(buildUrl(path, params), {
     method: "POST",
-    ...options,
+    ...rest,
     headers: {
       Accept: "application/pdf,application/octet-stream,*/*",
-      ...(options?.headers ?? {})
+      ...(requestBody === undefined ? {} : { "content-type": "application/json" }),
+      ...(headers ?? {})
     },
-    body: requestBody
+    ...(requestBody === undefined ? {} : { body: requestBody })
   });
 
   if (!response.ok) {
