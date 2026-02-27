@@ -51,6 +51,7 @@ export type PriorityMatrixItem = {
   frequencyPct: number;
   impact: number;
   quadrant: "critical" | "monitor" | "review" | "observe";
+  actionSummary: string;
 };
 
 export type SimulationScenario = {

@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 
-type SerializedValue<T> = string | null;
-
-function serialize<T>(value: T): SerializedValue<T> {
-  return JSON.stringify(value);
+function serialize<T>(value: T): string {
+  const raw = JSON.stringify(value);
+  return raw ?? "null";
 }
 
 function deserialize<T>(raw: string | null, fallback: T): T {
@@ -28,4 +27,3 @@ export function useLocalStorage<T>(key: string, fallback: T): [T, (next: T) => v
 
   return [value, setValue];
 }
-
