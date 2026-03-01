@@ -1,7 +1,7 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build",
-  "installCommand": "npm ci --include=dev",
+  "installCommand": "PUPPETEER_SKIP_DOWNLOAD=0 npm ci --include=dev && npm run puppeteer-install",
   "functions": {
     "app/api/analyze/route.ts": {
       "maxDuration": 300

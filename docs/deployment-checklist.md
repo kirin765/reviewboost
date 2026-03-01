@@ -47,6 +47,10 @@
 ## 5) 배포 전 건강점검
 
 - [ ] `/api/health` 응답이 200이고 `status: "ok"`인지 확인
+- [ ] Puppeteer 브라우저 준비:
+  - [ ] 배포 환경에서 `PUPPETEER_SKIP_DOWNLOAD=1`이 런타임 실행 환경에 설정돼 있지 않은지 확인
+  - [ ] `/usr/bin/google-chrome` 또는 `/usr/bin/chromium` 탐색 가능 여부 확인
+  - [ ] 필요 시 `npm run puppeteer-install`로 Chrome 번들 설치 적용
 - [ ] 배포 노트에 다음 항목 반영
   - [ ] user-story 상태 (`npm run test:user-story:smoke`)
   - [ ] 계약/보안/통합 smoke 결과
@@ -65,4 +69,3 @@
 - [ ] 배포 후 30분 내 에러율/지연률 모니터링
 - [ ] 스테이징/프로덕션 공지 체계 확인
 - [ ] 문제 발생 시 rollback/복구 경로 실행
-
