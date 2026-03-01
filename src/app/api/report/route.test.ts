@@ -71,6 +71,34 @@ describe("POST /api/report", () => {
     expect(res.headers.get("x-report-renderer")).toBe("pdfkit-fallback");
   });
 
+  it("fails fast when REPORT_REQUIRE_PUPPETEER_STYLE=1 and Puppeteer fails", async () => {
+    mocks.renderReportHtml.mockReturnValue("<html><body>ok</body></html>");
+    mocks.renderReportPdf.mockResolvedValue({
+      ok: false,
+      allErrors: ["Puppeteer 실패: no browser"],
+      puppeteerError: "Puppeteer 실패 [puppeteer_launch_error]: no browser",
+      fallbackError: "PDFKit 폴백 비활성화(REPORT_REQUIRE_PUPPETEER_STYLE=1)"
+    });
+
+    const req = new Request("https://reviewboost.app/api/report", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "https://reviewboost.app"
+      },
+      body: JSON.stringify({
+        stats: { total: 1, positive: 1, negative: 0, neutral: 0, positiveRatio: 1, negativeRatio: 0, avgRating: 4, negativeKeywordsTop10: [], categoryCounts: {}, priorityScore: 1, recentness: { hasDates: false, last30Share: 0, last90Share: 0, last30NegativeRatio: null } },
+        suggestions: { detailPageCopy: [], csResponseTemplates: [], faqRecommendations: [], notes: [] }
+      })
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(501);
+    expect(res.headers.get("x-report-renderer")).toBe("puppeteer-failed");
+    expect(res.headers.get("x-report-fallback-error")).toContain("REPORT_REQUIRE_PUPPETEER_STYLE=1");
+  });
+
   it("fallback: returns render-failed response when both renderers fail", async () => {
     mocks.renderReportHtml.mockReturnValue("<html><body>ok</body></html>");
     mocks.renderReportPdf.mockResolvedValue({
