@@ -57,8 +57,9 @@ export const env = {
   openai: {
     model: nextPublic(process.env.OPENAI_MODEL) || "gpt-4o-mini",
     classifyBatchSize: Number(nextPublic(process.env.OPENAI_CLASSIFY_BATCH_SIZE) ?? "60"),
-    classifyTimeoutMs: Number(nextPublic(process.env.OPENAI_CLASSIFY_TIMEOUT_MS) ?? "8000"),
-    suggestTimeoutMs: Number(nextPublic(process.env.OPENAI_SUGGEST_TIMEOUT_MS) ?? "6000")
+    classifyMaxConcurrency: Number(nextPublic(process.env.OPENAI_CLASSIFY_MAX_CONCURRENCY) ?? "2"),
+    classifyTimeoutMs: Number(nextPublic(process.env.OPENAI_CLASSIFY_TIMEOUT_MS) ?? "12000"),
+    suggestTimeoutMs: Number(nextPublic(process.env.OPENAI_SUGGEST_TIMEOUT_MS) ?? "12000")
   },
   report: {
     fontPath: nextPublic(process.env.REPORT_FONT_PATH)

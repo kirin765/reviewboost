@@ -1,11 +1,13 @@
 import OpenAI from "openai";
 import type { AnalysisStats, Suggestions } from "@/lib/types";
+import { env } from "@/lib/config";
 
 type SuggestionOptions = {
   useAiNarrative?: boolean;
   negativeReviewSamples?: Array<{ text: string; category: string }>;
   topKeywords?: Array<{ keyword: string; count: number }>;
   totalCount?: number;
+  timeBudgetMs?: number;
 };
 
 type SuggestionRaw = {
@@ -105,6 +107,19 @@ function fallbackSuggestions(stats: AnalysisStats, opts?: SuggestionOptions): Su
   return { detailPageCopy, csResponseTemplates, faqRecommendations, notes };
 }
 
+const SUGGEST_TIMEOUT_GUARD_MS = 2000;
+
+function normalizeTimeout(raw: number | string, fallback: number): number {
+  const parsed = typeof raw === "string" ? Number(raw) : raw;
+  return Number.isFinite(parsed) && parsed >= 3000 ? Math.floor(parsed) : fallback;
+}
+
+function normalizeTimeBudget(raw: number | undefined): number {
+  if (raw === undefined || !Number.isFinite(raw)) return Number.POSITIVE_INFINITY;
+  if (raw <= 0) return 0;
+  return Math.floor(raw);
+}
+
 export async function generateSuggestions(stats: AnalysisStats, opts?: SuggestionOptions): Promise<Suggestions> {
   if (!opts?.useAiNarrative) {
     console.log("[LLM:suggest][SUGGEST_DECISION_OFF_NOT_USABLE] AI 제안 미사용 — 템플릿 폴백");
@@ -112,7 +127,7 @@ export async function generateSuggestions(stats: AnalysisStats, opts?: Suggestio
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+  const model = env.openai.model;
   if (!apiKey) {
     console.warn("[LLM:suggest][SUGGEST_KEY_MISSING] OPENAI_API_KEY 미설정 — 템플릿 폴백");
     return fallbackSuggestions(stats, opts);
@@ -140,7 +155,8 @@ export async function generateSuggestions(stats: AnalysisStats, opts?: Suggestio
     ? samples.map((s, i) => `  ${i + 1}. [${s.category}] "${s.text}"`).join("\n")
     : "  (샘플 없음)";
 
-  const client = new OpenAI({ apiKey });
+  const client = new OpenAI({ apiKey, maxRetries: 0 });
+  let resp: Awaited<ReturnType<typeof client.chat.completions.create>>;
   const prompt = {
     role: "user" as const,
     content: [
@@ -171,10 +187,17 @@ export async function generateSuggestions(stats: AnalysisStats, opts?: Suggestio
     ].join("\n")
   };
 
-  const parsedTimeoutMs = Number(process.env.OPENAI_SUGGEST_TIMEOUT_MS ?? "6000");
-  const timeoutMs = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs >= 3000 ? Math.floor(parsedTimeoutMs) : 6000;
+  const timeoutMs = normalizeTimeout(
+    process.env.OPENAI_SUGGEST_TIMEOUT_MS ?? env.openai.suggestTimeoutMs ?? 12000,
+    12000
+  );
+  const timeBudgetMs = normalizeTimeBudget(opts?.timeBudgetMs);
 
-  let resp: Awaited<ReturnType<typeof client.chat.completions.create>>;
+  if (timeBudgetMs < timeoutMs + SUGGEST_TIMEOUT_GUARD_MS) {
+    console.error(`[LLM:suggest][SUGGEST_TIME_BUDGET_EXHAUSTED] timeBudgetMs=${timeBudgetMs}ms`);
+    return fallbackSuggestions(stats, opts);
+  }
+
   try {
     resp = await client.chat.completions.create(
       {

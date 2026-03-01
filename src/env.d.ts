@@ -18,6 +18,7 @@ declare namespace NodeJS {
     OPENAI_API_KEY?: string;
     OPENAI_MODEL?: string;
     OPENAI_CLASSIFY_BATCH_SIZE?: string;
+    OPENAI_CLASSIFY_MAX_CONCURRENCY?: string;
     OPENAI_CLASSIFY_TIMEOUT_MS?: string;
     OPENAI_SUGGEST_TIMEOUT_MS?: string;
     MAX_LLM_REVIEWS?: string;
@@ -29,6 +30,7 @@ declare namespace NodeJS {
 
     NEXT_PUBLIC_SUPABASE_ACCESS_TOKEN?: string;
     REPORT_FONT_PATH?: string;
+    REPORT_ENABLE_PDFKIT_FALLBACK?: string;
     SECURITY_ALLOWLIST_CVES?: string;
     PERF_SMOKE_MAX_MS?: string;
     PERF_SMOKE_BASELINE_MS?: string;

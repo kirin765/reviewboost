@@ -4,8 +4,8 @@ import { GET } from "./route";
 const mocks = vi.hoisted(() => ({
   createSupabaseServerActionClient: vi.fn(),
   renderReportHtml: vi.fn(),
-  launch: vi.fn(),
-  logApiError: vi.fn()
+  logApiError: vi.fn(),
+  renderReportPdf: vi.fn()
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -16,10 +16,8 @@ vi.mock("@/lib/report_html", () => ({
   renderReportHtml: mocks.renderReportHtml
 }));
 
-vi.mock("puppeteer", () => ({
-  default: {
-    launch: mocks.launch
-  }
+vi.mock("@/lib/report_renderer", () => ({
+  renderReportPdf: mocks.renderReportPdf
 }));
 
 vi.mock("@/lib/api_log", () => ({
@@ -50,10 +48,12 @@ describe("GET /api/report/[id]", () => {
     mocks.createSupabaseServerActionClient.mockReturnValue(dbClient);
     mocks.renderReportHtml.mockReturnValue("<html><body>ok</body></html>");
 
-    const page = { setContent: vi.fn().mockResolvedValue(undefined), pdf: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])) };
-    const close = vi.fn().mockResolvedValue(undefined);
-    const browser = { newPage: vi.fn().mockResolvedValue(page), close };
-    mocks.launch.mockResolvedValue(browser as never);
+    mocks.renderReportPdf.mockResolvedValue({
+      ok: true,
+      renderer: "puppeteer",
+      buffer: Buffer.from([1, 2, 3]),
+      allErrors: []
+    });
 
     const req = new Request("https://reviewboost.app/api/report/analysis-1", { method: "GET", headers: { origin: "https://reviewboost.app" } });
     const res = await GET(req, { params: Promise.resolve({ id: "analysis-1" }) });
@@ -61,6 +61,59 @@ describe("GET /api/report/[id]", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("application/pdf");
     expect(res.headers.get("x-report-renderer")).toBe("puppeteer");
+  });
+
+  it("성공: Puppeteer 실패 후 PDFKit 폴백으로 PDF를 반환한다", async () => {
+    const dbClient = makeDbClient({
+      data: {
+        id: "analysis-1",
+        created_at: "2026-01-01T00:00:00.000Z",
+        input_filename: "r.csv",
+        stats: { total: 1, positive: 1, negative: 0, neutral: 0, positiveRatio: 1, negativeRatio: 0, avgRating: 4, negativeKeywordsTop10: [], categoryCounts: {}, priorityScore: 1, recentness: { hasDates: false, last30Share: 0, last90Share: 0, last30NegativeRatio: null } },
+        suggestions: { detailPageCopy: [], csResponseTemplates: [], faqRecommendations: [], notes: [] }
+      }
+    });
+    mocks.createSupabaseServerActionClient.mockReturnValue(dbClient);
+    mocks.renderReportHtml.mockReturnValue("<html><body>ok</body></html>");
+    mocks.renderReportPdf.mockResolvedValue({
+      ok: true,
+      renderer: "pdfkit-fallback",
+      buffer: Buffer.from([1, 2, 3]),
+      allErrors: ["Puppeteer 실패: no browser"]
+    });
+
+    const req = new Request("https://reviewboost.app/api/report/analysis-1", { method: "GET", headers: { origin: "https://reviewboost.app" } });
+    const res = await GET(req, { params: Promise.resolve({ id: "analysis-1" }) });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("application/pdf");
+    expect(res.headers.get("x-report-renderer")).toBe("pdfkit-fallback");
+  });
+
+  it("조회 실패 시 폴백도 실패하면 501 반환", async () => {
+    const dbClient = makeDbClient({
+      data: {
+        id: "analysis-1",
+        created_at: "2026-01-01T00:00:00.000Z",
+        input_filename: "r.csv",
+        stats: { total: 1, positive: 1, negative: 0, neutral: 0, positiveRatio: 1, negativeRatio: 0, avgRating: 4, negativeKeywordsTop10: [], categoryCounts: {}, priorityScore: 1, recentness: { hasDates: false, last30Share: 0, last90Share: 0, last30NegativeRatio: null } },
+        suggestions: { detailPageCopy: [], csResponseTemplates: [], faqRecommendations: [], notes: [] }
+      }
+    });
+    mocks.createSupabaseServerActionClient.mockReturnValue(dbClient);
+    mocks.renderReportPdf.mockResolvedValue({
+      ok: false,
+      allErrors: ["Puppeteer 실패: no browser", "PDFKit 실패: font missing"],
+      puppeteerError: "Puppeteer 실패: no browser",
+      fallbackError: "PDFKit : font missing"
+    });
+
+    const req = new Request("https://reviewboost.app/api/report/analysis-1", { method: "GET", headers: { origin: "https://reviewboost.app" } });
+    const res = await GET(req, { params: Promise.resolve({ id: "analysis-1" }) });
+
+    expect(res.status).toBe(501);
+    expect(res.headers.get("x-report-renderer")).toBe("puppeteer-failed");
+    expect(res.headers.get("x-report-fallback-error")).toBe("PDFKit : font missing");
   });
 
   it("로그인되지 않은 사용자는 로그인으로 redirect", async () => {

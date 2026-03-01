@@ -12,6 +12,8 @@ export type DashboardAnalysisMeta = {
   storageAttempted?: boolean;
   storageError?: string | null;
   storageStep?: string | null;
+  aiFallbackReason?: string;
+  llmApplied?: boolean;
 };
 
 export type DashboardAnalysisResult = AnalysisOutput & {

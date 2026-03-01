@@ -66,7 +66,8 @@ const ReportHeadersSchema = z.object({
   "content-disposition": z.string().min(1),
   "cache-control": z.string().min(1),
   "x-report-renderer": z.string().optional(),
-  "x-puppeteer-error": z.string().optional()
+  "x-puppeteer-error": z.string().optional(),
+  "x-report-fallback-error": z.string().optional()
 });
 
 const AnalysisContractSchema = z.object({
@@ -379,7 +380,7 @@ function validateAnalyzeAndReportContracts() {
     "content-type": "application/json",
     "content-disposition": "inline",
     "cache-control": "no-store",
-    "x-report-renderer": "puppeteer",
+    "x-report-renderer": "puppeteer-failed",
     "x-puppeteer-error": "render timeout"
   };
   ReportHeadersSchema.extend({ "content-type": z.literal("application/pdf") }).parse(reportSuccessHeaders);

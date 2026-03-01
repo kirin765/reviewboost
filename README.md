@@ -20,7 +20,7 @@
   - FAQ 추천
 - 요약 리포트 PDF 다운로드
   - 기본: Puppeteer(HTML 렌더링)
-  - 최근 이슈 대응: Puppeteer 렌더 실패 시 명확한 에러 반환(텍스트 전용 fallback 없음)
+  - Puppeteer 실패 시 PDFKit 텍스트 기반 폴백 자동 전환 (운영/권장 설정에서 활성화)
   - 브라우저 렌더링에서 한글/아이콘/그래픽 보존이 핵심입니다.
 
 ## 실행
@@ -66,13 +66,15 @@ Vercel 배포:
 
 - `OPENAI_API_KEY`: 있으면 LLM 기반 개선 제안이 더 정교해집니다. 없으면 템플릿 기반으로 fallback 합니다.
 - (선택) 대시보드에서 `LLM 고급 분석`을 켜면 감성/카테고리 분류에도 OpenAI를 사용합니다.
-- `OPENAI_CLASSIFY_TIMEOUT_MS`(선택, 기본 `8000`): LLM 분류 요청 타임아웃(ms)
+- `OPENAI_CLASSIFY_TIMEOUT_MS`(선택, 기본 `12000`): LLM 분류 요청 타임아웃(ms)
 - `OPENAI_CLASSIFY_BATCH_SIZE`(선택, 기본 `60`): LLM 분류 배치 크기
-- `OPENAI_SUGGEST_TIMEOUT_MS`(선택, 기본 `6000`): 제안 생성 요청 타임아웃(ms)
+- `OPENAI_CLASSIFY_MAX_CONCURRENCY`(선택, 기본 `2`): LLM 분류 배치 동시 실행 수(상한 10)
+- `OPENAI_SUGGEST_TIMEOUT_MS`(선택, 기본 `12000`): 제안 생성 요청 타임아웃(ms)
 - `MAX_LLM_REVIEWS`(선택, 기본 `180`): 대용량 안정성을 위한 AI 고급분석 최대 대상 수 (초과분은 일반분석)
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`: 로그인/회원가입(Supabase Auth) 용도.
 - `SUPABASE_SERVICE_ROLE_KEY`: 있으면 분석 결과를 DB에 저장합니다(없으면 저장 없이 동작).
   - 주의: `SERVICE_ROLE_KEY`는 서버 전용 키입니다(클라이언트에 노출 금지).
+- `/api/analyze` 응답 `payload.meta`에는 `llmApplied`/`aiFallbackReason`이 추가됩니다.
 - Paddle 월결제(선택):
   - `APP_BASE_URL`: 앱 도메인(예: `https://reviewboost.co.kr`)
   - `PADDLE_ENV` (`sandbox` 또는 `live`)
@@ -128,11 +130,16 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 
 ## PDF 생성 운영 가이드
 
-최근 배포는 브라우저 렌더링(Puppeteer) 실패 시에도 리포트 다운로드를 계속 진행했으나, 그래픽이 사라진 텍스트 전용 PDF가 내려오던 이슈가 있었습니다. 현재는 `Puppeteer`만 사용하고, 실패 시 명확한 에러를 반환합니다.
+최근 배포는 브라우저 렌더링(Puppeteer) 실패 시 텍스트 기반 폴백으로 이어져 텍스트 PDF가 내려가는 방식에서, 현재는 `PDFKit` 폴백을 이용해 기본 형태를 보장하도록 구성했습니다.
 
-- 응답 헤더 `x-report-renderer`가 `puppeteer-failed`면 Puppeteer 실행 실패입니다.
-- 에러 원문은 `x-puppeteer-error` 헤더에서 확인할 수 있습니다.
-- `PDFKit` fallback은 더 이상 사용하지 않습니다.
+- 응답 헤더 `x-report-renderer` 값으로 경로를 확인하세요.
+  - `puppeteer`: Puppeteer로 PDF 생성 성공
+  - `pdfkit-fallback`: Puppeteer 실패 후 PDFKit 폴백 성공
+  - `puppeteer-failed`: 두 렌더러 모두 실패(다운로드 실패)
+- `x-puppeteer-error`: Puppeteer 실패 원문(가능한 경우)
+- `x-report-fallback-error`: PDFKit 폴백 실패 원문(가능한 경우)
+- 폴백 사용/해제는 `REPORT_ENABLE_PDFKIT_FALLBACK`(기본값 `1`)로 제어합니다.
+- 한글 폰트가 없어 깨질 경우 `REPORT_FONT_PATH` 또는 `assets/fonts`에 한글 폰트를 배치하세요.
 
 ### 서버에서 자주 나오는 Puppeteer 에러
 
