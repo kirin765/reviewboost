@@ -146,13 +146,32 @@ export async function POST(req: Request) {
     }
 
     const { buffer, renderer } = renderResult as ReportRenderSuccess;
+    const headers: Record<string, string> = {
+      "content-type": "application/pdf",
+      "content-disposition": `attachment; filename="reviewboost-report.pdf"`,
+      "x-report-renderer": renderer
+    };
+
+    if (renderer === "pdfkit-fallback") {
+      const puppeteerError =
+        renderResult.allErrors.find((entry) => entry.toLowerCase().includes("puppeteer")) ??
+        renderResult.allErrors[0];
+      const fallbackError =
+        renderResult.fallbackReason ??
+        renderResult.allErrors[renderResult.allErrors.length - 1] ??
+        renderResult.allErrors[0];
+
+      if (puppeteerError) {
+        headers["x-puppeteer-error"] = safeHeaderValue(puppeteerError);
+      }
+      if (fallbackError) {
+        headers["x-report-fallback-error"] = safeHeaderValue(fallbackError);
+      }
+    }
+
     return new Response(new Uint8Array(buffer), {
       status: 200,
-      headers: {
-        "content-type": "application/pdf",
-        "content-disposition": `attachment; filename="reviewboost-report.pdf"`,
-        "x-report-renderer": renderer
-      }
+      headers
     });
   } catch (e: unknown) {
     const message = getErrorMessage(e);
