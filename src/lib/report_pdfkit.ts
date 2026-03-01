@@ -42,6 +42,26 @@ function findKoreanFontPath(): string | null {
   return null;
 }
 
+function formatFontCandidates(): string {
+  const envPath = (process.env.REPORT_FONT_PATH ?? "").trim();
+  const candidates = [
+    envPath || null,
+    // Project-local (recommended)
+    path.join(process.cwd(), "assets/fonts/NotoSansKR-Regular.otf"),
+    path.join(process.cwd(), "assets/fonts/NotoSansKR-Regular.ttf"),
+    path.join(process.cwd(), "assets/fonts/NotoSansCJKkr-Regular.otf"),
+    path.join(process.cwd(), "assets/fonts/NotoSansCJKkr-Regular.ttf"),
+    // Common system paths (if installed)
+    "/usr/share/fonts/opentype/noto/NotoSansCJKkr-Regular.otf",
+    "/usr/share/fonts/opentype/noto/NotoSansKR-Regular.otf",
+    "/usr/share/fonts/truetype/noto/NotoSansKR-Regular.ttf",
+    "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+    "/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf"
+  ].filter((p): p is string => !!p);
+
+  return candidates.join(", ");
+}
+
 export async function renderReportPdfBuffer(args: {
   title: string;
   stats: AnalysisStats;
@@ -66,9 +86,10 @@ export async function renderReportPdfBuffer(args: {
   if (!koFontPath && (args.requireKoreanFont ?? false)) {
     throw new Error(
       [
-        "PDFKit 한글 폰트를 찾지 못했습니다.",
+        "PDFKit 한글 폰트 미설치",
+        "현재 시도 경로: " + formatFontCandidates(),
         "해결:",
-        "1) 한글 폰트 파일을 assets/fonts/NotoSansKR-Regular.otf (또는 .ttf)에 추가",
+        "1) 한글 폰트 파일을 assets/fonts/NotoSansKR-Regular.otf/ttf 에 추가",
         "2) 또는 REPORT_FONT_PATH 환경변수에 폰트 파일 경로 지정"
       ].join("\n")
     );

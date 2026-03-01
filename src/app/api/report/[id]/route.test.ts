@@ -116,6 +116,38 @@ describe("GET /api/report/[id]", () => {
     expect(res.headers.get("x-report-fallback-error")).toBe("PDFKit : font missing");
   });
 
+  it("폰트 누락으로 폴백 실패 시 501 반환", async () => {
+    const dbClient = makeDbClient({
+      data: {
+        id: "analysis-1",
+        created_at: "2026-01-01T00:00:00.000Z",
+        input_filename: "r.csv",
+        stats: { total: 1, positive: 1, negative: 0, neutral: 0, positiveRatio: 1, negativeRatio: 0, avgRating: 4, negativeKeywordsTop10: [], categoryCounts: {}, priorityScore: 1, recentness: { hasDates: false, last30Share: 0, last90Share: 0, last30NegativeRatio: null } },
+        suggestions: { detailPageCopy: [], csResponseTemplates: [], faqRecommendations: [], notes: [] }
+      }
+    });
+    mocks.createSupabaseServerActionClient.mockReturnValue(dbClient);
+    mocks.renderReportPdf.mockResolvedValue({
+      ok: false,
+      allErrors: [
+        "Puppeteer 실패: no browser",
+        "PDFKit 실패: PDFKit font missing"
+      ],
+      puppeteerError: "Puppeteer 실패: no browser",
+      fallbackError: "PDFKit font missing"
+    });
+
+    const req = new Request("https://reviewboost.app/api/report/analysis-1", {
+      method: "GET",
+      headers: { origin: "https://reviewboost.app" }
+    });
+    const res = await GET(req, { params: Promise.resolve({ id: "analysis-1" }) });
+
+    expect(res.status).toBe(501);
+    expect(res.headers.get("x-report-renderer")).toBe("puppeteer-failed");
+    expect(res.headers.get("x-report-fallback-error")).toBe("PDFKit font missing");
+  });
+
   it("로그인되지 않은 사용자는 로그인으로 redirect", async () => {
     mocks.createSupabaseServerActionClient.mockReturnValue({
       auth: {

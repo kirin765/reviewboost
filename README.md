@@ -191,3 +191,10 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 - 체크리스트: `docs/deployment-checklist.md`
 - 브랜치/배포 플로우: `docs/branch-deployment-flow.md`
 - CI/CD 가드레일: `docs/ci-cd-guardrails.md`
+
+## PDF 한글 폰트 복구(운영권장)
+
+- Vercel 배포에서는 `assets/fonts/NotoSansKR-Regular.ttf` 또는 `.otf`를 레포에 포함해 번들로 같이 배포되도록 설정하세요.
+- `REPORT_FONT_PATH`는 대체 경로로만 사용하고, 기본 동작은 `assets/fonts` 자동 탐색입니다.
+- `x-report-renderer=puppeteer-failed` + `x-report-fallback-error`가 `PDFKit 한글 폰트 미설치`로 오면 해당 요청은 PDFKit 폰트 미존재로 fail-closed 처리된 상태입니다.
+- 정상 폰트 반영 시 `x-report-renderer=pdfkit-fallback` + 깨짐 없는 텍스트 PDF를 기대하세요.

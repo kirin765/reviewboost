@@ -109,7 +109,8 @@ export async function renderReportPdf(input: ReportRenderInput): Promise<ReportR
       title: input.title,
       stats: input.stats,
       suggestions: input.suggestions,
-      meta: input.meta
+      meta: input.meta,
+      requireKoreanFont: true
     });
 
     return {
