@@ -14,7 +14,9 @@ import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 import { getErrorMessage } from "@/types/common";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 300;
+const ANALYZE_MAX_DURATION_SEC = maxDuration;
+const ANALYZE_REQUEST_BUDGET_MS = Math.max(0, ANALYZE_MAX_DURATION_SEC * 1000 - 1500);
 
 const MAX_BYTES = 6 * 1024 * 1024;
 
@@ -84,6 +86,8 @@ function buildStorageMeta(base: AnalysisPayload["meta"], storage: StorageStatus)
 
 export async function POST(req: Request) {
   if (!isSameOriginRequest(req)) return csrfErrorResponse();
+
+  const requestStartedAtMs = Date.now();
 
   let form: FormData;
   let filename: string | null;
@@ -226,7 +230,9 @@ export async function POST(req: Request) {
       ratingCol,
       dateCol,
       plan,
-      useLLM: effectiveUseLLM
+      useLLM: effectiveUseLLM,
+      startedAtMs: requestStartedAtMs,
+      timeBudgetMs: ANALYZE_REQUEST_BUDGET_MS
     }));
   } catch (e: unknown) {
     const message = getErrorMessage(e);

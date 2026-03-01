@@ -165,4 +165,34 @@ describe("POST /api/analyze", () => {
     expect(payload.meta.storageAttempted).toBe(true);
     expect(payload.meta.storageError).toContain("analyses_insert_admin_failed");
   });
+
+  it("analysis pipeline fallback meta가 응답에 유지된다", async () => {
+    const fallbackPayload = runResponsePayload();
+    fallbackPayload.payload.meta.aiFallbackReason = "time_budget_exhausted";
+    fallbackPayload.payload.meta.llmApplied = false;
+    mocks.readUploadedCsvText.mockResolvedValue({
+      filename: "reviews.csv",
+      csvText: ["review,rating", "좋아요,5"].join("\n"),
+      form: new FormData()
+    });
+    mocks.runAnalysisPipeline.mockResolvedValue(fallbackPayload);
+    mocks.resolvePlanTierForUser.mockResolvedValue("free");
+    mocks.monthlyLimitForPlan.mockReturnValue(null);
+    mocks.getCapabilitiesBase.mockReturnValue({ supabaseConfigured: false });
+    mocks.devForcedAnalysisMode.mockReturnValue("auto" as never);
+    mocks.devAllowAdvancedAiBypass.mockReturnValue(false);
+    mocks.getGatesForPlan.mockReturnValue({ allowLLM: true, maxReviewsPerAnalysis: 1000 } as never);
+
+    const res = await POST(
+      new Request("https://reviewboost.app/api/analyze", {
+        method: "POST",
+        headers: { origin: "https://reviewboost.app" }
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const payload = await res.json();
+    expect(payload.meta.aiFallbackReason).toBe("time_budget_exhausted");
+    expect(payload.meta.llmApplied).toBe(false);
+  });
 });

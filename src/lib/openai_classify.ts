@@ -1,10 +1,15 @@
 import OpenAI from "openai";
 import type { Category, Sentiment } from "@/lib/types";
+import { env } from "@/lib/config";
 
 export type LlmClassification = { sentiment: Sentiment; category: Category };
 
 const VALID_SENTIMENT: Sentiment[] = ["positive", "neutral", "negative"];
 const VALID_CATEGORY: Category[] = ["배송", "품질", "가격", "사용성", "CS", "기타"];
+const DEFAULT_CLASSIFY_TIMEOUT_MS = 12000;
+const CLASSIFY_TIMEOUT_GUARD_MS = 2000;
+const DEFAULT_CLASSIFY_BATCH_SIZE = 60;
+const DEFAULT_CLASSIFY_MAX_CONCURRENCY = 2;
 
 function coerceSentiment(v: unknown): Sentiment {
   return typeof v === "string" && VALID_SENTIMENT.includes(v as Sentiment) ? (v as Sentiment) : "neutral";
@@ -46,9 +51,33 @@ function parseOpenAiResponse(raw: string): unknown[] | null {
   return candidate.items;
 }
 
+function normalizeTimeout(raw: number | string, fallback: number): number {
+  const parsedTimeoutMs = typeof raw === "string" ? Number(raw) : raw;
+  return Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs >= 3000 ? Math.floor(parsedTimeoutMs) : fallback;
+}
+
+function normalizeBatchSize(raw: number | string | undefined, fallback: number): number {
+  const parsedBatchSize = Number(raw);
+  return Number.isFinite(parsedBatchSize) && parsedBatchSize > 0 ? Math.floor(parsedBatchSize) : fallback;
+}
+
+function normalizeBatchConcurrency(raw: number | string | undefined, fallback: number): number {
+  const parsedConcurrency = Number(raw);
+  if (!Number.isFinite(parsedConcurrency) || parsedConcurrency < 1) return fallback;
+  return Math.min(10, Math.floor(parsedConcurrency));
+}
+
+function normalizeTimeBudget(raw: number | undefined): number {
+  if (raw === undefined || !Number.isFinite(raw)) return Number.POSITIVE_INFINITY;
+  if (raw <= 0) return 0;
+  return Math.floor(raw);
+}
+
 export async function classifyReviewsWithOpenAI(args: {
   texts: string[];
   model?: string;
+  timeBudgetMs?: number;
+  maxConcurrency?: number;
 }): Promise<LlmClassification[] | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -56,20 +85,50 @@ export async function classifyReviewsWithOpenAI(args: {
     return null;
   }
 
-  const model = args.model ?? process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-  const parsedBatchSize = Number(process.env.OPENAI_CLASSIFY_BATCH_SIZE ?? "60");
-  const batchSize = Number.isFinite(parsedBatchSize) && parsedBatchSize > 0 ? Math.floor(parsedBatchSize) : 60;
-  const parsedTimeoutMs = Number(process.env.OPENAI_CLASSIFY_TIMEOUT_MS ?? "8000");
-  const timeoutMs = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs >= 3000 ? Math.floor(parsedTimeoutMs) : 8000;
-  const client = new OpenAI({ apiKey });
+  const model = args.model ?? env.openai.model;
+  const batchSize = normalizeBatchSize(
+    process.env.OPENAI_CLASSIFY_BATCH_SIZE,
+    Math.max(1, env.openai.classifyBatchSize || DEFAULT_CLASSIFY_BATCH_SIZE)
+  );
+  const timeoutMs = normalizeTimeout(
+    process.env.OPENAI_CLASSIFY_TIMEOUT_MS ?? env.openai.classifyTimeoutMs ?? DEFAULT_CLASSIFY_TIMEOUT_MS,
+    DEFAULT_CLASSIFY_TIMEOUT_MS
+  );
+  const totalTimeBudgetMs = normalizeTimeBudget(args.timeBudgetMs);
+  const maxConcurrency = normalizeBatchConcurrency(
+    args.maxConcurrency === undefined ? env.openai.classifyMaxConcurrency ?? DEFAULT_CLASSIFY_MAX_CONCURRENCY : args.maxConcurrency,
+    DEFAULT_CLASSIFY_MAX_CONCURRENCY
+  );
+  const client = new OpenAI({ apiKey, maxRetries: 0 });
 
   console.log(`[LLM:classify][BATCH_START] model=${model}, texts=${args.texts.length}건, batchSize=${batchSize}`);
+  if (args.texts.length === 0) {
+    console.log("[LLM:classify][OPENAI_CLASSIFY_EMPTY] 분류 대상 없음");
+    return [];
+  }
+
+  if (totalTimeBudgetMs < timeoutMs + CLASSIFY_TIMEOUT_GUARD_MS) {
+    console.warn(
+      `[LLM:classify][OPENAI_CLASSIFY_SKIPPED] timeBudgetMs=${totalTimeBudgetMs}ms < required=${timeoutMs + CLASSIFY_TIMEOUT_GUARD_MS}ms`
+    );
+    return null;
+  }
 
   const out: LlmClassification[] = [];
+  const startAtMs = Date.now();
+  const output: Array<LlmClassification | undefined> = new Array(args.texts.length);
+  const batchOffsets: Array<number> = [];
+  for (let i = 0; i < args.texts.length; i += batchSize) batchOffsets.push(i);
 
-  for (let i = 0; i < args.texts.length; i += batchSize) {
-    const batch = args.texts.slice(i, i + batchSize);
-    const payload = batch.map((t, idx) => ({ id: i + idx, text: t.slice(0, 600) }));
+  const runBatch = async (offset: number): Promise<boolean> => {
+    const budgetLeftMs = totalTimeBudgetMs === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : totalTimeBudgetMs - (Date.now() - startAtMs);
+    if (budgetLeftMs !== Number.POSITIVE_INFINITY && budgetLeftMs < timeoutMs + CLASSIFY_TIMEOUT_GUARD_MS) {
+      console.error(`[LLM:classify][OPENAI_BATCH_TIMEOUT_RISK] batchOffset=${offset}, remaining=${budgetLeftMs}ms`);
+      return false;
+    }
+
+    const batch = args.texts.slice(offset, offset + batchSize);
+    const payload = batch.map((t, idx) => ({ id: offset + idx, text: t.slice(0, 600) }));
     let resp: Awaited<ReturnType<typeof client.chat.completions.create>>;
 
     try {
@@ -96,26 +155,42 @@ export async function classifyReviewsWithOpenAI(args: {
         { timeout: timeoutMs }
       );
     } catch (err) {
-      console.error(`[LLM:classify][OPENAI_BATCH_CALL_FAILED] batchOffset=${i}, error=${err instanceof Error ? err.message : String(err)}`);
-      return null;
+      console.error(`[LLM:classify][OPENAI_BATCH_CALL_FAILED] batchOffset=${offset}, error=${err instanceof Error ? err.message : String(err)}`);
+      return false;
     }
 
     const text = resp.choices?.[0]?.message?.content ?? "";
     const parsedItems = parseOpenAiResponse(text);
     if (!parsedItems) {
-      console.error(`[LLM:classify][OPENAI_RESPONSE_PARSE_FAILED] batchOffset=${i}, response=${text.slice(0, 200)}`);
-      return null;
+      console.error(`[LLM:classify][OPENAI_RESPONSE_PARSE_FAILED] batchOffset=${offset}, response=${text.slice(0, 200)}`);
+      return false;
     }
 
     const map = toMapById(parsedItems);
     if (map.size === 0) {
-      console.error(`[LLM:classify][OPENAI_ITEMS_MISSING] batchOffset=${i}, keys=${Object.keys(parsedItems[0] as Record<string, unknown>).join(",")}`);
-      return null;
+      const keys =
+        parsedItems.length > 0 && parsedItems[0] && typeof parsedItems[0] === "object"
+          ? Object.keys(parsedItems[0] as Record<string, unknown>).join(",")
+          : "(empty)";
+      console.error(`[LLM:classify][OPENAI_ITEMS_MISSING] batchOffset=${offset}, keys=${keys}`);
+      return false;
     }
 
     for (let j = 0; j < batch.length; j++) {
-      const id = i + j;
-      out.push(map.get(id) ?? { sentiment: "neutral", category: "기타" });
+      const id = offset + j;
+      output[id] = map.get(id) ?? { sentiment: "neutral", category: "기타" };
+    }
+    return true;
+  };
+
+  for (let i = 0; i < batchOffsets.length; i += maxConcurrency) {
+    const slice = batchOffsets.slice(i, i + maxConcurrency);
+    const results = await Promise.all(slice.map((offset) => runBatch(offset)));
+    if (results.some((ok) => !ok)) return null;
+
+    for (const offset of slice) {
+      const batch = args.texts.slice(offset, offset + batchSize);
+      for (let j = 0; j < batch.length; j++) out.push(output[offset + j] ?? { sentiment: "neutral", category: "기타" });
     }
   }
 

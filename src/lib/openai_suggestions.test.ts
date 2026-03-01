@@ -3,15 +3,19 @@ import type { AnalysisStats } from "./types";
 import { generateSuggestions } from "./openai_suggestions";
 
 const openAiCreate = vi.hoisted(() => vi.fn());
+const openAiClient = vi.hoisted(() => vi.fn());
 
 vi.mock("openai", () => ({
-  default: vi.fn(() => ({
-    chat: {
-      completions: {
-        create: openAiCreate
+  default: vi.fn((options) => {
+    openAiClient(options);
+    return {
+      chat: {
+        completions: {
+          create: openAiCreate
+        }
       }
-    }
-  }))
+    };
+  })
 }));
 
 function sampleStats(): AnalysisStats {
@@ -92,5 +96,31 @@ describe("generateSuggestions", () => {
 
     expect(result.notes).toContain("n1");
     expect(options).toMatchObject({ timeout: 9000 });
+  });
+
+  it("creates OpenAI client with maxRetries 0", async () => {
+    openAiCreate.mockResolvedValue({
+      choices: [{ message: { content: JSON.stringify({
+        detailPageCopy: ["d1", "d2", "d3", "d4", "d5", "d6"],
+        csResponseTemplates: ["c1", "c2", "c3", "c4"],
+        faqRecommendations: ["f1", "f2", "f3", "f4", "f5", "f6"],
+        notes: ["n1", "n2"]
+      }) } }]
+    } as never);
+
+    await generateSuggestions(sampleStats(), { useAiNarrative: true });
+
+    expect(openAiClient).toHaveBeenCalledWith({ apiKey: "test-key", maxRetries: 0 });
+  });
+
+  it("falls back immediately when suggestion time budget is not enough", async () => {
+    const result = await generateSuggestions(sampleStats(), {
+      useAiNarrative: true,
+      timeBudgetMs: 500
+    });
+
+    expect(openAiCreate).not.toHaveBeenCalled();
+    expect(result.detailPageCopy.length).toBeGreaterThan(0);
+    expect(result.notes.length).toBeGreaterThan(0);
   });
 });

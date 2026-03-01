@@ -56,17 +56,20 @@ describe("contract smoke", () => {
       "content-type": "application/pdf",
       "content-disposition": 'attachment; filename="review-report.pdf"',
       "cache-control": "public, max-age=0",
-      "x-report-renderer": "puppeteer"
+      "x-report-renderer": "puppeteer",
+      "x-report-fallback-error": "font missing"
     });
     const fail = new Headers({
       "content-type": "application/json",
       "content-disposition": "inline",
       "cache-control": "no-store",
-      "x-report-renderer": "puppeteer",
+      "x-report-renderer": "puppeteer-failed",
       "x-puppeteer-error": "render timeout"
     });
 
     expect(success.get("content-disposition")).toContain("attachment");
+    expect(success.get("x-report-fallback-error")).toBe("font missing");
     expect(fail.get("x-puppeteer-error")).toBe("render timeout");
+    expect(fail.get("x-report-renderer")).toBe("puppeteer-failed");
   });
 });

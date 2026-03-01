@@ -71,6 +71,38 @@ describe("runAnalysisPipeline", () => {
     expect(openAi.generateSuggestions).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ useAiNarrative: true }));
   });
 
+  it("시간 예산이 부족하면 제안 생성은 템플릿 경로로 fallback한다", async () => {
+    openAi.classifyReviewsWithOpenAI.mockResolvedValue([
+      { sentiment: "positive", category: "품질" },
+      { sentiment: "negative", category: "배송" }
+    ]);
+    openAi.generateSuggestions.mockResolvedValue({
+      detailPageCopy: ["d1", "d2", "d3"],
+      csResponseTemplates: ["c1", "c2"],
+      faqRecommendations: ["f1", "f2", "f3"],
+      notes: ["n1"]
+    });
+
+    const result = await runAnalysisPipeline({
+      csvText: baseCsv,
+      headerMode: "header",
+      textCol: null,
+      ratingCol: null,
+      dateCol: null,
+      plan: "pro",
+      useLLM: true,
+      startedAtMs: Date.now() - 1_000,
+      timeBudgetMs: 2_000
+    });
+
+    expect(openAi.generateSuggestions).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ useAiNarrative: false })
+    );
+    expect(result.payload.meta.aiFallbackReason).toBe("time_budget_exhausted");
+    expect(result.payload.meta.llmApplied).toBe(false);
+  });
+
   it("LLM length mismatch면 휴리스틱을 유지한다", async () => {
     openAi.classifyReviewsWithOpenAI.mockResolvedValue([
       { sentiment: "positive", category: "품질" }

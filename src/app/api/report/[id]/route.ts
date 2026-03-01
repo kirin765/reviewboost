@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { renderReportHtml } from "@/lib/report_html";
+import { renderReportPdf, type ReportRenderSuccess } from "@/lib/report_renderer";
 import { logApiError } from "@/lib/api_log";
 import { getErrorMessage } from "@/types/common";
 
@@ -60,14 +61,6 @@ function safeHeaderValue(value: unknown) {
     .slice(0, 400);
 }
 
-function asPdfBuffer(value: unknown): Buffer {
-  if (Buffer.isBuffer(value)) return value;
-  if (value instanceof Uint8Array) return Buffer.from(value);
-  if (value instanceof ArrayBuffer) return Buffer.from(value);
-  if (typeof value === "string") return Buffer.from(value);
-  throw new Error("Puppeteer가 PDF 바이트 배열을 반환하지 않았습니다.");
-}
-
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
 
@@ -120,48 +113,73 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   });
 
   try {
-    const mod = await import("puppeteer");
-    const puppeteer = mod.default ?? mod;
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    const renderResult = await renderReportPdf({
+      html,
+      title: "ReviewBoost 요약 리포트",
+      stats: analysis.stats,
+      suggestions: analysis.suggestions,
+      meta: { filename: analysis.input_filename ?? null, createdAt: analysis.created_at }
     });
-    try {
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "networkidle0" });
-      const pdf = await page.pdf({
-        format: "A4",
-        printBackground: true,
-        margin: { top: "12mm", bottom: "12mm", left: "10mm", right: "10mm" }
-      });
-      const pdfBuffer = asPdfBuffer(pdf);
-      return new Response(new Uint8Array(pdfBuffer), {
-        status: 200,
-        headers: {
-          "content-type": "application/pdf",
-          "content-disposition": `attachment; filename="reviewboost-report-${analysis.id}.pdf"`,
-          "x-report-renderer": "puppeteer"
+
+    if (!renderResult.ok) {
+      const errors = [...renderResult.allErrors];
+      const fallbackError = renderResult.fallbackError ? safeHeaderValue(renderResult.fallbackError) : undefined;
+      const puppeteerError = renderResult.puppeteerError ? safeHeaderValue(renderResult.puppeteerError) : errors[0];
+
+      await logApiError({
+        route: "/api/report/[id]",
+        method: req.method,
+        status: 501,
+        code: "INTERNAL_ERROR",
+        message: "PDF 생성 실패(브라우저 렌더링 실패).",
+        details: errors.join(" | "),
+        request: req,
+        error: renderResult,
+        extra: {
+          analysisId: analysis?.id ?? id,
+          reportErrors: errors,
+          puppeteerError: renderResult.puppeteerError ?? null,
+          fallbackError: renderResult.fallbackError ?? null
         }
       });
-    } finally {
-      await browser.close();
+
+      const msg = `${renderResult.fallbackError ? `${renderResult.fallbackError} | ` : ""}${renderResult.puppeteerError || errors.join(" | ")}`;
+      return new Response(`PDF 생성에 실패했습니다.\n원인: Puppeteer 브라우저 실행 실패.\n${msg}`, {
+        status: 501,
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "x-report-renderer": "puppeteer-failed",
+          ...(puppeteerError ? { "x-puppeteer-error": safeHeaderValue(puppeteerError) } : {}),
+          ...(fallbackError ? { "x-report-fallback-error": safeHeaderValue(fallbackError) } : {})
+        }
+      });
     }
+
+    const { buffer, renderer } = renderResult as ReportRenderSuccess;
+    return new Response(new Uint8Array(buffer), {
+      status: 200,
+      headers: {
+        "content-type": "application/pdf",
+        "content-disposition": `attachment; filename="reviewboost-report-${analysis.id}.pdf"`,
+        "x-report-renderer": renderer
+      }
+    });
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     await logApiError({
       route: "/api/report/[id]",
       method: req.method,
-      status: 501,
+      status: 500,
       code: "INTERNAL_ERROR",
-      message: "PDF 생성 실패(브라우저 렌더링 실패).",
+      message: "PDF 생성 중 내부 예외가 발생했습니다.",
       details: message,
       request: req,
       error,
       extra: { analysisId: analysis?.id ?? id }
     });
 
-    return new Response(`PDF 생성에 실패했습니다.\n원인: Puppeteer 브라우저 실행 실패.\n${message}`, {
-      status: 501,
+    return new Response(`PDF 생성에 실패했습니다.\n원인: 내부 예외.\n${message}`, {
+      status: 500,
       headers: {
         "content-type": "text/plain; charset=utf-8",
         "x-report-renderer": "puppeteer-failed",

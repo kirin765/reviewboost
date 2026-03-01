@@ -35,6 +35,8 @@ const LLM_DIAGNOSTIC_REASONS = [
   "LLM_CLASSIFY_ERROR"
 ] as const;
 
+type AiFallbackReason = "time_budget_exhausted" | "llm_classify_len_mismatch" | "llm_classify_error" | "llm_not_requested";
+
 type LlmDiagnosticReason = (typeof LLM_DIAGNOSTIC_REASONS)[number];
 
 const FALLBACK_LLM_LIMITS: Record<PlanTier, number> = {
@@ -42,6 +44,10 @@ const FALLBACK_LLM_LIMITS: Record<PlanTier, number> = {
   basic: 180,
   pro: 180
 };
+
+const TIME_BUDGET_GUARD_MS = 1500;
+const SUGGEST_TIMEOUT_GUARD_MS = 2000;
+const CLASSIFY_TIMEOUT_GUARD_MS = 2000;
 
 /**
  * Input parameters for the analysis pipeline
@@ -54,6 +60,8 @@ export interface AnalysisPipelineInput {
   dateCol: string | null;
   plan: PlanTier;
   useLLM: boolean;
+  startedAtMs?: number;
+  timeBudgetMs?: number;
 }
 
 export interface AnalysisPipelineOutput {
@@ -65,6 +73,8 @@ export interface AnalysisPipelineOutput {
       filename: string | null;
       stored: false;
       truncated: boolean;
+      aiFallbackReason?: AiFallbackReason;
+      llmApplied?: boolean;
     };
     urgentReviews?: import("@/lib/types").UrgentReview[];
     priorityMatrix?: import("@/lib/types").PriorityMatrixItem[];
@@ -73,6 +83,12 @@ export interface AnalysisPipelineOutput {
     actionItems?: import("@/lib/types").ActionItem[];
   };
   classified: ClassifiedReview[];
+}
+
+function normalizeTimeBudget(raw: number | undefined): number {
+  if (raw === undefined || !Number.isFinite(raw)) return Number.POSITIVE_INFINITY;
+  if (raw <= 0) return 0;
+  return Math.floor(raw);
 }
 
 function normalizeHeaderMode(value: string | null | undefined): CsvHeaderMode {
@@ -144,6 +160,15 @@ function pickLlmTargetIndicesByHeuristic(
 
 export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise<AnalysisPipelineOutput> {
   const { csvText, headerMode, textCol, ratingCol, dateCol, plan, useLLM } = input;
+  const startedAtMsInput = input.startedAtMs;
+  const startedAtMs =
+    typeof startedAtMsInput === "number" && Number.isFinite(startedAtMsInput)
+      ? Math.floor(startedAtMsInput)
+      : Date.now();
+  const timeBudgetMs = normalizeTimeBudget(input.timeBudgetMs);
+  const remainingBudgetMs = () =>
+    timeBudgetMs === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : Math.max(0, timeBudgetMs - (Date.now() - startedAtMs));
+
   const gates = getGatesForPlan(plan);
   const maxLlmReviews = readMaxLlmReviews(plan);
 
@@ -167,6 +192,7 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
   // 1) Heuristic classification (baseline)
   let classified = classifyHeuristic(rows);
   let llmApplied = false;
+  let aiFallbackReason: AiFallbackReason | undefined;
 
   // 2) Optional: LLM classification for sentiment/category
   let aiDiagnosticReason: LlmDiagnosticReason = "LLM_NOT_REQUESTED";
@@ -177,11 +203,17 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
       const targetIdx = pickLlmTargetIndicesByHeuristic(classified, maxLlmReviews);
       if (targetIdx.length === 0) {
         aiDiagnosticReason = "LLM_REQUESTED_NO_TARGET";
+        aiFallbackReason = "llm_not_requested";
         console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} maxLlmReviews=${maxLlmReviews}`);
       } else {
         console.log(`[LLM:analyze] 분류 요청 — plan=${plan}, 전체=${classified.length}건, LLM대상=${targetIdx.length}건`);
         const targetTexts = targetIdx.map((i) => classified[i]!.text);
-        const llm = await classifyReviewsWithOpenAI({ texts: targetTexts });
+        const classifyBudgetMs = remainingBudgetMs();
+        const llm = await classifyReviewsWithOpenAI({
+          texts: targetTexts,
+          timeBudgetMs: classifyBudgetMs,
+          maxConcurrency: env.openai.classifyMaxConcurrency
+        });
         if (llm && llm.length === targetTexts.length) {
           for (let i = 0; i < targetIdx.length; i++) {
             const idx = targetIdx[i]!;
@@ -198,12 +230,17 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
           console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 대상=${targetIdx.length} maxLlmReviews=${maxLlmReviews}`);
         } else {
           aiDiagnosticReason = "LLM_CLASSIFY_LEN_MISMATCH";
+          aiFallbackReason =
+            classifyBudgetMs < env.openai.classifyTimeoutMs + CLASSIFY_TIMEOUT_GUARD_MS
+              ? "time_budget_exhausted"
+              : "llm_classify_len_mismatch";
           console.warn(`[LLM:analyze] 분류 결과 null 또는 길이 불일치 — heuristic 유지`);
           console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 대상=${targetIdx.length} 최대=${maxLlmReviews}`);
         }
       }
     } catch (err) {
       aiDiagnosticReason = "LLM_CLASSIFY_ERROR";
+      aiFallbackReason = "llm_classify_error";
       console.error(`[LLM:analyze] 분류 중 예외 — error=${err instanceof Error ? err.message : String(err)} → heuristic 유지`);
       console.error(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 최대=${maxLlmReviews} error=${err instanceof Error ? err.message : String(err)}`);
     }
@@ -220,11 +257,23 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
     .slice(0, 5)
     .map((r) => ({ text: r.text.slice(0, 300), category: r.category }));
 
+  const suggestBudgetMs = remainingBudgetMs();
+  const useAiNarrativeForSuggestions = llmApplied
+    ? suggestBudgetMs >= env.openai.suggestTimeoutMs + SUGGEST_TIMEOUT_GUARD_MS
+    : false;
+  if (llmApplied && !useAiNarrativeForSuggestions) {
+    aiFallbackReason = "time_budget_exhausted";
+    console.warn(
+      `[LLM:analyze] Suggestion time budget 부족으로 템플릿 폴백 — remaining=${suggestBudgetMs}ms, timeout=${env.openai.suggestTimeoutMs}ms`
+    );
+  }
+
   const suggestions = await generateSuggestions(stats, {
-    useAiNarrative: llmApplied,
+    useAiNarrative: useAiNarrativeForSuggestions,
     negativeReviewSamples,
     topKeywords: stats.negativeKeywordsTop10,
-    totalCount: classified.length
+    totalCount: classified.length,
+    timeBudgetMs: suggestBudgetMs - TIME_BUDGET_GUARD_MS
   });
 
   // === V2 New Features ===
@@ -249,7 +298,9 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
     meta: {
       filename: null,
       stored: false as const,
-      truncated
+      truncated,
+      aiFallbackReason,
+      llmApplied: useAiNarrativeForSuggestions
     },
     urgentReviews,
     priorityMatrix,
