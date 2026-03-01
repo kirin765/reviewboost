@@ -10,9 +10,44 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { planLabel, resolvePlanTierForUser, type PlanTier } from "@/lib/plan";
 import { paddleBrowserEnv, paddleBrowserToken } from "@/lib/paddle";
 
+const baseUrl = process.env.APP_BASE_URL || "https://reviewboost.co.kr";
+
 export const metadata: Metadata = {
-  title: "ReviewBoost",
-  description: "리뷰 CSV 업로드 -> 자동 분석/개선 제안 -> PDF 리포트"
+  title: {
+    default: "ReviewBoost - AI 리뷰 분석",
+    template: "%s | ReviewBoost",
+  },
+  description:
+    "이커머스 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다.",
+  keywords: [
+    "리뷰 분석",
+    "이커머스",
+    "AI 리뷰",
+    "감성 분석",
+    "리뷰 관리",
+    "셀러 도구",
+    "CSV 분석",
+    "PDF 리포트",
+  ],
+  authors: [{ name: "ReviewBoost" }],
+  metadataBase: new URL(baseUrl),
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: "/",
+    siteName: "ReviewBoost",
+    title: "ReviewBoost - AI 리뷰 분석",
+    description:
+      "이커머스 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ReviewBoost - AI 리뷰 분석",
+    description:
+      "이커머스 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다.",
+  },
+  manifest: "/manifest.json",
 };
 
 export const dynamic = "force-dynamic";
