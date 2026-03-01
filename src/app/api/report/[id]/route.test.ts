@@ -90,6 +90,33 @@ describe("GET /api/report/[id]", () => {
     expect(res.headers.get("x-report-renderer")).toBe("pdfkit-fallback");
   });
 
+  it("폴백 차단 모드에서는 501로 즉시 반환한다", async () => {
+    const dbClient = makeDbClient({
+      data: {
+        id: "analysis-1",
+        created_at: "2026-01-01T00:00:00.000Z",
+        input_filename: "r.csv",
+        stats: { total: 1, positive: 1, negative: 0, neutral: 0, positiveRatio: 1, negativeRatio: 0, avgRating: 4, negativeKeywordsTop10: [], categoryCounts: {}, priorityScore: 1, recentness: { hasDates: false, last30Share: 0, last90Share: 0, last30NegativeRatio: null } },
+        suggestions: { detailPageCopy: [], csResponseTemplates: [], faqRecommendations: [], notes: [] }
+      }
+    });
+    mocks.createSupabaseServerActionClient.mockReturnValue(dbClient);
+    mocks.renderReportHtml.mockReturnValue("<html><body>ok</body></html>");
+    mocks.renderReportPdf.mockResolvedValue({
+      ok: false,
+      allErrors: ["Puppeteer 실패: no browser"],
+      puppeteerError: "Puppeteer 실패 [puppeteer_launch_error]: no browser",
+      fallbackError: "PDFKit 폴백 비활성화(REPORT_REQUIRE_PUPPETEER_STYLE=1)"
+    });
+
+    const req = new Request("https://reviewboost.app/api/report/analysis-1", { method: "GET", headers: { origin: "https://reviewboost.app" } });
+    const res = await GET(req, { params: Promise.resolve({ id: "analysis-1" }) });
+
+    expect(res.status).toBe(501);
+    expect(res.headers.get("x-report-renderer")).toBe("puppeteer-failed");
+    expect(res.headers.get("x-report-fallback-error")).toContain("REPORT_REQUIRE_PUPPETEER_STYLE=1");
+  });
+
   it("조회 실패 시 폴백도 실패하면 501 반환", async () => {
     const dbClient = makeDbClient({
       data: {

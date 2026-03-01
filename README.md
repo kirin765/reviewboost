@@ -132,6 +132,16 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 
 최근 배포는 브라우저 렌더링(Puppeteer) 실패 시 텍스트 기반 폴백으로 이어져 텍스트 PDF가 내려가는 방식에서, 현재는 `PDFKit` 폴백을 이용해 기본 형태를 보장하도록 구성했습니다.
 
+### 배포 점검 체크리스트(리포트)
+- `x-report-renderer` 확인:
+  - 기본 목표: `puppeteer`
+  - 보조: `pdfkit-fallback`(일시적 Puppeteer 실패 케이스)
+  - 최종 실패: `puppeteer-failed`
+- `x-puppeteer-error` 및 `x-report-fallback-error` 로그 확인:
+  - `puppeteer-fallback`만 반복되면 `PUPPETEER_EXECUTABLE_PATH`/`PUPPETEER_MAX_RETRIES`/타임아웃 이슈를 의심
+  - `x-report-fallback-error`에 폰트 메시지가 있으면 `assets/fonts` 또는 `REPORT_FONT_PATH` 점검
+- `REPORT_REQUIRE_PUPPETEER_STYLE=1`일 때는 Puppeteer fallback이 차단되어 501이 정상 동작하는지 확인
+
 - 응답 헤더 `x-report-renderer` 값으로 경로를 확인하세요.
   - `puppeteer`: Puppeteer로 PDF 생성 성공
   - `pdfkit-fallback`: Puppeteer 실패 후 PDFKit 폴백 성공
@@ -140,6 +150,11 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 - `x-report-fallback-error`: PDFKit 폴백 실패 원문(가능한 경우)
 - 폴백 사용/해제는 `REPORT_ENABLE_PDFKIT_FALLBACK`(기본값 `1`)로 제어합니다.
 - 한글 폰트가 없어 깨질 경우 `REPORT_FONT_PATH` 또는 `assets/fonts`에 한글 폰트를 배치하세요.
+- Puppeteer 실행 보조 환경변수:
+  - `PUPPETEER_EXECUTABLE_PATH`
+  - `PUPPETEER_LAUNCH_TIMEOUT_MS` (기본값 `120000`)
+  - `PUPPETEER_MAX_RETRIES` (기본값 `2`)
+  - `REPORT_REQUIRE_PUPPETEER_STYLE=1`은 텍스트-only 폴백을 막고 501 우선 정책으로 전환
 
 ### 서버에서 자주 나오는 Puppeteer 에러
 
