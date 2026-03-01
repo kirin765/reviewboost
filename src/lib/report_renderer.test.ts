@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderReportPdf } from "./report_renderer";
+import fs from "node:fs";
 
 const mocks = vi.hoisted(() => ({
   launch: vi.fn(),
@@ -49,6 +50,10 @@ function makeBrowser() {
 }
 
 describe("report_renderer", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     process.env = { ...baseEnv };
@@ -102,6 +107,39 @@ describe("report_renderer", () => {
       })
     );
     expect(mocks.renderReportPdfBuffer).not.toHaveBeenCalled();
+  });
+
+  it("uses a discovered system Chromium path when no executable path env is provided", async () => {
+    process.env.PUPPETEER_MAX_RETRIES = "0";
+    delete process.env.PUPPETEER_EXECUTABLE_PATH;
+
+    const existsSpy = vi.spyOn(fs, "existsSync").mockImplementation((target) => target === "/usr/bin/chromium");
+    const browser = makeBrowser();
+    mocks.launch.mockResolvedValueOnce(browser);
+
+    const result = await renderReportPdf(sampleInput);
+
+    expect(result).toMatchObject({ ok: true, renderer: "puppeteer" });
+    expect(mocks.launch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        args: expect.arrayContaining(["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--no-zygote"]),
+        timeout: 120000,
+        executablePath: "/usr/bin/chromium"
+      })
+    );
+    existsSpy.mockRestore();
+  });
+
+  it("adds launch troubleshooting hint when Puppeteer fails to launch", async () => {
+    process.env.PUPPETEER_MAX_RETRIES = "0";
+    mocks.launch.mockRejectedValueOnce(new Error("puppeteer failed"));
+
+    const result = await renderReportPdf(sampleInput);
+
+    expect(result).toMatchObject({ ok: false });
+    if (!result.ok) {
+      expect(result.puppeteerError).toContain("npx puppeteer browsers install chrome");
+    }
   });
 
   it("blocks PDFKit fallback in REQUIRE_PUPPETEER_STYLE mode", async () => {

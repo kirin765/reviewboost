@@ -172,6 +172,14 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 
 - `PUPPETEER_SKIP_DOWNLOAD=1`가 운영 컨테이너에도 적용되어 있으면 브라우저 바이너리가 없을 수 있습니다.
   - 운영에서는 `puppeteer`의 번들 Chrome 사용을 허용하거나, 시스템 Chrome 경로를 `PUPPETEER_EXECUTABLE_PATH`로 지정하세요.
+- 배포 런타임(특히 Vercel)에서는 기본적으로 런타임 `PUPPETEER_SKIP_DOWNLOAD=1`을 설정하지 마세요.
+- Vercel/컨테이너 환경에서는 build/install 단계에서 다음을 실행해 브라우저를 보장하세요.
+  - `npm run puppeteer-install` (또는 동일하게 `npx puppeteer browsers install chrome`)
+  - 필요 시 `PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome` 등으로 경로를 고정하세요.
+- 서버 라이브러리 의존성 누락 시 Puppeteer가 바로 실패하므로 다음 라이브러리 설치를 점검하세요.
+  - `libatk-1.0-0`, `libatk-bridge2.0-0`, `libnss3`, `libx11-xcb1`, `libxcomposite1`,
+    `libxdamage1`, `libxrandr2`, `libgbm1`, `libasound2`, `libxshmfence1`, `libxss1`,
+    `libx11-6`, `libxext6`, `libgtk-3-0`  
 
 ## Auth (로그인/회원가입)
 

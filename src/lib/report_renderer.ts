@@ -1,6 +1,7 @@
 import { getErrorMessage } from "@/types/common";
 import { renderReportPdfBuffer } from "@/lib/report_pdfkit";
 import type { AnalysisStats, Suggestions } from "@/types/review";
+import fs from "node:fs";
 
 type SafeValue = unknown;
 
@@ -55,11 +56,40 @@ type PuppeteerBrowserLike = {
 
 const DEFAULT_PUPPETEER_MAX_RETRIES = 2;
 const DEFAULT_PUPPETEER_LAUNCH_TIMEOUT_MS = 120000;
+const DEFAULT_PUPPETEER_EXECUTABLE_PATHS = [
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser"
+];
+const PUPPETEER_LAUNCH_TROUBLESHOOTING = [
+  "PUPPETEER_SKIP_DOWNLOAD=1이 런타임에서 설정된 경우 브라우저가 설치되지 않습니다.",
+  "npx puppeteer browsers install chrome 를 실행하세요.",
+  "PUPPETEER_EXECUTABLE_PATH에 실제 Chrome/Chromium 경로(예: /usr/bin/google-chrome)를 지정하세요."
+];
 
 function toNumber(value: unknown): number | undefined {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || Number.isNaN(parsed)) return undefined;
   return parsed;
+}
+
+function existsPath(target: string): boolean {
+  try {
+    return fs.existsSync(target);
+  } catch {
+    return false;
+  }
+}
+
+function resolvePuppeteerExecutablePath(): string | undefined {
+  const configuredPath = process.env.PUPPETEER_EXECUTABLE_PATH?.trim();
+  if (configuredPath) return configuredPath;
+
+  for (const path of DEFAULT_PUPPETEER_EXECUTABLE_PATHS) {
+    if (existsPath(path)) return path;
+  }
+
+  return undefined;
 }
 
 function asPdfBuffer(value: SafeValue): Buffer {
@@ -91,6 +121,10 @@ function pushError(errors: string[], error: unknown, label: string, kind?: Puppe
   const final = kind ? `${label} [${kind}]: ${msg}` : `${label}: ${msg}`;
   errors.push(final);
   return final;
+}
+
+function annotateLaunchError(error: unknown) {
+  return `${getErrorMessage(error)}. ${PUPPETEER_LAUNCH_TROUBLESHOOTING.join(" ")}`
 }
 
 function taggedPuppeteerError(error: unknown, kind: PuppeteerErrorKind): PuppeteerTaggedError {
@@ -214,7 +248,7 @@ function getPuppeteerConfigFromEnv() {
   return {
     maxRetries: parseNumberEnv(process.env.PUPPETEER_MAX_RETRIES, DEFAULT_PUPPETEER_MAX_RETRIES),
     launchTimeoutMs: parseNumberEnv(process.env.PUPPETEER_LAUNCH_TIMEOUT_MS, DEFAULT_PUPPETEER_LAUNCH_TIMEOUT_MS),
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH?.trim() || undefined
+    executablePath: resolvePuppeteerExecutablePath()
   };
 }
 
@@ -236,7 +270,8 @@ export async function renderReportPdf(input: ReportRenderInput): Promise<ReportR
     };
   } catch (error) {
     puppeteerErrorKind = normalizePuppeteerReason(error);
-    puppeteerError = pushError(allErrors, error, "Puppeteer 실패", puppeteerErrorKind);
+    const launchError = puppeteerErrorKind === "puppeteer_launch_error" ? annotateLaunchError(error) : error;
+    puppeteerError = pushError(allErrors, launchError, "Puppeteer 실패", puppeteerErrorKind);
 
     if (!fallbackEnabled) {
       return {
