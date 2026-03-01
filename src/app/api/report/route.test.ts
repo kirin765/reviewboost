@@ -98,4 +98,35 @@ describe("POST /api/report", () => {
     expect(res.headers.get("x-report-renderer")).toBe("puppeteer-failed");
     expect(res.headers.get("x-report-fallback-error")).toBe("PDFKit : font missing");
   });
+
+  it("fallback: returns 501 when PDFKit fallback fails due to missing Korean font", async () => {
+    mocks.renderReportHtml.mockReturnValue("<html><body>ok</body></html>");
+    mocks.renderReportPdf.mockResolvedValue({
+      ok: false,
+      allErrors: [
+        "Puppeteer 실패: no browser",
+        "PDFKit 실패: PDFKit font missing"
+      ],
+      puppeteerError: "Puppeteer 실패: no browser",
+      fallbackError: "PDFKit font missing"
+    });
+
+    const req = new Request("https://reviewboost.app/api/report", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "https://reviewboost.app"
+      },
+      body: JSON.stringify({
+        stats: { total: 1, positive: 1, negative: 0, neutral: 0, positiveRatio: 1, negativeRatio: 0, avgRating: 4, negativeKeywordsTop10: [], categoryCounts: {}, priorityScore: 1, recentness: { hasDates: false, last30Share: 0, last90Share: 0, last30NegativeRatio: null } },
+        suggestions: { detailPageCopy: [], csResponseTemplates: [], faqRecommendations: [], notes: [] }
+      })
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(501);
+    expect(res.headers.get("x-report-renderer")).toBe("puppeteer-failed");
+    expect(res.headers.get("x-report-fallback-error")).toBe("PDFKit font missing");
+  });
 });
