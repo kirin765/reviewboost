@@ -1763,7 +1763,7 @@ a {
 
 .step {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   flex: 1 1 0;
   min-width: 0;
@@ -1812,13 +1812,20 @@ a {
 .stepNumber {
   width: 24px;
   height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  flex-shrink: 0;
   border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
   font-weight: 700;
   background: var(--color-border);
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .step.active .stepNumber {
