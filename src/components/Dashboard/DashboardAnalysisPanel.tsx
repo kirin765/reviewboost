@@ -54,10 +54,9 @@ export default function DashboardAnalysisPanel({
   return (
     <section className="dashboardPanel dashboardAnalysisPanel" id="analysis-panel" role="tabpanel" aria-labelledby="analysis-tab">
       <h1 className="heroTitle">리뷰 CSV 분석</h1>
+      <AnalysisStepList step={step} />
       <div className="analysisFlowGrid">
         <div>
-          <AnalysisStepList step={step} />
-
           <FileUploader
             file={file}
             busy={busy}

@@ -1739,7 +1739,7 @@ a {
 .stepper {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0;
   width: 100%;
   margin-bottom: 20px;
@@ -1785,13 +1785,16 @@ a {
 .stepTitle {
   font-weight: 600;
   line-height: 1.32;
+  white-space: nowrap;
 }
 
 .stepDesc {
   font-size: 12px;
   line-height: 1.35;
   color: var(--color-muted);
-  white-space: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .step.active {
@@ -1834,6 +1837,15 @@ a {
 
 .step.completed .stepNumber {
   background: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 600px) {
+  .stepper {
+    flex-wrap: wrap;
+  }
+  .stepConnector {
+    display: none;
+  }
 }
 
 /* Bar chart for table */
