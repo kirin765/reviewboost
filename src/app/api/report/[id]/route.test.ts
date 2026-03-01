@@ -79,7 +79,8 @@ describe("GET /api/report/[id]", () => {
       ok: true,
       renderer: "pdfkit-fallback",
       buffer: Buffer.from([1, 2, 3]),
-      allErrors: ["Puppeteer 실패: no browser"]
+      allErrors: ["Puppeteer 실패: no browser"],
+      fallbackReason: "puppeteer-failed"
     });
 
     const req = new Request("https://reviewboost.app/api/report/analysis-1", { method: "GET", headers: { origin: "https://reviewboost.app" } });
@@ -88,6 +89,8 @@ describe("GET /api/report/[id]", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("application/pdf");
     expect(res.headers.get("x-report-renderer")).toBe("pdfkit-fallback");
+    expect(res.headers.get("x-puppeteer-error")).toBe("Puppeteer : no browser");
+    expect(res.headers.get("x-report-fallback-error")).toBe("puppeteer-failed");
   });
 
   it("폴백 차단 모드에서는 501로 즉시 반환한다", async () => {

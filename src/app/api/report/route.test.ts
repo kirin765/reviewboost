@@ -50,7 +50,8 @@ describe("POST /api/report", () => {
       ok: true,
       renderer: "pdfkit-fallback",
       buffer: Buffer.from([1, 2, 3]),
-      allErrors: ["Puppeteer 실패: no browser"]
+      allErrors: ["Puppeteer 실패: no browser"],
+      fallbackReason: "puppeteer-failed"
     });
 
     const req = new Request("https://reviewboost.app/api/report", {
@@ -69,6 +70,8 @@ describe("POST /api/report", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get("x-report-renderer")).toBe("pdfkit-fallback");
+    expect(res.headers.get("x-puppeteer-error")).toBe("Puppeteer : no browser");
+    expect(res.headers.get("x-report-fallback-error")).toBe("puppeteer-failed");
   });
 
   it("fails fast when REPORT_REQUIRE_PUPPETEER_STYLE=1 and Puppeteer fails", async () => {
