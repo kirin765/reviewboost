@@ -56,7 +56,7 @@ export default function FeedbackModal(props: {
             닫기
           </button>
         </div>
-        <div className="modalBody" style={{ whiteSpace: "pre-wrap" }}>
+        <div className="modalBody modalBodyPreWrap">
           {message}
         </div>
         {actions?.length ? (

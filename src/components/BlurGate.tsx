@@ -41,38 +41,17 @@ export default function BlurGate({
     : children;
 
   return (
-    <div style={{ position: "relative" }}>
-      <div style={{ opacity: 0.3, filter: "blur(4px)", userSelect: "none" }}>
-        {children}
+    <div className="blurGate">
+      <div className="blurGateBlur">
+        {visibleItems}
       </div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: "60%",
-          background: "linear-gradient(transparent, rgba(255,255,255,0.9))",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          paddingBottom: 16,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 13,
-            color: "var(--color-muted)",
-            marginBottom: 8,
-          }}
-        >
+      <div className="blurGateOverlay">
+        <div className="blurGateMessage">
           {featureName} {effectiveLimit}개만 보기 가능
         </div>
         <Link
           href="/pricing"
-          className="btn"
-          style={{ fontSize: 12, padding: "6px 12px" }}
+          className="btn btnSmall"
         >
           전체 보기 ({totalCount - effectiveLimit}개 더)
         </Link>

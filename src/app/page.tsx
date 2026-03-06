@@ -27,9 +27,9 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
   return (
     <main className="pageMain">
       {isErrorState && (
-        <div className="card" style={{ marginBottom: "2rem", borderColor: "#dc3545", backgroundColor: "#fff5f5" }}>
-          <h2 style={{ color: "#dc3545", marginTop: 0 }}>⚠️ 인증 실패</h2>
-          <p style={{ fontSize: "1.1rem", marginBottom: "1.5rem" }}>{errorMessage}</p>
+        <div className="card errorCard">
+          <h2 className="errorTitle">⚠️ 인증 실패</h2>
+          <p className="errorMessage">{errorMessage}</p>
           {showResendOption && (
             <div className="actionRow">
               <a className="btn btnPrimary" href="/signup">

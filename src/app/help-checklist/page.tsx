@@ -123,9 +123,9 @@ export default function HelpChecklistPage() {
               </div>
             </li>
           </ul>
-          <details className="details" style={{ marginTop: 12 }}>
+          <details className="details detailsSpacing">
             <summary className="detailsSummary">자주 막히는 지점</summary>
-            <div className="muted" style={{ marginTop: 8 }}>
+            <div className="muted detailsText">
               <div>- 파일이 안 올라가면: CSV(.csv)인지, 6MB 이하인지 확인</div>
               <div>- 문자가 깨지면: CSV UTF-8로 다시 저장</div>
               <div>- 열 이름이 제각각이어도: 업로드 후 화면에서 직접 선택 가능</div>
@@ -136,4 +136,3 @@ export default function HelpChecklistPage() {
     </main>
   );
 }
-

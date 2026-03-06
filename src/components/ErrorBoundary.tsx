@@ -11,7 +11,7 @@ type ErrorBoundaryState = {
 };
 
 const fallbackUi = (
-  <div className="card" style={{ margin: 20 }}>
+  <div className="card errorBoundaryFallback">
     <h2>일시적 오류가 발생했습니다</h2>
     <p className="hint danger">문제가 지속되면 잠시 뒤 다시 시도해 주세요.</p>
     <a className="btn btnPrimary" href="/">
@@ -40,4 +40,3 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
     return children;
   }
 }
-

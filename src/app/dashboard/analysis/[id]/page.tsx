@@ -56,7 +56,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
         <div className="card">
           <h2>저장된 분석 보기</h2>
           <p className="muted">저장 기능이 꺼져 있어 이 페이지를 사용할 수 없습니다.</p>
-          <p className="hint muted" style={{ marginTop: 8 }}>
+          <p className="hint muted">
             저장 없이도 대시보드에서 분석 후 <strong>PDF 다운로드</strong>로 공유용 리포트를 만들 수 있어요.
           </p>
           <div className="actionRow">

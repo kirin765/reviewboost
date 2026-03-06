@@ -13,6 +13,12 @@
   --color-surface: #FFFFFF;
   --color-border: #E2E8F0;
   --color-border-strong: #CBD5E1;
+  --color-success-bg: rgba(5, 150, 105, 0.08);
+  --color-warning-bg: rgba(217, 119, 6, 0.08);
+  --color-danger-bg: rgba(220, 38, 38, 0.08);
+
+  --surface-soft: var(--color-bg-soft);
+  --surface-border: var(--color-border);
 
   /* Radius tokens */
   --radius-sm: 6px;
@@ -26,6 +32,9 @@
 
   --left-nav-width: 248px;
   --left-nav-width-mobile: 86px;
+
+  --container-inline-spacing: 20px;
+  --container-gap: 16px;
 
   /* Legacy fallbacks */
   --bg: var(--color-bg);
@@ -64,6 +73,177 @@ body {
 
 .appShell {
   min-height: 100%;
+}
+
+.appHeader {
+  margin: 0;
+}
+
+.pageShell {
+  margin: 0;
+}
+
+.pageSection {
+  margin-top: 0;
+}
+
+.pageSectionTight {
+  max-width: 1180px;
+}
+
+.pageNarrow {
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pageTop {
+  margin-top: 18px;
+}
+
+.errorCard {
+  border-color: var(--color-danger);
+  background-color: rgba(220, 38, 38, 0.1);
+  margin-bottom: 2rem;
+}
+
+.errorTitle {
+  color: var(--color-danger);
+  margin-top: 0;
+}
+
+.errorMessage {
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.errorBoundaryFallback {
+  margin: 20px;
+}
+
+.splitGrid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.splitPanel {
+  width: 100%;
+}
+
+.titleSmall {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.titleBlock {
+  margin-top: 0;
+}
+
+.textPanel {
+  margin-top: 20px;
+}
+
+.panelHint {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+
+.panelHintText {
+  font-size: 13px;
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.formLead {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.formList {
+  list-style: disc;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.formInputLabel {
+  font-size: 13px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.formSubmit {
+  margin-top: 8px;
+}
+
+.formNote {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.formList {
+  padding-left: 20px;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.fieldRow {
+  margin-top: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.formBottom {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.formHintRow {
+  margin-top: 8px;
+}
+
+.formBottomNote {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.sectionStack {
+  margin-top: 20px;
+}
+
+.sectionStackSmall {
+  margin-top: 12px;
+}
+
+.maxWidth900 {
+  max-width: 900px;
+}
+
+.maxWidth960 {
+  max-width: 960px;
+}
+
+.maxWidth1040 {
+  max-width: 1040px;
+}
+
+.contentWrapper {
+  width: 100%;
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+.contentWrapperFull {
+  max-width: none;
 }
 
 .leftNav {
@@ -735,6 +915,71 @@ a {
   background: linear-gradient(180deg, #fff7ea, #fff2dd);
 }
 
+.planGate {
+  position: relative;
+  padding: 24px;
+  border-radius: 10px;
+  background: var(--color-bg-soft, #f5f5f5);
+  text-align: center;
+  border: 1px dashed var(--color-border, #ccc);
+}
+
+.planGateContent {
+  opacity: 0.6;
+}
+
+.planGateOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  gap: 8px;
+  padding: 10px;
+}
+
+.planGateMessage {
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.blurGate {
+  position: relative;
+}
+
+.blurGateBlur {
+  opacity: 0.3;
+  filter: blur(4px);
+  user-select: none;
+}
+
+.blurGateOverlay {
+  position: absolute;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  height: 60%;
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.9));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 16px;
+}
+
+.blurGateMessage {
+  font-size: 13px;
+  color: var(--color-muted);
+  margin-bottom: 8px;
+}
+
+.emptyStateAction {
+  margin-top: 12px;
+}
+
 .link {
   color: var(--accent);
   text-decoration: underline;
@@ -745,6 +990,13 @@ a {
   display: grid;
   gap: 16px;
   grid-template-columns: 1fr;
+  margin-top: 20px;
+}
+
+.helpStepGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
   margin-top: 20px;
 }
 
@@ -958,8 +1210,33 @@ a {
   background: var(--bg-soft);
 }
 
+.rowColumn {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.sectionSpacing {
+  margin-top: 20px;
+}
+
+.mutedList {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
 .row .left {
   min-width: 0;
+}
+
+.rowTitle {
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historyMeta {
+  margin-top: 6px;
 }
 
 .row .right {
@@ -1230,6 +1507,14 @@ a {
   font-weight: 700;
 }
 
+.detailsSpacing {
+  margin-top: 12px;
+}
+
+.detailsText {
+  margin-top: 8px;
+}
+
 .legalDoc {
   margin-top: 14px;
   display: grid;
@@ -1272,6 +1557,26 @@ a {
   max-width: 100%;
   border-collapse: collapse;
   min-width: 520px;
+}
+
+.csvTableMin520 {
+  min-width: 520px;
+}
+
+.csvTableMin660 {
+  min-width: 660px;
+}
+
+.csvTableMin800 {
+  min-width: 800px;
+}
+
+.csvTableMin940 {
+  min-width: 940px;
+}
+
+.csvTableMin1100 {
+  min-width: 1100px;
 }
 
 .table th,
@@ -1441,6 +1746,10 @@ a {
   max-height: calc(78vh - 90px);
   font-size: 14px;
   color: #33352f;
+}
+
+.modalBodyPreWrap {
+  white-space: pre-wrap;
 }
 
 .feedbackModal {
@@ -1805,6 +2114,20 @@ a {
 .step.completed {
   background: var(--color-success);
   color: white;
+}
+
+.stepContent {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.textBold {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.textSmall {
+  font-size: 14px;
 }
 
 .step.active .stepDesc,
