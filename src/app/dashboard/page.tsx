@@ -154,10 +154,9 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
       <section className="card dashboardHeroPanel">
         <div className="dashboardHeroCopy">
           <p className="sectionEyebrow">Analysis studio</p>
-          <h1 className="dashboardPageTitle">리뷰 업로드부터 개선 액션 도출까지 하나의 워크스페이스로 정리했습니다.</h1>
+          <h1 className="dashboardPageTitle">리뷰 CSV를 업로드하고 개선 액션까지 바로 확인하세요.</h1>
           <p className="dashboardPageLead">
-            현재 도메인 로직은 유지하면서, CSV 업로드와 열 매핑, 분석 결과, PDF 다운로드를 SaaS 대시보드 스타일의 작업 흐름으로
-            재배치했습니다.
+            파일 업로드, 열 매핑, 분석 실행, PDF 다운로드를 한 화면에서 처리할 수 있습니다.
           </p>
         </div>
         <div className="dashboardStatStrip" aria-label="현재 분석 상태">

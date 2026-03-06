@@ -123,7 +123,7 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
         <div className="marketingSectionIntro">
           <p className="sectionEyebrow">Core outcomes</p>
           <h2>리뷰를 정리하는 데서 끝나지 않고, 바로 행동 가능한 결과로 연결합니다.</h2>
-          <p className="muted">현재 도메인 구조는 유지하면서 SaaS 대시보드 톤으로 경험을 다시 정리했습니다.</p>
+          <p className="muted">CSV 업로드 한 번으로 분류, 키워드, 제안 문구까지 한 화면에서 확인할 수 있습니다.</p>
         </div>
         <div className="marketingFeatureGrid">
           {featureCards.map((feature) => (
