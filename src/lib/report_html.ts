@@ -499,11 +499,11 @@ export function renderReportHtml(args: {
       <div class="barRow">
         <div>
           <div class="barLine"><span>최근 30일 리뷰 비중</span><span>${renderPercent(stats.recentness?.last30Share || 0)}</span></div>
-          <div class="track"><div class="fill" style="width:${Math.max(0, Math.min(100, Math.round((stats.recentness?.last30Share || 0) * 100))}%;"></div></div>
+          <div class="track"><div class="fill" style="width:${Math.max(0, Math.min(100, Math.round((stats.recentness?.last30Share || 0) * 100)))}%;"></div></div>
         </div>
         <div>
           <div class="barLine"><span>최근 90일 리뷰 비중</span><span>${renderPercent(stats.recentness?.last90Share || 0)}</span></div>
-          <div class="track"><div class="fill" style="width:${Math.max(0, Math.min(100, Math.round((stats.recentness?.last90Share || 0) * 100))}%;"></div></div>
+          <div class="track"><div class="fill" style="width:${Math.max(0, Math.min(100, Math.round((stats.recentness?.last90Share || 0) * 100)))}%;"></div></div>
         </div>
       </div>
       <p class="sectionInfo">${recentText(stats.recentness)}</p>
