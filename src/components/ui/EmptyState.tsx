@@ -9,8 +9,7 @@ export default function EmptyState({ message, action }: EmptyStateProps) {
   return (
     <div className="card" role="status" aria-live="polite">
       <p className="muted">{message}</p>
-      {action ? <div className="actionRow" style={{ marginTop: 12 }}>{action}</div> : null}
+      {action ? <div className="actionRow emptyStateAction">{action}</div> : null}
     </div>
   );
 }
-

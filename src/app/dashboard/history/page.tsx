@@ -31,7 +31,7 @@ export default async function HistoryPage() {
         <div className="card">
           <h2>저장된 리포트</h2>
           <p className="muted">지금은 저장 기능이 꺼져 있어, 여기에는 목록이 표시되지 않습니다.</p>
-          <p className="hint muted" style={{ marginTop: 8 }}>
+          <p className="hint muted">
             대신 대시보드에서 CSV를 분석한 뒤 <strong>PDF 다운로드</strong>로 바로 공유용 리포트를 만들 수 있어요. (저장 없이도 가능)
           </p>
           <div className="actionRow">
@@ -87,7 +87,7 @@ export default async function HistoryPage() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 14 }}>
+      <div className="card sectionSpacing">
         <h2>목록</h2>
         {rows.length === 0 ? (
           <p className="muted">저장된 분석이 없습니다. 먼저 대시보드에서 CSV를 분석해보세요.</p>
@@ -98,16 +98,16 @@ export default async function HistoryPage() {
               const neg = typeof r.stats?.negativeRatio === "number" ? `${Math.round(r.stats.negativeRatio * 100)}%` : "-";
               const created = new Date(r.created_at).toLocaleString("ko-KR");
               return (
-                <div className="row" key={r.id} style={{ alignItems: "center" }}>
-                  <div className="left" style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div className="row" key={r.id}>
+                  <div className="left">
+                    <div className="rowTitle">
                       {r.input_filename ?? "CSV"}
                     </div>
-                    <div className="hint" style={{ marginTop: 6 }}>
+                    <div className="hint historyMeta">
                       {created} · 리뷰 {total} · 부정 {neg}
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  <div className="rowActions">
                     <span className="pill">우선순위 {Number(r.priority_score ?? 0).toFixed(1)}</span>
                     <a className="btn" href={`/dashboard/analysis/${r.id}`}>
                       보기

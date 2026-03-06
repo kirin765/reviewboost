@@ -26,17 +26,17 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="pageMain">
+    <main className="pageMain pageTop">
       {err ? <FeedbackModal key={err} title="재설정 요청 실패" message={err} tone="error" onClose={handleErrorClose} /> : null}
       <div className="grid">
         <div className="card">
           <h2>비밀번호 재설정</h2>
           <p className="muted">가입한 이메일을 입력하면 비밀번호 재설정 링크를 보내드립니다.</p>
 
-            <form action={requestPasswordResetAction} style={{ display: "grid", gap: 10, marginTop: 12 }}>
+            <form className="fieldRow" action={requestPasswordResetAction}>
               <input type="hidden" name="next" value={next} />
               <input className="input" name="email" type="email" placeholder="email@example.com" required />
-              <button className="btn btnPrimary" type="submit" style={{ marginTop: 8 }}>
+              <button className="btn btnPrimary formSubmit" type="submit">
                 재설정 메일 보내기
               </button>
             </form>

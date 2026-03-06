@@ -79,6 +79,12 @@ export default function CsvPreview({
     return Math.max(520, Math.min(previewCols.length * 140, 1100));
   }, [previewCols.length]);
 
+  const previewTableWidthClass = previewTableMinWidth <= 520 ? "csvTableMin520"
+    : previewTableMinWidth <= 660 ? "csvTableMin660"
+      : previewTableMinWidth <= 800 ? "csvTableMin800"
+        : previewTableMinWidth <= 940 ? "csvTableMin940"
+          : "csvTableMin1100";
+
   const textColNeedsReview = useMemo(() => {
     const fallback = preview.inferred.textColSource === "fallback";
     return fallback;
@@ -169,7 +175,7 @@ export default function CsvPreview({
           </div>
           <div className="csvPreviewTableContainer">
           <div className="tableWrap csvPreviewTableWrap">
-            <table className="table" style={{ minWidth: previewTableMinWidth }}>
+            <table className={`table ${previewTableWidthClass}`}>
               <thead>
                 <tr>
                   {previewCols.map((c) => (

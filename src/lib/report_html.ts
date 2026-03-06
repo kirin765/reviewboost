@@ -513,7 +513,9 @@ export function renderReportHtml(args: {
       <article class="panel">
         <h2>부정 키워드 Top 10</h2>
         <p class="sectionInfo">부정 리뷰에서 자주 등장한 키워드</p>
-        <ul class="listBlock">${renderListRows(stats.negativeKeywordsTop10.map((item) => ({ label: item.keyword, count: item.count }))}</ul>
+        <ul class="listBlock">${renderListRows(
+          stats.negativeKeywordsTop10.map((item) => ({ label: item.keyword, count: item.count }))
+        )}</ul>
       </article>
       <article class="panel">
         <h2>문제 카테고리</h2>

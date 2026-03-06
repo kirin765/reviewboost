@@ -70,14 +70,14 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="pageMain">
+    <main className="pageMain pageTop">
       {error ? <FeedbackModal title="비밀번호 변경 실패" message={error} tone="error" onClose={handleErrorClose} /> : null}
       {!error && notice ? <FeedbackModal title="안내" message={notice} onClose={handleNoticeClose} /> : null}
       <div className="grid">
         <div className="card">
           <h2>새 비밀번호 설정</h2>
           <p className="muted">재설정 링크로 접근한 뒤 새 비밀번호를 입력하세요.</p>
-          <form onSubmit={onSubmit} style={{ display: "grid", gap: 10, marginTop: 12 }}>
+          <form className="fieldRow" onSubmit={onSubmit}>
             <input
               className="input"
               type="password"
@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
               onChange={(e) => setConfirm(e.target.value)}
               required
             />
-            <button className="btn btnPrimary" type="submit" disabled={busy}>
+            <button className="btn btnPrimary formSubmit" type="submit" disabled={busy}>
               {busy ? "변경 중..." : "비밀번호 변경"}
             </button>
           </form>
