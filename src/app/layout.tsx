@@ -15,7 +15,7 @@ const baseUrl = process.env.APP_BASE_URL || "https://reviewboost.co.kr";
 export const metadata: Metadata = {
   title: {
     default: "ReviewBoost - AI 리뷰 분석",
-    template: "%s | ReviewBoost",
+    template: "%s | ReviewBoost"
   },
   description:
     "이커머스 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다.",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "리뷰 관리",
     "셀러 도구",
     "CSV 분석",
-    "PDF 리포트",
+    "PDF 리포트"
   ],
   authors: [{ name: "ReviewBoost" }],
   metadataBase: new URL(baseUrl),
@@ -39,15 +39,15 @@ export const metadata: Metadata = {
     siteName: "ReviewBoost",
     title: "ReviewBoost - AI 리뷰 분석",
     description:
-      "이커머스 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다.",
+      "이커머스 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다."
   },
   twitter: {
     card: "summary_large_image",
     title: "ReviewBoost - AI 리뷰 분석",
     description:
-      "이커머스 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다.",
+      "이커머스 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다."
   },
-  manifest: "/manifest.json",
+  manifest: "/manifest.json"
 };
 
 export const dynamic = "force-dynamic";
@@ -85,101 +85,156 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <ErrorBoundary>
-        <GoogleAnalytics />
-        <AnalyticsQueryEvents />
-        <div className="appShell">
-          <aside className="leftNav" aria-label="주요 메뉴">
-            <div className="leftNavBrand">
-              <strong className="leftNavBrandTitle">📊 ReviewBoost</strong>
-              <span className="leftNavBrandSub">AI 리뷰 분석 · 우선순위 액션 제안</span>
-            </div>
-            <nav aria-label="주요 메뉴">
-              <ul className="leftNavList">
-                <li>
-                  <a className="leftNavLink" href="/help">
-                    <span className="leftNavIcon">?</span>
-                    <span className="leftNavText">사용법</span>
-                  </a>
-                </li>
-                <li>
-                  <a className="leftNavLink" href="/pricing">
-                    <span className="leftNavIcon">💎</span>
-                    <span className="leftNavText">요금제</span>
-                  </a>
-                </li>
-                <li>
-                  <a className="leftNavLink" href="/dashboard">
-                    <span className="leftNavIcon">⚙</span>
-                    <span className="leftNavText">분석하기</span>
-                  </a>
-                </li>
-                {!email ? (
-                  <li>
-                    <a className="leftNavLink" href="/login">
-                      <span className="leftNavIcon">🔐</span>
-                      <span className="leftNavText">로그인</span>
-                    </a>
-                  </li>
-                ) : null}
-              </ul>
-            </nav>
+          <GoogleAnalytics />
+          <AnalyticsQueryEvents />
+          <div className="appShell">
+            <aside className="leftNav appSidebar" aria-label="주요 메뉴">
+              <a className="appSidebarBrand" href="/">
+                <span className="appBrandMark" aria-hidden="true">
+                  <span className="appBrandMarkDot" />
+                  <span className="appBrandMarkLine appBrandMarkLineOne" />
+                  <span className="appBrandMarkLine appBrandMarkLineTwo" />
+                </span>
+                <span className="appBrandText">
+                  <strong>ReviewBoost</strong>
+                  <small>AI review ops dashboard</small>
+                </span>
+              </a>
 
-            <div className="leftNavFooter">
-              <span className={`leftNavBadge ${plan === "free" ? "badgeWarning" : plan === "basic" ? "badgePrimary" : "badgeSuccess"}`} title={`현재 플랜: ${planText}`}>
-                {planText}
-              </span>
+              <div className="appSidebarSection">
+                <p className="appSidebarEyebrow">Workspace</p>
+                <nav aria-label="주요 메뉴">
+                  <ul className="appNavList">
+                    <li>
+                      <a className="appNavLink" href="/dashboard">
+                        <span className="appNavIndex">01</span>
+                        <span className="appNavCopy">
+                          <strong>분석하기</strong>
+                          <small>CSV 업로드와 결과 확인</small>
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a className="appNavLink" href="/pricing">
+                        <span className="appNavIndex">02</span>
+                        <span className="appNavCopy">
+                          <strong>요금제</strong>
+                          <small>플랜과 기능 비교</small>
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a className="appNavLink" href="/help">
+                        <span className="appNavIndex">03</span>
+                        <span className="appNavCopy">
+                          <strong>사용법</strong>
+                          <small>업로드와 열 매핑 가이드</small>
+                        </span>
+                      </a>
+                    </li>
+                    {!email ? (
+                      <li>
+                        <a className="appNavLink" href="/login">
+                          <span className="appNavIndex">04</span>
+                          <span className="appNavCopy">
+                            <strong>로그인</strong>
+                            <small>저장 기능과 계정 관리</small>
+                          </span>
+                        </a>
+                      </li>
+                    ) : null}
+                  </ul>
+                </nav>
+              </div>
 
-              {plan !== "pro" ? (
-                <a className="leftNavButton" href="/pricing">
-                  업그레이드
-                </a>
-              ) : null}
-
-              {email ? (
-                <>
-                  <a className="leftNavButton" href="/dashboard/history">
-                    저장된 리포트
-                  </a>
-                  <span className="leftNavTextMuted" title={email}>
-                    {email}
+              <div className="appSidebarSection appSidebarPlanCard">
+                <div className="appSidebarPlanHeader">
+                  <span
+                    className={`leftNavBadge appPlanBadge ${
+                      plan === "free" ? "badgeWarning" : plan === "basic" ? "badgePrimary" : "badgeSuccess"
+                    }`}
+                    title={`현재 플랜: ${planText}`}
+                  >
+                    {planText}
                   </span>
-                  <form action={signOutAction} className="leftNavForm">
-                    <button className="leftNavButton" type="submit">
-                      로그아웃
-                    </button>
-                  </form>
-                </>
-              ) : null}
-            </div>
-          </aside>
+                  <span className="appSidebarPlanMeta">{email ? "로그인된 워크스페이스" : "게스트 워크스페이스"}</span>
+                </div>
+                <p className="appSidebarPlanCopy">
+                  리뷰 업로드, 결과 저장, PDF 공유를 현재 플랜과 로그인 상태에 맞춰 운영할 수 있습니다.
+                </p>
+                <div className="appSidebarActionStack">
+                  {plan !== "pro" ? (
+                    <a className="leftNavButton appSidebarButton primary" href="/pricing">
+                      업그레이드
+                    </a>
+                  ) : null}
+                  <a className="leftNavButton appSidebarButton" href="/dashboard">
+                    분석 워크스페이스 열기
+                  </a>
+                  {email ? (
+                    <>
+                      <a className="leftNavButton appSidebarButton" href="/dashboard/history">
+                        저장된 리포트
+                      </a>
+                      <span className="appSidebarEmail" title={email}>
+                        {email}
+                      </span>
+                      <form action={signOutAction} className="leftNavForm appSidebarForm">
+                        <button className="leftNavButton appSidebarButton" type="submit">
+                          로그아웃
+                        </button>
+                      </form>
+                    </>
+                  ) : (
+                    <a className="leftNavButton appSidebarButton" href="/signup">
+                      계정 만들기
+                    </a>
+                  )}
+                </div>
+              </div>
+            </aside>
 
-          <div className="container">
-            {children}
-          <footer className="siteFooterV2" aria-label="사이트 정보">
-            <div className="footerSection">
-              <h4>ReviewBoost</h4>
-              <ul>
-                <li><a href="/help">사용법</a></li>
-                <li><a href="/pricing">요금제</a></li>
-                <li><a href="/dashboard">분석하기</a></li>
-              </ul>
+            <div className="container appContainer">
+              <header className="siteTopbar" aria-label="페이지 상단 요약">
+                <div>
+                  <p className="siteTopbarEyebrow">Review operations dashboard</p>
+                  <p className="siteTopbarTitle">리뷰 데이터를 실행 가능한 인사이트와 팀 액션으로 전환하세요.</p>
+                </div>
+                <div className="siteTopbarMeta">
+                  <span className="siteTopbarPill">{planText}</span>
+                  <a className="btn btnPrimary" href="/dashboard">
+                    분석 시작
+                  </a>
+                </div>
+              </header>
+
+              <div className="contentStage">{children}</div>
+
+              <footer className="siteFooterV2" aria-label="사이트 정보">
+                <div className="footerSection">
+                  <h4>ReviewBoost</h4>
+                  <ul>
+                    <li><a href="/help">사용법</a></li>
+                    <li><a href="/pricing">요금제</a></li>
+                    <li><a href="/dashboard">분석하기</a></li>
+                  </ul>
+                </div>
+                <div className="footerSection">
+                  <h4>법적</h4>
+                  <ul>
+                    <li><a href="/term">서비스 이용약관</a></li>
+                    <li><a href="/privacy">개인정보 처리방침</a></li>
+                  </ul>
+                </div>
+                <div className="footerSection">
+                  <h4>고객 지원</h4>
+                  <ul>
+                    <li><a href="mailto:support@reviewboost.co.kr">support@reviewboost.co.kr</a></li>
+                  </ul>
+                </div>
+              </footer>
             </div>
-            <div className="footerSection">
-              <h4>법적</h4>
-              <ul>
-                <li><a href="/term">서비스 이용약관</a></li>
-                <li><a href="/privacy">개인정보 처리방침</a></li>
-              </ul>
-            </div>
-            <div className="footerSection">
-              <h4>고객 지원</h4>
-              <ul>
-                <li><a href="mailto:support@reviewboost.co.kr">support@reviewboost.co.kr</a></li>
-              </ul>
-            </div>
-          </footer>
           </div>
-        </div>
         </ErrorBoundary>
       </body>
     </html>

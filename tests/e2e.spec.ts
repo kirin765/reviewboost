@@ -8,17 +8,17 @@ test.describe("ReviewBoost E2E Tests", () => {
 
   test("login page loads", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "로그인", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "ReviewBoost 로그인", exact: true })).toBeVisible();
   });
 
   test("signup page loads", async ({ page }) => {
     await page.goto("/signup");
-    await expect(page.getByRole("heading", { name: "회원가입", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "무료로 시작하세요", exact: true })).toBeVisible();
   });
 
   test("pricing page loads", async ({ page }) => {
     await page.goto("/pricing");
-    await expect(page.getByRole("heading", { name: "요금제 (MVP)", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "리뷰 운영 성숙도에 맞춰 기능을 확장하세요.", exact: true })).toBeVisible();
   });
 
   test("homepage has no critical console errors", async ({ page }) => {
@@ -60,13 +60,13 @@ test.describe("ReviewBoost E2E Tests", () => {
     await page.getByRole("tab", { name: "분석하기" }).click();
     await expect(page.getByRole("tab", { name: "분석하기" })).toHaveAttribute("aria-selected", "true");
 
-    const homeBackLink = page.getByRole("link", { name: "리뷰분석 홈으로 이동" });
+    const homeBackLink = page.getByRole("link", { name: "메인 서비스로 이동" });
     await expect(homeBackLink).toBeVisible();
     await homeBackLink.click();
     await expect(page).toHaveURL("/");
   });
 
-test("dashboard mobile drawer and backdrop are operable", async ({ page }) => {
+  test("dashboard mobile drawer and backdrop are operable", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.goto("/dashboard");
 

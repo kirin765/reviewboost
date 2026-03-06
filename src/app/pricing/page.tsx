@@ -30,20 +30,52 @@ export default async function PricingPage({
   const basicPriceId = safePlanPriceId("basic");
   const proPriceId = safePlanPriceId("pro");
   const billing = (await searchParams)?.billing;
+  const pricingStats = [
+    { label: "무료", value: "월 5회", meta: "워터마크 포함 PDF" },
+    { label: "Basic", value: "월 39,000원", meta: "1인 실사용 추천" },
+    { label: "Pro", value: "월 89,000원", meta: "팀/에이전시용" }
+  ];
+
   return (
-    <main className="pageMain">
-      <div className="card">
-        <h2>요금제 (MVP)</h2>
-        <p className="muted">현재는 MVP 단계이며, 아래 구성/가격은 운영 데이터에 따라 조정될 수 있습니다.</p>
-        {billing === "success" ? <p className="hint">결제가 완료되었습니다. 구독 상태 반영까지 최대 1분 정도 소요될 수 있습니다.</p> : null}
-        {billing === "cancel" ? <p className="hint">결제가 취소되었습니다. 다시 시도하실 수 있습니다.</p> : null}
-      </div>
+    <main className="pageMain pricingPage">
+      <section className="card pricingHero">
+        <div className="pricingHeroHeader">
+          <div>
+            <p className="sectionEyebrow">Pricing</p>
+            <h1>리뷰 운영 성숙도에 맞춰 기능을 확장하세요.</h1>
+            <p className="muted pricingHeroLead">
+              현재는 MVP 단계이며, 실제 운영 데이터와 사용량을 기준으로 기능 구성과 가격이 조정될 수 있습니다.
+            </p>
+          </div>
+          <div className="pricingHeroMeta">
+            <span className="pill pillActive">Paddle 결제 연동</span>
+            <span className="pill">저장/공유 기능과 연계</span>
+          </div>
+        </div>
+
+        <div className="pricingHeroStats">
+          {pricingStats.map((item) => (
+            <article className="pricingHeroStat" key={item.label}>
+              <span className="pricingHeroStatLabel">{item.label}</span>
+              <strong className="pricingHeroStatValue">{item.value}</strong>
+              <span className="pricingHeroStatMeta">{item.meta}</span>
+            </article>
+          ))}
+        </div>
+
+        {billing === "success" ? <p className="hint pricingBillingNotice">결제가 완료되었습니다. 구독 상태 반영까지 최대 1분 정도 소요될 수 있습니다.</p> : null}
+        {billing === "cancel" ? <p className="hint pricingBillingNotice">결제가 취소되었습니다. 다시 시도하실 수 있습니다.</p> : null}
+      </section>
 
       <div className="pricingCardGrid">
         <article className="card pricingCard">
           <header className="pricingCardHeader">
-            <h2>무료</h2>
-            <p className="muted">체험/초기 유입용 (베타 기간)</p>
+            <div>
+              <p className="pricingPlanLabel">Starter</p>
+              <h2>무료</h2>
+            </div>
+            <p className="pricingValue">₩0</p>
+            <p className="muted pricingPlanMeta">체험/초기 유입용 (베타 기간)</p>
           </header>
           <div className="pricingCardBody">
             <div className="list">
@@ -87,10 +119,14 @@ export default async function PricingPage({
         <article className="card pricingCard pricingCardPopular">
           <header className="pricingCardHeader">
             <div className="pricingCardHeaderRow">
-              <h2>Basic</h2>
+              <div>
+                <p className="pricingPlanLabel">Recommended</p>
+                <h2>Basic</h2>
+              </div>
               <span className="badge badgePrimary pricingBadge">추천</span>
             </div>
-            <p className="muted">월 39,000원 (1인 실사용 추천, 초기 검증 가격)</p>
+            <p className="pricingValue">₩39,000</p>
+            <p className="muted pricingPlanMeta">월 39,000원 (1인 실사용 추천, 초기 검증 가격)</p>
           </header>
           <div className="pricingCardBody">
             <div className="list">
@@ -138,20 +174,19 @@ export default async function PricingPage({
           </div>
           <footer className="pricingCardFooter">
             <div className="pricingCardActionRow">
-              <PricingActions
-                plan="basic"
-                priceId={basicPriceId}
-                userId={userId ?? undefined}
-                userEmail={userEmail ?? undefined}
-              />
+              <PricingActions plan="basic" priceId={basicPriceId} userId={userId ?? undefined} userEmail={userEmail ?? undefined} />
             </div>
           </footer>
         </article>
 
         <article className="card pricingCard">
           <header className="pricingCardHeader">
-            <h2>Pro</h2>
-            <p className="muted">월 89,000원 (팀/에이전시용)</p>
+            <div>
+              <p className="pricingPlanLabel">Scale</p>
+              <h2>Pro</h2>
+            </div>
+            <p className="pricingValue">₩89,000</p>
+            <p className="muted pricingPlanMeta">월 89,000원 (팀/에이전시용)</p>
           </header>
           <div className="pricingCardBody">
             <div className="list">
@@ -215,27 +250,25 @@ export default async function PricingPage({
           </div>
           <footer className="pricingCardFooter">
             <div className="pricingCardActionRow">
-              <PricingActions
-                plan="pro"
-                priceId={proPriceId}
-                userId={userId ?? undefined}
-                userEmail={userEmail ?? undefined}
-              />
+              <PricingActions plan="pro" priceId={proPriceId} userId={userId ?? undefined} userEmail={userEmail ?? undefined} />
             </div>
           </footer>
         </article>
       </div>
 
-      <div className="card">
-        <h2>안내</h2>
-        <p className="muted">Basic 가격은 초기 검증 구간(39,000원)이며 운영 지표에 따라 49,000원으로 조정될 수 있습니다.</p>
-        <p className="muted">대용량 업로드 시 안정성을 위해 일부 리뷰를 샘플링하여 분석할 수 있습니다.</p>
+      <section className="card pricingNoteCard">
+        <div>
+          <p className="sectionEyebrow">Note</p>
+          <h2>운영 환경에 따라 가격과 샘플링 정책이 달라질 수 있습니다.</h2>
+          <p className="muted">Basic 가격은 초기 검증 구간(39,000원)이며 운영 지표에 따라 49,000원으로 조정될 수 있습니다.</p>
+          <p className="muted">대용량 업로드 시 안정성을 위해 일부 리뷰를 샘플링하여 분석할 수 있습니다.</p>
+        </div>
         <div className="actionRow">
           <a className="btn btnPrimary" href="/dashboard">
             지금 분석하기
           </a>
         </div>
-      </div>
+      </section>
     </main>
   );
 }

@@ -22,11 +22,7 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
   const [localError, setLocalError] = useState<string | null>(null);
   const [analysisDoneNotice, setAnalysisDoneNotice] = useState<string | null>(null);
 
-  const {
-    state,
-    actions,
-    modal
-  } = useReviewAnalysis({
+  const { state, actions, modal } = useReviewAnalysis({
     onNotice: setAnalysisDoneNotice
   });
 
@@ -111,6 +107,32 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
     [actions]
   );
 
+  const dashboardStats = useMemo(
+    () => [
+      {
+        label: "진행 단계",
+        value: `${step}/4`,
+        meta: step === 4 ? "분석 완료" : step === 3 ? "실행 준비" : step === 2 ? "열 매핑 확인" : "CSV 업로드 대기"
+      },
+      {
+        label: "선택 파일",
+        value: state.file ? state.file.name : "CSV 필요",
+        meta: state.file ? `${Math.round(state.file.size / 1024)} KB` : "드래그 앤 드롭 지원"
+      },
+      {
+        label: "워크스페이스",
+        value: caps?.planLabel ?? "Guest mode",
+        meta: caps?.supabaseConfigured === false ? "저장 비활성" : state.result?.meta?.stored ? "리포트 저장됨" : "PDF 공유 가능"
+      },
+      {
+        label: "결과 상태",
+        value: state.result ? `${state.result.stats.total}건 분석` : "대기 중",
+        meta: state.result ? `부정 비율 ${Math.round((state.result.stats.negativeRatio ?? 0) * 100)}%` : "결과 카드 준비 전"
+      }
+    ],
+    [caps?.planLabel, caps?.supabaseConfigured, state.file, state.result, step]
+  );
+
   return (
     <main className="pageMain analysisWorkspace">
       {shownError ? (
@@ -129,14 +151,29 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
         <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
       ) : null}
 
-      <DashboardTabs
-        activeTab={activeTab}
-        onChange={(next) => {
-          setActiveTab(next);
-        }}
-      />
+      <section className="card dashboardHeroPanel">
+        <div className="dashboardHeroCopy">
+          <p className="sectionEyebrow">Analysis studio</p>
+          <h1 className="dashboardPageTitle">리뷰 업로드부터 개선 액션 도출까지 하나의 워크스페이스로 정리했습니다.</h1>
+          <p className="dashboardPageLead">
+            현재 도메인 로직은 유지하면서, CSV 업로드와 열 매핑, 분석 결과, PDF 다운로드를 SaaS 대시보드 스타일의 작업 흐름으로
+            재배치했습니다.
+          </p>
+        </div>
+        <div className="dashboardStatStrip" aria-label="현재 분석 상태">
+          {dashboardStats.map((stat) => (
+            <article className="dashboardStatCard" key={stat.label}>
+              <span className="dashboardStatLabel">{stat.label}</span>
+              <strong className="dashboardStatValue">{stat.value}</strong>
+              <span className="dashboardStatMeta">{stat.meta}</span>
+            </article>
+          ))}
+        </div>
+      </section>
 
-      <div className="card heroCard">
+      <DashboardTabs activeTab={activeTab} onChange={(next) => setActiveTab(next)} />
+
+      <div className="card heroCard dashboardWorkspaceCard">
         {activeTab === "analysis" ? (
           <DashboardAnalysisPanel
             file={state.file}
@@ -166,9 +203,10 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
           </section>
         ) : (
           <section id="results-panel" role="tabpanel" aria-labelledby="results-tab" className="dashboardEmptyResult">
-            <div className="card">
+            <div className="card dashboardEmptyResultCard">
+              <p className="sectionEyebrow">Results</p>
               <h2>아직 분석 결과가 없습니다</h2>
-              <p className="hint">CSV를 업로드하고 분석을 완료하면, 리포트가 이곳에 표시됩니다.</p>
+              <p className="hint">CSV를 업로드하고 분석을 완료하면 핵심 지표, 우선순위, 액션 아이템이 이곳에 표시됩니다.</p>
               <button type="button" className="btn btnPrimary" onClick={() => setActiveTab("analysis")} aria-label="분석하기 탭으로 이동">
                 분석하기로 이동
               </button>

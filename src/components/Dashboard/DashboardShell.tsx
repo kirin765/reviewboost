@@ -74,16 +74,22 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       {
         href: "/dashboard",
         label: "분석하기",
-        description: "CSV 업로드·미리보기·분석"
+        description: "CSV 업로드와 결과 워크플로"
       },
       {
         href: "/dashboard/history",
         label: "저장된 리포트",
-        description: "이전 분석 결과 확인"
+        description: "이전 분석 결과와 PDF 다시 보기"
       }
     ],
     []
   );
+
+  const currentArea = useMemo(() => {
+    if (pathname.startsWith("/dashboard/history")) return "History";
+    if (pathname.startsWith("/dashboard/analysis/")) return "Saved report";
+    return "Analysis";
+  }, [pathname]);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -100,41 +106,56 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           aria-expanded={open}
           aria-controls="dashboardDrawer"
           aria-label={open ? "사이드바 닫기" : "사이드바 펼치기"}
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen((value) => !value)}
         >
-          {open ? "❮" : "≡"}
+          {open ? "Close" : "Menu"}
         </button>
 
-        <aside
-          id="dashboardDrawer"
-          className="dashboardDrawer"
-          aria-label="대시보드 탐색"
-          aria-hidden={!open}
-        >
-          <div className="drawerBrand">ReviewBoost 분석도구</div>
-          <p className="drawerSubtext">리뷰 분석 작업을 빠르게 이동하세요.</p>
-          <nav aria-label="대시보드 메뉴">
-            <ul className="drawerNav">
-              {navItems.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`drawerLink ${isActive(item.href) ? "drawerLinkActive" : ""}`}
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                    ref={item.href === "/dashboard" ? drawerFirstLinkRef : null}
-                    onClick={() => {
-                      if (isMobile) {
-                        setOpen(false);
-                      }
-                    }}
-                  >
-                    <span>{item.label}</span>
-                    <span>{item.description}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+        <aside id="dashboardDrawer" className="dashboardDrawer" aria-label="대시보드 탐색" aria-hidden={!open}>
+          <a className="dashboardBrand" href="/dashboard">
+            <span className="dashboardBrandMark" aria-hidden="true">
+              <span className="dashboardBrandDot" />
+              <span className="dashboardBrandLine dashboardBrandLineOne" />
+              <span className="dashboardBrandLine dashboardBrandLineTwo" />
+            </span>
+            <span>
+              <strong>ReviewBoost</strong>
+              <small>analysis workspace</small>
+            </span>
+          </a>
+
+          <div className="dashboardDrawerPanel">
+            <p className="dashboardDrawerEyebrow">Dashboard</p>
+            <nav aria-label="대시보드 메뉴">
+              <ul className="drawerNav">
+                {navItems.map((item, index) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={`drawerLink ${isActive(item.href) ? "drawerLinkActive" : ""}`}
+                      aria-current={isActive(item.href) ? "page" : undefined}
+                      ref={item.href === "/dashboard" ? drawerFirstLinkRef : null}
+                      onClick={() => {
+                        if (isMobile) {
+                          setOpen(false);
+                        }
+                      }}
+                    >
+                      <span className="drawerLinkIndex">0{index + 1}</span>
+                      <span>
+                        <strong>{item.label}</strong>
+                        <small>{item.description}</small>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </div>
+
+          <div className="dashboardDrawerInfo">
+            <p>리뷰 업로드, 열 매핑, 실행 결과, 공유 리포트를 한 흐름으로 관리합니다.</p>
+          </div>
         </aside>
 
         <button
@@ -156,11 +177,16 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
         <main className="dashboardMain" role="main">
           <div className="dashboardTopBar">
-            <a className="dashboardTopHome" href="/" onClick={() => setOpen(false)}>
-              <span aria-hidden>↩︎</span>
-              <span>리뷰분석 홈으로 이동</span>
-            </a>
-            <span className="dashboardTopHint">대시보드 작업 후에도 원래 화면으로 바로 복귀</span>
+            <div>
+              <a className="dashboardTopHome" href="/" onClick={() => setOpen(false)}>
+                메인 서비스로 이동
+              </a>
+              <span className="dashboardTopHint">ReviewBoost workspace</span>
+            </div>
+            <div className="dashboardTopBadgeRow">
+              <span className="dashboardTopBadge">AI Review Ops</span>
+              <span className="dashboardTopMeta">{currentArea}</span>
+            </div>
           </div>
           {children}
         </main>
