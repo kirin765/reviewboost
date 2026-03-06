@@ -52,7 +52,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
 
   if (!supabase) {
     return (
-      <main className="pageMain">
+      <main className="pageMain dashboardPageSurface">
         <div className="card">
           <h2>저장된 분석 보기</h2>
           <p className="muted">저장 기능이 꺼져 있어 이 페이지를 사용할 수 없습니다.</p>
@@ -84,7 +84,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
 
   if (error || !data) {
     return (
-      <main className="pageMain">
+      <main className="pageMain dashboardPageSurface">
         <div className="card">
           <h2>분석을 찾을 수 없음</h2>
           <p className="muted">권한이 없거나 삭제된 항목일 수 있습니다.</p>
@@ -108,27 +108,58 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
     suggestions: row.suggestions ?? EMPTY_ANALYSIS_RESULT.suggestions
   };
 
-  return (
-    <main className="pageMain">
-      <div className="card">
-        <h2>분석 상세</h2>
-        <p className="muted">
-          {row.input_filename ?? "CSV"} · {created} · 우선순위 {priorityScore.toFixed(1)}
-        </p>
-        <div className="actionRow">
-          <a className="btn" href="/dashboard/history">
-            히스토리
-          </a>
-          <a className="btn btnPrimary" href="/dashboard">
-            새 분석
-          </a>
-          <a className="btn" href={`/api/report/${row.id}`}>
-            PDF 다운로드
-          </a>
-        </div>
-      </div>
+  const summaryStats = [
+    { label: "총 리뷰", value: `${result.stats.total}건`, meta: row.input_filename ?? "CSV" },
+    {
+      label: "부정 비율",
+      value: `${Math.round((result.stats.negativeRatio ?? 0) * 100)}%`,
+      meta: `부정 ${result.stats.negative ?? 0}건`
+    },
+    {
+      label: "평균 별점",
+      value: result.stats.avgRating === null ? "미기재" : `${result.stats.avgRating.toFixed(1)}점`,
+      meta: "별점 열이 있을 때 계산"
+    }
+  ];
 
-      <AnalysisResultDigest result={result} />
+  return (
+    <main className="pageMain dashboardPageSurface">
+      <section className="card dashboardPageHeader dashboardDetailHero">
+        <div className="dashboardPageHeaderTop">
+          <div>
+            <p className="sectionEyebrow">Saved report</p>
+            <h1 className="dashboardPageTitle">분석 상세</h1>
+            <p className="dashboardPageLead">
+              {row.input_filename ?? "CSV"} · {created} · 우선순위 {priorityScore.toFixed(1)}
+            </p>
+          </div>
+          <div className="actionRow">
+            <a className="btn" href="/dashboard/history">
+              히스토리
+            </a>
+            <a className="btn btnPrimary" href="/dashboard">
+              새 분석
+            </a>
+            <a className="btn" href={`/api/report/${row.id}`}>
+              PDF 다운로드
+            </a>
+          </div>
+        </div>
+
+        <div className="dashboardPageStats">
+          {summaryStats.map((stat) => (
+            <article className="dashboardPageStat" key={stat.label}>
+              <span className="dashboardStatLabel">{stat.label}</span>
+              <strong className="dashboardStatValue">{stat.value}</strong>
+              <span className="dashboardStatMeta">{stat.meta}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="dashboardDetailSection">
+        <AnalysisResultDigest result={result} />
+      </section>
     </main>
   );
 }

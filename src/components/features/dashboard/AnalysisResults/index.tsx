@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { AnalysisOutput, PlanGates } from "@/lib/types";
 import type { Capabilities } from "@/lib/capabilities";
 import AnalysisResultDigest from "@/components/Analysis/AnalysisResultDigest";
@@ -34,13 +34,25 @@ export default function AnalysisResults({ result, caps, busy, onDownloadPdf }: A
   useEffect(() => {
     if (!result || !summaryCardRef.current) return;
     summaryCardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    setAnalysisDoneNotice("분석이 완료되었습니다. 핵심 지표를 확인해 보세요.");
+    setAnalysisDoneNotice("분석이 완료되었습니다. 핵심 지표와 우선순위 액션을 확인해 보세요.");
   }, [result]);
+
+  const resultsNavItems = useMemo(
+    () => [
+      { href: "#digest-section", label: "핵심 지표", enabled: true },
+      { href: "#urgent-section", label: "긴급 리뷰", enabled: Boolean(result.urgentReviews?.length) },
+      { href: "#priority-section", label: "우선순위", enabled: Boolean(result.priorityMatrix?.length) },
+      { href: "#simulation-section", label: "시뮬레이션", enabled: Boolean(result.ratingSimulation?.scenarios?.length) },
+      { href: "#positive-section", label: "긍정 키워드", enabled: Boolean(result.positiveKeywords?.length) },
+      { href: "#action-section", label: "액션 아이템", enabled: Boolean(result.actionItems?.length) }
+    ],
+    [result.actionItems?.length, result.priorityMatrix?.length, result.positiveKeywords?.length, result.ratingSimulation?.scenarios?.length, result.urgentReviews?.length]
+  );
 
   return (
     <>
       {analysisDoneNotice ? (
-        <div className="summaryBanner">
+        <div className="summaryBanner card">
           <p className="analysisNoticeCardText">{analysisDoneNotice}</p>
         </div>
       ) : null}
@@ -50,12 +62,11 @@ export default function AnalysisResults({ result, caps, busy, onDownloadPdf }: A
       </section>
 
       <nav className="resultsNav" aria-label="결과 섹션 바로가기">
-        <a href="#digest-section" className="resultsNavLink">핵심 지표</a>
-        {result.urgentReviews?.length ? <a href="#urgent-section" className="resultsNavLink">긴급 리뷰</a> : null}
-        {result.priorityMatrix?.length ? <a href="#priority-section" className="resultsNavLink">우선순위</a> : null}
-        {result.ratingSimulation?.scenarios?.length ? <a href="#simulation-section" className="resultsNavLink">시뮬레이션</a> : null}
-        {result.positiveKeywords?.length ? <a href="#positive-section" className="resultsNavLink">긍정 키워드</a> : null}
-        {result.actionItems?.length ? <a href="#action-section" className="resultsNavLink">액션 아이템</a> : null}
+        {resultsNavItems.filter((item) => item.enabled).map((item) => (
+          <a href={item.href} className="resultsNavLink" key={item.href}>
+            {item.label}
+          </a>
+        ))}
       </nav>
 
       <AnalysisResultDigest result={result} />
