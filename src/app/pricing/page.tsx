@@ -44,11 +44,11 @@ export default async function PricingPage({
             <p className="sectionEyebrow">Pricing</p>
             <h1>리뷰 운영 성숙도에 맞춰 기능을 확장하세요.</h1>
             <p className="muted pricingHeroLead">
-              현재는 MVP 단계이며, 실제 운영 데이터와 사용량을 기준으로 기능 구성과 가격이 조정될 수 있습니다.
+              운영 규모에 맞춰 플랜을 선택하고, 필요할 때 언제든 변경할 수 있습니다.
             </p>
           </div>
           <div className="pricingHeroMeta">
-            <span className="pill pillActive">Paddle 결제 연동</span>
+            <span className="pill pillActive">안전한 카드 결제</span>
             <span className="pill">저장/공유 기능과 연계</span>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default async function PricingPage({
               <h2>무료</h2>
             </div>
             <p className="pricingValue">₩0</p>
-            <p className="muted pricingPlanMeta">체험/초기 유입용 (베타 기간)</p>
+            <p className="muted pricingPlanMeta">기본 분석 체험용</p>
           </header>
           <div className="pricingCardBody">
             <div className="list">
@@ -126,7 +126,7 @@ export default async function PricingPage({
               <span className="badge badgePrimary pricingBadge">추천</span>
             </div>
             <p className="pricingValue">₩39,000</p>
-            <p className="muted pricingPlanMeta">월 39,000원 (1인 실사용 추천, 초기 검증 가격)</p>
+            <p className="muted pricingPlanMeta">월 39,000원 · 1인 실사용 추천</p>
           </header>
           <div className="pricingCardBody">
             <div className="list">
@@ -259,9 +259,8 @@ export default async function PricingPage({
       <section className="card pricingNoteCard">
         <div>
           <p className="sectionEyebrow">Note</p>
-          <h2>운영 환경에 따라 가격과 샘플링 정책이 달라질 수 있습니다.</h2>
-          <p className="muted">Basic 가격은 초기 검증 구간(39,000원)이며 운영 지표에 따라 49,000원으로 조정될 수 있습니다.</p>
-          <p className="muted">대용량 업로드 시 안정성을 위해 일부 리뷰를 샘플링하여 분석할 수 있습니다.</p>
+          <h2>대용량 업로드 시 일부 리뷰를 샘플링하여 분석할 수 있습니다.</h2>
+          <p className="muted">안정적인 분석을 위해 대량 리뷰는 플랜별 최대 처리량에 맞춰 샘플링됩니다.</p>
         </div>
         <div className="actionRow">
           <a className="btn btnPrimary" href="/dashboard">

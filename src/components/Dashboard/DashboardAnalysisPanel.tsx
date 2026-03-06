@@ -59,8 +59,8 @@ export default function DashboardAnalysisPanel({
     },
     {
       label: "미리보기",
-      value: preview ? `${preview.totalRows} rows` : "대기 중",
-      meta: preview ? `${preview.columns.length} columns detected` : "열 추정 후 매핑 가능"
+      value: preview ? `${preview.totalRows}행` : "대기 중",
+      meta: preview ? `${preview.columns.length}개 열 감지` : "열 추정 후 매핑 가능"
     },
     {
       label: "저장/플랜",
