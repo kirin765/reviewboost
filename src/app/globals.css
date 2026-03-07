@@ -3738,6 +3738,47 @@ h3 {
   margin: 0;
 }
 
+.dashboardDrawerActionStack {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(246, 248, 255, 0.92);
+  border: 1px solid rgba(91, 92, 234, 0.08);
+}
+
+.dashboardDrawerEmail {
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.dashboardDrawerAction {
+  margin: 0;
+}
+
+.dashboardDrawerSignOut {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--color-bg-soft);
+  color: var(--color-text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.dashboardDrawerSignOut:hover,
+.dashboardDrawerSignOut:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  outline: 2px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
 .dashboardMain {
   display: grid;
   gap: 24px;

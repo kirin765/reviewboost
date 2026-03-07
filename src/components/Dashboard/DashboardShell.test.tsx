@@ -1,8 +1,8 @@
 /** @vitest-environment jsdom */
 
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import DashboardShell from "./DashboardShell";
 
 vi.mock("next/navigation", () => ({
@@ -30,6 +30,10 @@ describe("DashboardShell", () => {
       writable: true,
       value: 1440
     });
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it("adds dashboardMode class and exposes nav controls", () => {
@@ -70,5 +74,26 @@ describe("DashboardShell", () => {
     fireEvent.click(toggle);
 
     expect(document.activeElement).toBe(toggle);
+  });
+
+  it("shows logout action when user is authenticated", () => {
+    render(
+      <DashboardShell userEmail="tester@example.com">
+        내용
+      </DashboardShell>
+    );
+
+    expect(screen.getByRole("button", { name: "로그아웃" })).toBeTruthy();
+    expect(screen.getByText("tester@example.com")).toBeTruthy();
+  });
+
+  it("hides logout action when user is not authenticated", () => {
+    render(
+      <DashboardShell userEmail={null}>
+        내용
+      </DashboardShell>
+    );
+
+    expect(screen.queryByRole("button", { name: "로그아웃" })).toBeNull();
   });
 });

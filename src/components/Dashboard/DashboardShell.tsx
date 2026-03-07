@@ -4,8 +4,14 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { signOutAction } from "@/app/(auth)/actions";
 
-export default function DashboardShell({ children }: { children: React.ReactNode }) {
+type DashboardShellProps = {
+  children: React.ReactNode;
+  userEmail?: string | null;
+};
+
+export default function DashboardShell({ children, userEmail = null }: DashboardShellProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -156,6 +162,19 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           <div className="dashboardDrawerInfo">
             <p>리뷰 업로드, 열 매핑, 실행 결과, 공유 리포트를 한 흐름으로 관리합니다.</p>
           </div>
+
+          {userEmail ? (
+            <div className="dashboardDrawerActionStack">
+              <span className="dashboardDrawerEmail" title={userEmail}>
+                {userEmail}
+              </span>
+              <form className="dashboardDrawerAction" action={signOutAction}>
+                <button className="dashboardDrawerSignOut" type="submit" aria-label="로그아웃">
+                  로그아웃
+                </button>
+              </form>
+            </div>
+          ) : null}
         </aside>
 
         <button
