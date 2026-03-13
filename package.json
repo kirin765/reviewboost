@@ -39,6 +39,7 @@
     "ci:security:deep": "tsx scripts/ci/security.ts --deep",
     "ci:report-smoke": "tsx scripts/ci/report-smoke.ts",
     "ci:perf-smoke": "tsx scripts/ci/perf-smoke.ts",
+    "supabase:keepalive": "bash scripts/ci/supabase-keepalive.sh",
     "test:e2e:smoke": "playwright test",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
