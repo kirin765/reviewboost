@@ -73,7 +73,7 @@ function CellModalPreviewRenderer() {
 
 export const CellModalPreview: Story = {
   render: () => <CellModalPreviewRenderer />,
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
     const contentCell = await canvas.findByRole("button", { name: "재방문 의향이 높아요" });
     await userEvent.click(contentCell);
