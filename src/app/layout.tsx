@@ -9,6 +9,7 @@ import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { planLabel, resolvePlanTierForUser, type PlanTier } from "@/lib/plan";
 import { paddleBrowserEnv, paddleBrowserToken } from "@/lib/paddle";
+import { Analytics } from "@vercel/analytics/next";
 
 const baseUrl = process.env.APP_BASE_URL || "https://reviewboost.co.kr";
 
@@ -85,6 +86,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <ErrorBoundary>
+          <Analytics />
           <GoogleAnalytics />
           <AnalyticsQueryEvents />
           <div className="appShell">
