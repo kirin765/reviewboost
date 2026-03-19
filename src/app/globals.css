@@ -2107,13 +2107,13 @@ a {
 }
 
 .step.active {
-  background: var(--color-primary);
-  color: white;
+  background: rgba(91, 92, 234, 0.12);
+  color: #2c336f;
 }
 
 .step.completed {
-  background: var(--color-success);
-  color: white;
+  background: rgba(34, 181, 115, 0.14);
+  color: #2c336f;
 }
 
 .stepContent {
@@ -2132,7 +2132,7 @@ a {
 
 .step.active .stepDesc,
 .step.completed .stepDesc {
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--color-muted);
 }
 
 .stepNumber {
@@ -2155,11 +2155,13 @@ a {
 }
 
 .step.active .stepNumber {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(91, 92, 234, 0.18);
+  color: #4c4ecf;
 }
 
 .step.completed .stepNumber {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(34, 181, 115, 0.18);
+  color: #1b8f5a;
 }
 
 @media (max-width: 600px) {
@@ -4334,6 +4336,38 @@ h3 {
   }
 }
 
+/* Fix: signal card label wrapping and step white text */
+.marketingSignalCard .marketingSignalLabel {
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+.step.active {
+  background: rgba(91, 92, 234, 0.12);
+  color: #2c336f;
+  border: 1px solid rgba(91, 92, 234, 0.16);
+}
+
+.step.completed {
+  background: rgba(34, 181, 115, 0.14);
+  color: #2c336f;
+}
+
+.step.active .stepDesc,
+.step.completed .stepDesc {
+  color: var(--color-muted);
+}
+
+.step.active .stepNumber {
+  background: rgba(91, 92, 234, 0.18);
+  color: #4c4ecf;
+}
+
+.step.completed .stepNumber {
+  background: rgba(34, 181, 115, 0.18);
+  color: #1b8f5a;
+}
+
 /* 2026 SaaS dashboard redesign overrides */
 :root {
   --color-bg: #f5f7ff;
@@ -6031,4 +6065,21 @@ h3 {
   .authVisualCardSide {
     width: calc(100% - 48px);
   }
+}
+
+/* Final overrides: signal card label no-wrap, value responsive */
+.marketingSignalCard .marketingSignalLabel {
+  white-space: nowrap;
+  margin-bottom: 4px;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+}
+
+.marketingSignalCard .marketingSignalValue {
+  font-size: clamp(20px, 3vw, 28px);
+}
+
+.marketingSignalCard .marketingSignalMeta {
+  font-size: 12px;
+  line-height: 1.4;
 }

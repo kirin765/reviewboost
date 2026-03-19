@@ -1,5 +1,12 @@
 import React from "react";
+import type { Metadata } from "next";
 import PricingActions from "@/components/PricingActions";
+
+export const metadata: Metadata = {
+  title: "요금제 - ReviewBoost AI 리뷰 분석 플랜 비교",
+  description: "ReviewBoost 무료·Basic·Pro 플랜을 비교하세요. 월 100회 무료 분석부터 대량 리뷰 분석까지, 이커머스 셀러에 맞는 요금제를 선택하세요.",
+  alternates: { canonical: "/pricing" }
+};
 import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 import { paddlePriceIdForPlan } from "@/lib/paddle";
 
