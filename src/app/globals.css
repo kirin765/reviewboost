@@ -6083,3 +6083,599 @@ h3 {
   font-size: 12px;
   line-height: 1.4;
 }
+
+/* Figma tmp sidebar overrides */
+:root {
+  --left-nav-width: 228px;
+}
+
+.appContainer {
+  margin-left: calc(var(--left-nav-width) + 46px);
+}
+
+body:has(.dashboardShell) .leftNav.appSidebar,
+body:has(.dashboardShell) .siteTopbar,
+body:has(.dashboardShell) .siteFooterV2,
+.dashboardMode .leftNav.appSidebar,
+.dashboardMode .siteTopbar,
+.dashboardMode .siteFooterV2 {
+  display: none;
+}
+
+body:has(.dashboardShell) .appContainer,
+.dashboardMode .appContainer {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.leftNav.appSidebar,
+.dashboardDrawer {
+  padding: 26px 16px 18px;
+  border: 1px solid rgba(110, 112, 178, 0.12);
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 56px rgba(42, 52, 123, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.leftNav.appSidebar {
+  top: 18px;
+  left: 18px;
+  bottom: 18px;
+  border-right: 1px solid rgba(110, 112, 178, 0.12);
+}
+
+.dashboardShellInner {
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: 28px;
+  padding: 24px 28px 28px;
+}
+
+.dashboardDrawer {
+  gap: 0;
+}
+
+.sidebarNav {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.sidebarNavMain {
+  display: grid;
+  gap: 28px;
+}
+
+.sidebarNavBrand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 2px 8px 0;
+}
+
+.sidebarNavBrandMark {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(145deg, #665cff 0%, #5b54ff 100%);
+  box-shadow: 0 16px 28px rgba(99, 88, 255, 0.28);
+}
+
+.sidebarNavBrandMark svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.sidebarNavBrandMark circle:first-child {
+  fill: currentColor;
+}
+
+.sidebarNavBrandMark path,
+.sidebarNavBrandMark circle:not(:first-child) {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.96);
+}
+
+.sidebarNavBrandMark circle:not(:first-child) {
+  fill: rgba(255, 255, 255, 0.96);
+  stroke: none;
+}
+
+.sidebarNavBrandText strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1.1;
+  color: #141a47;
+  letter-spacing: -0.03em;
+}
+
+.sidebarNavList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.sidebarNavLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 16px;
+  color: #8b90ab;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.sidebarNavLink:hover,
+.sidebarNavLink:focus-visible {
+  background: rgba(97, 92, 255, 0.08);
+  color: #5951ff;
+  transform: translateX(1px);
+}
+
+.sidebarNavLinkActive {
+  background: linear-gradient(90deg, rgba(97, 92, 255, 0.14) 0%, rgba(97, 92, 255, 0.04) 100%);
+  color: #5d55ff;
+}
+
+.sidebarNavIcon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(143, 146, 168, 0.12);
+  color: #9599b0;
+  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.sidebarNavIcon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: currentColor;
+}
+
+.sidebarNavIcon svg path,
+.sidebarNavIcon svg line,
+.sidebarNavIcon svg polyline,
+.sidebarNavIcon svg rect,
+.sidebarNavIcon svg circle {
+  vector-effect: non-scaling-stroke;
+}
+
+.sidebarNavLinkActive .sidebarNavIcon {
+  background: linear-gradient(145deg, #6157ff 0%, #6b79ff 100%);
+  color: #fff;
+  box-shadow: 0 12px 22px rgba(98, 94, 255, 0.24);
+}
+
+.sidebarNavLabel {
+  line-height: 1;
+}
+
+.sidebarNavFooter {
+  margin-top: auto;
+  display: grid;
+  gap: 16px;
+}
+
+.sidebarNavPromo {
+  overflow: hidden;
+  padding: 16px 14px 14px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #f1f4ff 0%, #e9efff 100%);
+  border: 1px solid rgba(107, 121, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.sidebarNavPromoVisual {
+  position: relative;
+  height: 140px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 10px;
+}
+
+.sidebarNavPromoStem {
+  position: absolute;
+  top: 8px;
+  width: 2px;
+  height: 44px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #4d6fff 0%, rgba(77, 111, 255, 0.08) 100%);
+}
+
+.sidebarNavPromoCone {
+  position: relative;
+  width: 124px;
+  height: 90px;
+  margin-top: 22px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #85b4ff 0%, #6b87ff 54%, #6884ff 100%);
+  clip-path: polygon(50% 0, 92% 76%, 8% 76%);
+  box-shadow: 0 22px 24px rgba(105, 135, 255, 0.18);
+}
+
+.sidebarNavPromoGlow {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 10px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(120, 163, 255, 0.24), rgba(120, 163, 255, 0.02));
+}
+
+.sidebarNavPromoCopy {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.sidebarNavPromoCopy strong {
+  color: #151c4e;
+  font-size: 14px;
+}
+
+.sidebarNavPromoCopy p {
+  margin: 0;
+  color: #7f85a6;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.sidebarNavPromoButton {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #655bff 0%, #564fe0 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 14px 22px rgba(94, 86, 255, 0.24);
+}
+
+.sidebarNavPromoButton:hover,
+.sidebarNavPromoButton:focus-visible {
+  transform: translateY(-1px);
+}
+
+.sidebarNavAccount {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 6px;
+}
+
+.sidebarNavAvatar {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #ffd8e6 0%, #f8c2d5 100%);
+  color: #4e2d41;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.sidebarNavAvatarGuest {
+  background: linear-gradient(145deg, #e7ebff 0%, #d5dcff 100%);
+  color: #5760cc;
+}
+
+.sidebarNavAccountText {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.sidebarNavAccountText strong {
+  font-size: 14px;
+  color: #171d4d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebarNavAccountText span {
+  font-size: 12px;
+  color: #8a90ae;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebarNavAccountAction {
+  margin: 0;
+}
+
+.sidebarNavActionButton {
+  display: inline-flex;
+  min-width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(144, 148, 170, 0.12);
+  color: #787d97;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sidebarNavActionButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sidebarNavActionButton:hover,
+.sidebarNavActionButton:focus-visible {
+  background: rgba(97, 92, 255, 0.12);
+  color: #5f57ff;
+}
+
+@media (max-width: 1100px) {
+  .dashboardShellInner {
+    padding: 84px 20px 20px;
+  }
+
+  .dashboardDrawer {
+    left: 16px;
+    top: 72px;
+    width: min(252px, calc(100vw - 32px));
+  }
+}
+
+@media (max-width: 720px) {
+  .dashboardDrawer {
+    padding: 20px 14px 16px;
+  }
+
+  .sidebarNavBrandText strong {
+    font-size: 17px;
+  }
+
+  .sidebarNavPromoVisual {
+    height: 126px;
+  }
+}
+
+.historyTableCard {
+  display: grid;
+  gap: 18px;
+}
+
+.historyTableEmpty {
+  margin: 0;
+  padding: 6px 4px 2px;
+}
+
+.historyTable {
+  display: grid;
+  gap: 14px;
+}
+
+.historyTableHeader,
+.historyTableRow {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(180px, 1.3fr) minmax(120px, 0.9fr) minmax(90px, 0.75fr) auto;
+  align-items: center;
+  column-gap: 16px;
+}
+
+.historyTableHeader {
+  padding: 0 18px;
+  color: #8f95b1;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.historyTableBody {
+  display: grid;
+  gap: 12px;
+}
+
+.historyTableRow {
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(97, 92, 255, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 16px 28px rgba(31, 36, 79, 0.06);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.historyTableRow:hover {
+  transform: translateY(-1px);
+  border-color: rgba(97, 92, 255, 0.18);
+  box-shadow: 0 22px 34px rgba(31, 36, 79, 0.1);
+}
+
+.historyReportCell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.historyAvatar {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #e8ecff 0%, #d8defe 100%);
+  color: #555de0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.historyReportText {
+  min-width: 0;
+}
+
+.historyReportTitle {
+  display: block;
+  color: #171d4d;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historyMetaCell {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.historyMetaLabel {
+  display: none;
+  color: #8f95b1;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.historyMetaValue {
+  color: #676e92;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.historyPriorityBadge,
+.historyPdfBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.historyPriorityBadge {
+  background: rgba(97, 92, 255, 0.1);
+  color: #5b54ff;
+}
+
+.historyPdfBadge {
+  background: rgba(5, 150, 105, 0.1);
+  color: #0d8a63;
+}
+
+.historyActionCell {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.historyRowAction {
+  min-width: 98px;
+  justify-content: center;
+  border-radius: 14px;
+  padding-inline: 16px;
+  background: rgba(246, 248, 255, 0.95);
+}
+
+.historyRowAction:hover,
+.historyRowAction:focus-visible {
+  border-color: rgba(97, 92, 255, 0.22);
+  color: #5b54ff;
+}
+
+@media (max-width: 960px) {
+  .historyTableHeader {
+    display: none;
+  }
+
+  .historyTableRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "report report"
+      "saved priority"
+      "pdf action";
+    row-gap: 14px;
+  }
+
+  .historyReportCell {
+    grid-area: report;
+  }
+
+  .historyMetaCellSaved {
+    grid-area: saved;
+  }
+
+  .historyMetaCellPriority {
+    grid-area: priority;
+  }
+
+  .historyMetaCellPdf {
+    grid-area: pdf;
+  }
+
+  .historyActionCell {
+    grid-area: action;
+    align-self: end;
+  }
+
+  .historyMetaLabel {
+    display: block;
+  }
+}
+
+@media (max-width: 640px) {
+  .historyTableRow {
+    padding: 14px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "report"
+      "saved"
+      "priority"
+      "pdf"
+      "action";
+  }
+
+  .historyActionCell {
+    justify-content: flex-start;
+  }
+
+  .historyRowAction {
+    width: 100%;
+  }
+
+  .historyMetaValue,
+  .historyReportTitle {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}

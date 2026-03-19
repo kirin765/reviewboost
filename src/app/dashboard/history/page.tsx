@@ -1,9 +1,10 @@
+import React from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-type AnalysisRow = {
+type HistoryAnalysisRow = {
   id: string;
   created_at: string;
   input_filename: string | null;
@@ -16,6 +17,43 @@ type AnalysisRow = {
     [key: string]: unknown;
   } | null;
 };
+
+type SavedReportListItem = {
+  id: string;
+  title: string;
+  createdLabel: string;
+  priorityLabel: string;
+  pdfStatusLabel: "Ready";
+  href: string;
+  avatarText: string;
+};
+
+function formatSavedAt(value: string) {
+  return new Date(value).toLocaleString("ko-KR");
+}
+
+function formatSavedDate(value: string) {
+  return new Date(value).toLocaleDateString("ko-KR");
+}
+
+function getAvatarText(filename: string | null) {
+  const base = (filename ?? "").replace(/\.[^.]+$/, "").trim();
+  const characters = Array.from(base).filter((character) => /[A-Za-z0-9가-힣]/.test(character));
+  if (characters.length === 0) return "RB";
+  return characters.slice(0, 2).join("").toUpperCase();
+}
+
+function mapSavedReportListItem(row: HistoryAnalysisRow): SavedReportListItem {
+  return {
+    id: row.id,
+    title: row.input_filename ?? "CSV",
+    createdLabel: formatSavedAt(row.created_at),
+    priorityLabel: Number(row.priority_score ?? 0).toFixed(1),
+    pdfStatusLabel: "Ready",
+    href: `/dashboard/analysis/${row.id}`,
+    avatarText: getAvatarText(row.input_filename)
+  };
+}
 
 export default async function HistoryPage() {
   let supabase: Awaited<ReturnType<typeof createSupabaseServerComponentClient>> | null = null;
@@ -73,9 +111,10 @@ export default async function HistoryPage() {
     );
   }
 
-  const rows = (data ?? []) as AnalysisRow[];
+  const rows = (data ?? []) as HistoryAnalysisRow[];
+  const items = rows.map(mapSavedReportListItem);
   const avgPriority = rows.length ? rows.reduce((sum, row) => sum + Number(row.priority_score ?? 0), 0) / rows.length : 0;
-  const latestCreated = rows[0] ? new Date(rows[0].created_at).toLocaleDateString("ko-KR") : "없음";
+  const latestCreated = rows[0] ? formatSavedDate(rows[0].created_at) : "없음";
 
   return (
     <main className="pageMain dashboardPageSurface">
@@ -84,7 +123,7 @@ export default async function HistoryPage() {
           <div>
             <p className="sectionEyebrow">Saved reports</p>
             <h1 className="dashboardPageTitle">내 분석 히스토리</h1>
-            <p className="dashboardPageLead">최근 50개까지의 저장된 분석을 카드형 목록으로 확인하고 PDF로 다시 내려받을 수 있습니다.</p>
+            <p className="dashboardPageLead">최근 50개까지의 저장된 분석을 빠르게 확인하고 상세 리포트로 바로 이동할 수 있습니다.</p>
           </div>
           <div className="actionRow">
             <a className="btn btnPrimary" href="/dashboard">
@@ -112,7 +151,7 @@ export default async function HistoryPage() {
         </div>
       </section>
 
-      <section className="card dashboardListCard">
+      <section className="card dashboardListCard historyTableCard">
         <div className="dashboardSubsectionHeader">
           <div>
             <p className="sectionEyebrow">Report list</p>
@@ -120,32 +159,52 @@ export default async function HistoryPage() {
           </div>
         </div>
 
-        {rows.length === 0 ? (
-          <p className="muted">저장된 분석이 없습니다. 먼저 대시보드에서 CSV를 분석해보세요.</p>
+        {items.length === 0 ? (
+          <p className="muted historyTableEmpty">저장된 분석이 없습니다. 먼저 대시보드에서 CSV를 분석해보세요.</p>
         ) : (
-          <div className="dashboardList">
-            {rows.map((row) => {
-              const total = row.stats?.total ?? "-";
-              const negativeRatio = typeof row.stats?.negativeRatio === "number" ? `${Math.round(row.stats.negativeRatio * 100)}%` : "-";
-              const created = new Date(row.created_at).toLocaleString("ko-KR");
-              return (
-                <div className="dashboardListRow row" key={row.id}>
-                  <div className="left">
-                    <div className="rowTitle">{row.input_filename ?? "CSV"}</div>
-                    <div className="hint historyMeta dashboardListMeta">{created} · 리뷰 {total} · 부정 {negativeRatio}</div>
+          <div className="historyTable" role="table" aria-label="저장된 리포트 목록">
+            <div className="historyTableHeader" role="row">
+              <span>Report</span>
+              <span>Saved at</span>
+              <span>Priority</span>
+              <span>PDF</span>
+              <span aria-hidden="true" />
+            </div>
+            <div className="historyTableBody">
+              {items.map((item) => (
+                <article className="historyTableRow" key={item.id}>
+                  <div className="historyReportCell">
+                    <span className="historyAvatar" aria-hidden="true">
+                      {item.avatarText}
+                    </span>
+                    <div className="historyReportText">
+                      <strong className="historyReportTitle">{item.title}</strong>
+                    </div>
                   </div>
-                  <div className="rowActions dashboardListActions">
-                    <span className="pill">우선순위 {Number(row.priority_score ?? 0).toFixed(1)}</span>
-                    <a className="btn" href={`/dashboard/analysis/${row.id}`}>
-                      보기
-                    </a>
-                    <a className="btn" href={`/api/report/${row.id}`}>
-                      PDF
+
+                  <div className="historyMetaCell historyMetaCellSaved">
+                    <span className="historyMetaLabel">Saved at</span>
+                    <span className="historyMetaValue">{item.createdLabel}</span>
+                  </div>
+
+                  <div className="historyMetaCell historyMetaCellPriority">
+                    <span className="historyMetaLabel">Priority</span>
+                    <span className="historyPriorityBadge">Priority {item.priorityLabel}</span>
+                  </div>
+
+                  <div className="historyMetaCell historyMetaCellPdf">
+                    <span className="historyMetaLabel">PDF</span>
+                    <span className="historyPdfBadge">{item.pdfStatusLabel}</span>
+                  </div>
+
+                  <div className="historyActionCell">
+                    <a className="btn historyRowAction" href={item.href}>
+                      상세 보기
                     </a>
                   </div>
-                </div>
-              );
-            })}
+                </article>
+              ))}
+            </div>
           </div>
         )}
       </section>

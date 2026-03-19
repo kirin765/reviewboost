@@ -1,13 +1,12 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import Script from "next/script";
-import { getCapabilitiesBase } from "@/lib/capabilities";
-import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
-import { signOutAction } from "@/app/(auth)/actions";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { planLabel, resolvePlanTierForUser, type PlanTier } from "@/lib/plan";
+import SidebarNav from "@/components/navigation/SidebarNav";
+import { planLabel } from "@/lib/plan";
+import { getNavigationSessionState } from "@/lib/navigation_session";
 import { paddleBrowserEnv, paddleBrowserToken } from "@/lib/paddle";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -70,22 +69,8 @@ const paddleToken = paddleBrowserToken();
 const paddleEnvForClient = paddleBrowserEnv();
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const { supabaseConfigured } = getCapabilitiesBase();
-  let email: string | null = null;
-  let userId: string | null = null;
-  let plan: PlanTier = "free";
-  try {
-    if (supabaseConfigured) {
-      const supabase = await createSupabaseServerComponentClient();
-      const { data } = await supabase.auth.getUser();
-      email = data.user?.email ?? null;
-      userId = data.user?.id ?? null;
-      plan = await resolvePlanTierForUser({ userId, email });
-    }
-  } catch {
-    // Supabase env missing: keep header minimal.
-  }
-  const planText = planLabel(plan);
+  const session = await getNavigationSessionState();
+  const planText = planLabel(session.plan);
 
   return (
     <html lang="ko">
@@ -129,109 +114,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AnalyticsQueryEvents />
           <div className="appShell">
             <aside className="leftNav appSidebar" aria-label="주요 메뉴">
-              <a className="appSidebarBrand" href="/">
-                <span className="appBrandMark" aria-hidden="true">
-                  <span className="appBrandMarkDot" />
-                  <span className="appBrandMarkLine appBrandMarkLineOne" />
-                  <span className="appBrandMarkLine appBrandMarkLineTwo" />
-                </span>
-                <span className="appBrandText">
-                  <strong>ReviewBoost</strong>
-                  <small>AI review ops dashboard</small>
-                </span>
-              </a>
-
-              <div className="appSidebarSection">
-                <p className="appSidebarEyebrow">Workspace</p>
-                <nav aria-label="주요 메뉴">
-                  <ul className="appNavList">
-                    <li>
-                      <a className="appNavLink" href="/dashboard">
-                        <span className="appNavIndex">01</span>
-                        <span className="appNavCopy">
-                          <strong>분석하기</strong>
-                          <small>CSV 업로드와 결과 확인</small>
-                        </span>
-                      </a>
-                    </li>
-                    <li>
-                      <a className="appNavLink" href="/pricing">
-                        <span className="appNavIndex">02</span>
-                        <span className="appNavCopy">
-                          <strong>요금제</strong>
-                          <small>플랜과 기능 비교</small>
-                        </span>
-                      </a>
-                    </li>
-                    <li>
-                      <a className="appNavLink" href="/help">
-                        <span className="appNavIndex">03</span>
-                        <span className="appNavCopy">
-                          <strong>사용법</strong>
-                          <small>업로드와 열 매핑 가이드</small>
-                        </span>
-                      </a>
-                    </li>
-                    {!email ? (
-                      <li>
-                        <a className="appNavLink" href="/login">
-                          <span className="appNavIndex">04</span>
-                          <span className="appNavCopy">
-                            <strong>로그인</strong>
-                            <small>저장 기능과 계정 관리</small>
-                          </span>
-                        </a>
-                      </li>
-                    ) : null}
-                  </ul>
-                </nav>
-              </div>
-
-              <div className="appSidebarSection appSidebarPlanCard">
-                <div className="appSidebarPlanHeader">
-                  <span
-                    className={`leftNavBadge appPlanBadge ${
-                      plan === "free" ? "badgeWarning" : plan === "basic" ? "badgePrimary" : "badgeSuccess"
-                    }`}
-                    title={`현재 플랜: ${planText}`}
-                  >
-                    {planText}
-                  </span>
-                  <span className="appSidebarPlanMeta">{email ? "로그인된 워크스페이스" : "게스트 워크스페이스"}</span>
-                </div>
-                <p className="appSidebarPlanCopy">
-                  리뷰 업로드, 결과 저장, PDF 공유를 현재 플랜과 로그인 상태에 맞춰 운영할 수 있습니다.
-                </p>
-                <div className="appSidebarActionStack">
-                  {plan !== "pro" ? (
-                    <a className="leftNavButton appSidebarButton primary" href="/pricing">
-                      업그레이드
-                    </a>
-                  ) : null}
-                  <a className="leftNavButton appSidebarButton" href="/dashboard">
-                    분석 워크스페이스 열기
-                  </a>
-                  {email ? (
-                    <>
-                      <a className="leftNavButton appSidebarButton" href="/dashboard/history">
-                        저장된 리포트
-                      </a>
-                      <span className="appSidebarEmail" title={email}>
-                        {email}
-                      </span>
-                      <form action={signOutAction} className="leftNavForm appSidebarForm">
-                        <button className="leftNavButton appSidebarButton" type="submit">
-                          로그아웃
-                        </button>
-                      </form>
-                    </>
-                  ) : (
-                    <a className="leftNavButton appSidebarButton" href="/signup">
-                      계정 만들기
-                    </a>
-                  )}
-                </div>
-              </div>
+              <SidebarNav variant="app" plan={session.plan} userEmail={session.userEmail} />
             </aside>
 
             <div className="container appContainer">
