@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { AnalysisPipelineOutput } from "@/lib/analysis_pipeline";
 import { POST } from "./route";
 
 const mocks = vi.hoisted(() => ({
@@ -55,7 +56,7 @@ vi.mock("@/lib/api_log", () => ({
   logApiError: mocks.logApiError
 }));
 
-function runResponsePayload() {
+function runResponsePayload(): AnalysisPipelineOutput {
   return {
     payload: {
       stats: {

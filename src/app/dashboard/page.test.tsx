@@ -4,6 +4,7 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { CsvPreview as CsvPreviewType } from "@/lib/csv";
+import type { DashboardAnalysisResult } from "@/lib/api/analysis";
 
 const previewData = {
   columns: ["content", "rating", "date"],
@@ -22,7 +23,7 @@ const previewData = {
   warnings: []
 };
 
-const analyzeResult = {
+const analyzeResult: DashboardAnalysisResult = {
   stats: {
     total: 12,
     positive: 7,
@@ -32,7 +33,14 @@ const analyzeResult = {
     negativeRatio: 0.17,
     avgRating: 4.4,
     negativeKeywordsTop10: [],
-    categoryCounts: {},
+    categoryCounts: {
+      배송: 1,
+      품질: 2,
+      가격: 0,
+      사용성: 0,
+      CS: 0,
+      기타: 0
+    },
     priorityScore: 54.2,
     recentness: {
       hasDates: true,
@@ -51,7 +59,7 @@ const analyzeResult = {
   priorityMatrix: [],
   ratingSimulation: { currentAvg: 4.7, scenarios: [] },
   actionItems: [],
-  topIssues: [],
+  classified: [],
   meta: {
     filename: "sample.csv",
     stored: false,
@@ -88,7 +96,7 @@ vi.mock("@/components/Dashboard/DashboardTabs", () => ({
   )
 }));
 
-vi.mock("@/components/Dashboard/DashboardAnalysisPanel", () => ({
+vi.mock("@/components/features/dashboard/AnalysisPanel", () => ({
   default: ({
     file,
     busy,
@@ -117,7 +125,7 @@ vi.mock("@/components/Dashboard/DashboardAnalysisPanel", () => ({
   )
 }));
 
-vi.mock("@/components/Dashboard/AnalysisResults", () => ({
+vi.mock("@/components/features/dashboard/AnalysisResults", () => ({
   default: () => <div>분석 결과 표시</div>
 }));
 

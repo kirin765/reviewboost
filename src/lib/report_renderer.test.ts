@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderReportPdf } from "./report_renderer";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { renderReportPdf, type ReportRenderInput } from "./report_renderer";
 import fs from "node:fs";
 
 const mocks = vi.hoisted(() => ({
@@ -17,7 +17,16 @@ vi.mock("@/lib/report_pdfkit", () => ({
   renderReportPdfBuffer: mocks.renderReportPdfBuffer
 }));
 
-const sampleInput = {
+const emptyCategoryCounts: ReportRenderInput["stats"]["categoryCounts"] = {
+  배송: 0,
+  품질: 0,
+  가격: 0,
+  사용성: 0,
+  CS: 0,
+  기타: 0
+};
+
+const sampleInput: ReportRenderInput = {
   html: "<html><body>ok</body></html>",
   title: "ReviewBoost 요약 리포트",
   stats: {
@@ -29,7 +38,7 @@ const sampleInput = {
     negativeRatio: 0,
     avgRating: 4.2,
     negativeKeywordsTop10: [],
-    categoryCounts: {},
+    categoryCounts: emptyCategoryCounts,
     priorityScore: 1,
     recentness: { hasDates: false, last30Share: 0, last90Share: 0, last30NegativeRatio: null }
   },
@@ -130,16 +139,14 @@ describe("report_renderer", () => {
     existsSpy.mockRestore();
   });
 
-  it("adds launch troubleshooting hint when Puppeteer fails to launch", async () => {
+  it("keeps launch troubleshooting hint when Puppeteer falls back to PDFKit", async () => {
     process.env.PUPPETEER_MAX_RETRIES = "0";
     mocks.launch.mockRejectedValueOnce(new Error("puppeteer failed"));
 
     const result = await renderReportPdf(sampleInput);
 
-    expect(result).toMatchObject({ ok: false });
-    if (!result.ok) {
-      expect(result.puppeteerError).toContain("npx puppeteer browsers install chrome");
-    }
+    expect(result).toMatchObject({ ok: true, renderer: "pdfkit-fallback", fallbackReason: "puppeteer-failed" });
+    expect(result.allErrors.some((message) => message.includes("npx puppeteer browsers install chrome"))).toBe(true);
   });
 
   it("blocks PDFKit fallback in REQUIRE_PUPPETEER_STYLE mode", async () => {
