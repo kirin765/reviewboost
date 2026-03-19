@@ -6679,3 +6679,30 @@ body:has(.dashboardShell) .appContainer,
     text-overflow: clip;
   }
 }
+
+.resultsHeroStatsSingleColumn,
+.kpiRowSingleColumn,
+.digestGridSingleColumn,
+.analysisResultsGridSingleColumn,
+.priorityMatrixSingleColumn,
+.simulationGridSingleColumn {
+  grid-template-columns: 1fr;
+}
+
+.analysisResultsGridSingleColumn {
+  align-items: start;
+}
+
+.analysisResultsGridSingleColumn .analysisResultsCard,
+.analysisResultsGridSingleColumn .analysisResultsWide {
+  grid-column: 1 / -1;
+}
+
+.digestGridSingleColumn > *,
+.resultsHeroStatsSingleColumn .resultsHeroStat,
+.kpiRowSingleColumn .kpiCard,
+.priorityMatrixSingleColumn .quadrant,
+.simulationGridSingleColumn .simulationCard {
+  min-width: 0;
+  width: 100%;
+}

@@ -73,18 +73,18 @@ export default function AnalysisResultDigest({ result }: { result: Pick<Analysis
         올라갑니다.
       </p>
 
-      <div className="grid digestGrid">
+      <div className="grid digestGrid digestGridSingleColumn">
         <AnalysisListSection title="부정 키워드 TOP10" items={items.negativeKeywords} emptyMessage="부정 키워드를 찾지 못했습니다." />
         <AnalysisListSection title="문제 카테고리" items={items.categoryEntries} emptyMessage="카테고리가 없습니다." />
       </div>
 
-      <div className="grid digestGrid">
+      <div className="grid digestGrid digestGridSingleColumn">
         <AnalysisListSection title="개선 제안: 상세페이지 문구" items={items.detailPageCopy} emptyMessage="개선 제안이 없습니다." />
         <AnalysisListSection title="개선 제안: CS/FAQ" items={items.csAndFaq} emptyMessage="개선 제안이 없습니다." />
       </div>
 
       {items.notes.length > 0 ? (
-        <div className="grid digestGrid">
+        <div className="grid digestGrid digestGridSingleColumn">
           <AnalysisListSection title="메모" items={items.notes} emptyMessage="메모가 없습니다." />
         </div>
       ) : null}

@@ -71,7 +71,7 @@ export default function AnalysisResults({ result, caps, busy, onDownloadPdf }: A
 
       <AnalysisResultDigest result={result} />
 
-      <section className="analysisResultsGrid">
+      <section className="analysisResultsGrid analysisResultsGridSingleColumn">
         <UrgentReviewsSection result={result} gates={{ urgentReviewVisibleCount: gates.urgentReviewVisibleCount }} />
         <PriorityMatrixSection result={result} gates={{ showPriorityActionSummary: gates.showPriorityActionSummary }} />
         <RatingSimulationSection result={result} />

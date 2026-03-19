@@ -1,3 +1,4 @@
+import React from "react";
 import type { AnalysisOutput } from "@/lib/types";
 import type { Capabilities } from "@/lib/capabilities";
 import type { PlanGates } from "@/lib/types";
@@ -69,7 +70,7 @@ export function AnalysisResultsSummary({ result, onDownloadPdf, busy, caps, gate
         </div>
       </div>
 
-      <div className="resultsHeroStats">
+      <div className="resultsHeroStats resultsHeroStatsSingleColumn">
         {summaryStats.map((stat) => (
           <article className="resultsHeroStat" key={stat.label}>
             <span className="resultsHeroStatLabel">{stat.label}</span>
