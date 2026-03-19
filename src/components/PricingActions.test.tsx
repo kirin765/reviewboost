@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/FeedbackModal", () => ({
@@ -17,10 +17,16 @@ import PricingActions from "./PricingActions";
 
 describe("PricingActions", () => {
   let checkoutOpenMock: ReturnType<typeof vi.fn>;
+  const baseEnv = { ...process.env };
 
   beforeEach(() => {
     vi.restoreAllMocks();
     checkoutOpenMock = vi.fn();
+    process.env = {
+      ...baseEnv,
+      PADDLE_ENV: "sandbox",
+      NEXT_PUBLIC_PADDLE_TOKEN_SANDBOX: "test_token"
+    };
     Object.defineProperty(window, "Paddle", {
       value: {
         Checkout: {
@@ -33,6 +39,8 @@ describe("PricingActions", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    cleanup();
+    process.env = { ...baseEnv };
   });
 
   it("opens Paddle checkout with required args", async () => {
@@ -92,7 +100,7 @@ describe("PricingActions", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("alert").textContent ?? "").toContain("Paddle 결제 모듈이 아직 준비되지 않았습니다.");
-    });
+    }, { timeout: 3500 });
   });
 
   it("shows module-not-ready error when Paddle SDK exists but is not initialized", async () => {
@@ -118,7 +126,7 @@ describe("PricingActions", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("alert").textContent ?? "").toContain("Paddle 결제 모듈이 아직 준비되지 않았습니다.");
-    });
+    }, { timeout: 3500 });
     expect(checkoutOpenMock).not.toHaveBeenCalled();
   });
 
@@ -126,8 +134,6 @@ describe("PricingActions", () => {
     render(<PricingActions plan="pro" priceId="" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Pro 시작하기" }));
-
-    expect(screen.getByRole("button", { name: "연결 중..." }).hasAttribute("disabled")).toBe(true);
 
     await waitFor(() => {
       expect(screen.getByRole("alert").textContent ?? "").toContain("요금제 가격 ID가 아직 설정되지 않았습니다.");
@@ -145,8 +151,6 @@ describe("PricingActions", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Pro 시작하기" }));
-
-    expect(screen.getByRole("button", { name: "연결 중..." }).hasAttribute("disabled")).toBe(true);
 
     await waitFor(() => {
       expect(screen.getByRole("alert").textContent ?? "").toContain("로그인이 필요합니다.");

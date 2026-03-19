@@ -80,13 +80,10 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
     setLocalError(null);
     try {
       await actions.onAnalyze();
-      if (!state.result) {
-        setActiveTab("analysis");
-      }
     } catch (error: unknown) {
       setLocalError(getErrorMessage(error));
     }
-  }, [actions, state.file, state.result]);
+  }, [actions, state.file]);
 
   const handleDownloadPdf = useCallback(async () => {
     const blob = await actions.onDownloadPdf();

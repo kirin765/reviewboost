@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
+import type { AnalysisStats } from "@/types/review";
 import { renderReportHtml } from "./report_html";
 
-const baseStats = {
+const emptyCategoryCounts: AnalysisStats["categoryCounts"] = {
+  배송: 0,
+  품질: 0,
+  가격: 0,
+  사용성: 0,
+  CS: 0,
+  기타: 0
+};
+
+const baseStats: AnalysisStats = {
   total: 42,
   positive: 30,
   negative: 8,
@@ -14,6 +24,7 @@ const baseStats = {
     { keyword: "배송 느림", count: 5 }
   ],
   categoryCounts: {
+    ...emptyCategoryCounts,
     품질: 6,
     배송: 4,
     가격: 3
@@ -63,7 +74,7 @@ describe("renderReportHtml", () => {
       stats: {
         ...baseStats,
         negativeKeywordsTop10: [{ keyword: "핵심 & 핵심", count: 1 }, { keyword: "<bad>", count: 2 }],
-        categoryCounts: { "<cat>": 1 }
+        categoryCounts: { "<cat>": 1 } as unknown as AnalysisStats["categoryCounts"]
       },
       suggestions: {
         detailPageCopy: ["안전 <tag>"],
