@@ -9,6 +9,10 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard"
 }));
 
+vi.mock("@/app/(auth)/actions", () => ({
+  signOutAction: "/logout"
+}));
+
 vi.mock("next/link", () => ({
   default: (() => {
     type MockLinkProps = React.ComponentPropsWithoutRef<"a"> & { href: string };
@@ -78,13 +82,14 @@ describe("DashboardShell", () => {
 
   it("shows logout action when user is authenticated", () => {
     render(
-      <DashboardShell userEmail="tester@example.com">
+      <DashboardShell userEmail="tester@example.com" plan="basic">
         내용
       </DashboardShell>
     );
 
     expect(screen.getByRole("button", { name: "로그아웃" })).toBeTruthy();
-    expect(screen.getByText("tester@example.com")).toBeTruthy();
+    expect(screen.getByText("Tester")).toBeTruthy();
+    expect(screen.getByText("Basic Account")).toBeTruthy();
   });
 
   it("hides logout action when user is not authenticated", () => {

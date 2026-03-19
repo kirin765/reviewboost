@@ -1,17 +1,18 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { signOutAction } from "@/app/(auth)/actions";
+import SidebarNav from "@/components/navigation/SidebarNav";
+import type { PlanTier } from "@/types/user";
 
 type DashboardShellProps = {
   children: React.ReactNode;
   userEmail?: string | null;
+  plan?: PlanTier;
 };
 
-export default function DashboardShell({ children, userEmail = null }: DashboardShellProps) {
+export default function DashboardShell({ children, userEmail = null, plan = "free" }: DashboardShellProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -75,32 +76,11 @@ export default function DashboardShell({ children, userEmail = null }: Dashboard
     }
   }, [open]);
 
-  const navItems = useMemo(
-    () => [
-      {
-        href: "/dashboard",
-        label: "분석하기",
-        description: "CSV 업로드와 결과 워크플로"
-      },
-      {
-        href: "/dashboard/history",
-        label: "저장된 리포트",
-        description: "이전 분석 결과와 PDF 다시 보기"
-      }
-    ],
-    []
-  );
-
   const currentArea = useMemo(() => {
     if (pathname.startsWith("/dashboard/history")) return "History";
     if (pathname.startsWith("/dashboard/analysis/")) return "Saved report";
     return "Analysis";
   }, [pathname]);
-
-  const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard";
-    return pathname.startsWith(href);
-  };
 
   return (
     <section className={`dashboardShell ${open ? "isOpen" : "isClosed"}`}>
@@ -118,63 +98,17 @@ export default function DashboardShell({ children, userEmail = null }: Dashboard
         </button>
 
         <aside id="dashboardDrawer" className="dashboardDrawer" aria-label="대시보드 탐색" aria-hidden={!open}>
-          <a className="dashboardBrand" href="/dashboard">
-            <span className="dashboardBrandMark" aria-hidden="true">
-              <span className="dashboardBrandDot" />
-              <span className="dashboardBrandLine dashboardBrandLineOne" />
-              <span className="dashboardBrandLine dashboardBrandLineTwo" />
-            </span>
-            <span>
-              <strong>ReviewBoost</strong>
-              <small>analysis workspace</small>
-            </span>
-          </a>
-
-          <div className="dashboardDrawerPanel">
-            <p className="dashboardDrawerEyebrow">Dashboard</p>
-            <nav aria-label="대시보드 메뉴">
-              <ul className="drawerNav">
-                {navItems.map((item, index) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={`drawerLink ${isActive(item.href) ? "drawerLinkActive" : ""}`}
-                      aria-current={isActive(item.href) ? "page" : undefined}
-                      ref={item.href === "/dashboard" ? drawerFirstLinkRef : null}
-                      onClick={() => {
-                        if (isMobile) {
-                          setOpen(false);
-                        }
-                      }}
-                    >
-                      <span className="drawerLinkIndex">0{index + 1}</span>
-                      <span>
-                        <strong>{item.label}</strong>
-                        <small>{item.description}</small>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </div>
-
-          <div className="dashboardDrawerInfo">
-            <p>리뷰 업로드, 열 매핑, 실행 결과, 공유 리포트를 한 흐름으로 관리합니다.</p>
-          </div>
-
-          {userEmail ? (
-            <div className="dashboardDrawerActionStack">
-              <span className="dashboardDrawerEmail" title={userEmail}>
-                {userEmail}
-              </span>
-              <form className="dashboardDrawerAction" action={signOutAction}>
-                <button className="dashboardDrawerSignOut" type="submit" aria-label="로그아웃">
-                  로그아웃
-                </button>
-              </form>
-            </div>
-          ) : null}
+          <SidebarNav
+            variant="dashboard"
+            plan={plan}
+            userEmail={userEmail}
+            firstLinkRef={drawerFirstLinkRef}
+            onNavigate={() => {
+              if (isMobile) {
+                setOpen(false);
+              }
+            }}
+          />
         </aside>
 
         <button
