@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "사용법 - ReviewBoost CSV 업로드 & 리뷰 분석 가이드",
+  description: "ReviewBoost 사용법을 단계별로 안내합니다. CSV 준비, 열 매핑, AI 분석, PDF 리포트 다운로드까지 2분이면 시작할 수 있습니다.",
+  alternates: { canonical: "/help" }
+};
+
 export default function HelpPage() {
   return (
     <main className="pageMain pageTop">
