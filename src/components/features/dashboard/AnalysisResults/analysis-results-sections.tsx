@@ -1,3 +1,4 @@
+import React from "react";
 import type { AnalysisOutput } from "@/lib/types";
 import PlanGate from "@/components/PlanGate";
 import BlurGate from "@/components/BlurGate";
@@ -53,7 +54,7 @@ export function PriorityMatrixSection({ result, gates }: { result: AnalysisOutpu
       <p className="hint analysisResultsSectionHint">
         카테고리별 빈도와 영향도로 개선 우선순위를 분류합니다.
       </p>
-      <div className="priorityMatrix">
+      <div className="priorityMatrix priorityMatrixSingleColumn">
         {result.priorityMatrix.map((pm: PriorityMatrix, idx) => (
           <div className={`quadrant ${pm.quadrant}`} key={idx}>
             <div className="quadrantTitle">
@@ -85,7 +86,7 @@ export function RatingSimulationSection({ result }: { result: AnalysisOutput }) 
         <p className="hint analysisResultsSectionHint">
           부정 리뷰 해결 시 예상되는 평균 별점 변화 (현재: {result.ratingSimulation.currentAvg.toFixed(2)}점)
         </p>
-        <div className="simulationGrid">
+        <div className="simulationGrid simulationGridSingleColumn">
           {result.ratingSimulation.scenarios.map((sc, idx) => (
             <div className="simulationCard" key={idx}>
               <div className="simulationLabel">{sc.label}</div>

@@ -41,11 +41,12 @@ const mockResult = {
 
 describe("AnalysisResultDigest", () => {
   it("renders digest cards and list sections", () => {
-    render(<AnalysisResultDigest result={mockResult} />);
+    const { container } = render(<AnalysisResultDigest result={mockResult} />);
 
     expect(screen.getByRole("heading", { level: 2, name: "부정 키워드 TOP10" })).toBeTruthy();
     expect(screen.getByRole("heading", { level: 2, name: "문제 카테고리" })).toBeTruthy();
     expect(screen.getByText("지연")).toBeTruthy();
     expect(screen.getByRole("heading", { level: 2, name: "개선 제안: 상세페이지 문구" })).toBeTruthy();
+    expect(container.querySelectorAll(".digestGridSingleColumn")).toHaveLength(3);
   });
 });

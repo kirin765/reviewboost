@@ -5,7 +5,7 @@ export default function AnalysisKpiGrid({ stats, includeRecentness = false }: { 
   const last30 = stats.recentness?.hasDates ? `${Math.round((stats.recentness.last30Share ?? 0) * 100)}%` : null;
 
   return (
-    <div className="kpiRow">
+    <div className="kpiRow kpiRowSingleColumn">
       <div className="kpiCard kpiCardPrimary" aria-label="리뷰 수 지표">
         <div className="label">리뷰 수</div>
         <div className="value">{stats.total}</div>

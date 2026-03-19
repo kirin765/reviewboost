@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { useGates } from "@/contexts/PlanContext";
 import type { ReactNode } from "react";
