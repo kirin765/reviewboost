@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import SidebarNav from "@/components/navigation/SidebarNav";
 import type { PlanTier } from "@/types/user";
+import { useTranslation } from "@/lib/i18n";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ type DashboardShellProps = {
 
 export default function DashboardShell({ children, userEmail = null, plan = "free" }: DashboardShellProps) {
   const pathname = usePathname();
+  const { locale } = useTranslation();
   const [open, setOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const hasMounted = useRef(false);
@@ -91,13 +93,13 @@ export default function DashboardShell({ children, userEmail = null, plan = "fre
           className="drawerToggle"
           aria-expanded={open}
           aria-controls="dashboardDrawer"
-          aria-label={open ? "사이드바 닫기" : "사이드바 펼치기"}
+          aria-label={open ? (locale === "en" ? "Close sidebar" : "사이드바 닫기") : (locale === "en" ? "Open sidebar" : "사이드바 펼치기")}
           onClick={() => setOpen((value) => !value)}
         >
           {open ? "Close" : "Menu"}
         </button>
 
-        <aside id="dashboardDrawer" className="dashboardDrawer" aria-label="대시보드 탐색" aria-hidden={!open}>
+        <aside id="dashboardDrawer" className="dashboardDrawer" aria-label={locale === "en" ? "Dashboard navigation" : "대시보드 탐색"} aria-hidden={!open}>
           <SidebarNav
             variant="dashboard"
             plan={plan}
@@ -124,7 +126,7 @@ export default function DashboardShell({ children, userEmail = null, plan = "fre
           }}
           hidden={!isMobile || !open}
           aria-hidden={!isMobile || !open}
-          aria-label="대시보드 내비게이션 닫기"
+          aria-label={locale === "en" ? "Close dashboard navigation" : "대시보드 내비게이션 닫기"}
           tabIndex={open ? -1 : -1}
         />
 
@@ -132,7 +134,7 @@ export default function DashboardShell({ children, userEmail = null, plan = "fre
           <div className="dashboardTopBar">
             <div>
               <a className="dashboardTopHome" href="/" onClick={() => setOpen(false)}>
-                메인 서비스로 이동
+                {locale === "en" ? "Go to main page" : "메인 서비스로 이동"}
               </a>
               <span className="dashboardTopHint">ReviewBoost workspace</span>
             </div>

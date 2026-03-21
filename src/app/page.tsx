@@ -1,7 +1,20 @@
-import FeedbackModal from "@/components/FeedbackModal";
+"use client";
 
-export default async function HomePage(props: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
-  const sp = (await props.searchParams) ?? {};
+import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import FeedbackModal from "@/components/FeedbackModal";
+import { useTranslation } from "@/lib/i18n";
+
+export default function HomePage() {
+  const searchParams = useSearchParams();
+  const { t } = useTranslation();
+
+  const sp = useMemo(() => {
+    const obj: Record<string, string> = {};
+    searchParams.forEach((v, k) => { obj[k] = v; });
+    return obj;
+  }, [searchParams]);
+
   const err = typeof sp.error === "string" ? sp.error : "";
   const errCode = typeof sp.error_code === "string" ? sp.error_code : "";
   const errDesc = typeof sp.error_description === "string" ? sp.error_description : "";
@@ -10,83 +23,82 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
   let errorMessage = err;
   let showResendOption = false;
   if (errCode === "otp_expired" || errDesc.includes("expired")) {
-    errorMessage = "이메일 인증 링크가 만료되었습니다. 다시 회원가입을 시도해주세요.";
+    errorMessage = t("home.otpExpired");
     showResendOption = true;
   } else if (errCode === "access_denied") {
-    errorMessage = "이메일 인증에 실패했습니다. 링크가 이미 사용되었거나 유효하지 않을 수 있습니다.";
+    errorMessage = t("home.accessDenied");
     showResendOption = true;
   } else if (errDesc) {
     errorMessage = errDesc.replace(/\+/g, " ");
   }
 
   const isErrorState = !!errorMessage;
-  const steps = ["CSV 업로드", "열 매핑", "자동 분석", "개선 결과 확인"];
+  const steps = [t("home.step1"), t("home.step2"), t("home.step3"), t("home.step4")];
   const signalCards = [
-    { label: "입력 포맷", value: "CSV", meta: "드래그 앤 드롭 또는 샘플 파일" },
-    { label: "분석 흐름", value: "4 step", meta: "업로드부터 PDF까지 한 화면" },
-    { label: "출력 방식", value: "Report", meta: "핵심 지표와 실행 액션 카드" },
-    { label: "공유 포맷", value: "PDF", meta: "저장 없이도 즉시 공유 가능" }
+    { label: t("home.signalInputFormat"), value: "CSV", meta: t("home.signalInputMeta") },
+    { label: t("home.signalFlow"), value: "4 step", meta: t("home.signalFlowMeta") },
+    { label: t("home.signalOutput"), value: "Report", meta: t("home.signalOutputMeta") },
+    { label: t("home.signalShare"), value: "PDF", meta: t("home.signalShareMeta") }
   ];
   const featureCards = [
     {
-      title: "정확한 분류",
-      body: "리뷰를 감정과 카테고리 기준으로 정렬해 가장 먼저 해결할 이슈를 드러냅니다.",
-      items: ["배송/품질/가격/사용성/CS 분류", "부정 키워드 TOP 정렬", "우선순위 점수 기반 실행 후보 추출"]
+      title: t("home.feature1Title"),
+      body: t("home.feature1Body"),
+      items: [t("home.feature1Item1"), t("home.feature1Item2"), t("home.feature1Item3")]
     },
     {
-      title: "바로 쓰는 제안",
-      body: "분석 결과를 그대로 복붙 가능한 문장과 대응안으로 변환합니다.",
-      items: ["상세페이지 문구 6개", "CS 응대 템플릿 4개", "FAQ 6개 제안"]
+      title: t("home.feature2Title"),
+      body: t("home.feature2Body"),
+      items: [t("home.feature2Item1"), t("home.feature2Item2"), t("home.feature2Item3")]
     },
     {
-      title: "리포트 중심 운영",
-      body: "팀 공유와 보고용 PDF, 저장 히스토리, 반복 분석 동선을 하나의 대시보드로 묶습니다.",
-      items: ["저장된 분석 재확인", "PDF 즉시 다운로드", "로그인 시 리포트 보관/관리"]
+      title: t("home.feature3Title"),
+      body: t("home.feature3Body"),
+      items: [t("home.feature3Item1"), t("home.feature3Item2"), t("home.feature3Item3")]
     }
   ];
+
+  const stepDescs = [t("home.stepDesc1"), t("home.stepDesc2"), t("home.stepDesc3"), t("home.stepDesc4")];
 
   return (
     <main className="pageMain marketingPage">
       {isErrorState ? (
         <div className="card errorCard">
-          <h2 className="errorTitle">인증 실패</h2>
+          <h2 className="errorTitle">{t("home.errorTitle")}</h2>
           <p className="errorMessage">{errorMessage}</p>
           {showResendOption ? (
             <div className="actionRow">
               <a className="btn btnPrimary" href="/signup">
-                다시 가입하기
+                {t("home.resendSignup")}
               </a>
               <a className="btn" href="/help">
-                도움말 보기
+                {t("home.viewHelp")}
               </a>
             </div>
           ) : null}
         </div>
       ) : null}
-      {!isErrorState && notice ? <FeedbackModal title="안내" message={notice} /> : null}
+      {!isErrorState && notice ? <FeedbackModal title={t("common.notice")} message={notice} /> : null}
 
       <section className="card marketingHero">
         <div className="marketingHeroCopy">
-          <p className="eyebrow">Review operations dashboard</p>
-          <h1 className="marketingTitle">리뷰를 업로드하면 우선순위와 실행 액션이 바로 정리됩니다.</h1>
-          <p className="marketingLead">
-            리뷰 CSV를 올리면 부정 리뷰를 분류하고, 카테고리별 이슈를 순위화해서 바로 적용 가능한 상세페이지 문구와 CS,
-            FAQ 제안까지 제공합니다.
-          </p>
+          <p className="eyebrow">{t("home.heroEyebrow")}</p>
+          <h1 className="marketingTitle">{t("home.heroTitle")}</h1>
+          <p className="marketingLead">{t("home.heroLead")}</p>
           <div className="actionRow actionRowLg">
             <a className="btn btnPrimary" href="/dashboard">
-              CSV 올리고 분석하기
+              {t("home.ctaAnalyze")}
             </a>
             <a className="btn btnGhost" href="/help">
-              사용법 보기
+              {t("home.ctaHelp")}
             </a>
             <a className="btn btnOutline" href="/sample.csv" download>
-              샘플 CSV 받기
+              {t("home.ctaSample")}
             </a>
           </div>
         </div>
 
-        <div className="marketingHeroPanel" aria-label="대시보드 신호 카드">
+        <div className="marketingHeroPanel" aria-label={t("home.dashboardSignal")}>
           <div className="marketingSignalGrid">
             {signalCards.map((card) => (
               <article className="marketingSignalCard" key={card.label}>
@@ -98,10 +110,10 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
           </div>
           <div className="marketingPreviewCard">
             <div className="marketingPreviewHeader">
-              <span className="marketingPreviewBadge">Live workflow</span>
-              <span className="marketingPreviewMuted">업로드부터 결과까지 1회 흐름</span>
+              <span className="marketingPreviewBadge">{t("home.previewBadge")}</span>
+              <span className="marketingPreviewMuted">{t("home.previewMuted")}</span>
             </div>
-            <div className="stepper marketingStepper" aria-label="진입 가이드">
+            <div className="stepper marketingStepper" aria-label={t("home.entryGuide")}>
               {steps.map((step, index) => (
                 <div className={`step ${index === 0 ? "active" : ""}`} key={step}>
                   <span className="stepNumber">{index + 1}</span>
@@ -113,17 +125,17 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
         </div>
       </section>
 
-      <section className="marketingTrustRow" aria-label="신뢰 포인트">
-        <span className="trustItem">업로드부터 결과까지 한 워크플로</span>
-        <span className="trustItem">분석 규칙 기반의 보수적 분류</span>
-        <span className="trustItem">PDF와 복붙용 문구 즉시 출력</span>
+      <section className="marketingTrustRow" aria-label="Trust points">
+        <span className="trustItem">{t("home.trust1")}</span>
+        <span className="trustItem">{t("home.trust2")}</span>
+        <span className="trustItem">{t("home.trust3")}</span>
       </section>
 
       <section className="card marketingSection">
         <div className="marketingSectionIntro">
-          <p className="sectionEyebrow">Core outcomes</p>
-          <h2>리뷰를 정리하는 데서 끝나지 않고, 바로 행동 가능한 결과로 연결합니다.</h2>
-          <p className="muted">CSV 업로드 한 번으로 분류, 키워드, 제안 문구까지 한 화면에서 확인할 수 있습니다.</p>
+          <p className="sectionEyebrow">{t("home.coreOutcomes")}</p>
+          <h2>{t("home.coreTitle")}</h2>
+          <p className="muted">{t("home.coreLead")}</p>
         </div>
         <div className="marketingFeatureGrid">
           {featureCards.map((feature) => (
@@ -145,24 +157,16 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
 
       <section className="card marketingSection">
         <div className="marketingSectionIntro">
-          <p className="sectionEyebrow">How it starts</p>
-          <h2>처음 사용자도 2분 안에 분석을 시작할 수 있습니다.</h2>
-          <p className="muted">가입 없이 분석을 먼저 체험하고, 필요할 때 저장 기능으로 확장합니다.</p>
+          <p className="sectionEyebrow">{t("home.howItStarts")}</p>
+          <h2>{t("home.howTitle")}</h2>
+          <p className="muted">{t("home.howLead")}</p>
         </div>
         <div className="marketingStepGrid">
           {steps.map((step, index) => (
             <article className="marketingStepCard" key={step}>
               <span className="marketingStepIndex">0{index + 1}</span>
               <h3>{step}</h3>
-              <p className="muted">
-                {index === 0
-                  ? "리뷰 CSV를 업로드하거나 샘플 파일로 바로 테스트합니다."
-                  : index === 1
-                    ? "리뷰 내용, 별점, 작성일 열을 빠르게 매핑합니다."
-                    : index === 2
-                      ? "AI가 부정 키워드, 카테고리, 우선순위를 계산합니다."
-                      : "핵심 지표, 액션 아이템, PDF 리포트로 결과를 확인합니다."}
-              </p>
+              <p className="muted">{stepDescs[index]}</p>
             </article>
           ))}
         </div>
@@ -170,18 +174,16 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
 
       <section className="card marketingCallout">
         <div>
-          <p className="sectionEyebrow">Start free</p>
-          <h2>가입이나 설정 없이도 분석은 바로 가능합니다.</h2>
-          <p className="muted">
-            CSV 헤더는 어떤 이름이어도 괜찮습니다. 업로드 후 화면에서 &quot;리뷰 내용/별점/작성일&quot; 열만 선택하면 됩니다.
-          </p>
+          <p className="sectionEyebrow">{t("home.startFree")}</p>
+          <h2>{t("home.ctaTitle")}</h2>
+          <p className="muted">{t("home.ctaLead")}</p>
         </div>
         <div className="actionRow">
           <a className="btn btnPrimary" href="/dashboard">
-            분석 시작하기
+            {t("home.ctaStart")}
           </a>
           <a className="btn btnOutline" href="/sample.csv" download>
-            샘플 CSV 다운로드
+            {t("home.ctaSampleDownload")}
           </a>
         </div>
       </section>

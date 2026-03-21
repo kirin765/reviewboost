@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useGates } from "@/contexts/PlanContext";
+import { useTranslation } from "@/lib/i18n";
 import type { ReactNode } from "react";
 
 type BlurGateProps = {
@@ -21,6 +22,7 @@ export default function BlurGate({
   requiredPlan = "basic",
 }: BlurGateProps) {
   const gates = useGates();
+  const { t } = useTranslation();
 
   const effectiveLimit =
     featureName === "부정 키워드"
@@ -48,13 +50,13 @@ export default function BlurGate({
       </div>
       <div className="blurGateOverlay">
         <div className="blurGateMessage">
-          {featureName} {effectiveLimit}개만 보기 가능
+          {t("gate.blurMessage", { feature: featureName, limit: effectiveLimit })}
         </div>
         <Link
           href="/pricing"
           className="btn btnSmall"
         >
-          전체 보기 ({totalCount - effectiveLimit}개 더)
+          {t("gate.showAll", { extra: totalCount - effectiveLimit })}
         </Link>
       </div>
     </div>
