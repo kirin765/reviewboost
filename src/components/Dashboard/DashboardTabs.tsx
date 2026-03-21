@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslation } from "@/lib/i18n";
 
 export type DashboardTab = "analysis" | "results";
 
@@ -11,6 +12,8 @@ export default function DashboardTabs({
   activeTab: DashboardTab;
   onChange: (tab: DashboardTab) => void;
 }) {
+  const { t } = useTranslation();
+
   function onKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
     const isNext = event.key === "ArrowRight" || event.key === "ArrowDown";
     const isPrev = event.key === "ArrowLeft" || event.key === "ArrowUp";
@@ -32,7 +35,7 @@ export default function DashboardTabs({
   }
 
   return (
-    <div className="dashboardTabs" role="tablist" aria-label="분석 단계 탭">
+    <div className="dashboardTabs" role="tablist" aria-label={t("tabs.ariaLabel")}>
       <button
         id="analysis-tab"
         type="button"
@@ -44,7 +47,7 @@ export default function DashboardTabs({
         onKeyDown={onKeyDown}
         onClick={() => onChange("analysis")}
       >
-        분석하기
+        {t("tabs.analysis")}
       </button>
       <button
         id="results-tab"
@@ -57,7 +60,7 @@ export default function DashboardTabs({
         onKeyDown={onKeyDown}
         onClick={() => onChange("results")}
       >
-        결과 보기
+        {t("tabs.results")}
       </button>
     </div>
   );

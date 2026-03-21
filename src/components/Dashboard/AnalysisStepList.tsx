@@ -1,24 +1,29 @@
+"use client";
+
 import React from "react";
+import { useTranslation } from "@/lib/i18n";
 
 type AnalysisStepperProps = {
   step: 1 | 2 | 3 | 4;
 };
 
-const steps: Array<{ n: 1 | 2 | 3 | 4; label: string; desc: string }> = [
-  { n: 1, label: "파일 선택", desc: "CSV 업로드" },
-  { n: 2, label: "열 매핑", desc: "텍스트/별점/작성일" },
-  { n: 3, label: "분석 진행", desc: "우선순위·액션 자동 산출" },
-  { n: 4, label: "결과 확인", desc: "리포트 다운로드" }
-];
-
 export default function AnalysisStepList({ step }: AnalysisStepperProps) {
+  const { t } = useTranslation();
+
+  const steps: Array<{ n: 1 | 2 | 3 | 4; labelKey: string; descKey: string }> = [
+    { n: 1, labelKey: "steps.fileSelect", descKey: "steps.fileSelectDesc" },
+    { n: 2, labelKey: "steps.columnMapping", descKey: "steps.columnMappingDesc" },
+    { n: 3, labelKey: "steps.analyzing", descKey: "steps.analyzingDesc" },
+    { n: 4, labelKey: "steps.results", descKey: "steps.resultsDesc" }
+  ];
+
   return (
-    <div className="stepper" role="list" aria-label="분석 단계">
+    <div className="stepper" role="list" aria-label={t("steps.ariaLabel")}>
       {steps.map((item, idx) => {
         const isDone = step > item.n;
         const isCurrent = step === item.n;
         return (
-          <React.Fragment key={item.label}>
+          <React.Fragment key={item.n}>
             {idx > 0 ? (
               <div className={`stepConnector ${step > item.n ? "stepConnectorDone" : step === item.n ? "stepConnectorActive" : ""}`} aria-hidden="true" />
             ) : null}
@@ -28,8 +33,8 @@ export default function AnalysisStepList({ step }: AnalysisStepperProps) {
             >
               <span className="stepNumber">{isDone ? "\u2713" : item.n}</span>
               <span className="stepBody">
-                <span className="stepTitle">{item.label}</span>
-                <span className="stepDesc">{item.desc}</span>
+                <span className="stepTitle">{t(item.labelKey)}</span>
+                <span className="stepDesc">{t(item.descKey)}</span>
               </span>
             </div>
           </React.Fragment>
@@ -38,4 +43,3 @@ export default function AnalysisStepList({ step }: AnalysisStepperProps) {
     </div>
   );
 }
-
