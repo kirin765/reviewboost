@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import type { DragEvent } from "react";
 import Button from "@/components/ui/Button";
+import { useTranslation } from "@/lib/i18n";
 
 interface FileUploaderProps {
   file: File | null;
@@ -25,6 +26,7 @@ export default function FileUploader({
 }: FileUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const { t } = useTranslation();
 
   function onDropFile(e: DragEvent<HTMLLabelElement>) {
     e.preventDefault();
@@ -40,7 +42,7 @@ export default function FileUploader({
 
   return (
     <div className="uploadBlock">
-      <p className="heroLead">리뷰 CSV 업로드를 먼저 진행한 뒤 바로 미리보기를 확인하세요.</p>
+      <p className="heroLead">{t("upload.lead")}</p>
 
       <label
         htmlFor="dashboardCsvInput"
@@ -50,15 +52,15 @@ export default function FileUploader({
         onDragEnter={() => setDragActive(true)}
         onDragLeave={() => setDragActive(false)}
         role="button"
-        aria-label="CSV 파일 업로드 영역"
+        aria-label={t("upload.csvFileUploadArea")}
       >
         <svg className="dropZoneIcon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="17 8 12 3 7 8" />
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
-        <p className="dropZoneText">클릭 또는 파일을 이곳에 드롭하세요</p>
-        <p className="hint">지원 형식: .csv</p>
+        <p className="dropZoneText">{t("upload.dropzone")}</p>
+        <p className="hint">{t("upload.hint")}</p>
       </label>
 
       <input
@@ -67,7 +69,7 @@ export default function FileUploader({
         className="input"
         type="file"
         accept=".csv,text/csv"
-        aria-label="CSV 파일 업로드"
+        aria-label={t("upload.csvFileUpload")}
         onChange={(e) => {
           const f = e.target.files?.[0] ?? null;
           onFileSelect(f);
@@ -78,20 +80,20 @@ export default function FileUploader({
 
       <div className="actionRow">
         <Button variant="ghost" onClick={onSample} disabled={busy}>
-          샘플로 테스트
+          {t("upload.sampleTest")}
         </Button>
         <Button onClick={onReset} disabled={busy}>
-          새로 시작
+          {t("upload.restart")}
         </Button>
       </div>
 
       <div className="uploadStatus" role="status" aria-live="polite">
         {file ? (
           <span>
-            선택됨: <code>{file.name}</code> ({Math.round(file.size / 1024)} KB)
+            {t("upload.selected")} <code>{file.name}</code> ({Math.round(file.size / 1024)} KB)
           </span>
         ) : (
-          <span>아직 파일이 선택되지 않았습니다.</span>
+          <span>{t("upload.noFileSelected")}</span>
         )}
       </div>
 
@@ -100,14 +102,14 @@ export default function FileUploader({
           {busy ? (
             <>
               <span className="spinner" aria-hidden="true" />
-              {preview ? "분석 중..." : "미리보기 준비 중..."}
+              {preview ? t("common.analyzing") : t("common.preparingPreview")}
             </>
-          ) : preview ? "분석 시작" : "다음: 미리보기"}
+          ) : preview ? t("common.startAnalysis") : t("common.nextPreview")}
         </Button>
       </div>
 
       {busy ? (
-        <div className="loadingBar" role="progressbar" aria-label="처리 중">
+        <div className="loadingBar" role="progressbar" aria-label={t("upload.processing")}>
           <div className="loadingBarFill" />
         </div>
       ) : null}

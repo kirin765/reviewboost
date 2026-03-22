@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useGates } from "@/contexts/PlanContext";
+import { useTranslation } from "@/lib/i18n";
 import type { ReactNode } from "react";
 
 type PlanGateProps = {
@@ -13,6 +14,7 @@ type PlanGateProps = {
 
 export default function PlanGate({ children, requiredPlan, featureName }: PlanGateProps) {
   const gates = useGates();
+  const { t } = useTranslation();
 
   const hasAccess =
     requiredPlan === "pro"
@@ -23,19 +25,20 @@ export default function PlanGate({ children, requiredPlan, featureName }: PlanGa
     return <>{children}</>;
   }
 
+  const planLabel = requiredPlan === "pro" ? "Pro" : "Basic";
+
   return (
     <div className="planGate">
       <div className="planGateContent">{children}</div>
       <div className="planGateOverlay">
         <div className="planGateMessage">
-          {featureName}은(는) <strong>{requiredPlan === "pro" ? "Pro" : "Basic"}</strong> 이상에서
-          제공됩니다
+          {t("gate.planRequired", { feature: featureName, plan: planLabel })}
         </div>
         <Link
           href="/pricing"
           className="btn btnPrimary btnSmall"
         >
-          업그레이드하기
+          {t("gate.upgrade")}
         </Link>
       </div>
     </div>

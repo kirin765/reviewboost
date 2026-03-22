@@ -11,16 +11,18 @@ import DashboardAnalysisPanel from "@/components/features/dashboard/AnalysisPane
 import { useReviewAnalysis } from "@/hooks/useReviewAnalysis";
 import { fetchCapabilities } from "@/lib/api/user";
 import { getErrorMessage } from "@/types/common";
+import { useTranslation } from "@/lib/i18n";
 
 const LazyAnalysisResults = dynamic(async () => import("@/components/features/dashboard/AnalysisResults"), {
   ssr: false,
-  loading: () => <p className="muted">분석 결과를 불러오는 중입니다...</p>
+  loading: () => <p className="muted">...</p>
 });
 
 function DashboardContent({ caps }: { caps: Capabilities | null }) {
   const [activeTab, setActiveTab] = useState<DashboardTab>("analysis");
   const [localError, setLocalError] = useState<string | null>(null);
   const [analysisDoneNotice, setAnalysisDoneNotice] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const { state, actions, modal } = useReviewAnalysis({
     onNotice: setAnalysisDoneNotice
@@ -33,17 +35,17 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
     if (!state.result) return;
 
     if (state.result.stats.total === 0) {
-      setAnalysisDoneNotice("분석 결과가 없습니다. 데이터 행을 확인해주세요.");
+      setAnalysisDoneNotice(t("dashboard.noResults"));
       return;
     }
 
     if (!caps?.supabaseConfigured) {
-      setAnalysisDoneNotice("분석이 완료되었습니다. 저장 기능이 비활성 상태여서 PDF로만 보관 가능합니다.");
+      setAnalysisDoneNotice(t("dashboard.doneNoStorage"));
       return;
     }
 
     setAnalysisDoneNotice(null);
-  }, [caps?.supabaseConfigured, state.result]);
+  }, [caps?.supabaseConfigured, state.result, t]);
 
   useEffect(() => {
     if (state.result) {
@@ -73,7 +75,7 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
 
   const handleAnalyze = useCallback(async () => {
     if (!state.file) {
-      setLocalError("파일을 먼저 선택해주세요.");
+      setLocalError(t("dashboard.selectFileFirst"));
       return;
     }
 
@@ -83,7 +85,7 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
     } catch (error: unknown) {
       setLocalError(getErrorMessage(error));
     }
-  }, [actions, state.file]);
+  }, [actions, state.file, t]);
 
   const handleDownloadPdf = useCallback(async () => {
     const blob = await actions.onDownloadPdf();
@@ -107,56 +109,54 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
   const dashboardStats = useMemo(
     () => [
       {
-        label: "진행 단계",
+        label: t("dashboard.stepLabel"),
         value: `${step}/4`,
-        meta: step === 4 ? "분석 완료" : step === 3 ? "실행 준비" : step === 2 ? "열 매핑 확인" : "CSV 업로드 대기"
+        meta: step === 4 ? t("dashboard.stepDone") : step === 3 ? t("dashboard.stepReady") : step === 2 ? t("dashboard.stepMapping") : t("dashboard.stepWaiting")
       },
       {
-        label: "선택 파일",
-        value: state.file ? state.file.name : "CSV 필요",
-        meta: state.file ? `${Math.round(state.file.size / 1024)} KB` : "드래그 앤 드롭 지원"
+        label: t("dashboard.selectedFile"),
+        value: state.file ? state.file.name : t("dashboard.csvNeeded"),
+        meta: state.file ? `${Math.round(state.file.size / 1024)} KB` : t("dashboard.dragSupported")
       },
       {
-        label: "워크스페이스",
+        label: t("dashboard.workspace"),
         value: caps?.planLabel ?? "Guest mode",
-        meta: caps?.supabaseConfigured === false ? "저장 비활성" : state.result?.meta?.stored ? "리포트 저장됨" : "PDF 공유 가능"
+        meta: caps?.supabaseConfigured === false ? t("dashboard.storageDisabled") : state.result?.meta?.stored ? t("dashboard.reportSaved") : t("dashboard.pdfShareable")
       },
       {
-        label: "결과 상태",
-        value: state.result ? `${state.result.stats.total}건 분석` : "대기 중",
-        meta: state.result ? `부정 비율 ${Math.round((state.result.stats.negativeRatio ?? 0) * 100)}%` : "결과 카드 준비 전"
+        label: t("dashboard.resultStatus"),
+        value: state.result ? `${state.result.stats.total}${t("dashboard.analyzed")}` : t("dashboard.waiting"),
+        meta: state.result ? `${t("dashboard.negRatio")} ${Math.round((state.result.stats.negativeRatio ?? 0) * 100)}%` : t("dashboard.resultCardPending")
       }
     ],
-    [caps?.planLabel, caps?.supabaseConfigured, state.file, state.result, step]
+    [caps?.planLabel, caps?.supabaseConfigured, state.file, state.result, step, t]
   );
 
   return (
     <main className="pageMain analysisWorkspace">
       {shownError ? (
         <FeedbackModal
-          title="분석 처리 오류"
+          title={t("dashboard.errorTitle")}
           message={shownError}
           tone="error"
           onClose={() => setLocalError(null)}
           actions={[
-            { label: "다시 시도", onClick: handleAnalyze, variant: "primary" },
-            { label: "새로 시작", onClick: actions.onReset }
+            { label: t("common.retry"), onClick: handleAnalyze, variant: "primary" },
+            { label: t("common.restart"), onClick: actions.onReset }
           ]}
         />
       ) : null}
       {!shownError && analysisDoneNotice ? (
-        <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
+        <FeedbackModal title={t("dashboard.doneTitle")} message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
       ) : null}
 
       <section className="card dashboardHeroPanel">
         <div className="dashboardHeroCopy">
-          <p className="sectionEyebrow">Analysis studio</p>
-          <h1 className="dashboardPageTitle">리뷰 CSV를 업로드하고 개선 액션까지 바로 확인하세요.</h1>
-          <p className="dashboardPageLead">
-            파일 업로드, 열 매핑, 분석 실행, PDF 다운로드를 한 화면에서 처리할 수 있습니다.
-          </p>
+          <p className="sectionEyebrow">{t("dashboard.heroEyebrow")}</p>
+          <h1 className="dashboardPageTitle">{t("dashboard.heroTitle")}</h1>
+          <p className="dashboardPageLead">{t("dashboard.heroLead")}</p>
         </div>
-        <div className="dashboardStatStrip" aria-label="현재 분석 상태">
+        <div className="dashboardStatStrip" aria-label={t("dashboard.currentStatus")}>
           {dashboardStats.map((stat) => (
             <article className="dashboardStatCard" key={stat.label}>
               <span className="dashboardStatLabel">{stat.label}</span>
@@ -201,10 +201,10 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
           <section id="results-panel" role="tabpanel" aria-labelledby="results-tab" className="dashboardEmptyResult">
             <div className="card dashboardEmptyResultCard">
               <p className="sectionEyebrow">Results</p>
-              <h2>아직 분석 결과가 없습니다</h2>
-              <p className="hint">CSV를 업로드하고 분석을 완료하면 핵심 지표, 우선순위, 액션 아이템이 이곳에 표시됩니다.</p>
-              <button type="button" className="btn btnPrimary" onClick={() => setActiveTab("analysis")} aria-label="분석하기 탭으로 이동">
-                분석하기로 이동
+              <h2>{t("dashboard.noResultsYet")}</h2>
+              <p className="hint">{t("dashboard.noResultsHint")}</p>
+              <button type="button" className="btn btnPrimary" onClick={() => setActiveTab("analysis")} aria-label={t("dashboard.goToAnalysisTab")}>
+                {t("dashboard.goToAnalysisTab")}
               </button>
             </div>
           </section>

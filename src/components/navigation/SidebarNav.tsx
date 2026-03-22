@@ -5,13 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/app/(auth)/actions";
 import { planLabel, type PlanTier } from "@/lib/plan";
+import { useTranslation } from "@/lib/i18n";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export type SidebarVariant = "app" | "dashboard";
 
 export type SidebarNavItem = {
   href: string;
   icon: "dashboard" | "history" | "pricing" | "help" | "blog";
-  label: string;
+  labelKey: string;
   matches: (pathname: string) => boolean;
 };
 
@@ -30,31 +32,31 @@ const NAV_ITEMS: SidebarNavItem[] = [
   {
     href: "/dashboard",
     icon: "dashboard",
-    label: "분석하기",
+    labelKey: "nav.analyze",
     matches: (pathname) => pathname === "/dashboard"
   },
   {
     href: "/dashboard/history",
     icon: "history",
-    label: "저장된 리포트",
+    labelKey: "nav.savedReports",
     matches: (pathname) => pathname.startsWith("/dashboard/history") || pathname.startsWith("/dashboard/analysis/")
   },
   {
     href: "/pricing",
     icon: "pricing",
-    label: "요금제",
+    labelKey: "nav.pricing",
     matches: (pathname) => pathname.startsWith("/pricing")
   },
   {
     href: "/help",
     icon: "help",
-    label: "사용법",
+    labelKey: "nav.help",
     matches: (pathname) => pathname.startsWith("/help")
   },
   {
     href: "/blog",
     icon: "blog",
-    label: "블로그",
+    labelKey: "nav.blog",
     matches: (pathname) => pathname.startsWith("/blog")
   }
 ];
@@ -176,17 +178,15 @@ export default function SidebarNav({
   onNavigate
 }: SidebarNavProps) {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const isAuthenticated = Boolean(userEmail);
   const items = isAuthenticated ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href !== "/dashboard/history");
   const currentPlanLabel = planLabel(plan);
   const displayName = getDisplayName(userEmail);
   const initials = getInitials(displayName);
-  const promoLabel = plan === "pro" ? "View Plans" : "Upgrade Now";
-  const promoTitle = plan === "pro" ? "Current Pro workspace" : "Unlock faster review ops";
-  const promoCopy =
-    plan === "pro"
-      ? "현재 플랜 구성과 공유 동선을 다시 확인할 수 있습니다."
-      : "더 많은 분석, 저장된 리포트, 공유 기능을 같은 워크플로에서 열어보세요.";
+  const promoLabel = plan === "pro" ? t("sidebar.promoButtonPro") : t("sidebar.promoButtonOther");
+  const promoTitle = plan === "pro" ? t("sidebar.promoTitlePro") : t("sidebar.promoTitleOther");
+  const promoCopy = plan === "pro" ? t("sidebar.promoCopyPro") : t("sidebar.promoCopyOther");
 
   return (
     <div className={`sidebarNav sidebarNav${variant === "dashboard" ? "Drawer" : "Rail"}`}>
@@ -210,7 +210,7 @@ export default function SidebarNav({
           </span>
         </Link>
 
-        <nav aria-label={variant === "dashboard" ? "대시보드 메뉴" : "주요 메뉴"}>
+        <nav aria-label={variant === "dashboard" ? t("nav.dashboardMenu") : t("nav.mainMenu")}>
           <ul className="sidebarNavList">
             {items.map((item, index) => {
               const active = item.matches(pathname);
@@ -226,7 +226,7 @@ export default function SidebarNav({
                     <span className="sidebarNavIcon" aria-hidden="true">
                       {renderIcon(item.icon)}
                     </span>
-                    <span className="sidebarNavLabel">{item.label}</span>
+                    <span className="sidebarNavLabel">{t(item.labelKey)}</span>
                   </Link>
                 </li>
               );
@@ -236,7 +236,11 @@ export default function SidebarNav({
       </div>
 
       <div className="sidebarNavFooter">
-        <section className="sidebarNavPromo" aria-label="업그레이드 안내">
+        <div className="sidebarNavLangRow">
+          <LanguageSwitcher />
+        </div>
+
+        <section className="sidebarNavPromo" aria-label={t("nav.upgradeGuide")}>
           <div className="sidebarNavPromoVisual" aria-hidden="true">
             <span className="sidebarNavPromoStem" />
             <span className="sidebarNavPromoCone" />
@@ -255,11 +259,11 @@ export default function SidebarNav({
           <div className={`sidebarNavAvatar ${isAuthenticated ? "" : "sidebarNavAvatarGuest"}`}>{initials}</div>
           <div className="sidebarNavAccountText">
             <strong>{displayName}</strong>
-            <span>{isAuthenticated ? `${currentPlanLabel} Account` : "로그인 후 리포트 저장"}</span>
+            <span>{isAuthenticated ? `${currentPlanLabel} Account` : t("nav.loginToSave")}</span>
           </div>
           {isAuthenticated ? (
             <form action={signOutAction} className="sidebarNavAccountAction">
-              <button type="submit" className="sidebarNavActionButton" aria-label="로그아웃">
+              <button type="submit" className="sidebarNavActionButton" aria-label={t("common.logout")}>
                 <svg viewBox="0 0 20 20" aria-hidden="true">
                   <path d="M7.5 5.2H5.8A1.8 1.8 0 0 0 4 7v6a1.8 1.8 0 0 0 1.8 1.8h1.7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M10.2 6.5 14 10l-3.8 3.5M14 10H7.7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -268,7 +272,7 @@ export default function SidebarNav({
             </form>
           ) : (
             <Link href="/login" className="sidebarNavActionButton sidebarNavLoginButton" onClick={onNavigate}>
-              로그인
+              {t("common.login")}
             </Link>
           )}
         </div>
