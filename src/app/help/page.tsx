@@ -10,10 +10,45 @@ export const metadata: Metadata = {
 export default async function HelpPage() {
   const { t } = await getServerTranslation();
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "리뷰가 너무 많으면 어떻게 되나요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "대량 리뷰는 샘플링하여 분석합니다. Basic 이상은 180건, Pro는 대량 우선 처리됩니다."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "분석 결과는 어디서 보나요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "분석 완료 후 화면에 바로 표시되며, PDF로도 다운로드 가능합니다."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "로그인 없이도 분석 가능한가요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "네, 로그인 없이도 CSV만 업로드하면 분석을 진행할 수 있습니다."
+        }
+      }
+    ]
+  };
+
   return (
     <main className="pageMain pageTop">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <div className="card">
-        <h2>{t("help.pageTitle")}</h2>
+        <h1>{t("help.pageTitle")}</h1>
         <p className="muted">{t("help.pageLead")}</p>
       </div>
 
