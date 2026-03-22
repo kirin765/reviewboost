@@ -1,81 +1,74 @@
-export default function HelpChecklistPage() {
+import type { Metadata } from "next";
+import { getServerTranslation } from "@/lib/i18n/server";
+
+export const metadata: Metadata = {
+  title: "CSV 업로드 체크리스트 - ReviewBoost 사용 가이드",
+  description: "ReviewBoost 리뷰 분석을 위한 CSV 파일 준비 체크리스트. 파일 형식, 필수 열, 인코딩 등을 확인하세요.",
+  alternates: { canonical: "/help" }
+};
+
+export default async function HelpChecklistPage() {
+  const { t } = await getServerTranslation();
+
   return (
     <main className="pageMain">
       <div className="card">
-        <h2>체크리스트</h2>
-        <p className="muted">CSV 업로드부터 결과 적용까지, 처음 진입 시 이것만 보면 됩니다.</p>
+        <h1>{t("checklist.title")}</h1>
+        <p className="muted">{t("checklist.lead")}</p>
         <div className="actionRow">
           <a className="btn btnPrimary" href="/dashboard">
-            지금 분석하기
+            {t("checklist.analyzeNow")}
           </a>
           <a className="btn" href="/sample.csv" download>
-            샘플 CSV(컬럼 많음)
+            {t("checklist.sampleFull")}
           </a>
           <a className="btn" href="/sample_simple.csv" download>
-            샘플 CSV(간단)
+            {t("checklist.sampleSimple")}
           </a>
         </div>
       </div>
 
       <div className="grid">
         <div className="card">
-          <h2>1) 준비물</h2>
+          <h2>{t("checklist.prepTitle")}</h2>
           <ul className="checklist">
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                <strong>리뷰 내용(텍스트) 열</strong>이 반드시 필요합니다.
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.prep1") }} />
             </li>
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                (권장) <strong>별점(0~5)</strong>이 있으면 부정 비율/우선순위가 더 정확해집니다.
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.prep2") }} />
             </li>
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                (선택) <strong>작성일</strong>이 있으면 최근 이슈를 더 쉽게 잡아냅니다.
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.prep3") }} />
             </li>
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                파일은 <strong>CSV(.csv)</strong>로 저장해주세요. (가능하면 <strong>CSV UTF-8</strong>)
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.prep4") }} />
             </li>
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                파일이 너무 크면 실패할 수 있어요. <strong>6MB 이하</strong>를 권장합니다.
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.prep5") }} />
             </li>
           </ul>
         </div>
 
         <div className="card">
-          <h2>2) CSV 내보내기</h2>
+          <h2>{t("checklist.exportTitle")}</h2>
           <ul className="checklist">
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                엑셀: <strong>파일</strong> &gt; <strong>다른 이름으로 저장</strong> &gt;{" "}
-                <strong>CSV(쉼표로 구분)</strong> 또는 <strong>CSV UTF-8</strong>
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.export1") }} />
             </li>
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                구글 스프레드시트: <strong>파일</strong> &gt; <strong>다운로드</strong> &gt;{" "}
-                <strong>쉼표로 구분된 값(.csv)</strong>
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.export2") }} />
             </li>
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                문자가 깨지면(예: <code>����</code>): <strong>CSV UTF-8</strong>로 다시 저장해서 업로드하세요.
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.export3") }} />
             </li>
           </ul>
         </div>
@@ -83,52 +76,42 @@ export default function HelpChecklistPage() {
 
       <div className="grid">
         <div className="card">
-          <h2>3) 업로드 후 할 일</h2>
-          <p className="muted">업로드 후에는 “컬럼 선택”만 정확히 해주면 나머지는 자동입니다.</p>
+          <h2>{t("checklist.afterUploadTitle")}</h2>
+          <p className="muted">{t("checklist.afterUploadLead")}</p>
           <ul className="checklist">
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                미리보기에서 <strong>리뷰 내용</strong> 열이 맞는지 확인합니다.
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.after1") }} />
             </li>
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                (있다면) <strong>별점</strong>, <strong>작성일</strong> 열도 지정합니다.
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.after2") }} />
             </li>
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                결과 화면에서 문구를 <strong>복사</strong>해 상세페이지/CS/FAQ에 붙여 넣습니다.
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.after3") }} />
             </li>
           </ul>
         </div>
 
         <div className="card">
-          <h2>공유/저장(선택)</h2>
+          <h2>{t("checklist.shareTitle")}</h2>
           <ul className="checklist">
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                저장 기능이 켜져 있으면 <strong>저장된 리포트</strong>에서 다시 열 수 있어요.
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.share1") }} />
             </li>
             <li className="checkItem">
               <span className="checkBox" aria-hidden />
-              <div className="checkText">
-                저장 기능이 꺼져 있어도 <strong>PDF</strong>로 공유할 수 있습니다.
-              </div>
+              <div className="checkText" dangerouslySetInnerHTML={{ __html: t("checklist.share2") }} />
             </li>
           </ul>
           <details className="details detailsSpacing">
-            <summary className="detailsSummary">자주 막히는 지점</summary>
+            <summary className="detailsSummary">{t("checklist.troubleSummary")}</summary>
             <div className="muted detailsText">
-              <div>- 파일이 안 올라가면: CSV(.csv)인지, 6MB 이하인지 확인</div>
-              <div>- 문자가 깨지면: CSV UTF-8로 다시 저장</div>
-              <div>- 열 이름이 제각각이어도: 업로드 후 화면에서 직접 선택 가능</div>
+              <div>{t("checklist.trouble1")}</div>
+              <div>{t("checklist.trouble2")}</div>
+              <div>{t("checklist.trouble3")}</div>
             </div>
           </details>
         </div>

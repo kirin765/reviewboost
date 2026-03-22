@@ -4,6 +4,7 @@ import React from "react";
 import { useMemo } from "react";
 import type { CsvPreview as CsvPreviewType } from "@/lib/csv";
 import CopyButton from "@/components/CopyButton";
+import { useTranslation } from "@/lib/i18n";
 
 interface CsvPreviewProps {
   preview: CsvPreviewType;
@@ -71,6 +72,8 @@ export default function CsvPreview({
   onCellClick,
   onCellModalClose
 }: CsvPreviewProps) {
+  const { t } = useTranslation();
+
   const previewCols = useMemo(() => {
     return showAllPreviewCols ? preview.columns : preview.columns.slice(0, 6);
   }, [preview.columns, showAllPreviewCols]);
@@ -99,25 +102,25 @@ export default function CsvPreview({
   return (
     <section className="mappingPanel mappingPanelBounded">
       <div className="mappingStatusRow">
-        <span className="pill">{preview.totalRows}행 / {preview.columns.length}컬럼</span>
-        <span className={`pill ${preview.headerMode === "header" ? "pillActive" : ""}`}>헤더 {preview.headerMode === "header" ? "있음" : "없음"}</span>
+        <span className="pill">{preview.totalRows}{t("preview.rows")} / {preview.columns.length}{t("preview.columns")}</span>
+        <span className={`pill ${preview.headerMode === "header" ? "pillActive" : ""}`}>{preview.headerMode === "header" ? t("preview.headerPresent") : t("preview.headerAbsent")}</span>
       </div>
 
       <div className="csvPreview">
         <div className="card">
-          <h2>열 매핑 패널</h2>
+          <h2>{t("preview.mappingPanel")}</h2>
           {textColNeedsReview ? (
             <p className="hint danger csvPreviewWarning">
-              리뷰 내용 열이 자동 추정되었으나 확실하지 않습니다. 현재 선택: <strong>{textCol}</strong>
-              {reviewTextHint ? `\n다음 열에 리뷰 텍스트가 있을 가능성이 있어요: ${reviewTextHint}` : ""}
-              <br />원하는 열로 변경해 주세요.
+              {t("preview.autoInferredWarning")} <strong>{textCol}</strong>
+              {reviewTextHint ? `\n${t("preview.possibleCols")} ${reviewTextHint}` : ""}
+              <br />{t("preview.changeCol")}
             </p>
           ) : null}
           <div className="csvPreviewColumnGrid">
             <label>
               <span className="muted">
-                리뷰 내용(텍스트) 열
-                {textCol ? <span className="mappingStatus mappingStatusDone">설정됨</span> : <span className="mappingStatus mappingStatusRequired">필수</span>}
+                {t("preview.reviewTextCol")}
+                {textCol ? <span className="mappingStatus mappingStatusDone">{t("common.set")}</span> : <span className="mappingStatus mappingStatusRequired">{t("common.required")}</span>}
               </span>
               <select className="input" value={textCol} onChange={(e) => onTextColChange(e.target.value)} disabled={busy}>
                 {preview.columns.map((c) => (
@@ -129,11 +132,11 @@ export default function CsvPreview({
             </label>
             <label>
               <span className="muted">
-                별점 열 (선택)
-                {ratingCol ? <span className="mappingStatus mappingStatusDone">설정됨</span> : null}
+                {t("preview.ratingCol")}
+                {ratingCol ? <span className="mappingStatus mappingStatusDone">{t("common.set")}</span> : null}
               </span>
               <select className="input" value={ratingCol} onChange={(e) => onRatingColChange(e.target.value)} disabled={busy}>
-                <option value="">(없음)</option>
+                <option value="">{t("common.none")}</option>
                 {preview.columns.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -143,11 +146,11 @@ export default function CsvPreview({
             </label>
             <label>
               <span className="muted">
-                작성일 열 (선택)
-                {dateCol ? <span className="mappingStatus mappingStatusDone">설정됨</span> : null}
+                {t("preview.dateCol")}
+                {dateCol ? <span className="mappingStatus mappingStatusDone">{t("common.set")}</span> : null}
               </span>
               <select className="input" value={dateCol} onChange={(e) => onDateColChange(e.target.value)} disabled={busy}>
-                <option value="">(없음)</option>
+                <option value="">{t("common.none")}</option>
                 {preview.columns.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -160,7 +163,7 @@ export default function CsvPreview({
 
         <div className="csvPreviewPreviewSection">
           <div className="csvPreviewPanelHeader">
-            <span>미리보기 (처음 5줄)</span>
+            <span>{t("preview.previewFirst5")}</span>
             {preview.columns.length > 6 ? (
               <button
                 type="button"
@@ -169,7 +172,7 @@ export default function CsvPreview({
                 disabled={busy}
                 aria-pressed={showAllPreviewCols}
               >
-                {showAllPreviewCols ? "앞의 6개만 보기" : "전체 컬럼 보기"}
+                {showAllPreviewCols ? t("preview.showFirst6") : t("preview.showAllCols")}
               </button>
             ) : null}
           </div>
@@ -181,9 +184,9 @@ export default function CsvPreview({
                   {previewCols.map((c) => (
                     <th key={c} className={c === textCol ? "thMappedText" : c === ratingCol ? "thMappedRating" : c === dateCol ? "thMappedDate" : ""}>
                       {c}
-                      {c === textCol ? <span className="thMappedLabel">텍스트</span> : null}
-                      {c === ratingCol ? <span className="thMappedLabel thMappedLabelRating">별점</span> : null}
-                      {c === dateCol ? <span className="thMappedLabel thMappedLabelDate">날짜</span> : null}
+                      {c === textCol ? <span className="thMappedLabel">{t("preview.text")}</span> : null}
+                      {c === ratingCol ? <span className="thMappedLabel thMappedLabelRating">{t("preview.rating")}</span> : null}
+                      {c === dateCol ? <span className="thMappedLabel thMappedLabelDate">{t("preview.date")}</span> : null}
                     </th>
                   ))}
                 </tr>
@@ -210,7 +213,7 @@ export default function CsvPreview({
           </div>
           </div>
           {preview.columns.length > 6 && !showAllPreviewCols ? (
-            <p className="hint muted">컬럼이 많아 앞의 6개만 표시합니다. (전체 컬럼 보기 가능)</p>
+            <p className="hint muted">{t("preview.tooManyCols")}</p>
           ) : null}
         </div>
       </div>
@@ -220,25 +223,25 @@ export default function CsvPreview({
       ) : null}
 
       {cellModal ? (
-        <div className="modalOverlay" role="dialog" aria-modal="true" aria-label="셀 전체보기">
+        <div className="modalOverlay" role="dialog" aria-modal="true" aria-label={t("preview.cellFullView")}>
           <div className="modal">
             <div className="modalHeader">
               <div>
-                <div className="muted">전체보기</div>
+                <div className="muted">{t("common.fullView")}</div>
                 <div className="csvPreviewModalCol">{cellModal.col}</div>
               </div>
               <div className="csvPreviewModalActions">
-                <CopyButton text={cellModal.value} className="btn btnSmall btnPrimary" ariaLabel="셀 내용 전체 복사">
-                  전체 복사
+                <CopyButton text={cellModal.value} className="btn btnSmall btnPrimary" ariaLabel={t("preview.cellCopy")}>
+                  {t("common.copyAll")}
                 </CopyButton>
-                <button type="button" className="btn btnSmall" onClick={onCellModalClose} aria-label="셀 모달 닫기">
-                  닫기
+                <button type="button" className="btn btnSmall" onClick={onCellModalClose} aria-label={t("preview.cellModalClose")}>
+                  {t("common.close")}
                 </button>
               </div>
             </div>
-            <div className="modalBody csvModalBody">{cellModal.value || <span className="muted">(빈 값)</span>}</div>
+            <div className="modalBody csvModalBody">{cellModal.value || <span className="muted">{t("common.emptyValue")}</span>}</div>
           </div>
-          <button type="button" className="modalBackdrop" aria-label="모달 배경 닫기" onClick={onCellModalClose} />
+          <button type="button" className="modalBackdrop" aria-label={t("preview.modalBackdropClose")} onClick={onCellModalClose} />
         </div>
       ) : null}
     </section>

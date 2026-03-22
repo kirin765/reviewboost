@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useTranslation } from "@/lib/i18n";
 
 interface AuthShellProps {
   eyebrow: string;
@@ -11,10 +14,14 @@ interface AuthShellProps {
 }
 
 export default function AuthShell({ eyebrow, title, lead, bullets, note, children, asideFooter }: AuthShellProps) {
+  const { locale } = useTranslation();
+  const visualMain = locale === "en" ? "Upload CSV, map columns, and share results in one workflow." : "CSV 업로드, 매핑, 결과 공유를 한 흐름으로 정리합니다.";
+  const visualSide = locale === "en" ? "Recent negative review response speed improved" : "최근 부정 리뷰 대응 속도 개선";
+
   return (
     <main className="pageMain authPage">
       <div className="authShell">
-        <section className="authAside" aria-label="서비스 소개">
+        <section className="authAside" aria-label="Service intro">
           <a className="authBrand" href="/">
             <span className="authBrandMark" aria-hidden="true">
               <span className="authBrandMarkDot" />
@@ -37,12 +44,12 @@ export default function AuthShell({ eyebrow, title, lead, bullets, note, childre
             <div className="authVisualCard authVisualCardMain">
               <span className="authVisualCardLabel">Workspace</span>
               <strong>Review analysis</strong>
-              <span>CSV 업로드, 매핑, 결과 공유를 한 흐름으로 정리합니다.</span>
+              <span>{visualMain}</span>
             </div>
             <div className="authVisualCard authVisualCardSide">
               <span className="authVisualMiniLabel">Weekly signal</span>
               <strong>+24%</strong>
-              <span>최근 부정 리뷰 대응 속도 개선</span>
+              <span>{visualSide}</span>
             </div>
           </div>
 
