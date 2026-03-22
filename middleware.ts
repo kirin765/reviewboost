@@ -32,6 +32,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
+  // Skip Supabase session refresh on public routes to reduce TTFB
+  const publicPaths = ["/", "/help", "/help-checklist", "/pricing", "/term", "/privacy", "/blog"];
+  const isPublicRoute = publicPaths.some(p => request.nextUrl.pathname === p);
+  if (isPublicRoute) {
+    const passthrough = NextResponse.next();
+    applySecurityHeaders(passthrough.headers);
+    return passthrough;
+  }
+
   let supabaseUrl: string;
   let supabaseAnonKey: string;
 
