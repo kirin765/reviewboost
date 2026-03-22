@@ -45,13 +45,15 @@ export const metadata: Metadata = {
     siteName: "ReviewBoost",
     title: "ReviewBoost - AI 리뷰 분석 | 쿠팡 스마트스토어 셀러 도구",
     description:
-      "쿠팡·스마트스토어 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다."
+      "쿠팡·스마트스토어 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다.",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "ReviewBoost - AI 리뷰 분석" }]
   },
   twitter: {
     card: "summary_large_image",
     title: "ReviewBoost - AI 리뷰 분석 | 쿠팡 스마트스토어 셀러 도구",
     description:
-      "쿠팡·스마트스토어 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다."
+      "쿠팡·스마트스토어 리뷰 CSV를 업로드하면 AI가 감성/카테고리 분류, 부정 키워드 추출, 개선 제안, PDF 리포트를 자동 생성합니다.",
+    images: [{ url: "/opengraph-image", alt: "ReviewBoost - AI 리뷰 분석" }]
   },
   manifest: "/manifest.json",
   robots: {

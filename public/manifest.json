@@ -2,7 +2,7 @@
   "name": "ReviewBoost",
   "short_name": "ReviewBoost",
   "description": "AI 리뷰 분석 · 우선순위 액션 제안 · PDF 리포트",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",

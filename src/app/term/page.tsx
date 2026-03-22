@@ -1,12 +1,16 @@
-export const metadata = {
-  title: "Terms of Service | ReviewBoost"
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "이용약관 - ReviewBoost",
+  description: "ReviewBoost 서비스 이용약관입니다. 서비스 이용 조건, 개인정보 처리, 환불 정책 등을 확인하세요.",
+  alternates: { canonical: "/term" }
 };
 
 export default function TermPage() {
   return (
     <main className="pageMain">
       <div className="card">
-        <h2>Terms of Service</h2>
+        <h1>Terms of Service</h1>
         <p className="muted">
           <strong>Effective Date:</strong> 2025-02-12
           <br />
