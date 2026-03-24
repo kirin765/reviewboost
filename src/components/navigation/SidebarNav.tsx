@@ -12,7 +12,7 @@ export type SidebarVariant = "app" | "dashboard";
 
 export type SidebarNavItem = {
   href: string;
-  icon: "dashboard" | "history" | "pricing" | "help" | "blog";
+  icon: "dashboard" | "history" | "pricing" | "help" | "blog" | "coupang";
   labelKey: string;
   matches: (pathname: string) => boolean;
 };
@@ -40,6 +40,12 @@ const NAV_ITEMS: SidebarNavItem[] = [
     icon: "history",
     labelKey: "nav.savedReports",
     matches: (pathname) => pathname.startsWith("/dashboard/history") || pathname.startsWith("/dashboard/analysis/")
+  },
+  {
+    href: "/coupang-csv",
+    icon: "coupang",
+    labelKey: "nav.coupangCsv",
+    matches: (pathname) => pathname.startsWith("/coupang-csv")
   },
   {
     href: "/pricing",
@@ -134,6 +140,20 @@ function renderIcon(icon: SidebarNavItem["icon"]) {
           />
           <path d="M4.75 10c0 1.04 2.35 1.88 5.25 1.88s5.25-.84 5.25-1.88M4.75 13.87c0 1.04 2.35 1.88 5.25 1.88s5.25-.84 5.25-1.88" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M4.75 6.13v7.74M15.25 6.13v7.74" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        </svg>
+      );
+    case "coupang":
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M4.25 6.5A1.75 1.75 0 0 1 6 4.75h8a1.75 1.75 0 0 1 1.75 1.75v7A1.75 1.75 0 0 1 14 15.25H6a1.75 1.75 0 0 1-1.75-1.75v-7Z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path d="M6.75 8.25h6.5M6.75 10.5h6.5M6.75 12.75h4.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
         </svg>
       );
     case "help":
