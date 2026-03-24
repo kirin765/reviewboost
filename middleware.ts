@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Skip Supabase session refresh on public routes to reduce TTFB
-  const publicPaths = ["/", "/help", "/help-checklist", "/pricing", "/term", "/privacy", "/blog"];
+  const publicPaths = ["/", "/help", "/help-checklist", "/pricing", "/term", "/privacy", "/blog", "/coupang-csv"];
   const isPublicRoute = publicPaths.some(p => request.nextUrl.pathname === p);
   if (isPublicRoute) {
     const passthrough = NextResponse.next();
