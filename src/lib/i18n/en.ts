@@ -29,6 +29,7 @@ const en: Dictionary = {
   // ── Navigation ──
   "nav.analyze": "Analyze",
   "nav.savedReports": "Saved Reports",
+  "nav.coupangCsv": "Coupang CSV",
   "nav.pricing": "Pricing",
   "nav.help": "Help",
   "nav.blog": "Blog",
@@ -534,6 +535,17 @@ const en: Dictionary = {
   "help.faq2A": "A: Results appear on screen immediately after analysis. You can also download as PDF.",
   "help.faq3Q": "Q: Can I analyze without logging in?",
   "help.faq3A": "A: Yes, just upload a CSV and analysis will run without needing an account.",
+
+  // ── Coupang CSV page ──
+  "coupangCsv.title": "Coupang Review CSV Download",
+  "coupangCsv.lead": "Enter a Coupang product URL to download review CSV.",
+  "coupangCsv.inputLabel": "Coupang product URL",
+  "coupangCsv.inputPlaceholder": "https://www.coupang.com/vp/products/...",
+  "coupangCsv.downloadButton": "Download CSV",
+  "coupangCsv.downloading": "Requesting download...",
+  "coupangCsv.downloadDone": "CSV download has started.",
+  "coupangCsv.goDashboard": "Go to Dashboard",
+  "coupangCsv.errorEmpty": "Please enter a Coupang product URL.",
 
   // ── Blog page ──
   "blog.pageTitle": "Review Analysis Guide for E-commerce Sellers",
