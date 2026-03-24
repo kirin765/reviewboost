@@ -9,11 +9,27 @@ describe("downloadCoupangCsv", () => {
     vi.restoreAllMocks();
   });
 
-  it("throws when crawler base url is missing", async () => {
+  it("uses reviewboost crawler defaults when env is missing", async () => {
     delete process.env.COUPANG_CRAWLER_BASE_URL;
-    await expect(downloadCoupangCsv({ productUrl: "https://www.coupang.com/vp/products/123" })).rejects.toMatchObject({
-      code: "CRAWLER_NOT_CONFIGURED"
-    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("a,b\n1,2\n", {
+        status: 200,
+        headers: {
+          "content-type": "text/csv; charset=utf-8",
+          "content-disposition": 'attachment; filename="reviews.csv"'
+        }
+      })
+    );
+
+    await downloadCoupangCsv({ productUrl: "https://www.coupang.com/vp/products/123" });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      new URL("/api/coupang/reviews/csv", "https://api.reviewboost.co.kr"),
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ url: "https://www.coupang.com/vp/products/123", limit: 100 })
+      })
+    );
   });
 
   it("throws on invalid coupang url", async () => {
@@ -25,6 +41,7 @@ describe("downloadCoupangCsv", () => {
 
   it("passes through csv buffer on success", async () => {
     process.env.COUPANG_CRAWLER_BASE_URL = "https://crawler.example.com";
+    process.env.COUPANG_CRAWLER_LIMIT = "50";
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(
@@ -42,5 +59,11 @@ describe("downloadCoupangCsv", () => {
     expect(result.contentType).toContain("csv");
     expect(result.csvBuffer.byteLength).toBeGreaterThan(0);
     expect(fetchSpy).toHaveBeenCalledOnce();
+    expect(fetchSpy).toHaveBeenCalledWith(
+      new URL("/api/coupang/reviews/csv", "https://crawler.example.com"),
+      expect.objectContaining({
+        body: JSON.stringify({ url: "https://www.coupang.com/vp/products/12345", limit: 50 })
+      })
+    );
   });
 });
