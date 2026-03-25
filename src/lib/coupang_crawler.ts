@@ -90,7 +90,7 @@ function loadCrawlerConfig(): CrawlerConfig {
 function normalizeCoupangProductUrl(raw: string) {
   const text = String(raw ?? "").trim();
   if (!text) {
-    throw new ApiError(400, "CRAWLER_INVALID_PRODUCT_URL", "쿠팡 상품 URL을 입력해주세요.");
+    throw new ApiError(400, "CRAWLER_INVALID_PRODUCT_URL", "상품 URL을 입력해주세요.");
   }
 
   let url: URL;
@@ -106,12 +106,12 @@ function normalizeCoupangProductUrl(raw: string) {
 
   const host = url.hostname.toLowerCase();
   if (!COUPANG_HOST_ALLOWLIST.has(host)) {
-    throw new ApiError(400, "CRAWLER_INVALID_PRODUCT_URL", "쿠팡 상품 URL만 지원합니다.");
+    throw new ApiError(400, "CRAWLER_INVALID_PRODUCT_URL", "현재 지원되는 스토어 상품 URL만 다운로드할 수 있습니다.");
   }
 
   const matchesPath = PRODUCT_PATH_HINTS.some((segment) => url.pathname.includes(segment));
   if (!matchesPath) {
-    throw new ApiError(400, "CRAWLER_INVALID_PRODUCT_URL", "쿠팡 상품 상세 URL을 입력해주세요.");
+    throw new ApiError(400, "CRAWLER_INVALID_PRODUCT_URL", "상품 상세 URL을 입력해주세요.");
   }
 
   url.hash = "";
@@ -134,7 +134,7 @@ function resolveFilename(contentDisposition: string | null) {
 }
 
 function safeFilename(value: string | null) {
-  const fallback = `coupang-reviews-${Date.now()}.csv`;
+  const fallback = `store-reviews-${Date.now()}.csv`;
   if (!value) return fallback;
   const cleaned = value
     .replace(/[\r\n\t]+/g, " ")

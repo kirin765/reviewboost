@@ -18,7 +18,7 @@
   - 상세페이지 수정 문구(초안)
   - 고객 불만 대응 문구(초안)
   - FAQ 추천
-- 쿠팡 상품 URL 기반 리뷰 CSV 다운로드 (`/coupang-csv`, 외부 crawler 연동)
+- 쿠팡/스마트스토어 상품 URL 기반 리뷰 CSV 다운로드 (`/coupang-csv`, 외부 crawler 연동)
 - 요약 리포트 PDF 다운로드
   - 기본: Puppeteer(HTML 렌더링)
   - Puppeteer 실패 시 PDFKit 텍스트 기반 폴백 자동 전환 (운영/권장 설정에서 활성화)

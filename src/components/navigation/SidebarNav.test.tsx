@@ -46,7 +46,7 @@ describe("SidebarNav", () => {
     expect(screen.getByText("로그인 후 리포트 저장")).toBeTruthy();
     expect(screen.getByRole("link", { name: "로그인" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: "저장된 리포트" })).toBeNull();
-    expect(screen.getByRole("link", { name: "쿠팡 CSV" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "리뷰 CSV" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Upgrade Now" })).toBeTruthy();
   });
 
@@ -78,6 +78,6 @@ describe("SidebarNav", () => {
     mockPathname = "/coupang-csv";
     renderWithI18n(<SidebarNav variant="dashboard" plan="basic" userEmail="owner@example.com" />);
 
-    expect(screen.getByRole("link", { name: "쿠팡 CSV" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "리뷰 CSV" }).getAttribute("aria-current")).toBe("page");
   });
 });

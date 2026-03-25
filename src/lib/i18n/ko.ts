@@ -29,7 +29,7 @@ const ko: Dictionary = {
   // ── Navigation ──
   "nav.analyze": "분석하기",
   "nav.savedReports": "저장된 리포트",
-  "nav.coupangCsv": "쿠팡 CSV",
+  "nav.coupangCsv": "리뷰 CSV",
   "nav.pricing": "요금제",
   "nav.help": "사용법",
   "nav.blog": "블로그",
@@ -537,15 +537,15 @@ const ko: Dictionary = {
   "help.faq3A": "A: 네, 로그인 없이도 CSV만 업로드하면 분석을 진행할 수 있습니다.",
 
   // ── Coupang CSV page ──
-  "coupangCsv.title": "쿠팡 리뷰 CSV 다운로드",
-  "coupangCsv.lead": "쿠팡 상품 URL을 입력하면 리뷰 CSV를 바로 다운로드할 수 있습니다.",
-  "coupangCsv.inputLabel": "쿠팡 상품 URL",
-  "coupangCsv.inputPlaceholder": "https://www.coupang.com/vp/products/...",
+  "coupangCsv.title": "스토어 리뷰 CSV 다운로드",
+  "coupangCsv.lead": "쿠팡 또는 스마트스토어 상품 URL을 입력하면 리뷰 CSV를 바로 다운로드할 수 있습니다.",
+  "coupangCsv.inputLabel": "상품 URL",
+  "coupangCsv.inputPlaceholder": "쿠팡 또는 스마트스토어 상품 URL",
   "coupangCsv.downloadButton": "CSV 다운로드",
   "coupangCsv.downloading": "다운로드 요청 중...",
   "coupangCsv.downloadDone": "CSV 다운로드가 시작되었습니다.",
   "coupangCsv.goDashboard": "분석하러 이동",
-  "coupangCsv.errorEmpty": "쿠팡 상품 URL을 입력해주세요.",
+  "coupangCsv.errorEmpty": "상품 URL을 입력해주세요.",
 
   // ── Blog page ──
   "blog.pageTitle": "이커머스 셀러를 위한 리뷰 분석 가이드",
