@@ -14,7 +14,7 @@ function buildContentDisposition(filename: string) {
   const asciiFallback = filename
     .replace(/[^\x20-\x7E]/g, "")
     .replace(/["\\]/g, "-")
-    .trim() || "coupang-reviews.csv";
+    .trim() || "store-reviews.csv";
   const encoded = encodeURIComponent(filename);
   return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
 }
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
   const productUrl = String(body?.productUrl ?? "").trim();
   if (!productUrl) {
-    return apiErrorResponse(new ApiError(400, "CRAWLER_PAYLOAD_INVALID", "쿠팡 상품 URL을 입력해주세요."));
+    return apiErrorResponse(new ApiError(400, "CRAWLER_PAYLOAD_INVALID", "상품 URL을 입력해주세요."));
   }
 
   try {
