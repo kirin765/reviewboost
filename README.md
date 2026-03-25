@@ -93,7 +93,7 @@ Vercel 배포:
   - `COUPANG_CRAWLER_TIMEOUT_MS` (기본 `30000`)
   - `COUPANG_CRAWLER_LIMIT` (기본 `100`)
   - `COUPANG_CRAWLER_AUTH_HEADER_NAME`, `COUPANG_CRAWLER_AUTH_HEADER_VALUE`
-  - `COUPANG_CRAWLER_AUTH_TOKEN`
+  - `COUPANG_CRAWLER_AUTH_TOKEN` (`X-ReviewBoost-Token` 헤더로 항상 전송)
   - `COUPANG_CRAWLER_PRODUCT_URL_FIELD` (기본 `url`)
   - `COUPANG_CRAWLER_EXTRA_BODY_JSON` (추가 파라미터 JSON)
   - 운영 주소는 코드에 하드코딩하지 말고 배포 환경변수/시크릿으로만 주입하세요.

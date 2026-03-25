@@ -26,6 +26,7 @@ describe("downloadCoupangCsv", () => {
   it("passes through csv buffer on success", async () => {
     process.env.COUPANG_CRAWLER_BASE_URL = "https://crawler.example.com";
     process.env.COUPANG_CRAWLER_LIMIT = "50";
+    process.env.COUPANG_CRAWLER_AUTH_TOKEN = "secret-token";
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(
@@ -46,8 +47,13 @@ describe("downloadCoupangCsv", () => {
     expect(fetchSpy).toHaveBeenCalledWith(
       new URL("/api/coupang/reviews/csv", "https://crawler.example.com"),
       expect.objectContaining({
+        headers: expect.any(Headers),
         body: JSON.stringify({ url: "https://www.coupang.com/vp/products/12345", limit: 50 })
       })
     );
+    const fetchCall = fetchSpy.mock.calls[0]?.[1];
+    const headers = fetchCall && "headers" in fetchCall ? fetchCall.headers : undefined;
+    expect(headers).toBeInstanceOf(Headers);
+    expect((headers as Headers).get("X-ReviewBoost-Token")).toBe("secret-token");
   });
 });
