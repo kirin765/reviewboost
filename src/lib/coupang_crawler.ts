@@ -1,6 +1,5 @@
 import { ApiError } from "@/lib/api_error";
 
-const DEFAULT_CRAWLER_BASE_URL = "https://api.reviewboost.co.kr";
 const DEFAULT_DOWNLOAD_PATH = "/api/coupang/reviews/csv";
 const DEFAULT_TIMEOUT_MS = 30000;
 const MAX_TIMEOUT_MS = 120000;
@@ -48,7 +47,10 @@ function parseReviewLimit(value: string | undefined) {
 }
 
 function loadCrawlerConfig(): CrawlerConfig {
-  const baseUrl = String(process.env.COUPANG_CRAWLER_BASE_URL ?? DEFAULT_CRAWLER_BASE_URL).trim() || DEFAULT_CRAWLER_BASE_URL;
+  const baseUrl = String(process.env.COUPANG_CRAWLER_BASE_URL ?? "").trim();
+  if (!baseUrl) {
+    throw new ApiError(503, "CRAWLER_NOT_CONFIGURED", "크롤러 서버 URL이 설정되지 않았습니다.");
+  }
 
   try {
     const parsed = new URL(baseUrl);
@@ -60,6 +62,9 @@ function loadCrawlerConfig(): CrawlerConfig {
   }
 
   const downloadPath = String(process.env.COUPANG_CRAWLER_DOWNLOAD_PATH ?? DEFAULT_DOWNLOAD_PATH).trim() || DEFAULT_DOWNLOAD_PATH;
+  if (!downloadPath.startsWith("/")) {
+    throw new ApiError(503, "CRAWLER_NOT_CONFIGURED", "크롤러 엔드포인트 경로 설정이 올바르지 않습니다.");
+  }
   const timeoutMs = parseTimeout(process.env.COUPANG_CRAWLER_TIMEOUT_MS);
   const reviewLimit = parseReviewLimit(process.env.COUPANG_CRAWLER_LIMIT);
   const authHeaderName = String(process.env.COUPANG_CRAWLER_AUTH_HEADER_NAME ?? "").trim() || null;

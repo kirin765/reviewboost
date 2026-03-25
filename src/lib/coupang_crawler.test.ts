@@ -9,27 +9,11 @@ describe("downloadCoupangCsv", () => {
     vi.restoreAllMocks();
   });
 
-  it("uses reviewboost crawler defaults when env is missing", async () => {
+  it("throws when crawler base url is missing", async () => {
     delete process.env.COUPANG_CRAWLER_BASE_URL;
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response("a,b\n1,2\n", {
-        status: 200,
-        headers: {
-          "content-type": "text/csv; charset=utf-8",
-          "content-disposition": 'attachment; filename="reviews.csv"'
-        }
-      })
-    );
-
-    await downloadCoupangCsv({ productUrl: "https://www.coupang.com/vp/products/123" });
-
-    expect(fetchSpy).toHaveBeenCalledWith(
-      new URL("/api/coupang/reviews/csv", "https://api.reviewboost.co.kr"),
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ url: "https://www.coupang.com/vp/products/123", limit: 100 })
-      })
-    );
+    await expect(downloadCoupangCsv({ productUrl: "https://www.coupang.com/vp/products/123" })).rejects.toMatchObject({
+      code: "CRAWLER_NOT_CONFIGURED"
+    });
   });
 
   it("throws on invalid coupang url", async () => {

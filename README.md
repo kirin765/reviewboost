@@ -87,9 +87,8 @@ Vercel 배포:
   - `PADDLE_BASIC_PRICE_ID`, `PADDLE_PRO_PRICE_ID`
   - 웹훅 엔드포인트: `/api/billing/webhook`
 - 쿠팡 crawler 연동(선택):
-  - 기본 업스트림: `https://api.reviewboost.co.kr/api/coupang/reviews/csv`
   - 요청 형식: `POST { url, limit }`
-  - `COUPANG_CRAWLER_BASE_URL` (기본 `https://api.reviewboost.co.kr`)
+  - `COUPANG_CRAWLER_BASE_URL` (필수)
   - `COUPANG_CRAWLER_DOWNLOAD_PATH` (기본 `/api/coupang/reviews/csv`)
   - `COUPANG_CRAWLER_TIMEOUT_MS` (기본 `30000`)
   - `COUPANG_CRAWLER_LIMIT` (기본 `100`)
@@ -97,6 +96,7 @@ Vercel 배포:
   - `COUPANG_CRAWLER_AUTH_TOKEN`
   - `COUPANG_CRAWLER_PRODUCT_URL_FIELD` (기본 `url`)
   - `COUPANG_CRAWLER_EXTRA_BODY_JSON` (추가 파라미터 JSON)
+  - 운영 주소는 코드에 하드코딩하지 말고 배포 환경변수/시크릿으로만 주입하세요.
 
 ## 월결제 연동
 
