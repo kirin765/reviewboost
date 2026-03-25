@@ -1,8 +1,9 @@
 import { ApiError } from "@/lib/api_error";
 
-const DEFAULT_DOWNLOAD_PATH = "/download";
+const DEFAULT_DOWNLOAD_PATH = "/api/coupang/reviews/csv";
 const DEFAULT_TIMEOUT_MS = 30000;
 const MAX_TIMEOUT_MS = 120000;
+const DEFAULT_REVIEW_LIMIT = 100;
 
 const COUPANG_HOST_ALLOWLIST = new Set(["www.coupang.com", "m.coupang.com", "coupang.com"]);
 const PRODUCT_PATH_HINTS = ["/vp/products/", "/products/"];
@@ -15,6 +16,7 @@ type CrawlerConfig = {
   baseUrl: string;
   downloadPath: string;
   timeoutMs: number;
+  reviewLimit: number;
   authHeaderName: string | null;
   authHeaderValue: string | null;
   authToken: string | null;
@@ -38,10 +40,16 @@ function parseTimeout(value: string | undefined) {
   return Math.min(parsed, MAX_TIMEOUT_MS);
 }
 
+function parseReviewLimit(value: string | undefined) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_REVIEW_LIMIT;
+  return Math.min(parsed, 300);
+}
+
 function loadCrawlerConfig(): CrawlerConfig {
   const baseUrl = String(process.env.COUPANG_CRAWLER_BASE_URL ?? "").trim();
   if (!baseUrl) {
-    throw new ApiError(503, "CRAWLER_NOT_CONFIGURED", "크롤러 서버가 설정되지 않았습니다.");
+    throw new ApiError(503, "CRAWLER_NOT_CONFIGURED", "크롤러 서버 URL이 설정되지 않았습니다.");
   }
 
   try {
@@ -54,11 +62,15 @@ function loadCrawlerConfig(): CrawlerConfig {
   }
 
   const downloadPath = String(process.env.COUPANG_CRAWLER_DOWNLOAD_PATH ?? DEFAULT_DOWNLOAD_PATH).trim() || DEFAULT_DOWNLOAD_PATH;
+  if (!downloadPath.startsWith("/")) {
+    throw new ApiError(503, "CRAWLER_NOT_CONFIGURED", "크롤러 엔드포인트 경로 설정이 올바르지 않습니다.");
+  }
   const timeoutMs = parseTimeout(process.env.COUPANG_CRAWLER_TIMEOUT_MS);
+  const reviewLimit = parseReviewLimit(process.env.COUPANG_CRAWLER_LIMIT);
   const authHeaderName = String(process.env.COUPANG_CRAWLER_AUTH_HEADER_NAME ?? "").trim() || null;
   const authHeaderValue = String(process.env.COUPANG_CRAWLER_AUTH_HEADER_VALUE ?? "").trim() || null;
   const authToken = String(process.env.COUPANG_CRAWLER_AUTH_TOKEN ?? "").trim() || null;
-  const productUrlField = String(process.env.COUPANG_CRAWLER_PRODUCT_URL_FIELD ?? "productUrl").trim() || "productUrl";
+  const productUrlField = String(process.env.COUPANG_CRAWLER_PRODUCT_URL_FIELD ?? "url").trim() || "url";
   let extraBody: Record<string, unknown> = {};
   const extraBodyRaw = String(process.env.COUPANG_CRAWLER_EXTRA_BODY_JSON ?? "").trim();
   if (extraBodyRaw) {
@@ -72,7 +84,7 @@ function loadCrawlerConfig(): CrawlerConfig {
     }
   }
 
-  return { baseUrl, downloadPath, timeoutMs, authHeaderName, authHeaderValue, authToken, productUrlField, extraBody };
+  return { baseUrl, downloadPath, timeoutMs, reviewLimit, authHeaderName, authHeaderValue, authToken, productUrlField, extraBody };
 }
 
 function normalizeCoupangProductUrl(raw: string) {
@@ -150,7 +162,11 @@ export async function downloadCoupangCsv(input: DownloadInput): Promise<CrawlerD
   const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
   let response: Response;
   try {
-    const body: Record<string, unknown> = { ...config.extraBody, [config.productUrlField]: productUrl };
+    const body: Record<string, unknown> = {
+      limit: config.reviewLimit,
+      ...config.extraBody,
+      [config.productUrlField]: productUrl
+    };
     response = await fetch(endpoint, {
       method: "POST",
       headers,

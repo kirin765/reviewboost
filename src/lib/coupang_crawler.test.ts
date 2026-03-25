@@ -25,6 +25,7 @@ describe("downloadCoupangCsv", () => {
 
   it("passes through csv buffer on success", async () => {
     process.env.COUPANG_CRAWLER_BASE_URL = "https://crawler.example.com";
+    process.env.COUPANG_CRAWLER_LIMIT = "50";
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(
@@ -42,5 +43,11 @@ describe("downloadCoupangCsv", () => {
     expect(result.contentType).toContain("csv");
     expect(result.csvBuffer.byteLength).toBeGreaterThan(0);
     expect(fetchSpy).toHaveBeenCalledOnce();
+    expect(fetchSpy).toHaveBeenCalledWith(
+      new URL("/api/coupang/reviews/csv", "https://crawler.example.com"),
+      expect.objectContaining({
+        body: JSON.stringify({ url: "https://www.coupang.com/vp/products/12345", limit: 50 })
+      })
+    );
   });
 });
