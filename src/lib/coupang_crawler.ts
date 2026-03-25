@@ -155,7 +155,7 @@ export async function downloadCoupangCsv(input: DownloadInput): Promise<CrawlerD
     headers.set(config.authHeaderName, sanitizeHeaderValue(config.authHeaderValue));
   }
   if (config.authToken) {
-    headers.set("authorization", `Bearer ${sanitizeHeaderValue(config.authToken)}`);
+    headers.set("X-ReviewBoost-Token", sanitizeHeaderValue(config.authToken));
   }
 
   const controller = new AbortController();
