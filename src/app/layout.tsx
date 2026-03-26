@@ -70,6 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link rel="preload" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" as="style" />
         <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet" />
+        <meta name="naver-site-verification" content="6ed42f5a7662f6bd1899e5d2e1b009dd82891f92" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
