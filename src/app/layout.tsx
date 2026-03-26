@@ -1,10 +1,13 @@
 import "./globals.css";
-import { Suspense } from "react";
+import "./app-shell.css";
 import type { Metadata } from "next";
+import Script from "next/script";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import LayoutClient from "@/components/LayoutClient";
+import AppShell from "@/components/AppShell";
+import { getNavigationSessionState } from "@/lib/navigation_session";
+import { paddleBrowserEnv, paddleBrowserToken } from "@/lib/paddle";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -63,7 +66,13 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = "force-dynamic";
+const paddleToken = paddleBrowserToken();
+const paddleEnvForClient = paddleBrowserEnv();
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await getNavigationSessionState();
+
   return (
     <html lang="ko">
       <head>
@@ -71,6 +80,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preload" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" as="style" />
         <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet" />
         <meta name="naver-site-verification" content="6ed42f5a7662f6bd1899e5d2e1b009dd82891f92" />
+        <Script src="https://cdn.paddle.com/paddle/v2/paddle.js" strategy="beforeInteractive" />
+        {paddleToken ? (
+          <Script id="paddle-init" strategy="afterInteractive">
+            {`if (window.Paddle) { ${paddleEnvForClient === "sandbox" ? 'Paddle.Environment.set("sandbox");' : ""} Paddle.Initialize({ token: ${JSON.stringify(paddleToken)} }); }`}
+          </Script>
+        ) : null}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -97,13 +112,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ErrorBoundary>
           <Analytics />
           <SpeedInsights />
-          <Suspense fallback={null}>
-            <GoogleAnalytics />
-            <AnalyticsQueryEvents />
-          </Suspense>
-          <LayoutClient>
+          <GoogleAnalytics />
+          <AnalyticsQueryEvents />
+          <AppShell plan={session.plan} userEmail={session.userEmail}>
             {children}
-          </LayoutClient>
+          </AppShell>
         </ErrorBoundary>
       </body>
     </html>
