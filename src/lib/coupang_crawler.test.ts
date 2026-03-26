@@ -48,7 +48,7 @@ describe("downloadCoupangCsv", () => {
       new URL("/api/coupang/reviews/csv", "https://crawler.example.com"),
       expect.objectContaining({
         headers: expect.any(Headers),
-        body: JSON.stringify({ url: "https://www.coupang.com/vp/products/12345", limit: 50 })
+        body: JSON.stringify({ limit: 50, url: "https://www.coupang.com/vp/products/12345" })
       })
     );
     const fetchCall = fetchSpy.mock.calls[0]?.[1];
