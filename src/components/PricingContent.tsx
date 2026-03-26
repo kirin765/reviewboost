@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Script from "next/script";
 import PricingActions from "@/components/PricingActions";
 import { useTranslation } from "@/lib/i18n";
 
@@ -23,6 +24,8 @@ export default function PricingContent({ userId, userEmail, basicPriceId, proPri
 
   return (
     <main className="pageMain pricingPage">
+      <Script src="https://cdn.paddle.com/paddle/v2/paddle.js" strategy="afterInteractive" />
+
       <section className="card pricingHero">
         <div className="pricingHeroHeader">
           <div>
