@@ -50,6 +50,6 @@ export async function downloadCoupangCsv(payload: CoupangCsvDownloadPayload): Pr
   }
 
   const blob = await response.blob();
-  const filename = parseFilename(response.headers.get("content-disposition")) ?? `coupang-reviews-${Date.now()}.csv`;
+  const filename = parseFilename(response.headers.get("content-disposition")) ?? `store-reviews-${Date.now()}.csv`;
   return { blob, filename };
 }

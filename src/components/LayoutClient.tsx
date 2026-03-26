@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { I18nProvider, useTranslation } from "@/lib/i18n";
 import SidebarNav from "@/components/navigation/SidebarNav";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import type { PlanTier } from "@/lib/plan";
+import { planLabel, type PlanTier } from "@/lib/plan";
 
 function TopBar({ planText }: { planText: string }) {
   const { t } = useTranslation();
@@ -56,15 +57,43 @@ function Footer() {
 
 export default function LayoutClient({
   children,
-  plan,
-  planText,
-  userEmail
+  initialPlan = "free",
+  initialUserEmail = null
 }: {
   children: React.ReactNode;
-  plan: PlanTier;
-  planText: string;
-  userEmail: string | null;
+  initialPlan?: PlanTier;
+  initialUserEmail?: string | null;
 }) {
+  const pathname = usePathname();
+  const [plan, setPlan] = useState<PlanTier>(initialPlan);
+  const [userEmail, setUserEmail] = useState<string | null>(initialUserEmail);
+
+  useEffect(() => {
+    if (pathname.startsWith("/dashboard")) return;
+
+    let active = true;
+
+    fetch("/api/navigation-session", { cache: "no-store", credentials: "same-origin" })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        return (await res.json()) as { plan?: PlanTier; userEmail?: string | null } | null;
+      })
+      .then((session) => {
+        if (!active || !session) return;
+        setPlan(session.plan === "basic" || session.plan === "pro" ? session.plan : "free");
+        setUserEmail(typeof session.userEmail === "string" ? session.userEmail : null);
+      })
+      .catch(() => {
+        // Public shell falls back to guest mode when auth lookup is unavailable.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [pathname]);
+
+  const planText = planLabel(plan);
+
   return (
     <I18nProvider>
       <div className="appShell">
