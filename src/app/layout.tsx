@@ -1,13 +1,10 @@
 import "./globals.css";
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import Script from "next/script";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LayoutClient from "@/components/LayoutClient";
-import { planLabel } from "@/lib/plan";
-import { getNavigationSessionState } from "@/lib/navigation_session";
-import { paddleBrowserEnv, paddleBrowserToken } from "@/lib/paddle";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -66,26 +63,14 @@ export const metadata: Metadata = {
   }
 };
 
-export const dynamic = "force-dynamic";
-const paddleToken = paddleBrowserToken();
-const paddleEnvForClient = paddleBrowserEnv();
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await getNavigationSessionState();
-  const planText = planLabel(session.plan);
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
       <head>
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link rel="preload" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" as="style" />
         <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet" />
-        <Script src="https://cdn.paddle.com/paddle/v2/paddle.js" strategy="afterInteractive" />
-        {paddleToken ? (
-          <Script id="paddle-init" strategy="afterInteractive">
-            {`if (window.Paddle) { ${paddleEnvForClient === "sandbox" ? 'Paddle.Environment.set("sandbox");' : ""} Paddle.Initialize({ token: ${JSON.stringify(paddleToken)} }); }`}
-          </Script>
-        ) : null}
+        <meta name="naver-site-verification" content="6ed42f5a7662f6bd1899e5d2e1b009dd82891f92" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -112,9 +97,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ErrorBoundary>
           <Analytics />
           <SpeedInsights />
-          <GoogleAnalytics />
-          <AnalyticsQueryEvents />
-          <LayoutClient plan={session.plan} planText={planText} userEmail={session.userEmail}>
+          <Suspense fallback={null}>
+            <GoogleAnalytics />
+            <AnalyticsQueryEvents />
+          </Suspense>
+          <LayoutClient>
             {children}
           </LayoutClient>
         </ErrorBoundary>
