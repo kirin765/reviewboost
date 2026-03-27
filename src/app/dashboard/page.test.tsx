@@ -176,6 +176,9 @@ describe("DashboardPage 분석 파이프라인", () => {
   it("파일 업로드 후 미리보기 -> 분석까지 상태가 전환된다", async () => {
     render(<DashboardPage />);
 
+    expect(screen.queryByText("리뷰 CSV를 업로드하고 개선 액션까지 바로 확인하세요.")).toBeNull();
+    expect(screen.queryByText("현재 워크스페이스 안내")).toBeNull();
+
     const file = new File(["content,rating,date\n좋아요,5,2026-02-22"], "sample.csv", {
       type: "text/csv"
     });
