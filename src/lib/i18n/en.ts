@@ -537,8 +537,8 @@ const en: Dictionary = {
   "help.faq3A": "A: Yes, just upload a CSV and analysis will run without needing an account.",
 
   // ── Coupang CSV page ──
-  "coupangCsv.title": "Store Review CSV Download",
-  "coupangCsv.lead": "Enter a Coupang or Smart Store product URL to download review CSV.",
+  "coupangCsv.title": "Coupang and Smart Store Review Crawling",
+  "coupangCsv.lead": "Enter a product URL to download the review CSV.",
   "coupangCsv.inputLabel": "Product URL",
   "coupangCsv.inputPlaceholder": "Coupang or Smart Store product URL",
   "coupangCsv.downloadButton": "Download CSV",
