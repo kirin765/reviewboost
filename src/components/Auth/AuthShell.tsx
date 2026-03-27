@@ -30,7 +30,7 @@ export default function AuthShell({ eyebrow, title, lead, bullets, note, childre
             </span>
             <span className="authBrandText">
               <strong>ReviewBoost</strong>
-              <small>AI review ops dashboard</small>
+              <small>AI 리뷰 운영 대시보드</small>
             </span>
           </a>
 
@@ -42,12 +42,12 @@ export default function AuthShell({ eyebrow, title, lead, bullets, note, childre
             <div className="authVisualOrb authVisualOrbPrimary" />
             <div className="authVisualOrb authVisualOrbWarm" />
             <div className="authVisualCard authVisualCardMain">
-              <span className="authVisualCardLabel">Workspace</span>
-              <strong>Review analysis</strong>
+              <span className="authVisualCardLabel">워크스페이스</span>
+              <strong>리뷰 분석</strong>
               <span>{visualMain}</span>
             </div>
             <div className="authVisualCard authVisualCardSide">
-              <span className="authVisualMiniLabel">Weekly signal</span>
+              <span className="authVisualMiniLabel">주간 신호</span>
               <strong>+24%</strong>
               <span>{visualSide}</span>
             </div>

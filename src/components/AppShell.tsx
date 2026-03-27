@@ -25,7 +25,7 @@ type ChromeConfig = {
 function getChromeConfig(pathname: string): ChromeConfig {
   if (pathname.startsWith("/dashboard/analysis/")) {
     return {
-      label: "Saved report",
+      label: "저장된 리포트",
       title: "저장된 분석",
       description: "저장된 리포트를 다시 확인하고 필요한 경우 바로 다운로드합니다.",
       actionHref: "/dashboard/history",
@@ -38,7 +38,7 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
   if (pathname.startsWith("/dashboard/history")) {
     return {
-      label: "Saved reports",
+      label: "리포트 목록",
       title: "저장된 리포트",
       description: "최근 분석 결과를 빠르게 다시 열어봅니다.",
       actionHref: "/dashboard",
@@ -51,7 +51,7 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
   if (pathname === "/dashboard") {
     return {
-      label: "Workspace",
+      label: "워크스페이스",
       title: "리뷰 CSV 분석",
       description: "업로드, 열 매핑, 분석, 결과 확인까지 한 흐름으로 진행합니다.",
       actionHref: "/dashboard/history",
@@ -64,7 +64,7 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
   if (pathname.startsWith("/pricing")) {
     return {
-      label: "Pricing",
+      label: "요금제",
       title: "요금제",
       description: "운영 규모에 맞는 플랜을 비교하고 바로 시작할 수 있습니다.",
       actionHref: "/dashboard",
@@ -77,7 +77,7 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
   if (pathname.startsWith("/help")) {
     return {
-      label: "Guide",
+      label: "가이드",
       title: "사용 가이드",
       description: "CSV 준비부터 결과 활용까지 핵심 흐름만 빠르게 확인합니다.",
       actionHref: "/dashboard",
@@ -90,7 +90,7 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
   if (pathname.startsWith("/blog")) {
     return {
-      label: "Blog",
+      label: "블로그",
       title: "실전 운영 가이드",
       description: "리뷰 운영과 개선 전략을 실무 중심으로 정리한 글 모음입니다.",
       actionHref: "/dashboard",
@@ -220,7 +220,7 @@ export default function AppShell({ children, userEmail = null, plan = "free" }: 
                     aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
                     onClick={() => setOpen((value) => !value)}
                   >
-                    {open ? "Close" : "Menu"}
+                    {open ? "닫기" : "메뉴"}
                   </button>
                 ) : null}
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/app/(auth)/actions";
 import { planLabel, type PlanTier } from "@/lib/plan";
+import { useTranslation } from "@/lib/i18n";
 
 export type SidebarVariant = "app" | "dashboard";
 
@@ -197,17 +198,15 @@ export default function SidebarNav({
   onNavigate
 }: SidebarNavProps) {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const isAuthenticated = Boolean(userEmail);
   const items = isAuthenticated ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href !== "/dashboard/history");
   const currentPlanLabel = planLabel(plan);
   const displayName = getDisplayName(userEmail);
   const initials = getInitials(displayName);
-  const promoLabel = plan === "pro" ? "View Plans" : "Upgrade Now";
-  const promoTitle = plan === "pro" ? "Current Pro workspace" : "Unlock faster review ops";
-  const promoCopy =
-    plan === "pro"
-      ? "현재 플랜 구성과 공유 동선을 다시 확인할 수 있습니다."
-      : "더 많은 분석, 저장된 리포트, 공유 기능을 같은 워크플로에서 열어보세요.";
+  const promoLabel = plan === "pro" ? t("sidebar.promoButtonPro") : t("sidebar.promoButtonOther");
+  const promoTitle = plan === "pro" ? t("sidebar.promoTitlePro") : t("sidebar.promoTitleOther");
+  const promoCopy = plan === "pro" ? t("sidebar.promoCopyPro") : t("sidebar.promoCopyOther");
 
   return (
     <div className={`sidebarNav sidebarNav${variant === "dashboard" ? "Drawer" : "Rail"}`}>
@@ -259,7 +258,7 @@ export default function SidebarNav({
       <div className="sidebarNavFooter">
         <section className="sidebarNavPromo" aria-label="업그레이드 안내">
           <div className="sidebarNavPromoCopy">
-            <span className="sidebarNavPromoEyebrow">{plan === "pro" ? "Workspace" : "Upgrade"}</span>
+            <span className="sidebarNavPromoEyebrow">{plan === "pro" ? "플랜" : "업그레이드"}</span>
             <strong>{promoTitle}</strong>
             <p>{promoCopy}</p>
           </div>
@@ -272,7 +271,7 @@ export default function SidebarNav({
           <div className={`sidebarNavAvatar ${isAuthenticated ? "" : "sidebarNavAvatarGuest"}`}>{initials}</div>
           <div className="sidebarNavAccountText">
             <strong>{displayName}</strong>
-            <span>{isAuthenticated ? `${currentPlanLabel} Account` : "로그인 후 리포트 저장"}</span>
+            <span>{isAuthenticated ? `${currentPlanLabel} 플랜` : "로그인 후 리포트 저장"}</span>
           </div>
           {isAuthenticated ? (
             <form action={signOutAction} className="sidebarNavAccountAction">
