@@ -153,6 +153,11 @@ body.appChromeNavOpen {
   display: none;
 }
 
+.appChromeBackdrop[hidden] {
+  display: none !important;
+  pointer-events: none;
+}
+
 .appChromeFooter {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -1146,6 +1151,10 @@ body.appChromeNavOpen {
     border: 0;
     background: rgba(17, 17, 17, 0.3);
     z-index: 30;
+  }
+
+  .appChromeBackdrop[hidden] {
+    display: none !important;
   }
 
   .appChromeMain {
