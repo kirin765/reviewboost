@@ -4,6 +4,13 @@ import { env } from "@/lib/config";
 
 export type LlmClassification = { sentiment: Sentiment; category: Category };
 
+export type LlmClassificationResult = {
+  classifications: LlmClassification[];
+  appliedCount: number;
+  requestedCount: number;
+  failedBatchCount: number;
+};
+
 const VALID_SENTIMENT: Sentiment[] = ["positive", "neutral", "negative"];
 const VALID_CATEGORY: Category[] = ["배송", "품질", "가격", "사용성", "CS", "기타"];
 const DEFAULT_CLASSIFY_TIMEOUT_MS = 12000;
@@ -75,10 +82,11 @@ function normalizeTimeBudget(raw: number | undefined): number {
 
 export async function classifyReviewsWithOpenAI(args: {
   texts: string[];
+  fallbackClassifications?: LlmClassification[];
   model?: string;
   timeBudgetMs?: number;
   maxConcurrency?: number;
-}): Promise<LlmClassification[] | null> {
+}): Promise<LlmClassificationResult | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     console.warn("[LLM:classify][OPENAI_KEY_MISSING] OPENAI_API_KEY 미설정 — LLM 분류 건너뜀");
@@ -104,7 +112,12 @@ export async function classifyReviewsWithOpenAI(args: {
   console.log(`[LLM:classify][BATCH_START] model=${model}, texts=${args.texts.length}건, batchSize=${batchSize}`);
   if (args.texts.length === 0) {
     console.log("[LLM:classify][OPENAI_CLASSIFY_EMPTY] 분류 대상 없음");
-    return [];
+    return {
+      classifications: [],
+      appliedCount: 0,
+      requestedCount: 0,
+      failedBatchCount: 0
+    };
   }
 
   if (totalTimeBudgetMs < timeoutMs + CLASSIFY_TIMEOUT_GUARD_MS) {
@@ -119,12 +132,26 @@ export async function classifyReviewsWithOpenAI(args: {
   const output: Array<LlmClassification | undefined> = new Array(args.texts.length);
   const batchOffsets: Array<number> = [];
   for (let i = 0; i < args.texts.length; i += batchSize) batchOffsets.push(i);
+  const fallbackClassifications = args.fallbackClassifications ?? [];
+  const fallbackForIndex = (index: number): LlmClassification => fallbackClassifications[index] ?? { sentiment: "neutral", category: "기타" };
+  let appliedCount = 0;
+  let failedBatchCount = 0;
 
-  const runBatch = async (offset: number): Promise<boolean> => {
+  const fillFallbackBatch = (offset: number, batchLength: number) => {
+    for (let j = 0; j < batchLength; j++) {
+      const id = offset + j;
+      output[id] = fallbackForIndex(id);
+    }
+  };
+
+  const runBatch = async (offset: number): Promise<void> => {
     const budgetLeftMs = totalTimeBudgetMs === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : totalTimeBudgetMs - (Date.now() - startAtMs);
     if (budgetLeftMs !== Number.POSITIVE_INFINITY && budgetLeftMs < timeoutMs + CLASSIFY_TIMEOUT_GUARD_MS) {
       console.error(`[LLM:classify][OPENAI_BATCH_TIMEOUT_RISK] batchOffset=${offset}, remaining=${budgetLeftMs}ms`);
-      return false;
+      const batch = args.texts.slice(offset, offset + batchSize);
+      failedBatchCount++;
+      fillFallbackBatch(offset, batch.length);
+      return;
     }
 
     const batch = args.texts.slice(offset, offset + batchSize);
@@ -156,14 +183,18 @@ export async function classifyReviewsWithOpenAI(args: {
       );
     } catch (err) {
       console.error(`[LLM:classify][OPENAI_BATCH_CALL_FAILED] batchOffset=${offset}, error=${err instanceof Error ? err.message : String(err)}`);
-      return false;
+      failedBatchCount++;
+      fillFallbackBatch(offset, batch.length);
+      return;
     }
 
     const text = resp.choices?.[0]?.message?.content ?? "";
     const parsedItems = parseOpenAiResponse(text);
     if (!parsedItems) {
       console.error(`[LLM:classify][OPENAI_RESPONSE_PARSE_FAILED] batchOffset=${offset}, response=${text.slice(0, 200)}`);
-      return false;
+      failedBatchCount++;
+      fillFallbackBatch(offset, batch.length);
+      return;
     }
 
     const map = toMapById(parsedItems);
@@ -173,27 +204,37 @@ export async function classifyReviewsWithOpenAI(args: {
           ? Object.keys(parsedItems[0] as Record<string, unknown>).join(",")
           : "(empty)";
       console.error(`[LLM:classify][OPENAI_ITEMS_MISSING] batchOffset=${offset}, keys=${keys}`);
-      return false;
+      failedBatchCount++;
+      fillFallbackBatch(offset, batch.length);
+      return;
     }
 
     for (let j = 0; j < batch.length; j++) {
       const id = offset + j;
-      output[id] = map.get(id) ?? { sentiment: "neutral", category: "기타" };
+      const item = map.get(id);
+      if (item) {
+        output[id] = item;
+        appliedCount++;
+      } else {
+        output[id] = fallbackForIndex(id);
+      }
     }
-    return true;
   };
 
   for (let i = 0; i < batchOffsets.length; i += maxConcurrency) {
     const slice = batchOffsets.slice(i, i + maxConcurrency);
-    const results = await Promise.all(slice.map((offset) => runBatch(offset)));
-    if (results.some((ok) => !ok)) return null;
+    await Promise.all(slice.map((offset) => runBatch(offset)));
+  }
 
-    for (const offset of slice) {
-      const batch = args.texts.slice(offset, offset + batchSize);
-      for (let j = 0; j < batch.length; j++) out.push(output[offset + j] ?? { sentiment: "neutral", category: "기타" });
-    }
+  for (let i = 0; i < args.texts.length; i++) {
+    out.push(output[i] ?? fallbackForIndex(i));
   }
 
   console.log(`[LLM:classify][OPENAI_CLASSIFY_OK] 총 ${out.length}건 분류 완료`);
-  return out;
+  return {
+    classifications: out,
+    appliedCount,
+    requestedCount: args.texts.length,
+    failedBatchCount
+  };
 }
