@@ -80,6 +80,14 @@ export async function GET(request: NextRequest) {
     return res;
   }
 
+  if (type === "recovery") {
+    const resetUrl = new URL("/reset-password", baseUrl);
+    resetUrl.searchParams.set("next", next);
+    const res = NextResponse.redirect(resetUrl);
+    applySecurityHeaders(res.headers);
+    return res;
+  }
+
   loginUrl.searchParams.set("notice", "이메일 인증이 완료되었습니다. 로그인해주세요.");
   const res = NextResponse.redirect(loginUrl);
   applySecurityHeaders(res.headers);
