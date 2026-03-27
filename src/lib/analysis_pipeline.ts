@@ -208,25 +208,38 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
       } else {
         console.log(`[LLM:analyze] 분류 요청 — plan=${plan}, 전체=${classified.length}건, LLM대상=${targetIdx.length}건`);
         const targetTexts = targetIdx.map((i) => classified[i]!.text);
+        const targetFallbacks = targetIdx.map((i) => ({
+          sentiment: classified[i]!.sentiment,
+          category: classified[i]!.category
+        }));
         const classifyBudgetMs = remainingBudgetMs();
         const llm = await classifyReviewsWithOpenAI({
           texts: targetTexts,
+          fallbackClassifications: targetFallbacks,
           timeBudgetMs: classifyBudgetMs,
           maxConcurrency: env.openai.classifyMaxConcurrency
         });
-        if (llm && llm.length === targetTexts.length) {
+        if (llm) {
+          let appliedFromLlm = 0;
           for (let i = 0; i < targetIdx.length; i++) {
             const idx = targetIdx[i]!;
-            const item = llm[i]!;
+            const item = llm.classifications[i];
+            if (!item) continue;
             classified[idx] = {
               ...classified[idx]!,
               sentiment: item.sentiment,
               category: item.category
             };
+            const heuristic = targetFallbacks[i]!;
+            if (item.sentiment !== heuristic.sentiment || item.category !== heuristic.category) {
+              appliedFromLlm++;
+            }
           }
-          llmApplied = true;
+          llmApplied = appliedFromLlm > 0;
           aiDiagnosticReason = "LLM_CLASSIFY_OK";
-          console.log(`[LLM:analyze] 분류 적용 완료 — ${targetIdx.length}건 LLM 반영`);
+          console.log(
+            `[LLM:analyze] 분류 적용 완료 — target=${targetIdx.length}건, llmApplied=${appliedFromLlm}건, failedBatches=${llm.failedBatchCount}`
+          );
           console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 대상=${targetIdx.length} maxLlmReviews=${maxLlmReviews}`);
         } else {
           aiDiagnosticReason = "LLM_CLASSIFY_LEN_MISMATCH";

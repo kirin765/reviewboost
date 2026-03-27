@@ -45,10 +45,15 @@ describe("runAnalysisPipeline", () => {
   });
 
   it("applies LLM 결과를 target 인덱스에 반영한다", async () => {
-    openAi.classifyReviewsWithOpenAI.mockResolvedValue([
-      { sentiment: "positive", category: "품질" },
-      { sentiment: "negative", category: "배송" }
-    ]);
+    openAi.classifyReviewsWithOpenAI.mockResolvedValue({
+      requestedCount: 2,
+      appliedCount: 2,
+      failedBatchCount: 0,
+      classifications: [
+        { sentiment: "positive", category: "가격" },
+        { sentiment: "negative", category: "CS" }
+      ]
+    });
     openAi.generateSuggestions.mockResolvedValue({
       detailPageCopy: ["d1", "d2", "d3"],
       csResponseTemplates: ["c1", "c2"],
@@ -67,15 +72,20 @@ describe("runAnalysisPipeline", () => {
     });
 
     expect(openAi.classifyReviewsWithOpenAI).toHaveBeenCalled();
-    expect(result.payload.classified[0]).toMatchObject({ sentiment: "positive", category: "품질" });
+    expect(result.payload.classified[0]).toMatchObject({ sentiment: "positive", category: "가격" });
     expect(openAi.generateSuggestions).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ useAiNarrative: true }));
   });
 
   it("시간 예산이 부족하면 제안 생성은 템플릿 경로로 fallback한다", async () => {
-    openAi.classifyReviewsWithOpenAI.mockResolvedValue([
-      { sentiment: "positive", category: "품질" },
-      { sentiment: "negative", category: "배송" }
-    ]);
+    openAi.classifyReviewsWithOpenAI.mockResolvedValue({
+      requestedCount: 2,
+      appliedCount: 2,
+      failedBatchCount: 0,
+      classifications: [
+        { sentiment: "positive", category: "품질" },
+        { sentiment: "negative", category: "배송" }
+      ]
+    });
     openAi.generateSuggestions.mockResolvedValue({
       detailPageCopy: ["d1", "d2", "d3"],
       csResponseTemplates: ["c1", "c2"],
@@ -103,10 +113,16 @@ describe("runAnalysisPipeline", () => {
     expect(result.payload.meta.llmApplied).toBe(false);
   });
 
-  it("LLM length mismatch면 휴리스틱을 유지한다", async () => {
-    openAi.classifyReviewsWithOpenAI.mockResolvedValue([
-      { sentiment: "positive", category: "품질" }
-    ]);
+  it("LLM 일부 실패가 있어도 나머지는 반영하고 휴리스틱을 유지한다", async () => {
+    openAi.classifyReviewsWithOpenAI.mockResolvedValue({
+      requestedCount: 2,
+      appliedCount: 1,
+      failedBatchCount: 1,
+      classifications: [
+        { sentiment: "positive", category: "품질" },
+        { sentiment: "negative", category: "배송" }
+      ]
+    });
     openAi.generateSuggestions.mockResolvedValue({
       detailPageCopy: ["d1", "d2", "d3"],
       csResponseTemplates: ["c1", "c2"],
@@ -125,7 +141,9 @@ describe("runAnalysisPipeline", () => {
     });
 
     expect(openAi.classifyReviewsWithOpenAI).toHaveBeenCalled();
-    expect(openAi.generateSuggestions).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ useAiNarrative: false }));
+    expect(result.payload.classified).toHaveLength(2);
+    expect(result.payload.classified[0]).toMatchObject({ sentiment: "positive", category: "품질" });
+    expect(openAi.generateSuggestions).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ useAiNarrative: true }));
     expect(result.payload.stats.total).toBe(2);
     expect(openAi.generateSuggestions).toHaveBeenCalled();
   });
