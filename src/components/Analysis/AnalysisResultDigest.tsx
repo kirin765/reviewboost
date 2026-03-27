@@ -1,10 +1,7 @@
-"use client";
-
 import React from "react";
 import type { AnalysisOutput } from "@/lib/types";
 import AnalysisKpiGrid from "./AnalysisKpiGrid";
 import { AnalysisListSection, type AnalysisListSectionItem } from "./AnalysisListSection";
-import { useTranslation } from "@/lib/i18n";
 
 export type AnalysisResultDigestItemSets = ReturnType<typeof getAnalysisResultDigestItems>;
 
@@ -60,33 +57,33 @@ export function getAnalysisResultDigestItems(result: Pick<AnalysisOutput, "stats
 
 export default function AnalysisResultDigest({ result }: { result: Pick<AnalysisOutput, "stats" | "suggestions"> }) {
   const items = getAnalysisResultDigestItems(result);
-  const { t } = useTranslation();
 
   return (
-    <div className="analysisResultDigest" id="digest-section" aria-label={t("digest.summary")}>
-      <div className="analysisDigestHeader">
-        <div>
-          <p className="sectionEyebrow">{t("digest.eyebrow")}</p>
-          <h2>{t("digest.title")}</h2>
-        </div>
+    <div className="analysisResultDigest" id="digest-section" aria-label="분석 요약">
+      <div className="contentPageHeader">
+        <p className="sectionEyebrow">Digest</p>
+        <h2>핵심 요약</h2>
+        <p className="contentPageLead">부정 키워드, 카테고리, 개선 제안을 빠르게 확인합니다.</p>
       </div>
 
       <AnalysisKpiGrid stats={result.stats} includeRecentness={Boolean(result.stats.recentness?.hasDates)} />
-      <p className="hint analysisDigestHint">{t("digest.priorityHint")}</p>
+      <p className="hint analysisDigestHint">
+        우선순위 점수는 지금 먼저 개선할 가치가 높은 항목을 요약한 값입니다.
+      </p>
 
       <div className="grid digestGrid digestGridSingleColumn">
-        <AnalysisListSection title={t("digest.negKeywordsTop10")} items={items.negativeKeywords} emptyMessage={t("digest.noNegKeywords")} />
-        <AnalysisListSection title={t("digest.problemCategories")} items={items.categoryEntries} emptyMessage={t("digest.noCategories")} />
+        <AnalysisListSection title="부정 키워드 TOP10" items={items.negativeKeywords} emptyMessage="부정 키워드를 찾지 못했습니다." />
+        <AnalysisListSection title="문제 카테고리" items={items.categoryEntries} emptyMessage="카테고리가 없습니다." />
       </div>
 
       <div className="grid digestGrid digestGridSingleColumn">
-        <AnalysisListSection title={t("digest.detailPageCopy")} items={items.detailPageCopy} emptyMessage={t("digest.noSuggestions")} />
-        <AnalysisListSection title={t("digest.csFaq")} items={items.csAndFaq} emptyMessage={t("digest.noSuggestions")} />
+        <AnalysisListSection title="개선 제안: 상세페이지 문구" items={items.detailPageCopy} emptyMessage="개선 제안이 없습니다." />
+        <AnalysisListSection title="개선 제안: CS/FAQ" items={items.csAndFaq} emptyMessage="개선 제안이 없습니다." />
       </div>
 
       {items.notes.length > 0 ? (
         <div className="grid digestGrid digestGridSingleColumn">
-          <AnalysisListSection title={t("digest.notes")} items={items.notes} emptyMessage={t("digest.noNotes")} />
+          <AnalysisListSection title="메모" items={items.notes} emptyMessage="메모가 없습니다." />
         </div>
       ) : null}
     </div>

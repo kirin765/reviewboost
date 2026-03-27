@@ -1,6 +1,4 @@
-"use client";
-
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import type { AnalysisOutput, PlanGates } from "@/lib/types";
 import type { Capabilities } from "@/lib/capabilities";
 import AnalysisResultDigest from "@/components/Analysis/AnalysisResultDigest";
@@ -13,7 +11,6 @@ import {
   RatingSimulationSection,
   UrgentReviewsSection
 } from "./analysis-results-sections";
-import { useTranslation } from "@/lib/i18n";
 
 interface AnalysisResultsProps {
   result: AnalysisOutput & {
@@ -31,41 +28,32 @@ interface AnalysisResultsProps {
 
 export default function AnalysisResults({ result, caps, busy, onDownloadPdf }: AnalysisResultsProps) {
   const gates: PlanGates = useGates();
-  const [analysisDoneNotice, setAnalysisDoneNotice] = useState<string | null>(null);
   const summaryCardRef = useRef<HTMLDivElement>(null);
-  const { t } = useTranslation();
 
   useEffect(() => {
     if (!result || !summaryCardRef.current) return;
     summaryCardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    setAnalysisDoneNotice(t("results.doneNotice"));
-  }, [result, t]);
+  }, [result]);
 
   const resultsNavItems = useMemo(
     () => [
-      { href: "#digest-section", label: t("results.kpi"), enabled: true },
-      { href: "#urgent-section", label: t("results.urgentReviews"), enabled: Boolean(result.urgentReviews?.length) },
-      { href: "#priority-section", label: t("results.priority"), enabled: Boolean(result.priorityMatrix?.length) },
-      { href: "#simulation-section", label: t("results.simulation"), enabled: Boolean(result.ratingSimulation?.scenarios?.length) },
-      { href: "#positive-section", label: t("results.positiveKeywords"), enabled: Boolean(result.positiveKeywords?.length) },
-      { href: "#action-section", label: t("results.actionItems"), enabled: Boolean(result.actionItems?.length) }
+      { href: "#digest-section", label: "핵심 지표", enabled: true },
+      { href: "#urgent-section", label: "긴급 리뷰", enabled: Boolean(result.urgentReviews?.length) },
+      { href: "#priority-section", label: "우선순위", enabled: Boolean(result.priorityMatrix?.length) },
+      { href: "#simulation-section", label: "시뮬레이션", enabled: Boolean(result.ratingSimulation?.scenarios?.length) },
+      { href: "#positive-section", label: "긍정 키워드", enabled: Boolean(result.positiveKeywords?.length) },
+      { href: "#action-section", label: "액션 아이템", enabled: Boolean(result.actionItems?.length) }
     ],
-    [result.actionItems?.length, result.priorityMatrix?.length, result.positiveKeywords?.length, result.ratingSimulation?.scenarios?.length, result.urgentReviews?.length, t]
+    [result.actionItems?.length, result.priorityMatrix?.length, result.positiveKeywords?.length, result.ratingSimulation?.scenarios?.length, result.urgentReviews?.length]
   );
 
   return (
     <>
-      {analysisDoneNotice ? (
-        <div className="summaryBanner card">
-          <p className="analysisNoticeCardText">{analysisDoneNotice}</p>
-        </div>
-      ) : null}
-
       <section ref={summaryCardRef}>
         <AnalysisResultsSummary result={result} onDownloadPdf={onDownloadPdf} busy={busy} caps={caps} gates={gates} />
       </section>
 
-      <nav className="resultsNav" aria-label={t("results.sectionNav")}>
+      <nav className="resultsNav" aria-label="결과 섹션 바로가기">
         {resultsNavItems.filter((item) => item.enabled).map((item) => (
           <a href={item.href} className="resultsNavLink" key={item.href}>
             {item.label}

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { getServerTranslation } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
   title: "사용법 - ReviewBoost CSV 업로드 & 리뷰 분석 가이드",
@@ -7,149 +6,126 @@ export const metadata: Metadata = {
   alternates: { canonical: "/help" }
 };
 
-export default async function HelpPage() {
-  const { t } = await getServerTranslation();
-
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "리뷰가 너무 많으면 어떻게 되나요?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "대량 리뷰는 샘플링하여 분석합니다. Basic 이상은 180건, Pro는 대량 우선 처리됩니다."
-        }
-      },
-      {
-        "@type": "Question",
-        name: "분석 결과는 어디서 보나요?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "분석 완료 후 화면에 바로 표시되며, PDF로도 다운로드 가능합니다."
-        }
-      },
-      {
-        "@type": "Question",
-        name: "로그인 없이도 분석 가능한가요?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "네, 로그인 없이도 CSV만 업로드하면 분석을 진행할 수 있습니다."
-        }
-      }
-    ]
-  };
-
+export default function HelpPage() {
   return (
     <main className="pageMain pageTop">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
-      <div className="card">
-        <h1>{t("help.pageTitle")}</h1>
-        <p className="muted">{t("help.pageLead")}</p>
-      </div>
+      <section className="card contentPageHeader">
+        <p className="sectionEyebrow">Guide</p>
+        <h1>CSV 업로드부터 결과 활용까지</h1>
+        <p className="contentPageLead">개발 지식 없이도 CSV만 있으면 바로 리뷰 분석을 시작할 수 있습니다.</p>
+      </section>
 
       {/* 4-Step Guide */}
       <div className="helpStepGrid">
         <div className="step completed">
           <span className="stepNumber">1</span>
-          <span>{t("help.step1")}</span>
+          <span>CSV 준비</span>
         </div>
         <div className="step">
           <span className="stepNumber">2</span>
-          <span>{t("help.step2")}</span>
+          <span>업로드</span>
         </div>
         <div className="step">
           <span className="stepNumber">3</span>
-          <span>{t("help.step3")}</span>
+          <span>분석</span>
         </div>
         <div className="step">
           <span className="stepNumber">4</span>
-          <span>{t("help.step4")}</span>
+          <span>결과 활용</span>
         </div>
       </div>
 
       <div className="grid">
         <div className="card">
-          <h2>{t("help.csvPrepTitle")}</h2>
+          <h2>1) CSV 준비</h2>
           <div className="list">
             <div className="row">
-              <div className="left">{t("help.csvRequired")}</div>
-              <div className="right">{t("help.csvRequiredValue")}</div>
+              <div className="left">필수</div>
+              <div className="right">리뷰 내용(텍스트)</div>
             </div>
             <div className="row">
-              <div className="left">{t("help.csvRecommended")}</div>
-              <div className="right">{t("help.csvRecommendedValue")}</div>
+              <div className="left">권장</div>
+              <div className="right">별점(0~5)</div>
             </div>
             <div className="row">
-              <div className="left">{t("help.csvOptional")}</div>
-              <div className="right">{t("help.csvOptionalValue")}</div>
+              <div className="left">선택</div>
+              <div className="right">작성일(최근 이슈 확인용)</div>
             </div>
           </div>
-          <p className="hint muted sectionSpacing" dangerouslySetInnerHTML={{ __html: t("help.csvSaveHint") }} />
+          <p className="hint muted sectionSpacing">
+            엑셀에서 저장할 때는 보통 <strong>CSV(쉼표로 구분)</strong> 형식으로 저장하면 됩니다.
+          </p>
           <div className="actionRow">
             <a className="btn" href="/sample.csv" download>
-              {t("help.sampleCsvFull")}
+              샘플 CSV(컬럼 많음)
             </a>
             <a className="btn" href="/sample_simple.csv" download>
-              {t("help.sampleCsvSimple")}
+              샘플 CSV(간단)
             </a>
           </div>
         </div>
 
         <div className="card">
-          <h2>{t("help.uploadTitle")}</h2>
-          <p className="muted">{t("help.uploadLead")}</p>
-          <p className="hint muted">{t("help.uploadHint")}</p>
+          <h2>2) 업로드 후 컬럼 확인</h2>
+          <p className="muted">
+            업로드하면 미리보기로 &ldquo;어느 열이 리뷰 내용인지, 별점인지, 작성일인지&rdquo;를 한 번 확인합니다.
+          </p>
+          <p className="hint muted">
+            컬럼명이 <code>review_text</code>, <code>내용</code>, <code>리뷰</code> 처럼 다양해도 괜찮습니다. 화면에서 선택만
+            해주면 됩니다.
+          </p>
         </div>
       </div>
 
       <div className="grid">
         <div className="card">
-          <h2>{t("help.resultsTitle")}</h2>
-          <p className="muted">{t("help.resultsLead")}</p>
+          <h2>3) 결과 활용</h2>
+          <p className="muted">분석 결과에서 확인 가능한 항목들:</p>
           <ul className="muted mutedList">
-            <li>{t("help.resultItem1")}</li>
-            <li>{t("help.resultItem2")}</li>
-            <li>{t("help.resultItem3")}</li>
-            <li>{t("help.resultItem4")}</li>
-            <li>{t("help.resultItem5")}</li>
-            <li>{t("help.resultItem6")}</li>
-            <li>{t("help.resultItem7")}</li>
+            <li>핵심 지표 (리뷰 수, 부정 비율, 평균 별점, 우선순위 점수)</li>
+            <li>부정 키워드 TOP10</li>
+            <li>카테고리별 문제 분포</li>
+            <li>긴급 대응 필요 리뷰</li>
+            <li>우선순위 매트릭스</li>
+            <li>별점 시뮬레이션</li>
+            <li>개선 제안 (상세페이지 문구, CS응대, FAQ)</li>
           </ul>
-          <p className="hint muted sectionSpacing">{t("help.resultsHint")}</p>
+          <p className="hint muted sectionSpacing">
+            결과에 나오는 문구는 바로 복사해서 상세페이지/CS 답변/FAQ에 붙여 넣을 수 있습니다.
+          </p>
           <div className="actionRow">
             <a className="btn btnPrimary" href="/dashboard">
-              {t("help.analyzeNow")}
+              지금 분석하기
             </a>
           </div>
         </div>
 
         <div className="card">
-          <h2>{t("help.saveTitle")}</h2>
-          <p className="muted">{t("help.saveLead")}</p>
-          <p className="hint muted">{t("help.saveHint")}</p>
+          <h2>저장(선택)</h2>
+          <p className="muted">
+            로그인 기능을 켜면 분석 결과를 저장하고, 나중에 &ldquo;저장된 리포트&rdquo;에서 다시 볼 수 있습니다.
+          </p>
+          <p className="hint muted">
+            PDF 다운로드로 분석 결과를 공유할 수도 있습니다.
+          </p>
         </div>
       </div>
 
       {/* FAQ Section */}
       <div className="card sectionSpacing">
-        <h2>{t("help.faqTitle")}</h2>
+        <h2>자주 묻는 질문 (FAQ)</h2>
         <div className="list">
           <div className="row rowColumn">
-            <div className="textBold textSmall">{t("help.faq1Q")}</div>
-            <div className="muted textSmall">{t("help.faq1A")}</div>
+            <div className="textBold textSmall">Q: 리뷰가 너무 많으면 어떻게 되나요?</div>
+            <div className="muted textSmall">A: 대량 리뷰는 샘플링하여 분석합니다. (Basic 이상은 180건, Pro는 대량 우선 처리)</div>
           </div>
           <div className="row rowColumn">
-            <div className="textBold textSmall">{t("help.faq2Q")}</div>
-            <div className="muted textSmall">{t("help.faq2A")}</div>
+            <div className="textBold textSmall">Q: 분석 결과는 어디서 보나요?</div>
+            <div className="muted textSmall">A: 분석 완료 후 화면에 바로 표시되며, PDF로도 다운로드 가능합니다.</div>
           </div>
           <div className="row rowColumn">
-            <div className="textBold textSmall">{t("help.faq3Q")}</div>
-            <div className="muted textSmall">{t("help.faq3A")}</div>
+            <div className="textBold textSmall">Q: 로그인 없이도 분석 가능한가요?</div>
+            <div className="muted textSmall">A: 네, 로그인 없이도 CSV만 업로드하면 분석을 진행할 수 있습니다.</div>
           </div>
         </div>
       </div>
