@@ -1247,3 +1247,53 @@ textarea.input:focus-visible {
 .quadrant.review {
   background: rgba(0, 0, 0, 0.03);
 }
+
+/* ── Open-beta pricing discount display ── */
+
+/* Original (strikethrough) price shown above the discounted price */
+.pricingValueGroup {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pricingValueOriginal {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+/* Badge group: allows stacking "추천" + "오픈베타" side by side */
+.pricingBadgeGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Open-beta badge: muted outline style */
+.pricingBetaBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* Beta pill in the pill row at top of pricing page */
+.pillBeta {
+  border-color: #111;
+  color: #111;
+  font-weight: 600;
+  background: transparent;
+}

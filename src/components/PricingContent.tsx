@@ -36,6 +36,7 @@ export default function PricingContent({ userId, userEmail, basicPriceId, proPri
           <div className="pricingHeroMeta">
             <span className="pill pillActive">{t("pricing.safePayment")}</span>
             <span className="pill">{t("pricing.storageIntegration")}</span>
+            <span className="pill pillBeta">🎉 {t("pricing.betaPill")}</span>
           </div>
         </div>
 
@@ -85,9 +86,15 @@ export default function PricingContent({ userId, userEmail, basicPriceId, proPri
                 <p className="pricingPlanLabel">{t("pricing.basicLabel")}</p>
                 <h2>{t("pricing.basicTitle")}</h2>
               </div>
-              <span className="badge badgePrimary pricingBadge">{t("pricing.basicBadge")}</span>
+              <div className="pricingBadgeGroup">
+                <span className="badge badgePrimary pricingBadge">{t("pricing.basicBadge")}</span>
+                <span className="badge pricingBetaBadge">{t("pricing.betaBadge")}</span>
+              </div>
             </div>
-            <p className="pricingValue">₩39,000</p>
+            <div className="pricingValueGroup">
+              <span className="pricingValueOriginal">₩39,000</span>
+              <p className="pricingValue">₩19,000</p>
+            </div>
             <p className="muted pricingPlanMeta">{t("pricing.basicPlanMeta")}</p>
           </header>
           <div className="pricingCardBody">
@@ -113,11 +120,17 @@ export default function PricingContent({ userId, userEmail, basicPriceId, proPri
 
         <article className="card pricingCard">
           <header className="pricingCardHeader">
-            <div>
-              <p className="pricingPlanLabel">{t("pricing.proLabel")}</p>
-              <h2>{t("pricing.proTitle")}</h2>
+            <div className="pricingCardHeaderRow">
+              <div>
+                <p className="pricingPlanLabel">{t("pricing.proLabel")}</p>
+                <h2>{t("pricing.proTitle")}</h2>
+              </div>
+              <span className="badge pricingBetaBadge">{t("pricing.betaBadge")}</span>
             </div>
-            <p className="pricingValue">₩89,000</p>
+            <div className="pricingValueGroup">
+              <span className="pricingValueOriginal">₩89,000</span>
+              <p className="pricingValue">₩45,000</p>
+            </div>
             <p className="muted pricingPlanMeta">{t("pricing.proPlanMeta")}</p>
           </header>
           <div className="pricingCardBody">

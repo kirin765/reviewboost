@@ -48,6 +48,7 @@ export default async function PricingPage({
         <div className="actionRow">
           <span className="pill pillActive">안전한 카드 결제</span>
           <span className="pill">저장/공유 기능 연계</span>
+          <span className="pill pillBeta">🎉 오픈베타 할인 중</span>
         </div>
         {billing === "success" ? <p className="hint pricingBillingNotice">결제가 완료되었습니다. 구독 상태 반영까지 최대 1분 정도 소요될 수 있습니다.</p> : null}
         {billing === "cancel" ? <p className="hint pricingBillingNotice">결제가 취소되었습니다. 다시 시도하실 수 있습니다.</p> : null}
@@ -109,10 +110,16 @@ export default async function PricingPage({
                 <p className="pricingPlanLabel">Recommended</p>
                 <h2>Basic</h2>
               </div>
-              <span className="badge badgePrimary pricingBadge">추천</span>
+              <div className="pricingBadgeGroup">
+                <span className="badge badgePrimary pricingBadge">추천</span>
+                <span className="badge pricingBetaBadge">오픈베타</span>
+              </div>
             </div>
-            <p className="pricingValue">₩39,000</p>
-            <p className="muted pricingPlanMeta">월 39,000원 · 1인 실사용 추천</p>
+            <div className="pricingValueGroup">
+              <span className="pricingValueOriginal">₩39,000</span>
+              <p className="pricingValue">₩19,000</p>
+            </div>
+            <p className="muted pricingPlanMeta">월 19,000원 · 오픈베타 한정가</p>
           </header>
           <div className="pricingCardBody">
             <div className="list">
@@ -167,12 +174,18 @@ export default async function PricingPage({
 
         <article className="card pricingCard">
           <header className="pricingCardHeader">
-            <div>
-              <p className="pricingPlanLabel">Scale</p>
-              <h2>Pro</h2>
+            <div className="pricingCardHeaderRow">
+              <div>
+                <p className="pricingPlanLabel">Scale</p>
+                <h2>Pro</h2>
+              </div>
+              <span className="badge pricingBetaBadge">오픈베타</span>
             </div>
-            <p className="pricingValue">₩89,000</p>
-            <p className="muted pricingPlanMeta">월 89,000원 (팀/에이전시용)</p>
+            <div className="pricingValueGroup">
+              <span className="pricingValueOriginal">₩89,000</span>
+              <p className="pricingValue">₩45,000</p>
+            </div>
+            <p className="muted pricingPlanMeta">월 45,000원 · 오픈베타 한정가</p>
           </header>
           <div className="pricingCardBody">
             <div className="list">
