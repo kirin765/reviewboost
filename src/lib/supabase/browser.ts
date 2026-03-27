@@ -1,8 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/keys";
 
-export function createSupabaseBrowserClient() {
-  // Uses localStorage session on the client.
-  return createClient(getSupabaseUrl(), getSupabaseAnonKey());
-}
+let browserClient: ReturnType<typeof createBrowserClient> | null = null;
 
+export function createSupabaseBrowserClient() {
+  if (!browserClient) {
+    browserClient = createBrowserClient(getSupabaseUrl(), getSupabaseAnonKey());
+  }
+
+  return browserClient;
+}
