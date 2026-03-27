@@ -537,8 +537,8 @@ const ko: Dictionary = {
   "help.faq3A": "A: 네, 로그인 없이도 CSV만 업로드하면 분석을 진행할 수 있습니다.",
 
   // ── Coupang CSV page ──
-  "coupangCsv.title": "스토어 리뷰 CSV 다운로드",
-  "coupangCsv.lead": "쿠팡 또는 스마트스토어 상품 URL을 입력하면 리뷰 CSV를 바로 다운로드할 수 있습니다.",
+  "coupangCsv.title": "쿠팡·스마트스토어 리뷰 크롤링",
+  "coupangCsv.lead": "상품 URL을 입력하면 리뷰 CSV를 바로 다운로드할 수 있습니다.",
   "coupangCsv.inputLabel": "상품 URL",
   "coupangCsv.inputPlaceholder": "쿠팡 또는 스마트스토어 상품 URL",
   "coupangCsv.downloadButton": "CSV 다운로드",
