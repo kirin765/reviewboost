@@ -170,7 +170,7 @@ export async function requestPasswordResetAction(formData: FormData) {
     const q = `error=${encodeURIComponent(mapAuthError(resetError, "reset"))}&next=${encodeURIComponent(next)}`;
     redirect(`/forgot-password?${q}`);
   }
-  const notice = "비밀번호 재설정 메일을 보냈습니다. 메일의 링크를 열어 새 비밀번호를 설정해주세요.";
+  const notice = "비밀번호 재설정 메일을 보냈습니다. 메일이 보이지 않으면 스팸함도 확인한 뒤, 메일의 링크를 열어 새 비밀번호를 설정해주세요.";
   redirect(`/login?notice=${encodeURIComponent(notice)}&next=${encodeURIComponent(next)}`);
 }
 
