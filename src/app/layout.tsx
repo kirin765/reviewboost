@@ -6,6 +6,7 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AppShell from "@/components/AppShell";
+import { I18nProvider } from "@/lib/i18n";
 import { getNavigationSessionState } from "@/lib/navigation_session";
 import { paddleBrowserEnv, paddleBrowserToken } from "@/lib/paddle";
 import { Analytics } from "@vercel/analytics/next";
@@ -114,9 +115,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SpeedInsights />
           <GoogleAnalytics />
           <AnalyticsQueryEvents />
-          <AppShell plan={session.plan} userEmail={session.userEmail}>
-            {children}
-          </AppShell>
+          <I18nProvider>
+            <AppShell plan={session.plan} userEmail={session.userEmail}>
+              {children}
+            </AppShell>
+          </I18nProvider>
         </ErrorBoundary>
       </body>
     </html>
