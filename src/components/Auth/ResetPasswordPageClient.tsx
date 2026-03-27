@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import FeedbackModal from "@/components/FeedbackModal";
@@ -12,6 +12,7 @@ export default function ResetPasswordPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
+  const [supabase] = useState(() => createSupabaseBrowserClient());
 
   const next = useMemo(() => {
     const raw = searchParams.get("next") ?? "/dashboard";
@@ -21,6 +22,7 @@ export default function ResetPasswordPageClient() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -29,9 +31,42 @@ export default function ResetPasswordPageClient() {
     const lower = message.toLowerCase();
     if (!message) return t("reset.genericError");
     if (lower.includes("password should be at least")) return t("reset.tooShort");
-    if (lower.includes("invalid") || lower.includes("expired")) return t("reset.linkExpired");
+    if (
+      lower.includes("invalid") ||
+      lower.includes("expired") ||
+      lower.includes("session missing") ||
+      lower.includes("auth session missing") ||
+      lower.includes("pkce")
+    ) return t("reset.linkExpired");
     return message;
   }
+
+  useEffect(() => {
+    let active = true;
+
+    async function prepareRecoverySession() {
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (!active) return;
+
+      if (sessionError) {
+        setError(mapResetError(sessionError.message));
+        return;
+      }
+
+      if (!data.session) {
+        setError(t("reset.linkExpired"));
+        return;
+      }
+
+      setSessionReady(true);
+    }
+
+    void prepareRecoverySession();
+
+    return () => {
+      active = false;
+    };
+  }, [supabase, t]);
 
   function handleErrorClose() {
     setError(null);
@@ -58,7 +93,6 @@ export default function ResetPasswordPageClient() {
 
     setBusy(true);
     try {
-      const supabase = createSupabaseBrowserClient();
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) {
         setError(mapResetError(updateError.message));
@@ -117,7 +151,7 @@ export default function ResetPasswordPageClient() {
               required
             />
           </div>
-          <button className="btn btnPrimary formSubmit" type="submit" disabled={busy}>
+          <button className="btn btnPrimary formSubmit" type="submit" disabled={busy || !sessionReady}>
             {busy ? t("reset.submitting") : t("reset.submit")}
           </button>
         </form>
