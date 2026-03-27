@@ -44,7 +44,13 @@ describe("classifyReviewsWithOpenAI", () => {
 
     const result = await classifyReviewsWithOpenAI({ texts: ["리뷰"] });
 
-    expect(result).toBeNull();
+    expect(result).not.toBeNull();
+    expect(result).toMatchObject({
+      requestedCount: 1,
+      appliedCount: 0,
+      failedBatchCount: 1,
+      classifications: [{ sentiment: "neutral", category: "기타" }]
+    });
   });
 
   it("maps batch results by id and keeps fallback when items 필드가 없으면", async () => {
@@ -55,7 +61,16 @@ describe("classifyReviewsWithOpenAI", () => {
 
     const result = await classifyReviewsWithOpenAI({ texts: ["리뷰1", "리뷰2"] });
 
-    expect(result).toBeNull();
+    expect(result).not.toBeNull();
+    expect(result).toMatchObject({
+      requestedCount: 2,
+      appliedCount: 0,
+      failedBatchCount: 1,
+      classifications: [
+        { sentiment: "neutral", category: "기타" },
+        { sentiment: "neutral", category: "기타" }
+      ]
+    });
   });
 
   it("returns parsed 분류 결과 when response is valid", async () => {
@@ -70,10 +85,15 @@ describe("classifyReviewsWithOpenAI", () => {
     });
 
     expect(openAiCreate).toHaveBeenCalledTimes(2);
-    expect(result).toEqual([
-      { sentiment: "positive", category: "품질" },
-      { sentiment: "neutral", category: "기타" }
-    ]);
+    expect(result).toMatchObject({
+      requestedCount: 2,
+      appliedCount: 1,
+      failedBatchCount: 0,
+      classifications: [
+        { sentiment: "positive", category: "품질" },
+        { sentiment: "neutral", category: "기타" }
+      ]
+    });
   });
 
   it("creates OpenAI client with maxRetries 0", async () => {
@@ -117,12 +137,17 @@ describe("classifyReviewsWithOpenAI", () => {
     });
 
     expect(openAiCreate).toHaveBeenCalledTimes(3);
-    expect(result).toEqual([
-      { sentiment: "positive", category: "품질" },
-      { sentiment: "positive", category: "품질" },
-      { sentiment: "positive", category: "품질" },
-      { sentiment: "positive", category: "품질" },
-      { sentiment: "positive", category: "품질" }
-    ]);
+    expect(result).toMatchObject({
+      requestedCount: 5,
+      appliedCount: 5,
+      failedBatchCount: 0,
+      classifications: [
+        { sentiment: "positive", category: "품질" },
+        { sentiment: "positive", category: "품질" },
+        { sentiment: "positive", category: "품질" },
+        { sentiment: "positive", category: "품질" },
+        { sentiment: "positive", category: "품질" }
+      ]
+    });
   });
 });
