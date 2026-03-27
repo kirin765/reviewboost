@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { blogPosts } from "@/lib/blog-posts";
 
 export const metadata: Metadata = {
   title: "블로그 - 쿠팡 리뷰 분석 & 스마트스토어 운영 팁",
@@ -16,51 +18,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/blog" }
 };
 
-const posts = [
-  {
-    slug: "coupang-review-analysis",
-    title: "쿠팡 리뷰 분석, 왜 중요한가?",
-    summary:
-      "쿠팡 셀러라면 리뷰 데이터를 체계적으로 분석해야 합니다. CSV로 추출한 리뷰를 AI로 분류하고, 부정 키워드를 찾아 우선순위를 매기는 방법을 알아봅니다.",
-    tag: "리뷰 분석"
-  },
-  {
-    slug: "coupang-negative-review-response",
-    title: "쿠팡 부정리뷰 대응: 별점 회복 전략",
-    summary:
-      "부정 리뷰를 무시하면 별점이 떨어지고 매출에 직접적인 영향을 줍니다. 카테고리별 부정 키워드를 분석하고, 상세페이지 수정과 CS 응대 템플릿으로 대응하는 실전 가이드입니다.",
-    tag: "부정리뷰 대응"
-  },
-  {
-    slug: "smartstore-review-management",
-    title: "스마트스토어 리뷰 관리 완벽 가이드",
-    summary:
-      "스마트스토어에서 리뷰를 효과적으로 관리하는 방법, CSV 추출부터 감성 분석, FAQ 자동 생성까지 한 화면에서 처리하는 워크플로를 소개합니다.",
-    tag: "리뷰 관리"
-  },
-  {
-    slug: "coupang-rating-drop-reasons",
-    title: "쿠팡 별점이 떨어지는 5가지 이유와 해결법",
-    summary:
-      "배송, 품질, 가격, 사용성, CS — 별점 하락의 주요 원인을 카테고리별로 분석하고, 각각에 대한 구체적인 개선 방안을 제시합니다.",
-    tag: "별점 관리"
-  },
-  {
-    slug: "coupang-review-csv-export",
-    title: "쿠팡 리뷰 CSV 추출하는 방법",
-    summary:
-      "쿠팡에서 리뷰 데이터를 CSV로 추출하고, ReviewBoost에 업로드하여 감성 분석과 카테고리 분류를 자동으로 실행하는 단계별 가이드입니다.",
-    tag: "CSV 활용"
-  },
-  {
-    slug: "increase-coupang-sales-with-reviews",
-    title: "쿠팡 매출 올리는 법: 리뷰 데이터 활용 전략",
-    summary:
-      "리뷰 분석 결과를 상세페이지 개선, CS 응대 최적화, FAQ 작성에 활용해서 전환율과 매출을 끌어올리는 실전 전략을 공유합니다.",
-    tag: "매출 향상"
-  }
-];
-
 export default function BlogPage() {
   return (
     <main className="pageMain marketingPage">
@@ -72,12 +29,12 @@ export default function BlogPage() {
 
       <section className="card marketingSection">
         <div className="marketingFeatureGrid">
-          {posts.map((post) => (
-            <article className="marketingFeatureCard" key={post.slug}>
+          {blogPosts.map((post) => (
+            <Link href={`/blog/${post.slug}`} className="marketingFeatureCard blogCardLink" key={post.slug}>
               <span className="badge">{post.tag}</span>
               <h3 style={{ marginTop: 8 }}>{post.title}</h3>
               <p className="muted">{post.summary}</p>
-            </article>
+            </Link>
           ))}
         </div>
       </section>
