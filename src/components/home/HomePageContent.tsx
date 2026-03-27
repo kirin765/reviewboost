@@ -53,7 +53,7 @@ export default function HomePageContent() {
         </div>
 
         <div className="marketingHeroPanel" aria-label={t("home.dashboardSignal")}>
-          <div className="marketingSignalGrid">
+          <div className="marketingSignalGrid" style={{ gridColumn: "1 / -1" }}>
             {signalCards.map((card) => (
               <article className="marketingSignalCard" key={card.label}>
                 <span className="marketingSignalLabel">{card.label}</span>
@@ -62,12 +62,16 @@ export default function HomePageContent() {
               </article>
             ))}
           </div>
-          <div className="marketingPreviewCard">
+          <div className="marketingPreviewCard" style={{ gridColumn: "1 / -1" }}>
             <div className="marketingPreviewHeader">
               <span className="marketingPreviewBadge">{t("home.previewBadge")}</span>
               <span className="marketingPreviewMuted">{t("home.previewMuted")}</span>
             </div>
-            <div className="stepper marketingStepper" aria-label={t("home.entryGuide")}>
+            <div
+              className="stepper marketingStepper"
+              style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
+              aria-label={t("home.entryGuide")}
+            >
               {steps.map((step, index) => (
                 <div className={`step ${index === 0 ? "active" : ""}`} key={step}>
                   <span className="stepNumber">{index + 1}</span>
