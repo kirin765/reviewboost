@@ -49,7 +49,7 @@ export default function LoginPage() {
         note={t("login.note")}
       >
         <div className="authPanelHeader">
-          <p className="sectionEyebrow">Log in</p>
+          <p className="sectionEyebrow">로그인</p>
           <h2>{t("login.panelTitle")}</h2>
           <p className="muted">{t("login.panelLead")}</p>
         </div>

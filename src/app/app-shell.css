@@ -235,6 +235,18 @@ body.appChromeNavOpen {
   box-shadow: none;
 }
 
+.btnPrimary:hover {
+  background: #000;
+  border-color: #000;
+}
+
+.btnPrimary:focus-visible {
+  background: #000;
+  border-color: #000;
+  outline: 2px solid rgba(0, 0, 0, 0.3);
+  outline-offset: 2px;
+}
+
 .pill,
 .badge,
 .siteTopbarPill,
@@ -353,7 +365,6 @@ body.appChromeNavOpen {
 .sidebarNavLink:focus-visible {
   background: var(--color-bg-soft);
   color: var(--color-text);
-  transform: translateX(1px);
 }
 
 .sidebarNavLinkActive {
@@ -1201,4 +1212,38 @@ body.appChromeNavOpen {
   .analysisFlowGridEnhanced {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── Vercel monochrome overrides: neutralise residual blues ── */
+
+/* Primary button hover must stay black, not revert to blue gradient from globals.css */
+
+/* Input & form focus rings — black instead of blue */
+.input:focus-visible,
+select.input:focus-visible,
+textarea.input:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.2);
+  outline-offset: 1px;
+  border-color: #111;
+}
+
+/* Loading bar — solid black instead of blue gradient */
+.loadingBarFill {
+  background: #111;
+}
+
+/* Active step text and number — keep neutral, avoid navy/blue bleed from globals.css */
+.step.active,
+.step.completed {
+  color: var(--color-text);
+}
+
+.step.active .stepNumber {
+  background: #111;
+  color: #fff;
+}
+
+/* Priority matrix "review" quadrant — neutral tint, not blue */
+.quadrant.review {
+  background: rgba(0, 0, 0, 0.03);
 }

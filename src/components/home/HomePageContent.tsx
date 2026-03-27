@@ -43,9 +43,6 @@ export default function HomePageContent() {
             <a className="btn btnPrimary" href="/dashboard">
               {t("home.ctaAnalyze")}
             </a>
-            <a className="btn btnGhost" href="/help">
-              {t("home.ctaHelp")}
-            </a>
             <a className="btn btnOutline" href="/sample.csv" download>
               {t("home.ctaSample")}
             </a>
