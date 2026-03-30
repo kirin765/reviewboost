@@ -1,5 +1,7 @@
+import React from "react";
 import type { Metadata } from "next";
 import CoupangCsvDownloadTool from "@/components/features/coupang/CoupangCsvDownloadTool";
+import { ShellContainer } from "@/components/ui/Primitives";
 
 export const metadata: Metadata = {
   title: "쿠팡·스마트스토어 리뷰 크롤링 - ReviewBoost",
@@ -9,8 +11,10 @@ export const metadata: Metadata = {
 
 export default function CoupangCsvPage() {
   return (
-    <main className="pageMain pageNarrow">
-      <CoupangCsvDownloadTool />
+    <main className="pageMain pb-8 pt-8 md:pt-12">
+      <ShellContainer className="max-w-[1080px]">
+        <CoupangCsvDownloadTool />
+      </ShellContainer>
     </main>
   );
 }

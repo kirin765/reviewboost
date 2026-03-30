@@ -7,14 +7,26 @@ import { I18nProvider } from "@/lib/i18n";
 import HomePageContent from "./HomePageContent";
 
 describe("HomePageContent", () => {
-  it("renders translated copy instead of raw translation keys", () => {
+  it("renders the new hero and the full landing section sequence", () => {
     render(
       <I18nProvider>
         <HomePageContent />
       </I18nProvider>
     );
 
-    expect(screen.getByRole("heading", { name: "리뷰를 업로드하면 우선순위와 실행 액션이 바로 정리됩니다." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "리뷰에서 상품의 문제를 찾아 매출을 개선하세요" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "리뷰 분석" })).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: "URL로 CSV 받기" }).length).toBeGreaterThan(0);
+    expect(Array.from(document.querySelectorAll("[data-home-section]")).map((node) => node.getAttribute("data-home-section"))).toEqual([
+      "hero",
+      "problem",
+      "solution",
+      "product",
+      "result",
+      "pricing",
+      "faq",
+      "cta"
+    ]);
     expect(screen.queryByText("home.heroTitle")).toBeNull();
     expect(screen.queryByText("home.heroLead")).toBeNull();
   });

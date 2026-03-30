@@ -1,7 +1,11 @@
 "use client";
 
+import React from "react";
 import type { Capabilities } from "@/lib/capabilities";
+import type { AnalysisStage } from "@/lib/analysis-stage";
 import type { CsvPreview } from "@/lib/csv";
+import { SectionHeader, StatePanel, Surface } from "@/components/ui/Primitives";
+import TerminalProgress from "@/components/ui/TerminalProgress";
 import FileUploader from "./FileUploader";
 import CsvPreviewComponent from "./CsvPreview";
 import AnalysisStepList from "./AnalysisStepList";
@@ -17,6 +21,7 @@ interface DashboardAnalysisPanelProps {
   cellModal: { col: string; value: string } | null;
   caps: Capabilities | null;
   step: 1 | 2 | 3 | 4;
+  analysisStage: AnalysisStage;
   onFileSelect: (file: File | null) => void;
   onReset: () => void;
   onSample: () => void;
@@ -35,6 +40,7 @@ export default function DashboardAnalysisPanel({
   preview,
   caps,
   step,
+  analysisStage,
   textCol,
   ratingCol,
   dateCol,
@@ -57,31 +63,23 @@ export default function DashboardAnalysisPanel({
       : `현재 플랜: ${caps?.planLabel ?? "Guest mode"} · 결과는 저장 또는 PDF 공유로 이어집니다.`;
 
   return (
-    <section className="dashboardPanel dashboardAnalysisPanel" id="analysis-panel" role="tabpanel" aria-labelledby="analysis-tab">
-      <div className="workspaceSectionHeading">
-        <div>
-          <p className="sectionEyebrow">Analysis flow</p>
-          <h2>업로드와 열 매핑</h2>
-        </div>
-        <p className="workspaceSectionHint">{sectionHint}</p>
-      </div>
-
+    <section className="space-y-6" id="analysis-panel" role="tabpanel" aria-labelledby="analysis-tab">
+      <Surface className="px-6 py-6 md:px-7">
+        <SectionHeader eyebrow="Analysis flow" title="업로드와 열 매핑" description={sectionHint} />
+      </Surface>
       <AnalysisStepList step={step} />
 
-      <div className="analysisFlowGrid analysisFlowGridEnhanced">
-        <div className="analysisControlColumn">
-          <div className="card surfaceCard">
-            <div className="dashboardSubsectionHeader">
-              <div>
-                <p className="sectionEyebrow">Step 1</p>
-                <h2>파일 업로드</h2>
-              </div>
-            </div>
+      <div className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
+        <Surface className="p-5 md:p-6">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Step 1</p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--rb-fg)]">파일 업로드</h2>
+          <div className="mt-5">
             <FileUploader file={file} busy={busy} preview={Boolean(preview)} onFileSelect={onFileSelect} onReset={onReset} onSample={onSample} onAnalyze={onAnalyze} />
           </div>
-        </div>
+        </Surface>
 
-        <div className="analysisPreviewColumn">
+        <div className="space-y-4">
+          {busy ? <TerminalProgress stage={analysisStage} /> : null}
           {preview ? (
             <CsvPreviewComponent
               preview={preview}
@@ -99,11 +97,7 @@ export default function DashboardAnalysisPanel({
               onCellModalClose={onCellModalClose}
             />
           ) : (
-            <div className="workspaceInlineEmptyState">
-              <p className="sectionEyebrow">Step 2</p>
-              <h2>열 미리보기 대기 중</h2>
-              <p className="muted">CSV를 올리면 리뷰 내용, 별점, 작성일 열을 바로 확인할 수 있습니다.</p>
-            </div>
+            <StatePanel title="여기도 채워주세요" description="CSV를 올리면 리뷰 내용, 별점, 작성일 열을 바로 확인할 수 있습니다." />
           )}
         </div>
       </div>

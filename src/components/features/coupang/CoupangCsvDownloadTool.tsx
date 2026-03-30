@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
+import { buttonStyles } from "@/components/ui/Button";
+import { SectionHeader, Surface } from "@/components/ui/Primitives";
 import { downloadCoupangCsv } from "@/lib/api/coupang";
 import { useTranslation } from "@/lib/i18n";
 import { getErrorMessage } from "@/types/common";
@@ -38,35 +40,45 @@ export default function CoupangCsvDownloadTool() {
   }, [productUrl, t]);
 
   return (
-    <section className="card">
-      <h1 className="dashboardPageTitle">{t("coupangCsv.title")}</h1>
-      <p className="dashboardPageLead">{t("coupangCsv.lead")}</p>
+    <Surface className="px-6 py-7 md:px-8 md:py-9">
+      <SectionHeader eyebrow="CSV tool" title={t("coupangCsv.title")} description={t("coupangCsv.lead")} />
 
-      <div className="sectionSpacing">
-        <label className="label" htmlFor="coupangProductUrl">
-          {t("coupangCsv.inputLabel")}
-        </label>
-        <input
-          id="coupangProductUrl"
-          className="input"
-          value={productUrl}
-          onChange={(event) => setProductUrl(event.target.value)}
-          placeholder={t("coupangCsv.inputPlaceholder")}
-          disabled={busy}
-        />
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div>
+          <label className="mb-3 block text-sm text-[var(--rb-muted-strong)]" htmlFor="coupangProductUrl">
+            {t("coupangCsv.inputLabel")}
+          </label>
+          <input
+            id="coupangProductUrl"
+            className="input"
+            value={productUrl}
+            onChange={(event) => setProductUrl(event.target.value)}
+            placeholder={t("coupangCsv.inputPlaceholder")}
+            disabled={busy}
+          />
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button type="button" className={buttonStyles({ variant: "primary" })} onClick={onDownload} disabled={busy}>
+              {busy ? t("coupangCsv.downloading") : t("coupangCsv.downloadButton")}
+            </button>
+            <a className={buttonStyles({ variant: "secondary" })} href="/dashboard">
+              {t("coupangCsv.goDashboard")}
+            </a>
+          </div>
+
+          {error ? <p className="mt-4 text-sm text-[var(--rb-danger)]">{error}</p> : null}
+          {!error && notice ? <p className="mt-4 text-sm text-[var(--rb-accent)]">{notice}</p> : null}
+        </div>
+
+        <div className="rounded-[16px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)] p-5">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Flow</p>
+          <ol className="mt-4 space-y-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
+            <li>1. 상품 URL을 입력합니다.</li>
+            <li>2. 리뷰 CSV를 생성해 다운로드합니다.</li>
+            <li>3. 같은 파일을 분석 작업면으로 바로 이어갑니다.</li>
+          </ol>
+        </div>
       </div>
-
-      <div className="actionRow sectionSpacing">
-        <button type="button" className={`btn btnPrimary ${busy ? "btnLoading" : ""}`} onClick={onDownload} disabled={busy}>
-          {busy ? t("coupangCsv.downloading") : t("coupangCsv.downloadButton")}
-        </button>
-        <a className="btn" href="/dashboard">
-          {t("coupangCsv.goDashboard")}
-        </a>
-      </div>
-
-      {error ? <p className="hint danger">{error}</p> : null}
-      {!error && notice ? <p className="hint">{notice}</p> : null}
-    </section>
+    </Surface>
   );
 }

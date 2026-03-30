@@ -4,25 +4,25 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/app/(auth)/actions";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { buttonStyles } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 import { planLabel, type PlanTier } from "@/lib/plan";
 import { useTranslation } from "@/lib/i18n";
 
 export type SidebarVariant = "app" | "dashboard";
 
-export type SidebarNavItem = {
+type SidebarNavItem = {
   href: string;
   icon: "dashboard" | "csv" | "history" | "pricing" | "help" | "blog";
-  label: string;
+  labelKey: string;
   matches: (pathname: string) => boolean;
 };
 
-export type SidebarFooterState = {
+type SidebarNavProps = {
+  variant: SidebarVariant;
   plan: PlanTier;
   userEmail: string | null;
-};
-
-type SidebarNavProps = SidebarFooterState & {
-  variant: SidebarVariant;
   firstLinkRef?: React.Ref<HTMLAnchorElement>;
   onNavigate?: () => void;
 };
@@ -31,37 +31,37 @@ const NAV_ITEMS: SidebarNavItem[] = [
   {
     href: "/dashboard",
     icon: "dashboard",
-    label: "분석하기",
+    labelKey: "nav.analyze",
     matches: (pathname) => pathname === "/dashboard"
   },
   {
     href: "/coupang-csv",
     icon: "csv",
-    label: "리뷰 CSV",
+    labelKey: "nav.coupangCsv",
     matches: (pathname) => pathname.startsWith("/coupang-csv")
   },
   {
     href: "/dashboard/history",
     icon: "history",
-    label: "저장된 리포트",
+    labelKey: "nav.savedReports",
     matches: (pathname) => pathname.startsWith("/dashboard/history") || pathname.startsWith("/dashboard/analysis/")
   },
   {
     href: "/pricing",
     icon: "pricing",
-    label: "요금제",
+    labelKey: "nav.pricing",
     matches: (pathname) => pathname.startsWith("/pricing")
   },
   {
     href: "/help",
     icon: "help",
-    label: "사용법",
+    labelKey: "nav.help",
     matches: (pathname) => pathname.startsWith("/help")
   },
   {
     href: "/blog",
     icon: "blog",
-    label: "블로그",
+    labelKey: "nav.blog",
     matches: (pathname) => pathname.startsWith("/blog")
   }
 ];
@@ -191,7 +191,6 @@ function renderIcon(icon: SidebarNavItem["icon"]) {
 }
 
 export default function SidebarNav({
-  variant,
   plan,
   userEmail,
   firstLinkRef,
@@ -204,87 +203,87 @@ export default function SidebarNav({
   const currentPlanLabel = planLabel(plan);
   const displayName = getDisplayName(userEmail);
   const initials = getInitials(displayName);
-  const promoLabel = plan === "pro" ? t("sidebar.promoButtonPro") : t("sidebar.promoButtonOther");
   const promoTitle = plan === "pro" ? t("sidebar.promoTitlePro") : t("sidebar.promoTitleOther");
   const promoCopy = plan === "pro" ? t("sidebar.promoCopyPro") : t("sidebar.promoCopyOther");
+  const promoLabel = plan === "pro" ? t("sidebar.promoButtonPro") : t("sidebar.promoButtonOther");
 
   return (
-    <div className={`sidebarNav sidebarNav${variant === "dashboard" ? "Drawer" : "Rail"}`}>
-      <div className="sidebarNavMain">
-        <Link
-          href={variant === "dashboard" ? "/dashboard" : "/"}
-          className="sidebarNavBrand"
-          onClick={onNavigate}
-        >
-          <span className="sidebarNavBrandMark" aria-hidden="true">
-            <svg viewBox="0 0 52 52">
-              <circle cx="26" cy="26" r="24" />
-              <path d="M14 31.5 23.8 25l8.1 4.1L39 19.4" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="24" cy="25" r="2.8" />
-              <circle cx="38.3" cy="19.7" r="2.8" />
-              <circle cx="14.2" cy="31.5" r="2.8" />
+    <div className="flex h-full flex-col gap-6">
+      <div className="rounded-[18px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)] p-4">
+        <Link href="/" className="flex items-center gap-3" onClick={onNavigate}>
+          <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[var(--rb-accent)] text-[#071112]">
+            <svg viewBox="0 0 52 52" className="h-6 w-6">
+              <circle cx="26" cy="26" r="24" fill="currentColor" />
+              <path d="M14 31.5 23.8 25l8.1 4.1L39 19.4" fill="none" stroke="#071112" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="24" cy="25" r="2.8" fill="#071112" />
+              <circle cx="38.3" cy="19.7" r="2.8" fill="#071112" />
+              <circle cx="14.2" cy="31.5" r="2.8" fill="#071112" />
             </svg>
           </span>
-          <span className="sidebarNavBrandText">
-            <strong>ReviewBoost</strong>
-          </span>
+          <div>
+            <strong className="text-base font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">ReviewBoost</strong>
+            <p className="mt-1 text-xs text-[var(--rb-muted)]">AI review operations</p>
+          </div>
         </Link>
-
-        <nav aria-label={variant === "dashboard" ? "대시보드 메뉴" : "주요 메뉴"}>
-          <ul className="sidebarNavList">
-            {items.map((item, index) => {
-              const active = item.matches(pathname);
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`sidebarNavLink ${active ? "sidebarNavLinkActive" : ""}`}
-                    aria-current={active ? "page" : undefined}
-                    onClick={onNavigate}
-                    ref={index === 0 ? firstLinkRef : undefined}
-                  >
-                    <span className="sidebarNavIcon" aria-hidden="true">
-                      {renderIcon(item.icon)}
-                    </span>
-                    <span className="sidebarNavLabel">{item.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
       </div>
 
-      <div className="sidebarNavFooter">
-        <section className="sidebarNavPromo" aria-label="업그레이드 안내">
-          <div className="sidebarNavPromoCopy">
-            <span className="sidebarNavPromoEyebrow">{plan === "pro" ? "플랜" : "업그레이드"}</span>
-            <strong>{promoTitle}</strong>
-            <p>{promoCopy}</p>
-          </div>
-          <Link href="/pricing" className="sidebarNavPromoButton" onClick={onNavigate}>
+      <nav aria-label={t("nav.mainMenu")} className="space-y-2">
+        {items.map((item, index) => {
+          const active = item.matches(pathname);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-[14px] border px-4 py-3 text-sm transition",
+                active
+                  ? "border-[color:rgba(95,198,183,0.28)] bg-[rgba(95,198,183,0.08)] text-[var(--rb-fg)]"
+                  : "border-transparent bg-transparent text-[var(--rb-muted-strong)] hover:border-[color:rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.03)] hover:text-[var(--rb-fg)]"
+              )}
+              aria-current={active ? "page" : undefined}
+              onClick={onNavigate}
+              ref={index === 0 ? firstLinkRef : undefined}
+            >
+              <span className="h-5 w-5 shrink-0">{renderIcon(item.icon)}</span>
+              <span>{t(item.labelKey)}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="rounded-[18px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)] p-4">
+        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">{plan === "pro" ? "Plan" : "Upgrade"}</p>
+        <h3 className="mt-3 text-lg font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">{promoTitle}</h3>
+        <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">{promoCopy}</p>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <Link href="/pricing" className={buttonStyles({ variant: "secondary", size: "sm" })} onClick={onNavigate}>
             {promoLabel}
           </Link>
-        </section>
+          <LanguageSwitcher />
+        </div>
+      </div>
 
-        <div className="sidebarNavAccount">
-          <div className={`sidebarNavAvatar ${isAuthenticated ? "" : "sidebarNavAvatarGuest"}`}>{initials}</div>
-          <div className="sidebarNavAccountText">
-            <strong>{displayName}</strong>
-            <span>{isAuthenticated ? `${currentPlanLabel} 플랜` : "로그인 후 리포트 저장"}</span>
+      <div className="mt-auto rounded-[18px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)] p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[rgba(255,255,255,0.06)] text-sm font-semibold text-[var(--rb-fg)]">
+            {initials}
           </div>
+          <div className="min-w-0">
+            <strong className="block truncate text-sm font-medium text-[var(--rb-fg)]">{displayName}</strong>
+            <span className="block truncate text-xs text-[var(--rb-muted)]">{isAuthenticated ? `${currentPlanLabel} 플랜` : t("nav.loginToSave")}</span>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-3">
           {isAuthenticated ? (
-            <form action={signOutAction} className="sidebarNavAccountAction">
-              <button type="submit" className="sidebarNavActionButton" aria-label="로그아웃">
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="M7.5 5.2H5.8A1.8 1.8 0 0 0 4 7v6a1.8 1.8 0 0 0 1.8 1.8h1.7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M10.2 6.5 14 10l-3.8 3.5M14 10H7.7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+            <form action={signOutAction}>
+              <button type="submit" className={buttonStyles({ variant: "ghost", size: "sm" })}>
+                {t("common.logout")}
               </button>
             </form>
           ) : (
-            <Link href="/login" className="sidebarNavActionButton sidebarNavLoginButton" onClick={onNavigate}>
-              로그인
+            <Link href="/login" className={buttonStyles({ variant: "secondary", size: "sm" })} onClick={onNavigate}>
+              {t("common.login")}
             </Link>
           )}
         </div>

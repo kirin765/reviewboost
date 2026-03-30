@@ -8,6 +8,8 @@ import { PlanProvider } from "@/contexts/PlanContext";
 import type { PlanTier } from "@/types/user";
 import DashboardTabs, { type DashboardTab } from "@/components/Dashboard/DashboardTabs";
 import DashboardAnalysisPanel from "@/components/features/dashboard/AnalysisPanel";
+import { buttonStyles } from "@/components/ui/Button";
+import { StatePanel } from "@/components/ui/Primitives";
 import { useReviewAnalysis } from "@/hooks/useReviewAnalysis";
 import { fetchCapabilities } from "@/lib/api/user";
 import { getErrorMessage } from "@/types/common";
@@ -108,7 +110,7 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
     <main className="pageMain workspacePage">
       {shownError ? (
         <FeedbackModal
-          title="분석 처리 오류"
+          title="문제가 발생했어요"
           message={shownError}
           tone="error"
           onClose={() => setLocalError(null)}
@@ -132,6 +134,7 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
             preview={state.preview}
             caps={caps}
             step={step}
+            analysisStage={state.analysisStage}
             textCol={state.textCol}
             ratingCol={state.ratingCol}
             dateCol={state.dateCol}
@@ -153,12 +156,16 @@ function DashboardContent({ caps }: { caps: Capabilities | null }) {
             <LazyAnalysisResults result={state.result} caps={caps} busy={state.busy} onDownloadPdf={handleDownloadPdf} />
           </section>
         ) : (
-          <section id="results-panel" role="tabpanel" aria-labelledby="results-tab" className="workspaceEmptyState">
-            <h2>아직 분석 결과가 없습니다</h2>
-            <p className="hint">CSV를 업로드하고 분석을 실행하면 핵심 지표와 개선 액션이 이곳에 표시됩니다.</p>
-            <button type="button" className="btn btnPrimary" onClick={() => setActiveTab("analysis")} aria-label="분석하기 탭으로 이동">
-              분석하기로 이동
-            </button>
+          <section id="results-panel" role="tabpanel" aria-labelledby="results-tab">
+            <StatePanel
+              title="여기도 채워주세요"
+              description="CSV를 업로드하고 분석을 실행하면 핵심 지표, 우선순위, 액션 아이템이 이곳에 표시됩니다."
+              actions={
+                <button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => setActiveTab("analysis")} aria-label="분석하기 탭으로 이동">
+                  분석하기로 이동
+                </button>
+              }
+            />
           </section>
         )}
       </div>

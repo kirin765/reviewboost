@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { gtagEvent } from "@/lib/analytics";
+import { ANALYSIS_STAGE_ORDER, type AnalysisStage } from "@/lib/analysis-stage";
 import { useLocalStorage } from "@/hooks/common/useLocalStorage";
 import { useModal } from "@/hooks/common/useModal";
 import { getErrorMessage } from "@/types/common";
@@ -33,8 +34,10 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
   const [dateCol, setDateCol] = useState("");
   const [showAllPreviewCols, setShowAllPreviewCols] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [analysisStage, setAnalysisStage] = useState<AnalysisStage>("done");
   const [lastTextCol, setLastTextCol] = useLocalStorage("reviewboost:last-text-col", "");
   const previewModal = useModal<{ col: string; value: string }>();
+  const stageTimerRef = useRef<number | null>(null);
 
   const step = useMemo<1 | 2 | 3 | 4>(() => {
     if (!file) return 1;
@@ -52,6 +55,31 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
   );
 
   const clearError = useCallback(() => setError(null), []);
+
+  const stopStageProgress = useCallback((finalStage: AnalysisStage = "done") => {
+    if (stageTimerRef.current !== null && typeof window !== "undefined") {
+      window.clearInterval(stageTimerRef.current);
+      stageTimerRef.current = null;
+    }
+    setAnalysisStage(finalStage);
+  }, []);
+
+  const startStageProgress = useCallback(() => {
+    stopStageProgress("collect");
+
+    if (typeof window === "undefined") return;
+
+    let index = 0;
+    stageTimerRef.current = window.setInterval(() => {
+      index = Math.min(index + 1, ANALYSIS_STAGE_ORDER.length - 1);
+      setAnalysisStage(ANALYSIS_STAGE_ORDER[index] ?? "priority");
+
+      if (index >= ANALYSIS_STAGE_ORDER.length - 1 && stageTimerRef.current !== null) {
+        window.clearInterval(stageTimerRef.current);
+        stageTimerRef.current = null;
+      }
+    }, 900);
+  }, [stopStageProgress]);
 
   const normalizeError = useCallback((error: unknown) => {
     setError(toNotice(getErrorMessage(error)));
@@ -83,10 +111,12 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
     setError(null);
     setResult(null);
     setNoticeState(null);
+    startStageProgress();
 
     try {
       if (!preview) {
         await loadPreview(file);
+        stopStageProgress("done");
         return;
       }
 
@@ -103,6 +133,7 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
       });
 
       setResult(next);
+      stopStageProgress("done");
       setNoticeState("분석이 완료되었습니다.");
       gtagEvent("analysis_complete", {
         total_reviews: next.stats.total,
@@ -110,19 +141,21 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
         negative_ratio: Number(next.stats.negativeRatio.toFixed(4))
       });
     } catch (error: unknown) {
+      stopStageProgress("done");
       normalizeError(error);
       setError(toNotice(getErrorMessage(error)));
       setNoticeState(null);
     } finally {
       setBusy(false);
     }
-  }, [dateCol, file, loadPreview, normalizeError, preview, ratingCol, setLastTextCol, setNoticeState, textCol]);
+  }, [dateCol, file, loadPreview, normalizeError, preview, ratingCol, setLastTextCol, setNoticeState, startStageProgress, stopStageProgress, textCol]);
 
   const onSample = useCallback(async () => {
     setBusy(true);
     setError(null);
     setResult(null);
     setNoticeState(null);
+    startStageProgress();
     try {
       const res = await fetch("/sample.csv", { cache: "no-store" });
       if (!res.ok) {
@@ -138,13 +171,15 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
       setRatingCol("");
       setDateCol("");
       await loadPreview(f);
+      stopStageProgress("done");
       setNoticeState("샘플 파일이 업로드되어 미리보기가 준비되었습니다.");
     } catch (error: unknown) {
+      stopStageProgress("done");
       normalizeError(error);
     } finally {
       setBusy(false);
     }
-  }, [lastTextCol, loadPreview, normalizeError, setNoticeState]);
+  }, [lastTextCol, loadPreview, normalizeError, setNoticeState, startStageProgress, stopStageProgress]);
 
   const onSampleAndAnalyze = useCallback(async () => {
     await onSample();
@@ -161,7 +196,10 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
     setTextCol(lastTextCol);
     setRatingCol("");
     setDateCol("");
-  }, [lastTextCol, setNoticeState]);
+    stopStageProgress("done");
+  }, [lastTextCol, setNoticeState, stopStageProgress]);
+
+  useEffect(() => () => stopStageProgress("done"), [stopStageProgress]);
 
   const onDownloadPdf = useCallback(async (): Promise<Blob | null> => {
     if (!result) return null;
@@ -203,6 +241,7 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
       dateCol,
       showAllPreviewCols,
       notice,
+      analysisStage,
       isBusy: busy
     },
     actions: {

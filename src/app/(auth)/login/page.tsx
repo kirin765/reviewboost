@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signInAction } from "@/app/(auth)/actions";
 import FeedbackModal from "@/components/FeedbackModal";

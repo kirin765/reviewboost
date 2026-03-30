@@ -1,7 +1,9 @@
+import React from "react";
 import { redirect } from "next/navigation";
+import { buttonStyles } from "@/components/ui/Button";
+import { SectionHeader, StatePanel, Surface } from "@/components/ui/Primitives";
 import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 import type { AnalysisOutput } from "@/lib/types";
-import AnalysisResultDigest from "@/components/Analysis/AnalysisResultDigest";
 
 export const dynamic = "force-dynamic";
 
@@ -52,22 +54,17 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
 
   if (!supabase) {
     return (
-      <main className="pageMain dashboardPageSurface">
-        <div className="card">
-          <h2>저장된 분석 보기</h2>
-          <p className="muted">저장 기능이 꺼져 있어 이 페이지를 사용할 수 없습니다.</p>
-          <p className="hint muted">
-            저장 없이도 대시보드에서 분석 후 <strong>PDF 다운로드</strong>로 공유용 리포트를 만들 수 있어요.
-          </p>
-          <div className="actionRow">
-            <a className="btn btnPrimary" href="/dashboard">
-              새 분석
-            </a>
-            <a className="btn" href="/help">
-              사용법
-            </a>
-          </div>
-        </div>
+      <main className="pageMain">
+        <StatePanel
+          title="저장 기능이 비활성화되어 있습니다"
+          description="지금은 저장 기능이 꺼져 있어 이 페이지를 사용할 수 없습니다. 대시보드에서 분석 후 PDF를 바로 공유용 리포트로 사용할 수 있습니다."
+          actions={
+            <>
+              <a className={buttonStyles({ variant: "primary" })} href="/dashboard">새 분석</a>
+              <a className={buttonStyles({ variant: "secondary" })} href="/help">사용법</a>
+            </>
+          }
+        />
       </main>
     );
   }
@@ -84,17 +81,13 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
 
   if (error || !data) {
     return (
-      <main className="pageMain dashboardPageSurface">
-        <div className="card">
-          <h2>분석을 찾을 수 없음</h2>
-          <p className="muted">권한이 없거나 삭제된 항목일 수 있습니다.</p>
-          {error ? <p className="hint danger">오류가 발생했습니다.</p> : null}
-          <div className="actionRow">
-            <a className="btn" href="/dashboard/history">
-              히스토리
-            </a>
-          </div>
-        </div>
+      <main className="pageMain">
+        <StatePanel
+          title="문제가 발생했어요"
+          description="분석을 찾을 수 없거나 접근 권한이 없습니다."
+          tone="error"
+          actions={<a className={buttonStyles({ variant: "secondary" })} href="/dashboard/history">히스토리</a>}
+        />
       </main>
     );
   }
@@ -123,43 +116,64 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
   ];
 
   return (
-    <main className="pageMain workspacePage">
-      <section className="card">
-        <div className="appPageHeader">
-          <div>
-            <p className="sectionEyebrow">Saved report</p>
-            <h1 className="appPageTitle">저장된 분석</h1>
-            <p className="appPageLead">
-              {row.input_filename ?? "CSV"} · {created} · 우선순위 {priorityScore.toFixed(1)}
-            </p>
-          </div>
-          <div className="appPageActions">
-            <a className="btn" href="/dashboard/history">
-              히스토리
-            </a>
-            <a className="btn btnPrimary" href="/dashboard">
-              새 분석
-            </a>
-            <a className="btn" href={`/api/report/${row.id}`}>
-              PDF 다운로드
-            </a>
-          </div>
-        </div>
-
-        <div className="appPageMetaGrid">
+    <main className="pageMain space-y-6">
+      <Surface className="px-6 py-6 md:px-7">
+        <SectionHeader
+          eyebrow="Saved report"
+          title={row.input_filename ?? "저장된 분석"}
+          description={`${created} · 우선순위 ${priorityScore.toFixed(1)}`}
+          action={
+            <div className="flex flex-wrap gap-3">
+              <a className={buttonStyles({ variant: "secondary" })} href="/dashboard/history">히스토리</a>
+              <a className={buttonStyles({ variant: "primary" })} href="/dashboard">새 분석</a>
+              <a className={buttonStyles({ variant: "secondary" })} href={`/api/report/${row.id}`}>PDF 다운로드</a>
+            </div>
+          }
+        />
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
           {summaryStats.map((stat) => (
-            <article className="appPageMetaItem" key={stat.label}>
-              <span>{stat.label}</span>
-              <strong>{stat.value}</strong>
-              <p className="hint">{stat.meta}</p>
-            </article>
+            <div key={stat.label} className="rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+              <p className="text-xs text-[var(--rb-muted)]">{stat.label}</p>
+              <strong className="mt-2 block text-3xl font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">{stat.value}</strong>
+              <p className="mt-2 text-sm text-[var(--rb-muted-strong)]">{stat.meta}</p>
+            </div>
           ))}
         </div>
-      </section>
+      </Surface>
 
-      <section className="dashboardDetailSection">
-        <AnalysisResultDigest result={result} />
-      </section>
+      <Surface className="px-6 py-6 md:px-7">
+        <SectionHeader eyebrow="Digest" title="핵심 요약" description="저장 시점의 통계와 제안 문구를 다시 확인합니다." />
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Negative keywords</p>
+            <div className="mt-4 space-y-3">
+              {result.stats.negativeKeywordsTop10.map((item) => (
+                <div key={item.keyword} className="flex items-center justify-between gap-4 text-sm">
+                  <span className="text-[var(--rb-fg)]">{item.keyword}</span>
+                  <span className="text-[var(--rb-muted)]">{item.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Suggestions</p>
+            <div className="mt-4 space-y-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
+              {result.suggestions.detailPageCopy.map((item, index) => (
+                <p key={`${item}-${index}`}>{item}</p>
+              ))}
+              {result.suggestions.csResponseTemplates.map((item, index) => (
+                <p key={`${item}-${index}`}>{item}</p>
+              ))}
+              {result.suggestions.faqRecommendations.map((item, index) => (
+                <p key={`${item}-${index}`}>{item}</p>
+              ))}
+              {result.suggestions.notes.map((item, index) => (
+                <p key={`${item}-${index}`}>{item}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Surface>
     </main>
   );
 }
