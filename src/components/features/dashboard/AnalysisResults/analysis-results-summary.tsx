@@ -1,10 +1,8 @@
 "use client";
 
-import React from "react";
 import type { AnalysisOutput } from "@/lib/types";
 import type { Capabilities } from "@/lib/capabilities";
 import type { PlanGates } from "@/lib/types";
-import { useTranslation } from "@/lib/i18n";
 
 type AnalysisResultsSummaryProps = {
   result: AnalysisOutput & {
@@ -22,65 +20,61 @@ type AnalysisResultsSummaryProps = {
 };
 
 export function AnalysisResultsSummary({ result, onDownloadPdf, busy, caps, gates }: AnalysisResultsSummaryProps) {
-  const { t } = useTranslation();
-  const storageEnabled = caps?.supabaseConfigured === true;
-  const storageLinkLabel = storageEnabled ? t("summary.viewSavedReports") : t("summary.storageDisabled");
   const negativeRatio = typeof result.stats.negativeRatio === "number" ? `${Math.round(result.stats.negativeRatio * 100)}%` : "-";
-  const avgRating = result.stats.avgRating === null ? t("summary.notProvided") : `${result.stats.avgRating.toFixed(1)}${t("summary.points")}`;
-  const recentShare = result.stats.recentness?.hasDates ? `${Math.round((result.stats.recentness.last30Share ?? 0) * 100)}%` : t("summary.noDate");
+  const avgRating = result.stats.avgRating === null ? "-" : `${result.stats.avgRating.toFixed(2)} / 5`;
+  const recentShare = result.stats.recentness?.hasDates ? `${Math.round((result.stats.recentness.last30Share ?? 0) * 100)}%` : "-";
   const summaryStats = [
-    { label: t("summary.totalReviews"), value: `${result.stats.total}${t("summary.count")}`, meta: result.meta.filename ?? t("summary.uploadFile") },
-    { label: t("summary.negativeRatio"), value: negativeRatio, meta: t("summary.negativeCount", { count: result.stats.negative ?? 0 }) },
-    { label: t("summary.avgRating"), value: avgRating, meta: t("summary.ratingCalcHint") },
-    { label: t("summary.recent30"), value: recentShare, meta: result.stats.recentness?.hasDates ? t("summary.recencyReflected") : t("summary.noDateCol") }
+    ["총 리뷰 수", String(result.stats.total)],
+    ["부정 비율", negativeRatio],
+    ["평균 평점", avgRating],
+    ["최근 가중치", recentShare]
   ];
 
   return (
-    <section className="resultsBlock analysisResultsPrimary resultsHeroCard">
+    <section className="space-y-5 rounded-[24px] border border-white/10 bg-[rgba(17,20,23,0.92)] p-6 md:p-8">
       {result.meta.truncated ? (
-        <p className="hint danger analysisResultsWarning">
-          {t("summary.truncatedWarning", { count: gates.maxReviewsPerAnalysis })}
-        </p>
+        <div className="rounded-[16px] border border-[var(--color-warning)]/30 bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-text)]/90">
+          분석 가능한 최대 리뷰 수 {gates.maxReviewsPerAnalysis}개를 초과해 일부만 반영했습니다.
+        </div>
       ) : null}
 
-      {!result.stats.recentness?.hasDates ? (
-        <p className="hint muted analysisResultsHintMuted">{t("summary.noDateHint")}</p>
-      ) : null}
-
-      <div className="resultsHeroHead">
-        <div className="resultsHeroIntro">
-          <p className="sectionEyebrow">{t("summary.eyebrow")}</p>
-          <h1 className="resultsHeroTitle">{t("summary.title")}</h1>
-          <p className="resultsHeroLead">{t("summary.lead")}</p>
-          <div className="resultsHeroMetaRow">
-            <span className="pill pillActive">{result.meta.filename ?? "CSV"}</span>
-            <span className="pill">{result.meta.stored ? t("summary.savedComplete") : t("summary.sessionResult")}</span>
-            <span className="pill">{storageEnabled ? caps?.planLabel ?? t("summary.account") : t("summary.guestMode")}</span>
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+        <div className="max-w-2xl">
+          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--color-muted)]">Analysis result</p>
+          <h1 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-[var(--color-text)] md:text-5xl">무엇이 가장 급하고, 무엇부터 고쳐야 하는지 정리했습니다.</h1>
+          <p className="mt-4 text-base leading-7 text-[var(--color-muted)]">
+            긴급 리뷰, 카테고리별 영향도, 실행 우선순위, 평점 개선 시뮬레이션까지 하나의 분석 흐름으로 제공합니다.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2 text-xs uppercase tracking-[0.18em] text-[var(--color-muted)]">
+            <span className="rounded-full border border-white/10 px-3 py-1.5">{result.meta.filename ?? "CSV"}</span>
+            <span className="rounded-full border border-white/10 px-3 py-1.5">{result.meta.stored ? "saved" : "session only"}</span>
+            <span className="rounded-full border border-white/10 px-3 py-1.5">{caps?.planLabel ?? "Guest mode"}</span>
           </div>
         </div>
-        <div className="toolbar resultsToolbar">
-          <button className="btn btnPrimary" onClick={onDownloadPdf} disabled={busy}>
-            {t("common.downloadPdf")}
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-[14px] bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            onClick={onDownloadPdf}
+            disabled={busy}
+          >
+            PDF 다운로드
           </button>
           <a
-            className="btn"
+            className="inline-flex items-center justify-center rounded-[14px] border border-white/10 bg-white/5 px-5 py-3 text-sm text-[var(--color-text)]"
             href="/dashboard/history"
-            onClick={(event) => {
-              if (!storageEnabled) event.preventDefault();
-            }}
           >
-            {storageLinkLabel}
+            저장된 리포트
           </a>
         </div>
       </div>
 
-      <div className="resultsHeroStats resultsHeroStatsSingleColumn">
-        {summaryStats.map((stat) => (
-          <article className="resultsHeroStat" key={stat.label}>
-            <span className="resultsHeroStatLabel">{stat.label}</span>
-            <strong className="resultsHeroStatValue">{stat.value}</strong>
-            <span className="resultsHeroStatMeta">{stat.meta}</span>
-          </article>
+      <div className="grid gap-4 md:grid-cols-4">
+        {summaryStats.map(([label, value]) => (
+          <div key={label} className="border-t border-white/10 pt-4">
+            <div className="text-xs uppercase tracking-[0.22em] text-[var(--color-muted)]">{label}</div>
+            <div className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--color-text)]">{value}</div>
+          </div>
         ))}
       </div>
     </section>

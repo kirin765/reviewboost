@@ -1,4 +1,3 @@
-import React from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 import { getServerTranslation, getServerLocale } from "@/lib/i18n/server";
@@ -10,23 +9,6 @@ type HistoryAnalysisRow = {
   created_at: string;
   input_filename: string | null;
   priority_score: number;
-  stats: {
-    total: number;
-    positive?: number;
-    negative?: number;
-    negativeRatio?: number;
-    [key: string]: unknown;
-  } | null;
-};
-
-type SavedReportListItem = {
-  id: string;
-  title: string;
-  createdLabel: string;
-  priorityLabel: string;
-  pdfStatusLabel: "Ready";
-  href: string;
-  avatarText: string;
 };
 
 async function formatSavedAt(value: string) {
@@ -34,28 +16,11 @@ async function formatSavedAt(value: string) {
   return new Date(value).toLocaleString(locale === "en" ? "en-US" : "ko-KR");
 }
 
-async function formatSavedDate(value: string) {
-  const locale = await getServerLocale();
-  return new Date(value).toLocaleDateString(locale === "en" ? "en-US" : "ko-KR");
-}
-
 function getAvatarText(filename: string | null) {
   const base = (filename ?? "").replace(/\.[^.]+$/, "").trim();
   const characters = Array.from(base).filter((character) => /[A-Za-z0-9가-힣]/.test(character));
   if (characters.length === 0) return "RB";
   return characters.slice(0, 2).join("").toUpperCase();
-}
-
-function mapSavedReportListItem(row: HistoryAnalysisRow, createdLabel: string): SavedReportListItem {
-  return {
-    id: row.id,
-    title: row.input_filename ?? "CSV",
-    createdLabel,
-    priorityLabel: Number(row.priority_score ?? 0).toFixed(1),
-    pdfStatusLabel: "Ready",
-    href: `/dashboard/analysis/${row.id}`,
-    avatarText: getAvatarText(row.input_filename)
-  };
 }
 
 export default async function HistoryPage() {
@@ -70,20 +35,11 @@ export default async function HistoryPage() {
 
   if (!supabase) {
     return (
-      <main className="pageMain dashboardPageSurface">
-        <div className="card">
-          <h2>{t("history.savedReports")}</h2>
-          <p className="muted">{t("history.storageOff")}</p>
-          <p className="hint muted" dangerouslySetInnerHTML={{ __html: t("history.storageOffHint") }} />
-          <div className="actionRow">
-            <a className="btn btnPrimary" href="/dashboard">
-              {t("history.newAnalysis")}
-            </a>
-            <a className="btn" href="/help">
-              {t("history.help")}
-            </a>
-          </div>
-        </div>
+      <main className="pb-16">
+        <section className="rounded-[28px] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(26,26,26,0.94),rgba(16,16,16,0.96))] p-8">
+          <h1 className="text-4xl font-semibold tracking-[-0.05em] text-white">{t("history.savedReports")}</h1>
+          <p className="mt-4 text-base leading-8 text-[var(--color-muted)]">{t("history.storageOff")}</p>
+        </section>
       </main>
     );
   }
@@ -91,129 +47,74 @@ export default async function HistoryPage() {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect(`/login?next=${encodeURIComponent("/dashboard/history")}`);
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("analyses")
-    .select("id, created_at, input_filename, priority_score, stats")
+    .select("id, created_at, input_filename, priority_score")
     .eq("user_id", userData.user.id)
     .order("created_at", { ascending: false })
     .limit(50);
 
-  if (error) {
-    return (
-      <main className="pageMain dashboardPageSurface">
-        <div className="card">
-          <h2>{t("history.loadFailed")}</h2>
-          <p className="hint danger">{t("history.loadError")}</p>
-          <div className="actionRow">
-            <a className="btn" href="/dashboard">
-              {t("history.dashboard")}
-            </a>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const rows = ((data ?? []) as HistoryAnalysisRow[]).map(async (row) => ({
+    ...row,
+    createdLabel: await formatSavedAt(row.created_at),
+    avatarText: getAvatarText(row.input_filename)
+  }));
 
-  const rows = (data ?? []) as HistoryAnalysisRow[];
-  const items: SavedReportListItem[] = [];
-  for (const row of rows) {
-    const label = await formatSavedAt(row.created_at);
-    items.push(mapSavedReportListItem(row, label));
-  }
-  const avgPriority = rows.length ? rows.reduce((sum, row) => sum + Number(row.priority_score ?? 0), 0) / rows.length : 0;
-  const latestCreated = rows[0] ? await formatSavedDate(rows[0].created_at) : t("history.none");
+  const items = await Promise.all(rows);
 
   return (
-    <main className="pageMain dashboardPageSurface">
-      <section className="card dashboardPageHeader">
-        <div className="dashboardPageHeaderTop">
-          <div>
-            <p className="sectionEyebrow">Saved reports</p>
-            <h1 className="dashboardPageTitle">{t("history.pageTitle")}</h1>
-            <p className="dashboardPageLead">{t("history.pageLead")}</p>
-          </div>
-          <div className="actionRow">
-            <a className="btn btnPrimary" href="/dashboard">
-              {t("history.newAnalysis")}
-            </a>
-          </div>
-        </div>
-
-        <div className="dashboardPageStats">
-          <article className="dashboardPageStat">
-            <span className="dashboardStatLabel">{t("history.savedAnalyses")}</span>
-            <strong className="dashboardStatValue">{rows.length}{t("history.countUnit")}</strong>
-            <span className="dashboardStatMeta">{t("history.last50")}</span>
-          </article>
-          <article className="dashboardPageStat">
-            <span className="dashboardStatLabel">{t("history.avgPriority")}</span>
-            <strong className="dashboardStatValue">{rows.length ? avgPriority.toFixed(1) : "-"}</strong>
-            <span className="dashboardStatMeta">{t("history.avgOfSaved")}</span>
-          </article>
-          <article className="dashboardPageStat">
-            <span className="dashboardStatLabel">{t("history.latestSaved")}</span>
-            <strong className="dashboardStatValue">{latestCreated}</strong>
-            <span className="dashboardStatMeta">{t("history.lastRecord")}</span>
-          </article>
-        </div>
+    <main className="pb-16">
+      <section className="mb-6">
+        <h1 className="text-4xl font-semibold tracking-[-0.05em] text-white md:text-6xl">분석결과리스트</h1>
+        <p className="mt-4 max-w-[720px] text-base leading-8 text-[var(--color-muted)]">
+          저장된 분석 결과를 최신순으로 확인하고, 원하는 리포트로 바로 이동할 수 있습니다.
+        </p>
       </section>
 
-      <section className="card dashboardListCard historyTableCard">
-        <div className="dashboardSubsectionHeader">
-          <div>
-            <p className="sectionEyebrow">Report list</p>
-            <h2>{t("history.listTitle")}</h2>
-          </div>
+      <section className="rounded-[28px] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(26,26,26,0.94),rgba(16,16,16,0.96))]">
+        <div className="grid gap-4 border-b border-white/[0.06] px-4 py-4 md:grid-cols-[1.1fr_0.8fr_0.9fr_0.7fr] md:px-6">
+          <div className="rounded-[14px] border border-white/[0.06] bg-black/20 px-4 py-3 text-sm text-[var(--color-muted)]">Select Date Range</div>
+          <div className="rounded-[14px] border border-white/[0.06] bg-black/20 px-4 py-3 text-sm text-[var(--color-muted)]">All Files</div>
+          <div className="rounded-[14px] border border-white/[0.06] bg-black/20 px-4 py-3 text-sm text-[var(--color-muted)]">All Priorities</div>
+          <div className="rounded-[14px] border border-white/[0.06] bg-black/20 px-4 py-3 text-sm text-[var(--color-muted)]">Status {items.length}/50</div>
         </div>
 
-        {items.length === 0 ? (
-          <p className="muted historyTableEmpty">{t("history.empty")}</p>
-        ) : (
-          <div className="historyTable" role="table" aria-label={t("history.tableLabel")}>
-            <div className="historyTableHeader" role="row">
-              <span>Report</span>
-              <span>Saved at</span>
-              <span>Priority</span>
-              <span>PDF</span>
-              <span aria-hidden="true" />
-            </div>
-            <div className="historyTableBody">
-              {items.map((item) => (
-                <article className="historyTableRow" key={item.id}>
-                  <div className="historyReportCell">
-                    <span className="historyAvatar" aria-hidden="true">
-                      {item.avatarText}
-                    </span>
-                    <div className="historyReportText">
-                      <strong className="historyReportTitle">{item.title}</strong>
-                    </div>
-                  </div>
+        <div className="divide-y divide-white/[0.06]">
+          {items.map((item) => (
+            <a
+              key={item.id}
+              href={`/dashboard/analysis/${item.id}`}
+              className="grid items-center gap-4 px-4 py-5 transition hover:bg-white/[0.02] md:grid-cols-[1.1fr_0.8fr_1fr_0.9fr_0.8fr] md:px-6"
+            >
+              <div>
+                <div className="text-xl font-semibold tracking-[-0.03em] text-white">{item.id.slice(0, 10)}</div>
+                <div className="mt-1 text-sm text-[var(--color-muted)]">{item.input_filename ?? "CSV"}</div>
+              </div>
 
-                  <div className="historyMetaCell historyMetaCellSaved">
-                    <span className="historyMetaLabel">Saved at</span>
-                    <span className="historyMetaValue">{item.createdLabel}</span>
-                  </div>
+              <div>
+                <div className="flex items-center gap-2 text-white">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                  <span>Ready</span>
+                </div>
+                <div className="mt-1 text-sm text-[var(--color-muted)]">{item.createdLabel}</div>
+              </div>
 
-                  <div className="historyMetaCell historyMetaCellPriority">
-                    <span className="historyMetaLabel">Priority</span>
-                    <span className="historyPriorityBadge">Priority {item.priorityLabel}</span>
-                  </div>
+              <div className="flex items-center gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[var(--color-primary)] text-sm font-semibold text-white">
+                  {item.avatarText}
+                </span>
+                <span className="text-sm text-white">reviewboost</span>
+              </div>
 
-                  <div className="historyMetaCell historyMetaCellPdf">
-                    <span className="historyMetaLabel">PDF</span>
-                    <span className="historyPdfBadge">{item.pdfStatusLabel}</span>
-                  </div>
+              <div>
+                <div className="text-sm text-white">main</div>
+                <div className="mt-1 text-sm text-[var(--color-muted)]">Priority {Number(item.priority_score ?? 0).toFixed(1)}</div>
+              </div>
 
-                  <div className="historyActionCell">
-                    <a className="btn historyRowAction" href={item.href}>
-                      {t("history.viewDetail")}
-                    </a>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        )}
+              <div className="text-right text-sm text-[var(--color-muted)]">열기</div>
+            </a>
+          ))}
+        </div>
       </section>
     </main>
   );

@@ -28,18 +28,20 @@ export default function PlanGate({ children, requiredPlan, featureName }: PlanGa
   const planLabel = requiredPlan === "pro" ? "Pro" : "Basic";
 
   return (
-    <div className="planGate">
-      <div className="planGateContent">{children}</div>
-      <div className="planGateOverlay">
-        <div className="planGateMessage">
+    <div className="relative overflow-hidden rounded-[16px] border border-white/10">
+      <div className="opacity-35 blur-[2px]">{children}</div>
+      <div className="absolute inset-0 flex items-center justify-center bg-[rgba(9,11,13,0.72)] backdrop-blur-sm">
+        <div className="flex max-w-sm flex-col items-center gap-4 px-6 text-center">
+          <div className="text-sm leading-6 text-[var(--color-text)]/88">
           {t("gate.planRequired", { feature: featureName, plan: planLabel })}
-        </div>
+          </div>
         <Link
           href="/pricing"
-          className="btn btnPrimary btnSmall"
+          className="inline-flex items-center justify-center rounded-[12px] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white"
         >
           {t("gate.upgrade")}
         </Link>
+        </div>
       </div>
     </div>
   );

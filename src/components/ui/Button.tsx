@@ -11,16 +11,20 @@ export type ButtonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "t
 };
 
 const variantClassName: Record<ButtonVariant, string> = {
-  primary: "btn btnPrimary",
-  secondary: "btn",
-  danger: "btn btnWarn",
-  ghost: "btn btnGhost"
+  primary:
+    "inline-flex items-center justify-center rounded-[14px] bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50",
+  secondary:
+    "inline-flex items-center justify-center rounded-[14px] border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-[var(--color-text)] transition hover:border-white/20 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50",
+  danger:
+    "inline-flex items-center justify-center rounded-[14px] bg-[var(--color-danger)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50",
+  ghost:
+    "inline-flex items-center justify-center rounded-[14px] px-4 py-2.5 text-sm font-medium text-[var(--color-text)] transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-50"
 };
 
 const sizeClassName: Record<ButtonSize, string> = {
-  sm: "btnSmall",
+  sm: "px-3 py-2 text-xs",
   md: "",
-  lg: "btnLarge"
+  lg: "px-5 py-3 text-base"
 };
 
 export default function Button({

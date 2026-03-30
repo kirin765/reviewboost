@@ -4,8 +4,6 @@ import type { Capabilities } from "@/lib/capabilities";
 import type { CsvPreview } from "@/lib/csv";
 import FileUploader from "./FileUploader";
 import CsvPreviewComponent from "./CsvPreview";
-import AnalysisStepList from "./AnalysisStepList";
-import { useTranslation } from "@/lib/i18n";
 
 interface DashboardAnalysisPanelProps {
   file: File | null;
@@ -30,6 +28,26 @@ interface DashboardAnalysisPanelProps {
   onCellModalClose: () => void;
 }
 
+function StepPage({
+  title,
+  description,
+  children
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-[28px] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(26,26,26,0.94),rgba(16,16,16,0.96))] p-6 md:p-8">
+      <div className="max-w-[720px]">
+        <h2 className="text-3xl font-semibold tracking-[-0.05em] text-white md:text-4xl">{title}</h2>
+        <p className="mt-4 text-base leading-8 text-[var(--color-muted)]">{description}</p>
+      </div>
+      <div className="mt-8">{children}</div>
+    </section>
+  );
+}
+
 export default function DashboardAnalysisPanel({
   file,
   busy,
@@ -52,128 +70,88 @@ export default function DashboardAnalysisPanel({
   onCellClick,
   onCellModalClose
 }: DashboardAnalysisPanelProps) {
-  const { t } = useTranslation();
-
-  const infoCards = [
-    {
-      label: t("panel.uploadStatus"),
-      value: file ? file.name : t("panel.noFile"),
-      meta: file ? `${Math.round(file.size / 1024)} KB` : t("panel.addCsv")
-    },
-    {
-      label: t("panel.previewLabel"),
-      value: preview ? `${preview.totalRows}${t("preview.rows")}` : t("panel.previewWaiting"),
-      meta: preview ? `${preview.columns.length}${t("panel.colsDetected")}` : t("panel.colsEstimateHint")
-    },
-    {
-      label: t("panel.savePlan"),
-      value: caps?.planLabel ?? "Guest mode",
-      meta: caps?.supabaseConfigured === false ? t("panel.storageOff") : t("panel.storageOrPdf")
-    }
-  ];
-
-  return (
-    <section className="dashboardPanel dashboardAnalysisPanel" id="analysis-panel" role="tabpanel" aria-labelledby="analysis-tab">
-      <div className="dashboardSectionHeader">
-        <div>
-          <p className="sectionEyebrow">Upload and map</p>
-          <h1 className="dashboardSectionTitle">{t("panel.csvAnalysis")}</h1>
-          <p className="dashboardSectionLead">{t("panel.csvAnalysisLead")}</p>
-        </div>
-        <div className="analysisInfoCards">
-          {infoCards.map((card) => (
-            <article className="miniStatCard" key={card.label}>
-              <span className="dashboardStatLabel">{card.label}</span>
-              <strong className="dashboardStatValue">{card.value}</strong>
-              <span className="dashboardStatMeta">{card.meta}</span>
-            </article>
-          ))}
-        </div>
-      </div>
-
-      <AnalysisStepList step={step} />
-
-      <div className="analysisFlowGrid analysisFlowGridEnhanced">
-        <div className="analysisControlColumn">
-          <div className="card surfaceCard">
-            <div className="dashboardSubsectionHeader">
-              <div>
-                <p className="sectionEyebrow">Step 1</p>
-                <h2>{t("panel.fileUpload")}</h2>
-              </div>
-              <span className="pill pillActive">CSV only</span>
-            </div>
+  if (step === 1) {
+    return (
+      <StepPage title="CSV 파일을 업로드합니다" description="첫 단계에서는 분석할 리뷰 데이터를 넣습니다. 샘플로 바로 테스트하거나 업로드를 시작할 수 있습니다.">
+        <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+          <div className="rounded-[22px] border border-white/[0.06] bg-black/20 p-5">
             <FileUploader file={file} busy={busy} preview={Boolean(preview)} onFileSelect={onFileSelect} onReset={onReset} onSample={onSample} onAnalyze={onAnalyze} />
           </div>
-
-          <div className="card surfaceCard dashboardInfoCard">
-            <div className="dashboardSubsectionHeader">
-              <div>
-                <p className="sectionEyebrow">Workspace notes</p>
-                <h2>{t("panel.workspaceNotes")}</h2>
-              </div>
-            </div>
-
-            {caps?.supabaseConfigured === false ? (
-              <div className="actionRow dashboardPanelHint" role="note">
-                <p className="hint muted">{t("panel.storageOffHint")}</p>
-              </div>
-            ) : caps ? (
-              <p className="hint muted dashboardPanelHint">
-                {t("panel.currentPlan")} <strong>{caps.planLabel}</strong> · {t("panel.monthlyUsage")} {caps.monthlyUsed}
-                {typeof caps.monthlyLimit === "number" ? ` / ${caps.monthlyLimit}` : ""}
-              </p>
-            ) : (
-              <p className="hint muted dashboardPanelHint">{t("panel.noStorageHint")}</p>
-            )}
-
-            <div className="dashboardInfoList">
-              <div className="dashboardInfoListItem">{t("panel.info1")}</div>
-              <div className="dashboardInfoListItem">{t("panel.info2")}</div>
-              <div className="dashboardInfoListItem">{t("panel.info3")}</div>
-            </div>
-
-            <div className="actionRow dashboardPanelActionRow">
-              {caps?.supabaseConfigured === false ? null : (
-                <a className="btn btnGhost" href="/dashboard/history">
-                  {t("panel.savedReports")}
-                </a>
-              )}
+          <div className="rounded-[22px] border border-white/[0.06] bg-black/15 p-8">
+            <div className="text-[11px] uppercase tracking-[0.22em] text-white">Step 1</div>
+            <h3 className="mt-4 text-[28px] font-medium tracking-[-0.04em] text-white">입력만 끝내면 다음 단계로 넘어갑니다.</h3>
+            <div className="mt-5 space-y-3 text-base leading-8 text-[var(--color-muted)]">
+              <p>상품 리뷰 CSV를 업로드합니다.</p>
+              <p>샘플 파일로 바로 분석 흐름을 체험할 수 있습니다.</p>
+              <p>업로드가 끝나면 하단 화면이 컬럼 확인 화면으로 바뀝니다.</p>
             </div>
           </div>
         </div>
+      </StepPage>
+    );
+  }
 
-        <div className="analysisPreviewColumn">
-          {preview ? (
-            <CsvPreviewComponent
-              preview={preview}
-              busy={busy}
-              textCol={textCol}
-              ratingCol={ratingCol}
-              dateCol={dateCol}
-              showAllPreviewCols={showAllPreviewCols}
-              cellModal={cellModal}
-              onTextColChange={onTextColChange}
-              onRatingColChange={onRatingColChange}
-              onDateColChange={onDateColChange}
-              onTogglePreviewCols={onTogglePreviewCols}
-              onCellClick={onCellClick}
-              onCellModalClose={onCellModalClose}
-            />
-          ) : (
-            <div className="card previewEmptyState">
-              <p className="sectionEyebrow">Step 2</p>
-              <h2>{t("panel.step2Title")}</h2>
-              <p className="muted">{t("panel.step2Desc")}</p>
-              <ul className="previewEmptyStateList">
-                <li>{t("panel.step2Feature1")}</li>
-                <li>{t("panel.step2Feature2")}</li>
-                <li>{t("panel.step2Feature3")}</li>
-              </ul>
+  if (step === 2 && preview) {
+    return (
+      <StepPage title="컬럼을 확인하고 분석 준비를 마칩니다" description="리뷰 텍스트, 평점, 날짜 컬럼을 확인하면 분석 준비가 끝납니다. 준비가 끝나면 다음 단계에서 AI 분석이 진행됩니다.">
+        <CsvPreviewComponent
+          preview={preview}
+          busy={busy}
+          textCol={textCol}
+          ratingCol={ratingCol}
+          dateCol={dateCol}
+          showAllPreviewCols={showAllPreviewCols}
+          cellModal={cellModal}
+          onTextColChange={onTextColChange}
+          onRatingColChange={onRatingColChange}
+          onDateColChange={onDateColChange}
+          onTogglePreviewCols={onTogglePreviewCols}
+          onCellClick={onCellClick}
+          onCellModalClose={onCellModalClose}
+        />
+      </StepPage>
+    );
+  }
+
+  return (
+    <StepPage title="AI 분석을 실행합니다" description="현재 설정된 리뷰 컬럼 기준으로 감정 분석, 카테고리 분류, 우선순위 계산을 진행합니다. 분석이 끝나면 하단 화면이 결과 화면으로 바뀝니다.">
+      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-[22px] border border-white/[0.06] bg-black/20 p-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">플랜</div>
+              <div className="mt-2 text-xl font-medium text-white">{caps?.planLabel ?? "Guest"}</div>
             </div>
-          )}
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">파일</div>
+              <div className="mt-2 text-xl font-medium text-white">{file?.name ?? "sample.csv"}</div>
+            </div>
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">저장</div>
+              <div className="mt-2 text-xl font-medium text-white">{caps?.supabaseConfigured === false ? "비활성화" : "가능"}</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="mt-8 inline-flex items-center justify-center rounded-[16px] bg-[var(--color-primary)] px-5 py-3 text-base font-semibold text-white disabled:opacity-50"
+            onClick={onAnalyze}
+            disabled={busy}
+          >
+            {busy ? "분석 중..." : "AI 분석 실행"}
+          </button>
+        </div>
+
+        <div className="rounded-[22px] border border-white/[0.06] bg-[#0c0c0d] p-6 font-mono text-sm">
+          <div className={busy ? "text-emerald-300" : "text-[var(--color-text-tertiary)]"}>1. 리뷰 수집 중...</div>
+          <div className={`mt-3 ${busy ? "text-emerald-300" : "text-[var(--color-text-tertiary)]"}`}>2. 감정 분석 진행 중...</div>
+          <div className={`mt-3 ${busy ? "text-emerald-300" : "text-[var(--color-text-tertiary)]"}`}>3. 카테고리 분류 중...</div>
+          <div className={`mt-3 ${busy ? "text-emerald-300" : "text-[var(--color-text-tertiary)]"}`}>4. 우선순위 계산 중...</div>
+          <div className="mt-5 h-2 rounded-full bg-white/[0.05]">
+            <div className="h-2 rounded-full bg-emerald-400 transition-all duration-700" style={{ width: busy ? "72%" : "26%" }} />
+          </div>
+          <div className="mt-4 text-xs text-[var(--color-muted)]">최대 5분 정도 걸릴 수 있습니다.</div>
         </div>
       </div>
-    </section>
+    </StepPage>
   );
 }

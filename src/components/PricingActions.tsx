@@ -167,8 +167,12 @@ export default function PricingActions({ plan, priceId, userId, userEmail }: Pro
   return (
     <>
       {error ? <FeedbackModal title="결제 오류" message={error} tone="error" onClose={handleErrorClose} /> : null}
-      <div className="actionRow">
-        <button className="btn btnPrimary" disabled={busy} onClick={startCheckout}>
+      <div>
+        <button
+          className="inline-flex w-full items-center justify-center rounded-[16px] bg-[var(--color-text)] px-5 py-3.5 text-base font-semibold text-[#050607] disabled:opacity-50"
+          disabled={busy}
+          onClick={startCheckout}
+        >
           {busy ? "연결 중..." : buttonText}
         </button>
       </div>

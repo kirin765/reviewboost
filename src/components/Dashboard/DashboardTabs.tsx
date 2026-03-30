@@ -35,11 +35,13 @@ export default function DashboardTabs({
   }
 
   return (
-    <div className="dashboardTabs" role="tablist" aria-label={t("tabs.ariaLabel")}>
+    <div className="inline-flex rounded-[16px] border border-white/10 bg-[rgba(245,239,230,0.03)] p-1" role="tablist" aria-label={t("tabs.ariaLabel")}>
       <button
         id="analysis-tab"
         type="button"
-        className={`dashboardTab ${activeTab === "analysis" ? "isActive" : ""}`}
+        className={`rounded-[12px] px-4 py-2.5 text-sm transition ${
+          activeTab === "analysis" ? "bg-[var(--color-primary)] font-semibold text-white" : "text-[var(--color-muted)]"
+        }`}
         role="tab"
         aria-selected={activeTab === "analysis"}
         aria-controls="analysis-panel"
@@ -52,7 +54,9 @@ export default function DashboardTabs({
       <button
         id="results-tab"
         type="button"
-        className={`dashboardTab ${activeTab === "results" ? "isActive" : ""}`}
+        className={`rounded-[12px] px-4 py-2.5 text-sm transition ${
+          activeTab === "results" ? "bg-[var(--color-primary)] font-semibold text-white" : "text-[var(--color-muted)]"
+        }`}
         role="tab"
         aria-selected={activeTab === "results"}
         aria-controls="results-panel"

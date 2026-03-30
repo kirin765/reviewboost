@@ -44,20 +44,22 @@ export default function BlurGate({
     : children;
 
   return (
-    <div className="blurGate">
-      <div className="blurGateBlur">
+    <div className="relative overflow-hidden rounded-[16px] border border-white/10">
+      <div className="opacity-40 blur-[2px]">
         {visibleItems}
       </div>
-      <div className="blurGateOverlay">
-        <div className="blurGateMessage">
+      <div className="absolute inset-0 flex items-center justify-center bg-[rgba(9,11,13,0.7)] backdrop-blur-sm">
+        <div className="flex max-w-sm flex-col items-center gap-4 px-6 text-center">
+          <div className="text-sm leading-6 text-[var(--color-text)]/88">
           {t("gate.blurMessage", { feature: featureName, limit: effectiveLimit })}
-        </div>
+          </div>
         <Link
           href="/pricing"
-          className="btn btnSmall"
+          className="inline-flex items-center justify-center rounded-[12px] border border-white/10 bg-white/5 px-4 py-2 text-sm text-[var(--color-text)]"
         >
           {t("gate.showAll", { extra: totalCount - effectiveLimit })}
         </Link>
+        </div>
       </div>
     </div>
   );
