@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { cn } from "@/lib/cn";
 import { useTranslation } from "@/lib/i18n";
 
 type AnalysisStepperProps = {
@@ -18,26 +19,33 @@ export default function AnalysisStepList({ step }: AnalysisStepperProps) {
   ];
 
   return (
-    <div className="stepper" role="list" aria-label={t("steps.ariaLabel")}>
-      {steps.map((item, idx) => {
+    <div className="grid gap-3 xl:grid-cols-4" role="list" aria-label={t("steps.ariaLabel")}>
+      {steps.map((item) => {
         const isDone = step > item.n;
         const isCurrent = step === item.n;
         return (
-          <React.Fragment key={item.n}>
-            {idx > 0 ? (
-              <div className={`stepConnector ${step > item.n ? "stepConnectorDone" : step === item.n ? "stepConnectorActive" : ""}`} aria-hidden="true" />
-            ) : null}
-            <div
-              className={`step ${isDone ? "completed" : ""} ${isCurrent ? "active" : ""}`}
-              role="listitem"
-            >
-              <span className="stepNumber">{isDone ? "\u2713" : item.n}</span>
-              <span className="stepBody">
-                <span className="stepTitle">{t(item.labelKey)}</span>
-                <span className="stepDesc">{t(item.descKey)}</span>
+          <div
+            key={item.n}
+            className={cn(
+              "rounded-[16px] border px-4 py-4 transition",
+              isCurrent
+                ? "border-[color:rgba(95,198,183,0.28)] bg-[rgba(95,198,183,0.08)]"
+                : isDone
+                  ? "border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)]"
+                  : "border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)]"
+            )}
+            role="listitem"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-sm font-semibold text-[var(--rb-fg)]">
+                {isDone ? "\u2713" : item.n}
               </span>
+              <div>
+                <span className="block text-sm font-medium text-[var(--rb-fg)]">{t(item.labelKey)}</span>
+                <span className="block text-xs text-[var(--rb-muted)]">{t(item.descKey)}</span>
+              </div>
             </div>
-          </React.Fragment>
+          </div>
         );
       })}
     </div>

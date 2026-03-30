@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* Ensure text renders immediately while web font loads */
 @font-face {
   font-family: "Pretendard";
@@ -6717,4 +6719,261 @@ body:has(.dashboardShell) .appContainer,
 .simulationGridSingleColumn .simulationCard {
   min-width: 0;
   width: 100%;
+}
+
+@theme inline {
+  --font-sans: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+:root {
+  color-scheme: dark;
+  --rb-bg: #070b0c;
+  --rb-bg-soft: #0d1315;
+  --rb-surface: rgba(13, 19, 21, 0.86);
+  --rb-surface-strong: #12191c;
+  --rb-surface-muted: rgba(255, 255, 255, 0.03);
+  --rb-border: rgba(255, 255, 255, 0.08);
+  --rb-border-strong: rgba(255, 255, 255, 0.14);
+  --rb-fg: #f3efe7;
+  --rb-muted-strong: #b3aea6;
+  --rb-muted: #8d8b84;
+  --rb-accent: #5fc6b7;
+  --rb-danger: #ff8f8f;
+  --rb-warning: #f5b96e;
+}
+
+html,
+body {
+  background: var(--rb-bg);
+}
+
+body {
+  color: var(--rb-fg);
+  background:
+    radial-gradient(circle at top right, rgba(95, 198, 183, 0.08), transparent 26%),
+    radial-gradient(circle at bottom left, rgba(95, 198, 183, 0.05), transparent 24%),
+    var(--rb-bg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(95, 198, 183, 0.28);
+  color: var(--rb-fg);
+}
+
+a {
+  color: inherit;
+}
+
+main {
+  width: 100%;
+}
+
+.pageMain,
+.marketingPage,
+.pricingPage,
+.workspacePage,
+.dashboardPageSurface,
+.authPage {
+  display: grid;
+  gap: 24px;
+}
+
+.card {
+  border: 1px solid var(--rb-border);
+  background: var(--rb-surface);
+  color: var(--rb-fg);
+  border-radius: 16px;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.22);
+}
+
+.btn,
+.btnOutline,
+.btnGhost,
+.btnPrimary {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 14px;
+  padding-inline: 16px;
+  border: 1px solid var(--rb-border-strong);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--rb-fg);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: 180ms ease;
+}
+
+.btn:hover,
+.btnOutline:hover,
+.btnGhost:hover,
+.btnPrimary:hover {
+  transform: translateY(-1px);
+}
+
+.btnPrimary {
+  background: var(--rb-accent);
+  border-color: var(--rb-accent);
+  color: #071112;
+}
+
+.btnGhost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--rb-muted-strong);
+}
+
+.btnSmall {
+  min-height: 36px;
+  padding-inline: 14px;
+  font-size: 12px;
+}
+
+.input,
+select.input,
+textarea.input {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid var(--rb-border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--rb-fg);
+  padding: 0 14px;
+  outline: none;
+}
+
+textarea.input {
+  padding-block: 12px;
+  min-height: 120px;
+}
+
+.input:focus,
+select.input:focus,
+textarea.input:focus {
+  border-color: rgba(95, 198, 183, 0.36);
+  box-shadow: 0 0 0 4px rgba(95, 198, 183, 0.12);
+}
+
+.muted,
+.hint,
+.formNote,
+.panelHintText,
+.contentPageLead,
+.dashboardPageLead,
+.authLead {
+  color: var(--rb-muted-strong);
+}
+
+.danger {
+  color: var(--rb-danger);
+}
+
+.sectionEyebrow,
+.authEyebrow {
+  color: var(--rb-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 11px;
+}
+
+.fieldRow {
+  display: grid;
+  gap: 16px;
+}
+
+.formInputLabel {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.actionRow,
+.authActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.consentRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--rb-muted-strong);
+  font-size: 14px;
+}
+
+.consentSummary {
+  border: 1px solid var(--rb-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--rb-muted-strong);
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.authPanelHeader h2,
+.contentPageHeader h1,
+.appPageTitle,
+.dashboardPageTitle {
+  margin: 8px 0 0;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  letter-spacing: -0.05em;
+  color: var(--rb-fg);
+}
+
+.authPanelFooter,
+.formBottom {
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.link {
+  color: var(--rb-accent);
+}
+
+.tableWrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+th {
+  color: var(--rb-muted);
+}
+
+.loadingBar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.loadingBarFill {
+  height: 100%;
+  width: 40%;
+  border-radius: inherit;
+  background: var(--rb-accent);
+  animation: rb-loading 1.2s linear infinite;
+}
+
+@keyframes rb-loading {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
 }

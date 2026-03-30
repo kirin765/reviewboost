@@ -3,6 +3,7 @@
 import React from "react";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { I18nProvider } from "@/lib/i18n";
 import AppShell from "./AppShell";
 
 let mockPathname = "/pricing";
@@ -29,6 +30,10 @@ vi.mock("@/app/(auth)/actions", () => ({
 }));
 
 describe("AppShell", () => {
+  function renderWithI18n(children: React.ReactElement) {
+    return render(<I18nProvider>{children}</I18nProvider>);
+  }
+
   beforeEach(() => {
     Object.defineProperty(window, "innerWidth", {
       configurable: true,
@@ -43,52 +48,51 @@ describe("AppShell", () => {
     document.body.className = "";
   });
 
-  it("renders a single shared navigation rail and content header on content pages", () => {
-    render(
+  it("renders the marketing header and footer on public pages", () => {
+    renderWithI18n(
       <AppShell userEmail="tester@example.com" plan="basic">
         <div>내용</div>
       </AppShell>
     );
 
-    const sidebar = screen.getByRole("complementary", { name: "주요 메뉴" });
-    expect(within(sidebar).getByRole("link", { name: "요금제" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Pricing" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "CSV" })).toBeTruthy();
     expect(screen.getAllByRole("navigation").length).toBe(1);
-    expect(screen.getByRole("heading", { name: "요금제" })).toBeTruthy();
     expect(screen.getByText("support@reviewboost.co.kr")).toBeTruthy();
   });
 
-  it("hides the footer on workspace pages and keeps only one chrome shell", () => {
+  it("uses the workspace rail and hides the footer on dashboard pages", () => {
     mockPathname = "/dashboard";
 
-    render(
+    renderWithI18n(
       <AppShell userEmail="tester@example.com" plan="basic">
         <div>대시보드 내용</div>
       </AppShell>
     );
 
-    expect(screen.getByRole("heading", { name: "리뷰 CSV 분석" })).toBeTruthy();
+    const sidebar = screen.getByRole("complementary", { name: "주요 메뉴" });
+    expect(within(sidebar).getByRole("link", { name: "분석하기" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("heading", { name: "리뷰 분석 작업면" })).toBeTruthy();
     expect(screen.queryByText("support@reviewboost.co.kr")).toBeNull();
     expect(screen.getAllByRole("navigation").length).toBe(1);
   });
 
-  it("uses the shared drawer on mobile widths", () => {
+  it("opens the workspace drawer on mobile widths", () => {
     mockPathname = "/dashboard";
     window.innerWidth = 900;
 
-    render(
+    renderWithI18n(
       <AppShell userEmail="tester@example.com" plan="basic">
         <div>대시보드 내용</div>
       </AppShell>
     );
 
     const toggle = screen.getByRole("button", { name: "메뉴 열기" });
-    const backdrop = screen.getByTestId("appShellBackdrop");
-
-    expect(backdrop).toHaveProperty("hidden", true);
+    expect(screen.queryByLabelText("주요 메뉴")).toBeNull();
 
     fireEvent.click(toggle);
 
-    expect(screen.getAllByRole("button", { name: "메뉴 닫기" }).length).toBe(2);
-    expect(backdrop).toHaveProperty("hidden", false);
+    expect(screen.getByRole("button", { name: "메뉴 닫기" })).toBeTruthy();
+    expect(screen.getAllByRole("complementary", { name: "주요 메뉴" }).length).toBe(1);
   });
 });

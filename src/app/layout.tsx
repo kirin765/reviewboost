@@ -1,5 +1,4 @@
 import "./globals.css";
-import "./app-shell.css";
 import type { Metadata } from "next";
 import Script from "next/script";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
