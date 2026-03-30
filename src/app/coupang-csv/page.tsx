@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function CoupangCsvPage() {
   return (
-    <main className="pageMain pageNarrow">
+    <main>
       <CoupangCsvDownloadTool />
     </main>
   );

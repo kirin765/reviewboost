@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getServerTranslation } from "@/lib/i18n/server";
+import { Eyebrow, Panel, SectionHeading, pageShellClass, primaryButtonClass, secondaryButtonClass } from "@/components/marketing/MarketingPrimitives";
 
 export const metadata: Metadata = {
   title: "사용법 - ReviewBoost CSV 업로드 & 리뷰 분석 가이드",
@@ -41,118 +42,129 @@ export default async function HelpPage() {
     ]
   };
 
+  const steps = [t("help.step1"), t("help.step2"), t("help.step3"), t("help.step4")];
+
   return (
-    <main className="pageMain pageTop">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
-      <div className="card">
-        <h1>{t("help.pageTitle")}</h1>
-        <p className="muted">{t("help.pageLead")}</p>
-      </div>
+    <main className={`${pageShellClass} pt-12`}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
-      {/* 4-Step Guide */}
-      <div className="helpStepGrid">
-        <div className="step completed">
-          <span className="stepNumber">1</span>
-          <span>{t("help.step1")}</span>
+      <section className="grid gap-10 lg:grid-cols-[0.94fr_1.06fr] lg:items-end">
+        <div className="max-w-[650px]">
+          <Eyebrow>Guide</Eyebrow>
+          <h1 className="mt-4 text-5xl font-semibold tracking-[-0.07em] text-white md:text-7xl md:leading-[0.95]">
+            첫 분석까지
+            <br />
+            2분 안에 도달하도록
+            <br />
+            흐름을 단순화했습니다
+          </h1>
+          <p className="mt-6 text-base leading-8 text-[var(--color-muted)]">{t("help.pageLead")}</p>
         </div>
-        <div className="step">
-          <span className="stepNumber">2</span>
-          <span>{t("help.step2")}</span>
-        </div>
-        <div className="step">
-          <span className="stepNumber">3</span>
-          <span>{t("help.step3")}</span>
-        </div>
-        <div className="step">
-          <span className="stepNumber">4</span>
-          <span>{t("help.step4")}</span>
-        </div>
-      </div>
+        <Panel className="p-6 md:p-7">
+          <div className="grid gap-4 md:grid-cols-4">
+            {steps.map((step, index) => (
+              <div key={step} className="rounded-[22px] border border-white/[0.08] bg-white/[0.03] p-4">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">Step {index + 1}</div>
+                <div className="mt-3 text-base font-medium text-white">{step}</div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </section>
 
-      <div className="grid">
-        <div className="card">
-          <h2>{t("help.csvPrepTitle")}</h2>
-          <div className="list">
-            <div className="row">
-              <div className="left">{t("help.csvRequired")}</div>
-              <div className="right">{t("help.csvRequiredValue")}</div>
-            </div>
-            <div className="row">
-              <div className="left">{t("help.csvRecommended")}</div>
-              <div className="right">{t("help.csvRecommendedValue")}</div>
-            </div>
-            <div className="row">
-              <div className="left">{t("help.csvOptional")}</div>
-              <div className="right">{t("help.csvOptionalValue")}</div>
-            </div>
+      <section className="mt-20 grid gap-6 lg:grid-cols-2">
+        <Panel className="p-6 md:p-7">
+          <div className="max-w-[520px]">
+            <Eyebrow>CSV prep</Eyebrow>
+            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-white md:text-4xl">{t("help.csvPrepTitle")}</h2>
+            <p className="mt-4 text-base leading-8 text-[var(--color-muted)]">{t("help.csvSaveHint")}</p>
           </div>
-          <p className="hint muted sectionSpacing" dangerouslySetInnerHTML={{ __html: t("help.csvSaveHint") }} />
-          <div className="actionRow">
-            <a className="btn" href="/sample.csv" download>
-              {t("help.sampleCsvFull")}
-            </a>
-            <a className="btn" href="/sample_simple.csv" download>
-              {t("help.sampleCsvSimple")}
-            </a>
+          <div className="mt-8 space-y-4">
+            {[
+              [t("help.csvRequired"), t("help.csvRequiredValue")],
+              [t("help.csvRecommended"), t("help.csvRecommendedValue")],
+              [t("help.csvOptional"), t("help.csvOptionalValue")]
+            ].map(([label, value]) => (
+              <div key={label} className="flex items-start justify-between gap-5 border-t border-white/[0.08] py-4 first:border-t-0 first:pt-0">
+                <div className="text-sm text-white">{label}</div>
+                <div className="max-w-[55%] text-right text-sm leading-7 text-[var(--color-muted)]">{value}</div>
+              </div>
+            ))}
           </div>
-        </div>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a className={primaryButtonClass} href="/sample.csv" download>{t("help.sampleCsvFull")}</a>
+            <a className={secondaryButtonClass} href="/sample_simple.csv" download>{t("help.sampleCsvSimple")}</a>
+          </div>
+        </Panel>
 
-        <div className="card">
-          <h2>{t("help.uploadTitle")}</h2>
-          <p className="muted">{t("help.uploadLead")}</p>
-          <p className="hint muted">{t("help.uploadHint")}</p>
-        </div>
-      </div>
+        <Panel className="p-6 md:p-7">
+          <div className="max-w-[520px]">
+            <Eyebrow>Upload</Eyebrow>
+            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-white md:text-4xl">{t("help.uploadTitle")}</h2>
+            <p className="mt-4 text-base leading-8 text-[var(--color-muted)]">{t("help.uploadLead")}</p>
+          </div>
+          <div className="mt-8 rounded-[24px] border border-dashed border-white/[0.12] bg-white/[0.03] p-6">
+            <div className="text-sm uppercase tracking-[0.18em] text-white/42">Upload zone</div>
+            <p className="mt-4 text-base leading-8 text-white/86">{t("help.uploadHint")}</p>
+            <p className="mt-6 text-sm leading-7 text-[var(--color-muted)]">CSV를 업로드하면 리뷰 텍스트, 별점, 작성일 컬럼 후보를 자동으로 추정합니다.</p>
+          </div>
+        </Panel>
+      </section>
 
-      <div className="grid">
-        <div className="card">
-          <h2>{t("help.resultsTitle")}</h2>
-          <p className="muted">{t("help.resultsLead")}</p>
-          <ul className="muted mutedList">
-            <li>{t("help.resultItem1")}</li>
-            <li>{t("help.resultItem2")}</li>
-            <li>{t("help.resultItem3")}</li>
-            <li>{t("help.resultItem4")}</li>
-            <li>{t("help.resultItem5")}</li>
-            <li>{t("help.resultItem6")}</li>
-            <li>{t("help.resultItem7")}</li>
-          </ul>
-          <p className="hint muted sectionSpacing">{t("help.resultsHint")}</p>
-          <div className="actionRow">
-            <a className="btn btnPrimary" href="/dashboard">
-              {t("help.analyzeNow")}
-            </a>
+      <section className="mt-24 grid gap-10 lg:grid-cols-[0.92fr_1.08fr]">
+        <SectionHeading eyebrow="Results" title={t("help.resultsTitle")} body={t("help.resultsLead")} />
+        <Panel className="p-6 md:p-7">
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              t("help.resultItem1"),
+              t("help.resultItem2"),
+              t("help.resultItem3"),
+              t("help.resultItem4"),
+              t("help.resultItem5"),
+              t("help.resultItem6"),
+              t("help.resultItem7")
+            ].map((item) => (
+              <div key={item} className="rounded-[22px] border border-white/[0.08] bg-white/[0.03] p-4 text-sm leading-7 text-white/84">
+                {item}
+              </div>
+            ))}
           </div>
-        </div>
+          <p className="mt-6 text-sm leading-7 text-[var(--color-muted)]">{t("help.resultsHint")}</p>
+          <div className="mt-8">
+            <a className={primaryButtonClass} href="/dashboard/analyze">{t("help.analyzeNow")}</a>
+          </div>
+        </Panel>
+      </section>
 
-        <div className="card">
-          <h2>{t("help.saveTitle")}</h2>
-          <p className="muted">{t("help.saveLead")}</p>
-          <p className="hint muted">{t("help.saveHint")}</p>
-        </div>
-      </div>
+      <section className="mt-24 grid gap-10 lg:grid-cols-[0.92fr_1.08fr]">
+        <SectionHeading eyebrow="Storage" title={t("help.saveTitle")} body={t("help.saveLead")} />
+        <Panel className="p-6 md:p-7">
+          <p className="text-base leading-8 text-[var(--color-muted)]">{t("help.saveHint")}</p>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {["Free는 빠른 테스트", "Basic은 반복 분석 저장", "Pro는 전체 액션 공유"].map((item) => (
+              <div key={item} className="rounded-[22px] border border-white/[0.08] bg-white/[0.03] p-4 text-sm leading-7 text-white/84">
+                {item}
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </section>
 
-      {/* FAQ Section */}
-      <div className="card sectionSpacing">
-        <h2>{t("help.faqTitle")}</h2>
-        <div className="list">
-          <div className="row rowColumn">
-            <div className="textBold textSmall">{t("help.faq1Q")}</div>
-            <div className="muted textSmall">{t("help.faq1A")}</div>
-          </div>
-          <div className="row rowColumn">
-            <div className="textBold textSmall">{t("help.faq2Q")}</div>
-            <div className="muted textSmall">{t("help.faq2A")}</div>
-          </div>
-          <div className="row rowColumn">
-            <div className="textBold textSmall">{t("help.faq3Q")}</div>
-            <div className="muted textSmall">{t("help.faq3A")}</div>
-          </div>
+      <section className="mt-24 grid gap-10 lg:grid-cols-[0.92fr_1.08fr]">
+        <SectionHeading eyebrow="FAQ" title={t("help.faqTitle")} body="시작 전에 가장 자주 확인하는 내용을 정리했습니다." />
+        <div className="space-y-4">
+          {[
+            [t("help.faq1Q"), t("help.faq1A")],
+            [t("help.faq2Q"), t("help.faq2A")],
+            [t("help.faq3Q"), t("help.faq3A")]
+          ].map(([question, answer]) => (
+            <Panel key={question} className="p-6">
+              <h3 className="text-[24px] font-medium tracking-[-0.05em] text-white">{question}</h3>
+              <p className="mt-3 text-base leading-8 text-[var(--color-muted)]">{answer}</p>
+            </Panel>
+          ))}
         </div>
-      </div>
+      </section>
     </main>
   );
 }

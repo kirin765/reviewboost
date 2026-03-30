@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
 import { getServerTranslation } from "@/lib/i18n/server";
+import {
+  Eyebrow,
+  Panel,
+  pageShellClass,
+  primaryButtonClass,
+  secondaryButtonClass
+} from "@/components/marketing/MarketingPrimitives";
 
 export const metadata: Metadata = {
   title: "블로그 - 쿠팡 리뷰 분석 & 스마트스토어 운영 팁",
@@ -30,44 +37,63 @@ export default async function BlogPage() {
   ];
 
   return (
-    <main className="pageMain marketingPage">
-      <section className="card marketingSection">
-        <div className="marketingSectionIntro">
-          <p className="sectionEyebrow">Blog</p>
-          <h1 style={{ fontSize: "clamp(28px, 4vw, 44px)" }}>
-            {t("blog.pageTitle")}
+    <main className={`${pageShellClass} pt-12`}>
+      <section className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="max-w-[620px]">
+          <Eyebrow>Insights</Eyebrow>
+          <h1 className="mt-4 text-5xl font-semibold tracking-[-0.07em] text-white md:text-7xl md:leading-[0.95]">
+            리뷰 운영 감각을
+            <br />
+            더 빠르게 끌어올리는
+            <br />
+            실전 메모
           </h1>
-          <p className="muted">
-            {t("blog.pageLead")}
-          </p>
+          <p className="mt-6 text-base leading-8 text-[var(--color-muted)]">{t("blog.pageLead")}</p>
         </div>
-        <div className="marketingFeatureGrid">
-          {posts.map((post) => (
-            <article className="marketingFeatureCard" key={post.slug}>
-              <span className="badge">{post.tag}</span>
-              <h3 style={{ marginTop: 8 }}>{post.title}</h3>
-              <p className="muted">{post.summary}</p>
-            </article>
-          ))}
-        </div>
+        <Panel className="p-6 md:p-7">
+          <div className="grid gap-4 md:grid-cols-3">
+            {["리뷰 해석", "부정 대응", "상세페이지 개선"].map((item) => (
+              <div key={item} className="rounded-[22px] border border-white/[0.08] bg-white/[0.03] p-4">
+                <div className="text-sm font-medium text-white">{item}</div>
+                <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">운영팀이 바로 적용할 수 있는 짧고 실전적인 가이드만 추렸습니다.</p>
+              </div>
+            ))}
+          </div>
+        </Panel>
       </section>
 
-      <section className="card marketingCallout">
-        <div>
-          <p className="sectionEyebrow">Start free</p>
-          <h2>{t("blog.ctaTitle")}</h2>
-          <p className="muted">
-            {t("blog.ctaLead")}
-          </p>
-        </div>
-        <div className="actionRow">
-          <a className="btn btnPrimary" href="/dashboard">
-            {t("blog.ctaStart")}
-          </a>
-          <a className="btn btnOutline" href="/sample.csv" download>
-            {t("blog.ctaSample")}
-          </a>
-        </div>
+      <section className="mt-16 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {posts.map((post, index) => (
+          <article key={post.slug}>
+            <Panel className="flex h-full flex-col p-6">
+              <div className="flex items-center justify-between">
+                <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/64">
+                  {post.tag}
+                </span>
+                <span className="text-xs text-white/34">0{index + 1}</span>
+              </div>
+              <h2 className="mt-6 text-[28px] font-medium tracking-[-0.05em] text-white">{post.title}</h2>
+              <p className="mt-4 flex-1 text-base leading-8 text-[var(--color-muted)]">{post.summary}</p>
+              <div className="mt-8 text-sm text-white/72">콘텐츠 준비 중</div>
+            </Panel>
+          </article>
+        ))}
+      </section>
+
+      <section className="mt-24">
+        <Panel className="p-8 md:p-10">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-[700px]">
+              <Eyebrow>Start free</Eyebrow>
+              <h2 className="mt-4 text-4xl font-semibold tracking-[-0.06em] text-white md:text-6xl md:leading-[0.98]">{t("blog.ctaTitle")}</h2>
+              <p className="mt-5 text-base leading-8 text-[var(--color-muted)]">{t("blog.ctaLead")}</p>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <a className={primaryButtonClass} href="/dashboard/analyze">{t("blog.ctaStart")}</a>
+              <a className={secondaryButtonClass} href="/sample.csv" download>{t("blog.ctaSample")}</a>
+            </div>
+          </div>
+        </Panel>
       </section>
     </main>
   );

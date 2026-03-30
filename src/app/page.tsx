@@ -4,7 +4,7 @@ import HomePageStatus from "@/components/home/HomePageStatus";
 
 export default function HomePage() {
   return (
-    <main className="pageMain marketingPage">
+    <main>
       <Suspense fallback={null}>
         <HomePageStatus />
       </Suspense>

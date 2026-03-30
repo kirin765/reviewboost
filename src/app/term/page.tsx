@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Eyebrow, Panel, pageShellClass } from "@/components/marketing/MarketingPrimitives";
 
 export const metadata: Metadata = {
   title: "이용약관 - ReviewBoost",
@@ -8,10 +9,11 @@ export const metadata: Metadata = {
 
 export default function TermPage() {
   return (
-    <main className="pageMain">
-      <div className="card">
-        <h1>Terms of Service</h1>
-        <p className="muted">
+    <main className={`${pageShellClass} pt-12`}>
+      <div className="max-w-[760px]">
+        <Eyebrow>Legal</Eyebrow>
+        <h1 className="mt-4 text-5xl font-semibold tracking-[-0.07em] text-white md:text-6xl">Terms of Service</h1>
+        <p className="mt-5 text-base leading-8 text-[var(--color-muted)]">
           <strong>Effective Date:</strong> 2025-02-12
           <br />
           <strong>Company Name:</strong> Onnuri stationery
@@ -21,8 +23,10 @@ export default function TermPage() {
             https://reviewboost.co.kr
           </a>
         </p>
+      </div>
 
-        <article className="legalDoc">
+      <Panel className="mt-10 p-8 md:p-10">
+        <article className="legalDoc text-[var(--color-muted)]">
           <section className="legalSection">
             <h3>1. Overview</h3>
             <p>
@@ -189,7 +193,7 @@ export default function TermPage() {
             </p>
           </section>
         </article>
-      </div>
+      </Panel>
     </main>
   );
 }
