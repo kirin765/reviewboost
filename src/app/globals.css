@@ -2874,7 +2874,7 @@ h2,
 .authPanelHeader h2,
 .pricingHero h1 {
   margin: 0;
-  color: #171c4b;
+  color: #ffffff;
   font-size: clamp(24px, 3vw, 36px);
   line-height: 1.12;
 }
@@ -4435,7 +4435,7 @@ a.btn {
   padding: 0 18px;
   border-radius: 16px;
   border: 1px solid transparent;
-  background: rgba(91, 92, 234, 0.08);
+  background: rgba(255, 255, 255, 0.02);
   color: var(--color-text);
   font-weight: 700;
   font-size: 14px;
@@ -4449,20 +4449,22 @@ a.btn {
 a.btn:hover,
 button.btn:hover {
   transform: translateY(-1px);
-  border-color: rgba(91, 92, 234, 0.2);
-  background: rgba(91, 92, 234, 0.12);
+  border-color: rgba(95, 198, 183, 0.24);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .btnPrimary,
 .leftNavButton.primary {
-  background: linear-gradient(135deg, #5b5cea 0%, #7a6cf4 100%);
-  color: #fff;
-  box-shadow: 0 16px 28px rgba(91, 92, 234, 0.24);
+  border-color: var(--rb-accent);
+  background: var(--rb-accent);
+  color: #061111;
+  box-shadow: 0 18px 30px rgba(95, 198, 183, 0.18);
 }
 
 .btnPrimary:hover,
 .leftNavButton.primary:hover {
-  background: linear-gradient(135deg, #5054dd 0%, #705ff0 100%);
+  background: #74d5c8;
+  border-color: #74d5c8;
   border-color: transparent;
 }
 
@@ -4651,7 +4653,7 @@ h2,
 .authPanelHeader h2,
 .pricingHero h1 {
   margin: 0;
-  color: #171c4b;
+  color: #ffffff;
   font-size: clamp(24px, 3vw, 36px);
   line-height: 1.12;
 }
@@ -6976,4 +6978,51 @@ th {
   100% {
     transform: translateX(260%);
   }
+}
+
+h1,
+.heroTitle,
+.dashboardPageTitle,
+.authTitle,
+.marketingTitle,
+.resultsHeroTitle {
+  margin: 0;
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+h2,
+.dashboardSectionTitle,
+.resultsHeroTitle,
+.dashboardPageTitle,
+.authPanelHeader h2,
+.pricingHero h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1.12;
+}
+
+h3 {
+  color: #ffffff;
+}
+
+.btnPrimary,
+.leftNavButton.primary,
+button.btn.btnPrimary,
+a.btn.btnPrimary {
+  color: #071112 !important;
+  border-color: var(--rb-accent) !important;
+  background: var(--rb-accent) !important;
+  box-shadow: 0 18px 30px rgba(95, 198, 183, 0.22) !important;
+}
+
+.btnPrimary:hover,
+.leftNavButton.primary:hover,
+button.btn.btnPrimary:hover,
+a.btn.btnPrimary:hover {
+  color: #071112 !important;
+  border-color: #74d5c8 !important;
+  background: #74d5c8 !important;
 }
