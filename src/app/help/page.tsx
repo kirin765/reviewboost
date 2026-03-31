@@ -1,14 +1,43 @@
 import React from "react";
 import type { Metadata } from "next";
+import StructuredData from "@/components/seo/StructuredData";
 import { buttonStyles } from "@/components/ui/Button";
 import { ShellContainer } from "@/components/ui/Primitives";
+import { generatePageMetadata } from "@/lib/seo/metadata";
+import { getRequiredSeoPageRecord } from "@/lib/seo/page-registry";
+import { createCollectionPageStructuredData } from "@/lib/seo/structured-data";
 import { getSiteContent } from "@/lib/site-content";
 
-export const metadata: Metadata = {
-  title: "사용법 - ReviewBoost CSV 업로드 & 리뷰 분석 가이드",
-  description: "ReviewBoost 사용법을 단계별로 안내합니다. CSV 준비, 열 매핑, AI 분석, PDF 리포트 다운로드까지 2분이면 시작할 수 있습니다.",
-  alternates: { canonical: "/help" }
-};
+const helpRecord = getRequiredSeoPageRecord("/help");
+
+const helpCards = [
+  {
+    href: "/help/csv-checklist",
+    title: "CSV 업로드 체크리스트",
+    description: "파일 형식, 필수 컬럼, 인코딩, 업로드 직후 점검 포인트를 빠르게 확인합니다.",
+    tag: "기본"
+  },
+  {
+    href: "/help/coupang-review-csv-export",
+    title: "쿠팡 리뷰 CSV 추출 가이드",
+    description: "쿠팡 리뷰 데이터를 추출하고 바로 분석으로 넘기는 운영 흐름을 정리했습니다.",
+    tag: "쿠팡"
+  },
+  {
+    href: "/help/smartstore-review-csv-export",
+    title: "스마트스토어 리뷰 CSV 추출 가이드",
+    description: "스마트스토어 리뷰 다운로드부터 FAQ 생성까지 이어지는 흐름을 다룹니다.",
+    tag: "스마트스토어"
+  },
+  {
+    href: "/help/faq",
+    title: "리뷰 FAQ 운영 가이드",
+    description: "리뷰 데이터를 FAQ, 상세페이지 문구, CS 답변 템플릿으로 바꾸는 방법을 설명합니다.",
+    tag: "FAQ"
+  }
+] as const;
+
+export const metadata: Metadata = generatePageMetadata(helpRecord);
 
 const HELP_STAGE_DETAILS = [
   {
@@ -66,6 +95,12 @@ export default function HelpPage() {
 
   return (
     <main className="pageMain pb-10 pt-8 md:pt-12">
+      <StructuredData
+        data={createCollectionPageStructuredData(
+          helpRecord,
+          helpCards.map((card) => ({ name: card.title, path: card.href }))
+        )}
+      />
       <ShellContainer className="space-y-10">
         <section className="grid gap-6 border-b border-[color:rgba(222,230,242,0.08)] pb-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(280px,420px)]">
           <div>

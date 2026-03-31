@@ -1,31 +1,29 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import StructuredData from "@/components/seo/StructuredData";
 import { buttonStyles } from "@/components/ui/Button";
 import { ShellContainer } from "@/components/ui/Primitives";
 import { blogPosts } from "@/lib/blog-posts";
+import { generatePageMetadata } from "@/lib/seo/metadata";
+import { getRequiredSeoPageRecord } from "@/lib/seo/page-registry";
+import { createCollectionPageStructuredData } from "@/lib/seo/structured-data";
 
-export const metadata: Metadata = {
-  title: "블로그 - 쿠팡 리뷰 분석 & 스마트스토어 운영 팁",
-  description:
-    "쿠팡 리뷰 분석, 부정리뷰 대응법, 스마트스토어 리뷰 관리, 매출 올리는 법 등 이커머스 셀러를 위한 실전 가이드를 제공합니다.",
-  keywords: [
-    "쿠팡 리뷰 분석",
-    "쿠팡 부정리뷰 대응",
-    "쿠팡 매출 올리는 법",
-    "스마트스토어 리뷰 관리",
-    "쿠팡 별점 낮아지는 이유",
-    "쿠팡 리뷰 삭제 가능",
-    "쿠팡 리뷰 csv 추출"
-  ],
-  alternates: { canonical: "/blog" }
-};
+const blogRecord = getRequiredSeoPageRecord("/blog");
+
+export const metadata: Metadata = generatePageMetadata(blogRecord);
 
 export default function BlogPage() {
   const [featured, ...rest] = blogPosts;
 
   return (
     <main className="pageMain pb-8 pt-8 md:pt-12">
+      <StructuredData
+        data={createCollectionPageStructuredData(
+          blogRecord,
+          blogPosts.map((post) => ({ name: post.title, path: `/blog/${post.slug}` }))
+        )}
+      />
       <ShellContainer className="space-y-10">
         <section className="space-y-8">
           <div className="grid gap-6 border-b border-[color:rgba(222,230,242,0.08)] pb-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(280px,420px)]">

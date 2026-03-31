@@ -180,43 +180,31 @@ export default function SidebarNav({
         </div>
       </div>
 
-      <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
-        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">플랜</p>
-        <p className="mt-3 text-lg font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">{plan === "pro" ? "현재 Pro 작업면" : "반복 분석이 늘면 업그레이드"}</p>
-        <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">
-          {plan === "pro"
-            ? "저장, 공유, 반복 분석 기능을 같은 워크플로에서 사용할 수 있습니다."
-            : "저장된 분석과 더 많은 처리량이 필요할 때 Basic 또는 Pro로 확장할 수 있습니다."}
-        </p>
-        <div className="mt-4 flex items-center gap-3">
-          <Link href="/pricing" className={buttonStyles({ variant: "secondary", size: "sm" })} onClick={onNavigate}>
-            {plan === "pro" ? "플랜 보기" : "업그레이드"}
-          </Link>
-          <LanguageSwitcher />
-        </div>
-      </div>
-
-      <div className="mt-auto rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[rgba(255,255,255,0.06)] text-sm font-semibold text-[var(--rb-fg)]">
-            {initials}
+      <div className="mt-auto space-y-4">
+        <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-sm font-semibold text-[var(--rb-fg)]">
+              {initials}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--rb-fg)]">{displayName}</p>
+              <p className="mt-1 text-xs text-[var(--rb-muted)]">{currentPlanLabel}</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <strong className="block truncate text-sm font-medium text-[var(--rb-fg)]">{displayName}</strong>
-            <span className="block truncate text-xs text-[var(--rb-muted)]">{isAuthenticated ? `${currentPlanLabel} 플랜` : "로그인하고 리포트 저장하기"}</span>
+          <div className="mt-4 flex items-center gap-3">
+            <LanguageSwitcher />
+            {isAuthenticated ? (
+              <form action={signOutAction} className="flex-1">
+                <button className={buttonStyles({ variant: "ghost", className: "w-full justify-center" })} type="submit">
+                  로그아웃
+                </button>
+              </form>
+            ) : (
+              <Link href="/login" className={buttonStyles({ variant: "secondary", className: "flex-1 justify-center" })} onClick={onNavigate}>
+                로그인
+              </Link>
+            )}
           </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-3">
-          {isAuthenticated ? (
-            <form action={signOutAction}>
-              <button type="submit" className={buttonStyles({ variant: "ghost", size: "sm" })}>로그아웃</button>
-            </form>
-          ) : (
-            <Link href="/login" className={buttonStyles({ variant: "secondary", size: "sm" })} onClick={onNavigate}>
-              로그인
-            </Link>
-          )}
         </div>
       </div>
     </div>

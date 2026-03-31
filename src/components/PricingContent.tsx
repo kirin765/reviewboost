@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Script from "next/script";
 import PricingActions from "@/components/PricingActions";
 import { SectionHeader, ShellContainer, Surface } from "@/components/ui/Primitives";
 import { getSiteContent } from "@/lib/site-content";
@@ -9,20 +8,15 @@ import { useTranslation } from "@/lib/i18n";
 
 interface PricingContentProps {
   userId: string | null;
-  userEmail: string | null;
-  basicPriceId: string | undefined;
-  proPriceId: string | undefined;
   billing: string | undefined;
 }
 
-export default function PricingContent({ userId, userEmail, basicPriceId, proPriceId, billing }: PricingContentProps) {
+export default function PricingContent({ userId, billing }: PricingContentProps) {
   const { locale } = useTranslation();
   const content = getSiteContent(locale).pricing;
 
   return (
     <main className="pageMain pricingPage pb-8">
-      <Script src="https://cdn.paddle.com/paddle/v2/paddle.js" strategy="afterInteractive" />
-
       <ShellContainer className="pt-8 md:pt-12">
         <Surface className="px-6 py-7 md:px-8 md:py-9">
           <SectionHeader eyebrow={content.eyebrow} title={content.title} description={content.lead} />
@@ -76,9 +70,9 @@ export default function PricingContent({ userId, userEmail, basicPriceId, proPri
                 </div>
                 <div className="mt-7">
                   {plan.name === "basic" ? (
-                    <PricingActions plan="basic" priceId={basicPriceId} userId={userId ?? undefined} userEmail={userEmail ?? undefined} />
+                    <PricingActions plan="basic" userId={userId ?? undefined} />
                   ) : plan.name === "pro" ? (
-                    <PricingActions plan="pro" priceId={proPriceId} userId={userId ?? undefined} userEmail={userEmail ?? undefined} />
+                    <PricingActions plan="pro" userId={userId ?? undefined} />
                   ) : (
                     <a className="btn btnPrimary w-full justify-center" href="/dashboard">
                       {plan.cta}

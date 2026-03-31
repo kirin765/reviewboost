@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import FeedbackModal from "@/components/FeedbackModal";
@@ -27,7 +27,7 @@ export default function ResetPasswordPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  function mapResetError(raw: string) {
+  const mapResetError = useCallback((raw: string) => {
     const message = String(raw || "").trim();
     const lower = message.toLowerCase();
     if (!message) return t("reset.genericError");
@@ -40,7 +40,7 @@ export default function ResetPasswordPageClient() {
       lower.includes("pkce")
     ) return t("reset.linkExpired");
     return message;
-  }
+  }, [t]);
 
   useEffect(() => {
     let active = true;
@@ -67,7 +67,7 @@ export default function ResetPasswordPageClient() {
     return () => {
       active = false;
     };
-  }, [supabase, t]);
+  }, [mapResetError, supabase, t]);
 
   function handleErrorClose() {
     setError(null);

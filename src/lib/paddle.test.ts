@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   appBaseUrl,
   isPaddleConfigured,
+  paddleBrowserToken,
   paddleEnv,
   paddlePlanForPriceId,
   paddlePriceIdForPlan,
@@ -79,6 +80,22 @@ describe("paddle config", () => {
   it("falls back to request URL when APP_BASE_URL is unset", () => {
     vi.stubEnv("APP_BASE_URL", "");
     expect(appBaseUrl(new Request("https://sub.domain.dev/path?q=1"))).toBe("https://sub.domain.dev");
+  });
+
+  it("prefers the live public token when running in live mode", () => {
+    vi.stubEnv("PADDLE_ENV", "live");
+    vi.stubEnv("NEXT_PUBLIC_PADDLE_TOKEN_LIVE", "live_public");
+    vi.stubEnv("NEXT_PUBLIC_PADDLE_TOKEN", "legacy_public");
+
+    expect(paddleBrowserToken()).toBe("live_public");
+  });
+
+  it("falls back to the legacy public token when the environment-specific token is absent", () => {
+    vi.stubEnv("PADDLE_ENV", "sandbox");
+    vi.stubEnv("NEXT_PUBLIC_PADDLE_TOKEN_SANDBOX", "");
+    vi.stubEnv("NEXT_PUBLIC_PADDLE_TOKEN", "legacy_public");
+
+    expect(paddleBrowserToken()).toBe("legacy_public");
   });
 });
 

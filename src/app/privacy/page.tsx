@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
+import StructuredData from "@/components/seo/StructuredData";
+import { generatePageMetadata } from "@/lib/seo/metadata";
+import { getRequiredSeoPageRecord } from "@/lib/seo/page-registry";
+import { createWebPageStructuredData } from "@/lib/seo/structured-data";
 
-export const metadata: Metadata = {
-  title: "개인정보처리방침 - ReviewBoost",
-  description: "ReviewBoost 개인정보처리방침입니다. 수집하는 정보, 이용 목적, 보관 기간 등을 확인하세요.",
-  alternates: { canonical: "/privacy" }
-};
+const record = getRequiredSeoPageRecord("/privacy");
+
+export const metadata: Metadata = generatePageMetadata(record);
 
 export default function PrivacyPage() {
   return (
     <main className="pageMain">
+      <StructuredData data={createWebPageStructuredData(record)} />
       <div className="card">
         <h1>Privacy Policy</h1>
         <p className="muted">
