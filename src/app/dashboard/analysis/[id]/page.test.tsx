@@ -24,15 +24,19 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/components/features/dashboard/AnalysisResults", () => ({
   default: ({
     result,
-    headerDescription
+    headerDescription,
+    resultContext
   }: {
     result: { meta: { filename: string | null } };
     headerDescription?: string;
+    resultContext?: { source: string; legacyNotice?: string };
   }) => (
     <div>
       <span>mock-analysis-results</span>
       <span>{result.meta.filename}</span>
       <span>{headerDescription}</span>
+      <span>{resultContext?.source ?? "live"}</span>
+      <span>{resultContext?.legacyNotice ?? ""}</span>
     </div>
   )
 }));
@@ -168,7 +172,7 @@ describe("/dashboard/analysis/[id] page", () => {
     expect(html).toContain("우선순위 57.4");
   });
 
-  it("renders the legacy fallback when only stats and suggestions were stored", async () => {
+  it("uses the shared result surface for legacy saved analyses too", async () => {
     mockCreateSupabaseServerComponentClient.mockResolvedValue(
       createSupabaseMock({
         analysisRow: {
@@ -216,15 +220,13 @@ describe("/dashboard/analysis/[id] page", () => {
       })
     );
 
-    expect(html).toContain("일부 고급 섹션이 축약 표시됩니다");
-    expect(html).toContain("배송이 늦었어요");
-    expect(html).toContain("CS 응대 템플릿");
-    expect(html).toContain("배송 지연 사과 템플릿");
-    expect(html).toContain("data-tone=\"legacy-note\"");
-    expect(html).toContain("활용 제안");
+    expect(html).toContain("mock-analysis-results");
+    expect(html).toContain("legacy.csv");
+    expect(html).toContain("saved_legacy");
+    expect(html).toContain("이 저장본은 이전 형식으로 저장되어 일부 섹션은 추정값 또는 비어 있는 상태로 표시됩니다.");
   });
 
-  it("result_payload 컬럼이 없어도 legacy fallback을 계속 렌더한다", async () => {
+  it("result_payload 컬럼이 없어도 같은 결과 화면으로 계속 렌더한다", async () => {
     mockCreateSupabaseServerComponentClient.mockResolvedValue(
       createSupabaseMock({
         analysisRow: {
@@ -274,9 +276,9 @@ describe("/dashboard/analysis/[id] page", () => {
       })
     );
 
-    expect(html).toContain("일부 고급 섹션이 축약 표시됩니다");
-    expect(html).toContain("품질이 일정하지 않아요");
-    expect(html).toContain("제품 상세 설명에 품질 보증 범위를 명시하세요.");
+    expect(html).toContain("mock-analysis-results");
+    expect(html).toContain("schema-fallback.csv");
+    expect(html).toContain("saved_legacy");
   });
 
   it("redirects unauthenticated users to login", async () => {

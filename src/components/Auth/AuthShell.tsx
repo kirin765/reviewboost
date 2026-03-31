@@ -31,7 +31,7 @@ export default function AuthShell({ eyebrow, title, lead, bullets, note, childre
               </span>
               <div>
                 <strong className="block text-sm font-semibold tracking-[-0.02em] text-[var(--rb-fg)]">ReviewBoost</strong>
-                <span className="block text-[11px] text-[var(--rb-muted)]">Analytical seller workspace</span>
+                <span className="block text-[11px] text-[var(--rb-muted)]">셀러를 위한 리뷰 분석 워크스페이스</span>
               </div>
             </Link>
 

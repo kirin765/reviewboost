@@ -122,17 +122,17 @@ type SiteContent = {
 const ko: SiteContent = {
   home: {
     hero: {
-      eyebrow: "AI review intelligence",
+      eyebrow: "AI 리뷰 분석",
       title: "리뷰에서 상품의 문제를 찾아 매출을 개선하세요",
       lead: "AI가 리뷰를 감정과 카테고리로 분석해 가장 먼저 해결할 문제를 보여줍니다.",
       primaryCta: "리뷰 분석",
       secondaryCta: "URL을 통한 CSV 다운로드",
       tertiaryCta: "무료 회원가입",
-      previewLabel: "Analytical preview",
-      previewLead: "부정 비율, 카테고리 분포, 긴급 리뷰, 개선 시뮬레이션을 한 화면에서 읽습니다."
+      previewLabel: "분석 미리보기",
+      previewLead: "부정 비율, 카테고리 분포, 긴급 리뷰, 개선 시뮬레이션을 한 화면에서 확인합니다."
     },
     problem: {
-      eyebrow: "Problem",
+      eyebrow: "문제 인식",
       title: "리뷰는 쌓이는데 무엇이 매출을 깎는지 바로 보이지 않습니다.",
       lead: "낮은 별점만 보는 방식으로는 배송 문제와 품질 문제, 오래된 불만과 최근 악화 신호를 구분하기 어렵습니다.",
       items: [
@@ -151,7 +151,7 @@ const ko: SiteContent = {
       ]
     },
     solution: {
-      eyebrow: "Solution",
+      eyebrow: "해결 흐름",
       title: "입력에서 개선까지 하나의 차분한 작업 흐름으로 연결합니다.",
       lead: "URL 입력 → 리뷰 수집 → AI 분석 → 문제 도출 → 개선 흐름을 기준으로, 실제 화면에서는 셀러가 바로 따라갈 수 있는 4단계 온보딩 스트립으로 압축해 보여줍니다.",
       flow: [
@@ -186,14 +186,14 @@ const ko: SiteContent = {
       assurances: ["전체 비용이 보이도록 단순한 플랜", "리뷰 운영을 위한 보수적 분류", "팀 공유까지 이어지는 같은 흐름"]
     },
     product: {
-      eyebrow: "Product detail",
+      eyebrow: "제품 구성",
       title: "화면은 예쁜 대시보드가 아니라 운영자가 바로 읽을 수 있는 작업면입니다.",
       lead: "상단에는 핵심 지표를, 중간에는 카테고리 탭을, 하단에는 긴급 리뷰와 우선순위, 시뮬레이션과 액션 아이템을 배치합니다.",
       items: [
         {
           title: "감정 분석",
           body: "부정 비율과 평균 별점으로 현재 고객 경험의 상태를 빠르게 읽습니다.",
-          stat: "Negative rate 33%"
+          stat: "부정 비율 33%"
         },
         {
           title: "카테고리 분류",
@@ -203,19 +203,19 @@ const ko: SiteContent = {
         {
           title: "이슈 우선순위화",
           body: "발생 비중과 영향도를 합쳐 지금 먼저 해결해야 할 문제를 드러냅니다.",
-          stat: "Priority 46.7"
+          stat: "우선순위 46.7"
         }
       ]
     },
     result: {
-      eyebrow: "Result",
+      eyebrow: "예시 결과",
       title: "같은 리뷰 데이터도 구조화해서 읽으면 대응 순서가 달라집니다.",
       lead: "예시 데이터에서는 품질 이슈가 가장 큰 비중과 영향도를 차지했고, 일부만 해결해도 평균 별점의 개선 폭이 뚜렷하게 나타납니다.",
       metrics: [
-        { label: "Negative rate", value: "33%" },
-        { label: "Avg rating", value: "3.33 / 5" },
-        { label: "Priority score", value: "46.7" },
-        { label: "Recent weight", value: "73%" }
+        { label: "부정 비율", value: "33%" },
+        { label: "평균 별점", value: "3.33 / 5" },
+        { label: "우선순위 점수", value: "46.7" },
+        { label: "최근성 가중치", value: "73%" }
       ],
       categories: [
         { label: "배송", share: "20%", impact: 7 },
@@ -226,8 +226,8 @@ const ko: SiteContent = {
         { label: "기타", share: "20%", impact: 4 }
       ],
       simulations: [
-        { label: "25% fix", value: "3.67", delta: "+0.33" },
-        { label: "75% fix", value: "4.67", delta: "+1.33" }
+        { label: "25% 개선", value: "3.67", delta: "+0.33" },
+        { label: "75% 개선", value: "4.67", delta: "+1.33" }
       ],
       graph: {
         heroMetricLabel: "우선 대응 시점",
@@ -243,12 +243,12 @@ const ko: SiteContent = {
       }
     },
     pricing: {
-      eyebrow: "Pricing",
+      eyebrow: "요금제",
       title: "무료로 정확도를 먼저 확인하고, 저장과 반복 분석이 필요할 때 확장하세요.",
       lead: "무료 플랜으로 첫 결과를 검증한 뒤, 운영 빈도와 저장 필요에 맞게 Basic 또는 Pro로 확장할 수 있습니다."
     },
     faq: {
-      eyebrow: "FAQ",
+      eyebrow: "자주 묻는 질문",
       title: "도입 전에 가장 많이 확인하는 질문",
       items: [
         {
@@ -266,7 +266,7 @@ const ko: SiteContent = {
       ]
     },
     cta: {
-      eyebrow: "Start free",
+      eyebrow: "무료로 시작",
       title: "리뷰를 읽는 시간을 줄이고, 먼저 고쳐야 할 문제부터 바로 확인하세요.",
       lead: "무료 가입으로 첫 분석을 시작하거나, 상품 URL에서 리뷰 CSV를 받아 같은 흐름으로 이어갈 수 있습니다.",
       primary: "무료로 시작하기",
@@ -274,7 +274,7 @@ const ko: SiteContent = {
     }
   },
   pricing: {
-    eyebrow: "Pricing",
+    eyebrow: "요금제",
     title: "운영 빈도와 저장 필요도에 맞는 플랜",
     lead: "무료로 정확도를 확인하고, 저장·공유·대량 분석이 필요할 때 Basic과 Pro로 확장할 수 있습니다.",
     pills: ["안전한 카드 결제", "저장/공유 기능 연계", "오픈베타 할인 중"],
@@ -283,7 +283,7 @@ const ko: SiteContent = {
     plans: [
       {
         name: "free",
-        label: "Starter",
+        label: "체험용",
         price: "₩0",
         meta: "체험용",
         cta: "무료로 시작",
@@ -297,7 +297,7 @@ const ko: SiteContent = {
       },
       {
         name: "basic",
-        label: "Recommended",
+        label: "추천",
         price: "₩19,000",
         originalPrice: "₩39,000",
         meta: "월 19,000원 · 오픈베타 한정가",
@@ -313,7 +313,7 @@ const ko: SiteContent = {
       },
       {
         name: "pro",
-        label: "Scale",
+        label: "팀 운영",
         price: "₩45,000",
         originalPrice: "₩89,000",
         meta: "월 45,000원 · 오픈베타 한정가",

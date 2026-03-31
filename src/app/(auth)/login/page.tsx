@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signInAction } from "@/app/(auth)/actions";
 import FeedbackModal from "@/components/FeedbackModal";
 import AuthShell from "@/components/Auth/AuthShell";
+import { buttonStyles } from "@/components/ui/Button";
 import { useTranslation } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +65,7 @@ export default function LoginPage() {
             <label className="muted formInputLabel" htmlFor="login-password">{t("login.passwordLabel")}</label>
             <input id="login-password" className="input" name="password" type="password" placeholder={t("login.passwordPlaceholder")} required />
           </div>
-          <button className="btn btnPrimary formSubmit" type="submit">
+          <button className={buttonStyles({ variant: "primary", className: "formSubmit w-full justify-center" })} type="submit">
             {t("login.submit")}
           </button>
           <div className="formHintRow">
@@ -77,10 +78,10 @@ export default function LoginPage() {
         <div className="authPanelFooter">
           <p className="muted formBottomNote">{t("login.noAccount")}</p>
           <div className="actionRow authActions">
-            <a className="btn" href={`/signup?next=${encodeURIComponent(next)}`}>
+            <a className={buttonStyles({ variant: "secondary" })} href={`/signup?next=${encodeURIComponent(next)}`}>
               {t("common.signup")}
             </a>
-            <a className="btn btnOutline" href="/dashboard/analyze">
+            <a className={buttonStyles({ variant: "primary" })} href="/dashboard/analyze">
               {t("common.goToAnalysis")}
             </a>
           </div>

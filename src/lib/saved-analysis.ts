@@ -1,10 +1,13 @@
 import type { DashboardAnalysisResult } from "@/lib/api/analysis";
 import type {
   ActionItem,
+  AnalysisStats,
   AnalysisOutput,
   Category,
   ClassifiedReview,
   PriorityMatrixItem,
+  PositiveKeyword,
+  RatingSimulation,
   Suggestions,
   UrgentReview
 } from "@/lib/types";
@@ -65,6 +68,82 @@ function ensureSuggestions(suggestions: Suggestions | null | undefined): Suggest
   };
 }
 
+function emptyCategoryCounts(): Record<Category, number> {
+  return {
+    배송: 0,
+    품질: 0,
+    사용성: 0,
+    CS: 0,
+    가격: 0,
+    기타: 0
+  };
+}
+
+function deriveStatsFromReviews(row: SavedAnalysisDetailRow, reviews: SavedAnalysisReviewRow[]): AnalysisStats {
+  const total = reviews.length;
+  const negative = reviews.filter((review) => review.sentiment === "negative").length;
+  const positive = reviews.filter((review) => review.sentiment === "positive").length;
+  const neutral = Math.max(0, total - negative - positive);
+  const ratings = reviews.map((review) => review.rating).filter((rating): rating is number => typeof rating === "number");
+  const avgRating = ratings.length > 0 ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : null;
+  const categoryCounts = reviews.reduce<Record<Category, number>>((counts, review) => {
+    counts[review.category] += 1;
+    return counts;
+  }, emptyCategoryCounts());
+  const datedReviews = reviews.filter((review) => review.reviewed_at).map((review) => ({
+    ...review,
+    reviewed_at: review.reviewed_at as string
+  }));
+  const now = Date.now();
+  const within30Days = datedReviews.filter((review) => now - new Date(review.reviewed_at).getTime() <= 1000 * 60 * 60 * 24 * 30);
+  const within90Days = datedReviews.filter((review) => now - new Date(review.reviewed_at).getTime() <= 1000 * 60 * 60 * 24 * 90);
+
+  return {
+    total,
+    positive,
+    negative,
+    neutral,
+    positiveRatio: total > 0 ? positive / total : 0,
+    negativeRatio: total > 0 ? negative / total : 0,
+    avgRating,
+    negativeKeywordsTop10: [],
+    categoryCounts,
+    priorityScore: Number(row.priority_score ?? 0),
+    recentness: {
+      hasDates: datedReviews.length > 0,
+      last30Share: total > 0 ? within30Days.length / total : 0,
+      last90Share: total > 0 ? within90Days.length / total : 0,
+      last30NegativeRatio: within30Days.length > 0 ? within30Days.filter((review) => review.sentiment === "negative").length / within30Days.length : null
+    }
+  };
+}
+
+function ensureLegacyStats(row: SavedAnalysisDetailRow, reviews: SavedAnalysisReviewRow[]): AnalysisStats {
+  if (!row.stats) return deriveStatsFromReviews(row, reviews);
+
+  return {
+    total: Number(row.stats.total ?? reviews.length),
+    positive: Number(row.stats.positive ?? reviews.filter((review) => review.sentiment === "positive").length),
+    negative: Number(row.stats.negative ?? reviews.filter((review) => review.sentiment === "negative").length),
+    neutral: Number(
+      row.stats.neutral ??
+        Math.max(
+          0,
+          Number(row.stats.total ?? reviews.length) -
+            Number(row.stats.positive ?? reviews.filter((review) => review.sentiment === "positive").length) -
+            Number(row.stats.negative ?? reviews.filter((review) => review.sentiment === "negative").length)
+        )
+    ),
+    positiveRatio: Number(row.stats.positiveRatio ?? 0),
+    negativeRatio: Number(row.stats.negativeRatio ?? 0),
+    avgRating: typeof row.stats.avgRating === "number" ? row.stats.avgRating : null,
+    negativeKeywordsTop10: row.stats.negativeKeywordsTop10 ?? [],
+    categoryCounts: row.stats.categoryCounts ?? emptyCategoryCounts(),
+    priorityScore: Number(row.stats.priorityScore ?? row.priority_score ?? 0),
+    recentness: row.stats.recentness ?? deriveStatsFromReviews(row, reviews).recentness
+  };
+}
+
 export function mapSavedAnalysisResult(row: SavedAnalysisDetailRow): DashboardAnalysisResult | null {
   if (!row.result_payload) return null;
 
@@ -72,6 +151,43 @@ export function mapSavedAnalysisResult(row: SavedAnalysisDetailRow): DashboardAn
     ...row.result_payload,
     stats: row.result_payload.stats ?? row.stats ?? row.result_payload.stats,
     suggestions: row.result_payload.suggestions ?? ensureSuggestions(row.suggestions),
+    meta: {
+      filename: row.input_filename,
+      stored: true,
+      analysisId: row.id,
+      truncated: false
+    }
+  };
+}
+
+export function mapLegacySavedAnalysisResult(row: SavedAnalysisDetailRow, reviews: SavedAnalysisReviewRow[]): DashboardAnalysisResult {
+  const stats = ensureLegacyStats(row, reviews);
+  const suggestions = ensureSuggestions(row.suggestions);
+  const urgentReviews = deriveUrgentReviewsFromSavedReviews(reviews);
+  const priorityMatrix = derivePriorityMatrixFromStats({ ...row, stats });
+  const actionItems = deriveActionItemsFromSuggestions(suggestions);
+  const ratingSimulation: RatingSimulation = {
+    currentAvg: typeof stats.avgRating === "number" ? stats.avgRating : 0,
+    scenarios: []
+  };
+  const positiveKeywords: PositiveKeyword[] = [];
+  const classified: ClassifiedReview[] = reviews.map((review) => ({
+    text: review.text,
+    rating: review.rating,
+    reviewedAt: review.reviewed_at,
+    sentiment: review.sentiment,
+    category: review.category
+  }));
+
+  return {
+    stats,
+    suggestions,
+    classified,
+    urgentReviews,
+    priorityMatrix,
+    ratingSimulation,
+    positiveKeywords,
+    actionItems,
     meta: {
       filename: row.input_filename,
       stored: true,
