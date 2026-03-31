@@ -11,6 +11,8 @@ import { getGatesForPlan } from "@/lib/plan_gates";
 import { runAnalysisPipeline } from "@/lib/analysis_pipeline";
 import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
+import { createStoredAnalysisPayload } from "@/lib/saved-analysis";
+import { isResultPayloadSchemaMismatch, RESULT_PAYLOAD_STORAGE_WARNING } from "@/lib/result-payload-compat";
 import { getErrorMessage } from "@/types/common";
 
 export const runtime = "nodejs";
@@ -26,6 +28,7 @@ type StorageStatus = {
   analysisId?: string;
   step?: string;
   error: string | null;
+  warning?: string | null;
 };
 
 type AnalysisPayload = Awaited<ReturnType<typeof runAnalysisPipeline>>["payload"];
@@ -80,7 +83,80 @@ function buildStorageMeta(base: AnalysisPayload["meta"], storage: StorageStatus)
     truncated: base.truncated,
     storageAttempted: storage.attempted,
     storageError: storage.success ? null : storage.error,
+    storageWarning: storage.warning ?? null,
     storageStep: storage.step ?? null
+  };
+}
+
+function buildAnalysisInsertRecord({
+  userId,
+  clientIp,
+  filename,
+  payload,
+  includeResultPayload
+}: {
+  userId: string;
+  clientIp: string | null;
+  filename: string | null;
+  payload: AnalysisPayload;
+  includeResultPayload: boolean;
+}) {
+  return {
+    user_id: userId,
+    client_ip: clientIp,
+    input_filename: filename,
+    stats: payload.stats,
+    suggestions: payload.suggestions,
+    priority_score: payload.stats.priorityScore,
+    ...(includeResultPayload ? { result_payload: createStoredAnalysisPayload(payload) } : {})
+  };
+}
+
+async function insertAnalysisWithCompat({
+  client,
+  userId,
+  clientIp,
+  filename,
+  payload
+}: {
+  client: { from: (table: string) => any };
+  userId: string;
+  clientIp: string | null;
+  filename: string | null;
+  payload: AnalysisPayload;
+}) {
+  const firstAttempt = await client
+    .from("analyses")
+    .insert(buildAnalysisInsertRecord({ userId, clientIp, filename, payload, includeResultPayload: true }))
+    .select("id")
+    .single();
+
+  if (!firstAttempt.error) {
+    return {
+      data: firstAttempt.data,
+      error: null,
+      usedCompatFallback: false
+    };
+  }
+
+  if (!isResultPayloadSchemaMismatch(firstAttempt.error)) {
+    return {
+      data: null,
+      error: firstAttempt.error,
+      usedCompatFallback: false
+    };
+  }
+
+  const secondAttempt = await client
+    .from("analyses")
+    .insert(buildAnalysisInsertRecord({ userId, clientIp, filename, payload, includeResultPayload: false }))
+    .select("id")
+    .single();
+
+  return {
+    data: secondAttempt.data,
+    error: secondAttempt.error,
+    usedCompatFallback: true
   };
 }
 
@@ -260,7 +336,8 @@ export async function POST(req: Request) {
   const storageStatus: StorageStatus = {
     attempted: false,
     success: false,
-    error: null
+    error: null,
+    warning: null
   };
 
   // Optional persistence (Supabase)
@@ -274,21 +351,25 @@ export async function POST(req: Request) {
         storageStatus.attempted = false;
         storageStatus.error = "로그인 후 히스토리에 저장됩니다.";
       } else {
-        const insertAnalysis = await admin
-          .from("analyses")
-          .insert({
-            user_id: userId,
-            client_ip: clientIp,
-            input_filename: filename,
-            stats: payload.stats,
-            suggestions: payload.suggestions,
-            priority_score: payload.stats.priorityScore
-          })
-          .select("id")
-          .single();
+        const insertAnalysis = await insertAnalysisWithCompat({
+          client: admin,
+          userId,
+          clientIp,
+          filename,
+          payload
+        });
+
+        if (insertAnalysis.usedCompatFallback) {
+          storageStatus.warning = RESULT_PAYLOAD_STORAGE_WARNING;
+          storageStatus.step = "analyses_insert_admin_compat";
+        }
 
         if (insertAnalysis.error) {
-          storageStatus.error = toStorageError(`analyses_insert_admin_failed: ${insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)}`);
+          storageStatus.error = toStorageError(
+            `${insertAnalysis.usedCompatFallback ? "analyses_insert_admin_compat_failed" : "analyses_insert_admin_failed"}: ${
+              insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)
+            }`
+          );
           throw new Error(storageStatus.error);
         }
 
@@ -327,21 +408,25 @@ export async function POST(req: Request) {
     if (userId && supabaseAuth) {
       storageStatus.attempted = true;
       storageStatus.step = "analyses_insert_auth";
-      const insertAnalysis = await supabaseAuth
-        .from("analyses")
-        .insert({
-          user_id: userId,
-          client_ip: clientIp,
-          input_filename: filename,
-          stats: payload.stats,
-          suggestions: payload.suggestions,
-          priority_score: payload.stats.priorityScore
-        })
-        .select("id")
-        .single();
+      const insertAnalysis = await insertAnalysisWithCompat({
+        client: supabaseAuth,
+        userId,
+        clientIp,
+        filename,
+        payload
+      });
+
+      if (insertAnalysis.usedCompatFallback) {
+        storageStatus.warning = RESULT_PAYLOAD_STORAGE_WARNING;
+        storageStatus.step = "analyses_insert_auth_compat";
+      }
 
       if (insertAnalysis.error) {
-        storageStatus.error = toStorageError(`analyses_insert_auth_failed: ${insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)}`);
+        storageStatus.error = toStorageError(
+          `${insertAnalysis.usedCompatFallback ? "analyses_insert_auth_compat_failed" : "analyses_insert_auth_failed"}: ${
+            insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)
+          }`
+        );
         throw new Error(storageStatus.error);
       }
 

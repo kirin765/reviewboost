@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlanProvider } from "@/contexts/PlanContext";
 import type { DashboardAnalysisResult } from "@/lib/api/analysis";
@@ -139,5 +139,47 @@ describe("AnalysisResults", () => {
     expect(getByText("CS 응대 템플릿")).toBeTruthy();
     expect(container.querySelector('[data-tone="urgent"]')).toBeTruthy();
     expect(container.querySelector('[data-tone="simulation"]')).toBeTruthy();
+  });
+
+  it("shows a save failure notice when persistence failed", () => {
+    const failedResult: DashboardAnalysisResult = {
+      ...result,
+      meta: {
+        ...result.meta,
+        stored: false,
+        storageAttempted: true,
+        storageError: "analyses_insert_admin_failed: insert failed"
+      }
+    };
+
+    render(
+      <PlanProvider plan="pro">
+        <AnalysisResults result={failedResult} caps={caps} busy={false} onDownloadPdf={vi.fn()} />
+      </PlanProvider>
+    );
+
+    expect(screen.getByText("저장 실패")).toBeTruthy();
+    expect(screen.getByText("저장에 실패해 이번 결과는 히스토리에 남지 않았습니다.")).toBeTruthy();
+  });
+
+  it("shows a summary-only save notice when compat fallback stored the analysis", () => {
+    const compatStoredResult: DashboardAnalysisResult = {
+      ...result,
+      meta: {
+        ...result.meta,
+        stored: true,
+        storageAttempted: true,
+        storageWarning: "기본 요약만 저장되었습니다. 확장 상세는 DB 업데이트 후 저장됩니다."
+      }
+    };
+
+    render(
+      <PlanProvider plan="pro">
+        <AnalysisResults result={compatStoredResult} caps={caps} busy={false} onDownloadPdf={vi.fn()} />
+      </PlanProvider>
+    );
+
+    expect(screen.getByText("요약 저장 완료")).toBeTruthy();
+    expect(screen.getByText("기본 요약만 저장되었습니다. 확장 상세는 DB 업데이트 후 저장됩니다.")).toBeTruthy();
   });
 });

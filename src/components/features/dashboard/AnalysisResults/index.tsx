@@ -82,6 +82,36 @@ function actionCategoryLabel(category: string) {
   return "운영";
 }
 
+function resolveStorageNotice(meta: DashboardAnalysisResult["meta"]) {
+  if (meta.storageAttempted !== true) return null;
+
+  if (meta.stored && meta.storageWarning) {
+    return {
+      tone: TONE_STYLES.warning,
+      title: "요약 저장 완료",
+      message: meta.storageWarning
+    };
+  }
+
+  if (meta.stored) {
+    return {
+      tone: TONE_STYLES.accent,
+      title: "저장 완료",
+      message: "이번 분석 결과가 히스토리에 저장되었습니다."
+    };
+  }
+
+  if (meta.storageError) {
+    return {
+      tone: TONE_STYLES.danger,
+      title: "저장 실패",
+      message: "저장에 실패해 이번 결과는 히스토리에 남지 않았습니다."
+    };
+  }
+
+  return null;
+}
+
 function TonedSection({
   tone,
   eyebrow,
@@ -197,6 +227,7 @@ export default function AnalysisResults({
     headerDescription ?? `${result.meta.stored ? "저장된 리포트" : "이번 분석 결과"} · ${storageEnabled ? `${caps?.planLabel ?? "계정"} 플랜` : "게스트 모드"}`;
   const resolvedSecondaryHref = secondaryHref ?? (storageEnabled ? "/dashboard" : "/dashboard/analyze");
   const resolvedSecondaryLabel = secondaryLabel ?? (storageEnabled ? "홈" : "새 분석");
+  const storageNotice = resolveStorageNotice(result.meta);
   const suggestionGroups = [
     { title: "상세페이지 반영", items: result.suggestions.detailPageCopy },
     { title: "CS 응대 템플릿", items: result.suggestions.csResponseTemplates },
@@ -234,6 +265,14 @@ export default function AnalysisResults({
           <p className="mt-5 text-sm text-[var(--rb-warning)]">
             리뷰 수가 플랜 한도를 초과하여 {gates.maxReviewsPerAnalysis}개만 분석되었습니다. 전체 분석은 Basic 이상으로 이용하세요.
           </p>
+        ) : null}
+
+        {storageNotice ? (
+          <div className={`mt-5 rounded-[16px] border px-4 py-4 ${storageNotice.tone.panel}`}>
+            <div className={`h-1.5 w-12 rounded-full ${storageNotice.tone.bar}`} aria-hidden="true" />
+            <p className={`mt-4 text-[11px] uppercase tracking-[0.2em] ${storageNotice.tone.label}`}>{storageNotice.title}</p>
+            <p className="mt-2 text-sm leading-7 text-[var(--rb-muted-strong)]">{storageNotice.message}</p>
+          </div>
         ) : null}
 
         {!result.stats.recentness?.hasDates ? (

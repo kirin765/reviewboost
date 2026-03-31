@@ -11,6 +11,7 @@ export type DashboardAnalysisMeta = {
   truncated?: boolean;
   storageAttempted?: boolean;
   storageError?: string | null;
+  storageWarning?: string | null;
   storageStep?: string | null;
   aiFallbackReason?: string;
   llmApplied?: boolean;
@@ -58,6 +59,7 @@ export function createAnalysisResultMeta(): DashboardAnalysisMeta {
     truncated: false,
     storageAttempted: false,
     storageError: null,
+    storageWarning: null,
     storageStep: null
   };
 }

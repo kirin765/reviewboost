@@ -8,6 +8,7 @@ import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 import { getCapabilitiesBase } from "@/lib/capabilities";
 import { getNavigationSessionState } from "@/lib/navigation_session";
 import { monthlyLimitForPlan, planLabel } from "@/lib/plan";
+import { isResultPayloadSchemaMismatch } from "@/lib/result-payload-compat";
 import {
   mapLegacySavedAnalysisView,
   mapSavedAnalysisResult,
@@ -32,6 +33,52 @@ function legacySuggestionTone(title: string) {
   if (title.includes("FAQ")) return "border-[color:rgba(132,162,255,0.18)] bg-[rgba(132,162,255,0.06)]";
   if (title.includes("상세페이지")) return "border-[color:rgba(245,185,110,0.18)] bg-[rgba(245,185,110,0.06)]";
   return "border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)]";
+}
+
+async function loadSavedAnalysisRow({
+  supabase,
+  analysisId,
+  userId
+}: {
+  supabase: Awaited<ReturnType<typeof createSupabaseServerComponentClient>>;
+  analysisId: string;
+  userId: string;
+}) {
+  const baseQuery = await supabase
+    .from("analyses")
+    .select("id, created_at, input_filename, stats, suggestions, priority_score")
+    .eq("id", analysisId)
+    .eq("user_id", userId)
+    .single();
+
+  if (baseQuery.error || !baseQuery.data) {
+    return {
+      data: null,
+      error: baseQuery.error ?? { message: "missing" }
+    };
+  }
+
+  const payloadQuery = await supabase
+    .from("analyses")
+    .select("result_payload")
+    .eq("id", analysisId)
+    .eq("user_id", userId)
+    .single();
+
+  if (payloadQuery.error && !isResultPayloadSchemaMismatch(payloadQuery.error)) {
+    return {
+      data: null,
+      error: payloadQuery.error
+    };
+  }
+
+  return {
+    data: {
+      ...baseQuery.data,
+      result_payload: payloadQuery.error ? null : payloadQuery.data?.result_payload ?? null
+    } satisfies SavedAnalysisDetailRow,
+    error: null
+  };
 }
 
 export default async function AnalysisDetailPage(props: { params: Promise<{ id: string }> }) {
@@ -70,12 +117,11 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
   if (!userData.user) redirect(`/login?next=${encodeURIComponent(`/dashboard/analysis/${id}`)}`);
 
   const [{ data, error }, session] = await Promise.all([
-    supabase
-      .from("analyses")
-      .select("id, created_at, input_filename, stats, suggestions, priority_score, result_payload")
-      .eq("id", id)
-      .eq("user_id", userData.user.id)
-      .single(),
+    loadSavedAnalysisRow({
+      supabase,
+      analysisId: id,
+      userId: userData.user.id
+    }),
     getNavigationSessionState()
   ]);
 
