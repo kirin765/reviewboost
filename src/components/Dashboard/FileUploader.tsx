@@ -8,21 +8,17 @@ import { useTranslation } from "@/lib/i18n";
 interface FileUploaderProps {
   file: File | null;
   busy: boolean;
-  preview: boolean;
   onFileSelect: (file: File | null) => void;
   onReset: () => void;
   onSample: () => void;
-  onAnalyze: () => void;
 }
 
 export default function FileUploader({
   file,
   busy,
-  preview,
   onFileSelect,
   onReset,
-  onSample,
-  onAnalyze
+  onSample
 }: FileUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -97,12 +93,6 @@ export default function FileUploader({
         ) : (
           <span>{t("upload.noFileSelected")}</span>
         )}
-      </div>
-
-      <div className="mt-5">
-        <Button variant="primary" onClick={onAnalyze} disabled={!file || busy} className="w-full justify-center" asLoading={busy}>
-          {preview ? t("common.startAnalysis") : t("common.nextPreview")}
-        </Button>
       </div>
     </div>
   );
