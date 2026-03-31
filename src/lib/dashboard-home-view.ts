@@ -32,6 +32,15 @@ export type DashboardHomeView = {
   negativeRate: number | null;
   averageRating: number | null;
   recent30DayWeight: number | null;
+  negativeReviews: number;
+  nonNegativeReviews: number;
+  trend: Array<{
+    id: string;
+    label: string;
+    negativeRate: number;
+    averageRating: number | null;
+    total: number;
+  }>;
   recentReports: DashboardHomeReportItem[];
 };
 
@@ -82,6 +91,18 @@ export function mapDashboardHomeView(rows: DashboardHomeAnalysisRow[]): Dashboar
     negativeRate: negativeWeightBase > 0 ? negativeCount / negativeWeightBase : null,
     averageRating: ratingWeightBase > 0 ? ratingWeighted / ratingWeightBase : null,
     recent30DayWeight: recentWeightBase > 0 ? recentWeighted / recentWeightBase : null,
+    negativeReviews: Math.round(negativeCount),
+    nonNegativeReviews: Math.max(0, totalReviews - Math.round(negativeCount)),
+    trend: [...rows]
+      .reverse()
+      .slice(-12)
+      .map((row) => ({
+        id: row.id,
+        label: new Date(row.created_at).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" }),
+        negativeRate: typeof row.stats?.negativeRatio === "number" ? row.stats.negativeRatio : 0,
+        averageRating: typeof row.stats?.avgRating === "number" ? row.stats.avgRating : null,
+        total: Number(row.stats?.total ?? 0)
+      })),
     recentReports: rows.map((row) => ({
       id: row.id,
       href: `/dashboard/analysis/${row.id}`,
