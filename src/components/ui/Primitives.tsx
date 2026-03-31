@@ -85,7 +85,7 @@ export function StatePanel({
         className
       )}
     >
-      <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">{tone === "error" ? "Error state" : "State"}</p>
+      <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">{tone === "error" ? "오류 상태" : "안내 상태"}</p>
       <h3 className="mt-3 text-xl font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">{title}</h3>
       <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--rb-muted-strong)]">{description}</p>
       {actions ? <div className="mt-5 flex flex-wrap gap-3">{actions}</div> : null}

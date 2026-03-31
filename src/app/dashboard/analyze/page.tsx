@@ -6,16 +6,16 @@ import FeedbackModal from "@/components/FeedbackModal";
 import { PlanProvider } from "@/contexts/PlanContext";
 import type { PlanTier } from "@/types/user";
 import DashboardAnalysisPanel from "@/components/features/dashboard/AnalysisPanel";
-import { useReviewAnalysis } from "@/hooks/useReviewAnalysis";
+import { useReviewAnalysis, type AnalysisNotice } from "@/hooks/useReviewAnalysis";
 import { fetchCapabilities } from "@/lib/api/user";
 import { getErrorMessage } from "@/types/common";
 
 function AnalyzeWorkspace({ caps }: { caps: Capabilities | null }) {
   const [localError, setLocalError] = useState<string | null>(null);
-  const [analysisDoneNotice, setAnalysisDoneNotice] = useState<string | null>(null);
+  const [analysisNotice, setAnalysisNotice] = useState<AnalysisNotice | null>(null);
 
   const { state, actions, modal } = useReviewAnalysis({
-    onNotice: setAnalysisDoneNotice
+    onNotice: setAnalysisNotice
   });
 
   const shownError = localError ?? state.error;
@@ -24,16 +24,28 @@ function AnalyzeWorkspace({ caps }: { caps: Capabilities | null }) {
     if (!state.result) return;
 
     if (state.result.stats.total === 0) {
-      setAnalysisDoneNotice("분석 결과가 없습니다. 데이터 행을 확인해주세요.");
+      setAnalysisNotice({
+        kind: "analysis",
+        title: "분석 완료",
+        message: "분석 결과가 없습니다. 데이터 행을 확인해주세요."
+      });
       return;
     }
 
     if (!caps?.supabaseConfigured) {
-      setAnalysisDoneNotice("분석이 완료되었습니다. 저장 기능이 비활성 상태여서 PDF로만 보관 가능합니다.");
+      setAnalysisNotice({
+        kind: "analysis",
+        title: "분석 완료",
+        message: "분석이 완료되었습니다. 저장 기능이 비활성 상태여서 PDF로만 보관 가능합니다."
+      });
       return;
     }
 
-    setAnalysisDoneNotice(null);
+    setAnalysisNotice({
+      kind: "analysis",
+      title: "분석 완료",
+      message: "분석 결과가 준비되었습니다. 아래 화면에서 우선순위와 액션 아이템을 확인해 주세요."
+    });
   }, [caps?.supabaseConfigured, state.result]);
 
   useEffect(() => {
@@ -103,8 +115,8 @@ function AnalyzeWorkspace({ caps }: { caps: Capabilities | null }) {
           ]}
         />
       ) : null}
-      {!shownError && analysisDoneNotice ? (
-        <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
+      {!shownError && analysisNotice ? (
+        <FeedbackModal title={analysisNotice.title} message={analysisNotice.message} onClose={() => setAnalysisNotice(null)} />
       ) : null}
 
       <DashboardAnalysisPanel
@@ -125,6 +137,7 @@ function AnalyzeWorkspace({ caps }: { caps: Capabilities | null }) {
         onSample={actions.onSample}
         onAnalyze={handleAnalyze}
         onDownloadPdf={handleDownloadPdf}
+        onBackToUpload={actions.onBackToUpload}
         onTextColChange={actions.setTextCol}
         onRatingColChange={actions.setRatingCol}
         onDateColChange={actions.setDateCol}

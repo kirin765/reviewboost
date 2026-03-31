@@ -4,7 +4,6 @@ import React, { useMemo } from "react";
 import CopyButton from "@/components/CopyButton";
 import { buttonStyles } from "@/components/ui/Button";
 import type { CsvPreview as CsvPreviewType } from "@/lib/csv";
-import { useTranslation } from "@/lib/i18n";
 
 interface CsvPreviewProps {
   preview: CsvPreviewType;
@@ -70,8 +69,6 @@ export default function CsvPreview({
   onCellClick,
   onCellModalClose
 }: CsvPreviewProps) {
-  const { t } = useTranslation();
-
   const previewCols = useMemo(() => (showAllPreviewCols ? preview.columns : preview.columns.slice(0, 6)), [preview.columns, showAllPreviewCols]);
   const textColNeedsReview = preview.inferred.textColSource === "fallback";
   const reviewTextHint = useMemo(() => {
@@ -83,29 +80,27 @@ export default function CsvPreview({
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap gap-3">
-        <span className="rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-1 text-xs text-[var(--rb-muted-strong)]">
-          {preview.totalRows}
-          {t("preview.rows")} / {preview.columns.length}
-          {t("preview.columns")}
+        <span className="rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(18,24,31,0.94)] px-3 py-1 text-xs text-[var(--rb-muted-strong)]">
+          {preview.totalRows}행 / {preview.columns.length}열
         </span>
-        <span className="rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-1 text-xs text-[var(--rb-muted-strong)]">
-          {preview.headerMode === "header" ? t("preview.headerPresent") : t("preview.headerAbsent")}
+        <span className="rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(18,24,31,0.94)] px-3 py-1 text-xs text-[var(--rb-muted-strong)]">
+          {preview.headerMode === "header" ? "헤더 있음" : "헤더 없음"}
         </span>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="rounded-[16px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)] p-5">
-          <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">{t("preview.mappingPanel")}</h2>
+        <div className="rounded-[18px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.98),rgba(15,20,27,0.98))] p-5 shadow-[0_20px_42px_rgba(0,0,0,0.22)]">
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">열 매핑 패널</h2>
           {textColNeedsReview ? (
             <p className="mt-4 whitespace-pre-line rounded-[14px] border border-[color:rgba(255,137,137,0.2)] bg-[rgba(123,22,22,0.18)] px-4 py-4 text-sm leading-7 text-[#ffc5c5]">
-              {t("preview.autoInferredWarning")} <strong>{textCol}</strong>
-              {reviewTextHint ? `\n${t("preview.possibleCols")} ${reviewTextHint}` : ""}
-              <br />{t("preview.changeCol")}
+              리뷰 내용 열이 자동으로 추정되었는데 정확하지 않을 수 있어요. 지금 선택된 열: <strong>{textCol}</strong>
+              {reviewTextHint ? `\n리뷰 텍스트 후보 열: ${reviewTextHint}` : ""}
+              <br />원하는 열로 바꿔주세요.
             </p>
           ) : null}
           <div className="mt-5 grid gap-4">
             <label>
-              <span className="mb-2 block text-sm text-[var(--rb-muted-strong)]">{t("preview.reviewTextCol")}</span>
+              <span className="mb-2 block text-sm text-[var(--rb-muted-strong)]">리뷰 내용(텍스트) 열</span>
               <select className="input" value={textCol} onChange={(e) => onTextColChange(e.target.value)} disabled={busy}>
                 {preview.columns.map((column) => (
                   <option key={column} value={column}>
@@ -115,9 +110,9 @@ export default function CsvPreview({
               </select>
             </label>
             <label>
-              <span className="mb-2 block text-sm text-[var(--rb-muted-strong)]">{t("preview.ratingCol")}</span>
+              <span className="mb-2 block text-sm text-[var(--rb-muted-strong)]">별점 열 (선택)</span>
               <select className="input" value={ratingCol} onChange={(e) => onRatingColChange(e.target.value)} disabled={busy}>
-                <option value="">{t("common.none")}</option>
+                <option value="">(없음)</option>
                 {preview.columns.map((column) => (
                   <option key={column} value={column}>
                     {column}
@@ -126,9 +121,9 @@ export default function CsvPreview({
               </select>
             </label>
             <label>
-              <span className="mb-2 block text-sm text-[var(--rb-muted-strong)]">{t("preview.dateCol")}</span>
+              <span className="mb-2 block text-sm text-[var(--rb-muted-strong)]">작성일 열 (선택)</span>
               <select className="input" value={dateCol} onChange={(e) => onDateColChange(e.target.value)} disabled={busy}>
-                <option value="">{t("common.none")}</option>
+                <option value="">(없음)</option>
                 {preview.columns.map((column) => (
                   <option key={column} value={column}>
                     {column}
@@ -139,39 +134,50 @@ export default function CsvPreview({
           </div>
         </div>
 
-        <div className="rounded-[16px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)] p-5">
+        <div className="rounded-[18px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.98),rgba(15,20,27,0.98))] p-5 shadow-[0_20px_42px_rgba(0,0,0,0.22)]">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-[var(--rb-muted-strong)]">{t("preview.previewFirst5")}</span>
+            <span className="text-sm font-medium text-[var(--rb-muted-strong)]">미리보기 (처음 5줄)</span>
             {preview.columns.length > 6 ? (
-              <button type="button" className={buttonStyles({ variant: "ghost", size: "sm" })} onClick={onTogglePreviewCols} disabled={busy} aria-pressed={showAllPreviewCols}>
-                {showAllPreviewCols ? t("preview.showFirst6") : t("preview.showAllCols")}
+              <button
+                type="button"
+                className={buttonStyles({ variant: "ghost", size: "sm" })}
+                onClick={onTogglePreviewCols}
+                disabled={busy}
+                aria-pressed={showAllPreviewCols}
+              >
+                {showAllPreviewCols ? "앞의 6개만 보기" : "전체 열 보기"}
               </button>
             ) : null}
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-[14px] border border-[color:rgba(255,255,255,0.06)]">
-            <div className="tableWrap">
-              <table className="min-w-[720px] text-left text-sm">
-                <thead className="bg-[rgba(255,255,255,0.03)]">
+          <div className="mt-4 overflow-hidden rounded-[16px] border border-[color:rgba(255,255,255,0.08)] bg-[#121922]">
+            <div className="tableWrap bg-[#121922]">
+              <table className="min-w-[720px] bg-[#121922] text-left text-sm text-[#d5dde8]">
+                <thead className="bg-[#0f151d]">
                   <tr>
                     {previewCols.map((column) => (
-                      <th key={column} className="px-4 py-3 font-medium text-[var(--rb-muted)]">
+                      <th key={column} className="border-b border-[color:rgba(255,255,255,0.08)] px-4 py-3 font-semibold text-[#edf2ea]">
                         <div className="flex items-center gap-2">
                           <span>{column}</span>
-                          {column === textCol ? <span className="rounded-full bg-[rgba(95,198,183,0.12)] px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-[var(--rb-accent)]">{t("preview.text")}</span> : null}
-                          {column === ratingCol ? <span className="rounded-full bg-[rgba(95,198,183,0.12)] px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-[var(--rb-accent)]">{t("preview.rating")}</span> : null}
-                          {column === dateCol ? <span className="rounded-full bg-[rgba(95,198,183,0.12)] px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-[var(--rb-accent)]">{t("preview.date")}</span> : null}
+                          {column === textCol ? <span className="rounded-full border border-[color:rgba(107,210,193,0.18)] bg-[rgba(107,210,193,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[var(--rb-accent)]">리뷰</span> : null}
+                          {column === ratingCol ? <span className="rounded-full border border-[color:rgba(245,185,110,0.2)] bg-[rgba(245,185,110,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[var(--rb-warning)]">별점</span> : null}
+                          {column === dateCol ? <span className="rounded-full border border-[color:rgba(120,155,255,0.18)] bg-[rgba(120,155,255,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[#94afff]">작성일</span> : null}
                         </div>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-[#121922]">
                   {preview.sampleRows.slice(0, 5).map((row, rowIndex) => (
-                    <tr key={rowIndex}>
+                    <tr key={rowIndex} className="bg-[#121922] transition hover:bg-[rgba(255,255,255,0.03)]">
                       {previewCols.map((column) => (
-                        <td key={column} className="px-4 py-3 align-top text-[var(--rb-muted-strong)]">
-                          <button type="button" className="whitespace-pre-wrap text-left text-sm leading-6 hover:text-[var(--rb-fg)]" title={String(row[column] ?? "")} onClick={() => onCellClick(column, String(row[column] ?? ""))}>
+                        <td key={column} className="border-b border-[color:rgba(255,255,255,0.06)] bg-[#121922] px-4 py-3 align-top text-[#d0d8e4]">
+                          <button
+                            type="button"
+                            className="whitespace-pre-wrap break-words text-left text-sm leading-6 text-[#d0d8e4] transition hover:text-[var(--rb-fg)]"
+                            title={String(row[column] ?? "")}
+                            onClick={() => onCellClick(column, String(row[column] ?? ""))}
+                          >
                             {renderCellPreview(row[column])}
                           </button>
                         </td>
@@ -183,31 +189,31 @@ export default function CsvPreview({
             </div>
           </div>
 
-          {preview.columns.length > 6 && !showAllPreviewCols ? <p className="mt-3 text-sm text-[var(--rb-muted)]">{t("preview.tooManyCols")}</p> : null}
+          {preview.columns.length > 6 && !showAllPreviewCols ? <p className="mt-3 text-sm text-[var(--rb-muted)]">열이 많아 앞의 6개만 표시합니다. 필요하면 전체 열 보기를 눌러주세요.</p> : null}
           {preview.warnings?.length ? <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[var(--rb-muted)]">{preview.warnings.join("\n")}</p> : null}
         </div>
       </div>
 
       {cellModal ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center px-5">
-          <button type="button" className="absolute inset-0 bg-[rgba(0,0,0,0.62)] backdrop-blur-sm" aria-label={t("preview.modalBackdropClose")} onClick={onCellModalClose} />
+          <button type="button" className="absolute inset-0 bg-[rgba(0,0,0,0.62)] backdrop-blur-sm" aria-label="모달 닫기" onClick={onCellModalClose} />
           <div className="relative z-10 w-full max-w-2xl rounded-[18px] border border-[color:var(--rb-border)] bg-[rgba(11,15,16,0.96)] p-6 shadow-[0_28px_50px_rgba(0,0,0,0.38)]">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">{t("common.fullView")}</p>
+                <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">전체 보기</p>
                 <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">{cellModal.col}</h3>
               </div>
               <div className="flex gap-3">
-                <CopyButton text={cellModal.value} className={buttonStyles({ variant: "primary", size: "sm" })} ariaLabel={t("preview.cellCopy")}>
-                  {t("common.copyAll")}
+                <CopyButton text={cellModal.value} className={buttonStyles({ variant: "primary", size: "sm" })} ariaLabel="셀 내용 전체 복사">
+                  전체 복사
                 </CopyButton>
-                <button type="button" className={buttonStyles({ variant: "ghost", size: "sm" })} onClick={onCellModalClose} aria-label={t("preview.cellModalClose")}>
-                  {t("common.close")}
+                <button type="button" className={buttonStyles({ variant: "ghost", size: "sm" })} onClick={onCellModalClose} aria-label="셀 모달 닫기">
+                  닫기
                 </button>
               </div>
             </div>
             <div className="mt-5 max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-[14px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
-              {cellModal.value || <span className="text-[var(--rb-muted)]">{t("common.emptyValue")}</span>}
+              {cellModal.value || <span className="text-[var(--rb-muted)]">비어 있음</span>}
             </div>
           </div>
         </div>

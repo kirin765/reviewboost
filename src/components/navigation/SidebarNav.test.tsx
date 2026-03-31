@@ -42,8 +42,8 @@ describe("SidebarNav", () => {
   it("renders guest footer and hides history for unauthenticated state", () => {
     renderWithI18n(<SidebarNav variant="app" plan="free" userEmail={null} />);
 
-    expect(screen.getByText("Guest")).toBeTruthy();
-    expect(screen.getByText("로그인 후 리포트 저장")).toBeTruthy();
+    expect(screen.getByText("게스트")).toBeTruthy();
+    expect(screen.getByText("로그인하고 리포트 저장하기")).toBeTruthy();
     expect(screen.getByRole("link", { name: "로그인" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "홈" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "AI분석" })).toBeTruthy();
@@ -67,7 +67,7 @@ describe("SidebarNav", () => {
 
     expect(screen.getByRole("link", { name: "AI분석" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("link", { name: "플랜 보기" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Pricing" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "요금제" })).toBeTruthy();
   });
 
   it("treats saved report detail routes as home-active", () => {
