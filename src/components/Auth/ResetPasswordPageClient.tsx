@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import FeedbackModal from "@/components/FeedbackModal";
+import { buttonStyles } from "@/components/ui/Button";
 import { getErrorMessage } from "@/types/common";
 import AuthShell from "@/components/Auth/AuthShell";
 import { useTranslation } from "@/lib/i18n";
@@ -151,7 +152,7 @@ export default function ResetPasswordPageClient() {
               required
             />
           </div>
-          <button className="btn btnPrimary formSubmit" type="submit" disabled={busy || !sessionReady}>
+          <button className={buttonStyles({ variant: "primary", className: "formSubmit w-full justify-center" })} type="submit" disabled={busy || !sessionReady}>
             {busy ? t("reset.submitting") : t("reset.submit")}
           </button>
         </form>

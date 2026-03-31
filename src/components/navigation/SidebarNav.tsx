@@ -130,12 +130,11 @@ export default function SidebarNav({
       <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
         <Link href="/" className="flex items-center gap-3" onClick={onNavigate}>
           <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[var(--rb-accent)] text-[#071112]">
-            <svg viewBox="0 0 52 52" className="h-6 w-6">
-              <circle cx="26" cy="26" r="24" fill="currentColor" />
-              <path d="M14 31.5 23.8 25l8.1 4.1L39 19.4" fill="none" stroke="#071112" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="24" cy="25" r="2.8" fill="#071112" />
-              <circle cx="38.3" cy="19.7" r="2.8" fill="#071112" />
-              <circle cx="14.2" cy="31.5" r="2.8" fill="#071112" />
+            <svg viewBox="0 0 20 20" className="h-5 w-5">
+              <path d="M4 12.4 8.2 9.6l3.4 1.7 4.4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="4.1" cy="12.5" r="1.2" fill="currentColor" />
+              <circle cx="8.2" cy="9.6" r="1.2" fill="currentColor" />
+              <circle cx="16" cy="7.3" r="1.2" fill="currentColor" />
             </svg>
           </span>
           <div>

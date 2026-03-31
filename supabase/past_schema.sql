@@ -9,6 +9,7 @@ create table if not exists public.analyses (
   input_filename text null,
   stats jsonb not null,
   suggestions jsonb not null,
+  result_payload jsonb null,
   priority_score numeric not null default 0
 );
 

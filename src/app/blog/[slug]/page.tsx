@@ -43,14 +43,14 @@ function getContentBlockKey(block: ContentBlock, index: number) {
 function renderContentBlock(block: ContentBlock, key: string) {
   switch (block.type) {
     case "h2":
-      return <h2 key={key}>{block.text}</h2>;
+      return <h2 key={key} className="articleHeading2">{block.text}</h2>;
     case "h3":
-      return <h3 key={key}>{block.text}</h3>;
+      return <h3 key={key} className="articleHeading3">{block.text}</h3>;
     case "p":
-      return <p key={key}>{block.text}</p>;
+      return <p key={key} className="articleParagraph">{block.text}</p>;
     case "ul":
       return (
-        <ul key={key}>
+        <ul key={key} className="articleList">
           {block.items.map((item, itemIndex) => (
             <li key={`${item}-${itemIndex}`}>{item}</li>
           ))}
@@ -58,7 +58,7 @@ function renderContentBlock(block: ContentBlock, key: string) {
       );
     case "ol":
       return (
-        <ol key={key}>
+        <ol key={key} className="articleList articleListOrdered">
           {block.items.map((item, itemIndex) => (
             <li key={`${item}-${itemIndex}`}>{item}</li>
           ))}
@@ -66,7 +66,7 @@ function renderContentBlock(block: ContentBlock, key: string) {
       );
     case "callout":
       return (
-        <div className="blogCallout" key={key}>
+        <div className="blogCallout articleCallout" key={key}>
           {block.text}
         </div>
       );
@@ -96,7 +96,7 @@ export default async function BlogDetailPage(props: BlogDetailPageProps) {
           <p className="mt-5 text-base leading-8 text-[var(--rb-muted-strong)]">{post.summary}</p>
         </section>
 
-        <article className="rb-prose px-2 py-2 md:px-4">
+        <article className="articleBody px-2 py-2 md:px-4">
           {post.content.map((block, index) => renderContentBlock(block, getContentBlockKey(block, index)))}
         </article>
 

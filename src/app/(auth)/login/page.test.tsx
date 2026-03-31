@@ -28,5 +28,7 @@ describe("LoginPage", () => {
     expect(screen.getByLabelText("이메일")).toBeTruthy();
     expect(screen.getByLabelText("비밀번호")).toBeTruthy();
     expect(screen.getByRole("button", { name: "로그인" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "회원가입" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "분석하러 가기" })).toBeTruthy();
   });
 });
