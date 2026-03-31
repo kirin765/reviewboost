@@ -7116,3 +7116,227 @@ a.btn.btnPrimary:hover {
   padding: 1rem 1.1rem;
   line-height: 1.8;
 }
+
+.featureHubHeroGrid {
+  display: grid;
+  gap: 24px;
+  align-items: end;
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.featureHubTitle,
+.featureHubLead {
+  max-width: 760px;
+}
+
+.featureHubGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.featureHubCard {
+  display: flex;
+  min-height: 292px;
+  flex-direction: column;
+}
+
+.featureHubCardTitle {
+  max-width: 12ch;
+}
+
+.featureHubCardBody {
+  opacity: 0.96;
+}
+
+.featureHubCardFooter {
+  margin-top: auto;
+}
+
+@media (max-width: 1040px) {
+  .featureHubHeroGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 820px) {
+  .featureHubGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .featureHubCard {
+    min-height: 0;
+  }
+}
+
+/* Contrast remediation: final dark-theme overrides */
+.card h2,
+.card h3,
+.contentPageHeader h2,
+.contentPageHeader h3,
+.blogPostBody h2,
+.blogPostBody h3,
+.marketingPageTitle,
+.marketingSectionTitle,
+.marketingCardTitle,
+.marketingFaqQuestion,
+.marketingCalloutTitle,
+.marketingArticleHeading {
+  color: var(--rb-fg) !important;
+}
+
+.muted,
+.hint,
+.formNote,
+.panelHintText,
+.dashboardTopHint,
+.marketingSignalMeta,
+.dashboardStatMeta,
+.resultsHeroStatMeta,
+.marketingPageLead,
+.marketingCardBody,
+.marketingFaqAnswer,
+.marketingCalloutLead,
+.marketingArticleParagraph,
+.marketingArticleBody p,
+.marketingArticleBody li,
+.articleParagraph,
+.articleList,
+.articleListOrdered {
+  color: var(--rb-muted-strong) !important;
+}
+
+.sectionEyebrow,
+.authEyebrow,
+.marketingPageEyebrow,
+.marketingArticleBody .sectionEyebrow,
+.featureHubCardFooter p:first-child {
+  color: var(--rb-muted) !important;
+}
+
+.badge,
+.pill,
+.marketingCardBadge,
+.marketingPagePill,
+.leftNavBadge,
+.siteTopbarPill {
+  border-color: rgba(107, 210, 193, 0.18) !important;
+  background: rgba(107, 210, 193, 0.08) !important;
+  color: var(--rb-accent) !important;
+}
+
+.btnGhost,
+.btnOutline {
+  border-color: rgba(222, 230, 242, 0.16) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: var(--rb-fg) !important;
+}
+
+.btnGhost:hover,
+.btnOutline:hover,
+.btnGhost:focus-visible,
+.btnOutline:focus-visible {
+  border-color: rgba(222, 230, 242, 0.24) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--rb-fg) !important;
+}
+
+.marketingPageHeader,
+.marketingSection,
+.marketingCallout,
+.marketingFeatureCard,
+.marketingFaqCard,
+.marketingArticleBody {
+  border-color: var(--rb-border) !important;
+  background: var(--rb-surface) !important;
+  color: var(--rb-fg) !important;
+}
+
+.marketingFeatureCard,
+.marketingFaqCard {
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.2);
+}
+
+.marketingArticleBody {
+  display: grid;
+  gap: 1.6rem;
+}
+
+.marketingArticleSection {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.marketingArticleHeading {
+  font-size: clamp(1.6rem, 2.2vw, 2.2rem);
+  line-height: 1.18;
+  letter-spacing: -0.05em;
+}
+
+.marketingArticleParagraph {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.95;
+}
+
+.marketingArticleList,
+.marketingArticleListOrdered {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.marketingArticleList li,
+.marketingArticleListOrdered li {
+  padding-left: 0.15rem;
+  font-size: 0.98rem;
+  line-height: 1.9;
+}
+
+.marketingCard {
+  border-color: var(--rb-border) !important;
+  background: linear-gradient(180deg, rgba(24, 31, 39, 0.96), rgba(17, 23, 31, 0.92)) !important;
+}
+
+.marketingCardTitle {
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+  line-height: 1.18;
+  letter-spacing: -0.04em;
+}
+
+.marketingCardBody {
+  font-size: 0.98rem;
+  line-height: 1.85;
+}
+
+.marketingFaqGrid {
+  gap: 16px;
+}
+
+.marketingFaqCard {
+  padding: 22px;
+}
+
+.marketingFaqQuestion {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  line-height: 1.45;
+}
+
+.contentPageHeader .contentPageLead,
+.marketingPageHeader .contentPageLead {
+  color: var(--rb-muted-strong) !important;
+}
+
+.row .right,
+.dashboardStatMeta,
+.resultsHeroStatMeta,
+.simulationResolvedCount,
+.quadrantImpact,
+.actionItemKeyword,
+.kpi .label,
+.historyTableHeader,
+th {
+  color: var(--rb-muted-strong) !important;
+}

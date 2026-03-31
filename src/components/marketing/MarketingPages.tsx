@@ -38,14 +38,14 @@ export function MarketingHubPage({
 }) {
   return (
     <main className="pageMain marketingPage">
-      <section className="card contentPageHeader">
-        <p className="sectionEyebrow">{eyebrow}</p>
-        <h1>{title}</h1>
-        <p className="contentPageLead">{lead}</p>
+      <section className="card contentPageHeader marketingPageHeader">
+        <p className="sectionEyebrow marketingPageEyebrow">{eyebrow}</p>
+        <h1 className="marketingPageTitle">{title}</h1>
+        <p className="contentPageLead marketingPageLead">{lead}</p>
         {highlights && highlights.length > 0 ? (
-          <div className="actionRow">
+          <div className="actionRow marketingPagePills">
             {highlights.map((item) => (
-              <span className="pill" key={item}>
+              <span className="pill marketingPagePill" key={item}>
                 {item}
               </span>
             ))}
@@ -53,23 +53,23 @@ export function MarketingHubPage({
         ) : null}
       </section>
 
-      <section className="card marketingSection">
+      <section className="card marketingSection marketingHubSection">
         <div className="marketingFeatureGrid">
           {cards.map((card) => (
-            <Link href={card.href} className="marketingFeatureCard blogCardLink" key={card.href}>
-              {card.tag ? <span className="badge">{card.tag}</span> : null}
-              <h2 style={{ marginTop: card.tag ? 8 : 0 }}>{card.title}</h2>
-              <p className="muted">{card.description}</p>
+            <Link href={card.href} className="marketingFeatureCard marketingCard blogCardLink" key={card.href}>
+              {card.tag ? <span className="badge marketingCardBadge">{card.tag}</span> : null}
+              <h2 className="marketingCardTitle" style={{ marginTop: card.tag ? 8 : 0 }}>{card.title}</h2>
+              <p className="muted marketingCardBody">{card.description}</p>
             </Link>
           ))}
         </div>
       </section>
 
-      <section className="card marketingCallout">
+      <section className="card marketingCallout marketingPageCallout">
         <div>
-          <p className="sectionEyebrow">Start free</p>
-          <h2>{ctaTitle}</h2>
-          <p className="muted">{ctaLead}</p>
+          <p className="sectionEyebrow marketingPageEyebrow">Start free</p>
+          <h2 className="marketingCalloutTitle">{ctaTitle}</h2>
+          <p className="muted marketingCalloutLead">{ctaLead}</p>
         </div>
         <div className="actionRow">
           <a className="btn btnPrimary" href="/dashboard">
@@ -101,28 +101,28 @@ export function MarketingArticlePage({
 }) {
   return (
     <main className="pageMain marketingPage">
-      <section className="card contentPageHeader">
-        <p className="sectionEyebrow">{eyebrow}</p>
-        <h1>{title}</h1>
-        <p className="contentPageLead">{lead}</p>
+      <section className="card contentPageHeader marketingPageHeader">
+        <p className="sectionEyebrow marketingPageEyebrow">{eyebrow}</p>
+        <h1 className="marketingPageTitle">{title}</h1>
+        <p className="contentPageLead marketingPageLead">{lead}</p>
       </section>
 
-      <article className="card blogPostBody">
+      <article className="card blogPostBody marketingArticleBody">
         {sections.map((section) => (
-          <section key={section.title}>
-            <h2>{section.title}</h2>
+          <section className="marketingArticleSection" key={section.title}>
+            <h2 className="marketingArticleHeading">{section.title}</h2>
             {section.paragraphs?.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
+              <p className="marketingArticleParagraph" key={paragraph}>{paragraph}</p>
             ))}
             {section.bullets ? (
-              <ul>
+              <ul className="marketingArticleList">
                 {section.bullets.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
             ) : null}
             {section.ordered ? (
-              <ol>
+              <ol className="marketingArticleList marketingArticleListOrdered">
                 {section.ordered.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -133,16 +133,16 @@ export function MarketingArticlePage({
       </article>
 
       {faq && faq.length > 0 ? (
-        <section className="card marketingSection">
+        <section className="card marketingSection marketingFaqSection">
           <div className="marketingSectionIntro">
-            <p className="sectionEyebrow">FAQ</p>
-            <h2>자주 묻는 질문</h2>
+            <p className="sectionEyebrow marketingPageEyebrow">FAQ</p>
+            <h2 className="marketingSectionTitle">자주 묻는 질문</h2>
           </div>
-          <div className="grid">
+          <div className="grid marketingFaqGrid">
             {faq.map((item) => (
-              <div className="card" key={item.question}>
-                <h3>{item.question}</h3>
-                <p className="muted">{item.answer}</p>
+              <div className="card marketingFaqCard" key={item.question}>
+                <h3 className="marketingFaqQuestion">{item.question}</h3>
+                <p className="muted marketingFaqAnswer">{item.answer}</p>
               </div>
             ))}
           </div>
@@ -150,28 +150,28 @@ export function MarketingArticlePage({
       ) : null}
 
       {relatedLinks && relatedLinks.length > 0 ? (
-        <section className="card marketingSection">
+        <section className="card marketingSection marketingRelatedSection">
           <div className="marketingSectionIntro">
-            <p className="sectionEyebrow">Related</p>
-            <h2>함께 보면 좋은 페이지</h2>
+            <p className="sectionEyebrow marketingPageEyebrow">Related</p>
+            <h2 className="marketingSectionTitle">함께 보면 좋은 페이지</h2>
           </div>
           <div className="marketingFeatureGrid">
             {relatedLinks.map((card) => (
-              <Link href={card.href} className="marketingFeatureCard blogCardLink" key={card.href}>
-                {card.tag ? <span className="badge">{card.tag}</span> : null}
-                <h3 style={{ marginTop: card.tag ? 8 : 0 }}>{card.title}</h3>
-                <p className="muted">{card.description}</p>
+              <Link href={card.href} className="marketingFeatureCard marketingCard blogCardLink" key={card.href}>
+                {card.tag ? <span className="badge marketingCardBadge">{card.tag}</span> : null}
+                <h3 className="marketingCardTitle" style={{ marginTop: card.tag ? 8 : 0 }}>{card.title}</h3>
+                <p className="muted marketingCardBody">{card.description}</p>
               </Link>
             ))}
           </div>
         </section>
       ) : null}
 
-      <section className="card marketingCallout">
+      <section className="card marketingCallout marketingPageCallout">
         <div>
-          <p className="sectionEyebrow">Start free</p>
-          <h2>리뷰 운영 흐름을 바로 검증해보세요.</h2>
-          <p className="muted">CSV 업로드부터 인사이트 확인까지 한 번에 이어집니다.</p>
+          <p className="sectionEyebrow marketingPageEyebrow">Start free</p>
+          <h2 className="marketingCalloutTitle">리뷰 운영 흐름을 바로 검증해보세요.</h2>
+          <p className="muted marketingCalloutLead">CSV 업로드부터 인사이트 확인까지 한 번에 이어집니다.</p>
         </div>
         <div className="actionRow">
           <a className="btn btnPrimary" href="/dashboard">
