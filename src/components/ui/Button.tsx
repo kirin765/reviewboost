@@ -15,11 +15,11 @@ const variantClassName: Record<ButtonVariant, string> = {
   primary:
     "border-[color:var(--rb-accent)] bg-[var(--rb-accent)] text-[#061111] shadow-[0_18px_30px_rgba(95,198,183,0.18)] hover:bg-[#74d5c8]",
   secondary:
-    "border-[color:var(--rb-border-strong)] bg-[rgba(255,255,255,0.05)] text-[var(--rb-fg)] hover:border-[color:rgba(107,210,193,0.24)] hover:bg-[rgba(255,255,255,0.08)]",
+    "border-[color:rgba(222,230,242,0.24)] bg-[rgba(255,255,255,0.07)] text-[var(--rb-fg)] hover:border-[color:rgba(107,210,193,0.3)] hover:bg-[rgba(255,255,255,0.12)]",
   danger:
     "border-[color:rgba(255,137,137,0.28)] bg-[rgba(132,27,27,0.22)] text-[#ffc5c5] hover:bg-[rgba(132,27,27,0.3)]",
   ghost:
-    "border-transparent bg-transparent text-[var(--rb-muted-strong)] hover:border-[color:rgba(222,230,242,0.08)] hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--rb-fg)]"
+    "border-[color:rgba(222,230,242,0.12)] bg-[rgba(255,255,255,0.02)] text-[var(--rb-fg)] hover:border-[color:rgba(222,230,242,0.2)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--rb-fg)]"
 };
 
 const sizeClassName: Record<ButtonSize, string> = {
