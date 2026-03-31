@@ -41,7 +41,7 @@ function Footer() {
       <div className="footerSection">
         <h4>{t("footer.legal")}</h4>
         <ul>
-          <li><a href="/term">{t("footer.terms")}</a></li>
+          <li><a href="/terms">{t("footer.terms")}</a></li>
           <li><a href="/privacy">{t("footer.privacy")}</a></li>
         </ul>
       </div>

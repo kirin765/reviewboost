@@ -108,6 +108,19 @@ function getChromeConfig(pathname: string): ChromeConfig {
     };
   }
 
+  if (pathname.startsWith("/features")) {
+    return {
+      label: "기능",
+      title: "핵심 기능",
+      description: "리뷰 분석, CSV 확보, 부정리뷰 대응, FAQ 운영 기능을 한 번에 살펴볼 수 있습니다.",
+      actionHref: "/dashboard/analyze",
+      actionLabel: "분석 시작",
+      showHeader: true,
+      showFooter: true,
+      isWorkspace: false
+    };
+  }
+
   return {
     title: "ReviewBoost",
     showHeader: true,
@@ -136,6 +149,7 @@ function MarketingHeader({ userEmail }: { userEmail: string | null }) {
             </div>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-[var(--rb-muted-strong)] lg:flex">
+            <Link href="/features" className="hover:text-[var(--rb-fg)]">기능</Link>
             <Link href="/pricing" className="hover:text-[var(--rb-fg)]">요금제</Link>
             <Link href="/coupang-csv" className="hover:text-[var(--rb-fg)]">리뷰 CSV</Link>
             <Link href="/help" className="hover:text-[var(--rb-fg)]">사용법</Link>
@@ -173,11 +187,12 @@ function MarketingFooter() {
         </div>
         <div className="space-y-3">
           <Link href="/dashboard/analyze" className="block hover:text-[var(--rb-fg)]">분석하기</Link>
+          <Link href="/features" className="block hover:text-[var(--rb-fg)]">기능</Link>
           <Link href="/pricing" className="block hover:text-[var(--rb-fg)]">요금제</Link>
           <Link href="/help" className="block hover:text-[var(--rb-fg)]">사용법</Link>
         </div>
         <div className="space-y-3">
-          <Link href="/term" className="block hover:text-[var(--rb-fg)]">서비스 이용약관</Link>
+          <Link href="/terms" className="block hover:text-[var(--rb-fg)]">서비스 이용약관</Link>
           <Link href="/privacy" className="block hover:text-[var(--rb-fg)]">개인정보 처리방침</Link>
           <a href="mailto:support@reviewboost.co.kr" className="block hover:text-[var(--rb-fg)]">support@reviewboost.co.kr</a>
         </div>
@@ -212,11 +227,7 @@ export default function AppShell({ children, userEmail = null, plan = "free" }: 
 
   if (!config.isWorkspace) {
     if (config.isAuth) {
-      return (
-        <div className="min-h-screen bg-[var(--rb-bg)] text-[var(--rb-fg)]">
-          {children}
-        </div>
-      );
+      return <div className="min-h-screen bg-[var(--rb-bg)] text-[var(--rb-fg)]">{children}</div>;
     }
 
     return (

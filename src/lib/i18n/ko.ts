@@ -338,6 +338,7 @@ const ko: Dictionary = {
   "login.passwordLabel": "비밀번호",
   "login.passwordPlaceholder": "비밀번호",
   "login.submit": "로그인",
+  "login.submitting": "로그인 중...",
   "login.forgotPassword": "비밀번호를 잊으셨나요?",
   "login.noAccount": "아직 계정이 없으신가요?",
 
@@ -357,6 +358,7 @@ const ko: Dictionary = {
   "signup.consentSummary": "목적: 회원 식별/로그인/계정관리 | 항목: 이메일 | 보유기간: 회원 탈퇴 시까지(법령 보관 제외) | 거부 시: 회원가입 불가",
   "signup.agreeMarketing": "[선택] 광고성 정보(이벤트/혜택) 이메일 수신 동의",
   "signup.submit": "회원가입",
+  "signup.submitting": "가입 중...",
   "signup.hasAccount": "이미 계정이 있으신가요?",
 
   // ── Auth - Forgot password ──
@@ -372,7 +374,8 @@ const ko: Dictionary = {
   "forgot.panelLead": "가입한 이메일을 입력하면 비밀번호 재설정 링크를 보내드립니다. 메일이 안 보이면 스팸함도 확인해주세요.",
   "forgot.emailLabel": "이메일",
   "forgot.submit": "재설정 메일 보내기",
-  "forgot.otherRoutes": "다른 페이지로 이동하시겠어요?",
+  "forgot.submitting": "메일 발송 중...",
+  "forgot.otherRoutes": "다른 경로로 이동하시겠어요?",
   "forgot.goToLogin": "로그인으로 이동",
 
   // ── Pricing ──

@@ -12,7 +12,6 @@ import { useTranslation } from "@/lib/i18n";
 function useCanObserveInView() {
   const reducedMotion = useReducedMotion();
   const [mounted, setMounted] = React.useState(false);
-
   React.useEffect(() => {
     setMounted(true);
   }, []);
@@ -648,6 +647,44 @@ export default function HomePageContent() {
                   <h3 className="text-lg font-semibold tracking-[-0.03em] text-white">{item.question}</h3>
                   <p className="text-sm leading-7 text-[var(--rb-muted-strong)]">{item.answer}</p>
                 </div>
+              ))}
+            </div>
+          </section>
+        </Reveal>
+
+        <Reveal>
+          <section data-home-section="explore" className="space-y-8">
+            <EditorialIntro
+              eyebrow="Explore"
+              title="검색과 탐색에 맞춘 주요 허브"
+              description="기능 소개, 사용 가이드, 실전 운영 글을 각각 허브 형태로 정리했습니다."
+            />
+            <div className="grid gap-4 lg:grid-cols-3">
+              {[
+                {
+                  href: "/features",
+                  title: "핵심 기능 보기",
+                  body: "AI 리뷰 분석, CSV 추출, 부정리뷰 대응, FAQ 생성 흐름을 한 번에 확인합니다."
+                },
+                {
+                  href: "/help",
+                  title: "사용법 빠르게 읽기",
+                  body: "CSV 준비부터 쿠팡·스마트스토어 리뷰 추출, FAQ 운영까지 단계별 가이드를 확인합니다."
+                },
+                {
+                  href: "/blog",
+                  title: "실전 운영 사례 읽기",
+                  body: "부정리뷰 대응, 별점 관리, 매출 개선 전략을 블로그 글로 살펴볼 수 있습니다."
+                }
+              ].map((card) => (
+                <Link
+                  key={card.href}
+                  href={card.href}
+                  className="rounded-[26px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(19,26,34,0.94),rgba(14,20,28,0.92))] p-5 transition hover:border-[color:rgba(107,210,193,0.24)] hover:bg-[linear-gradient(180deg,rgba(22,30,39,0.96),rgba(16,23,31,0.94))] md:p-6"
+                >
+                  <h3 className="text-2xl font-semibold tracking-[-0.04em] text-white">{card.title}</h3>
+                  <p className="mt-4 text-sm leading-7 text-[var(--rb-muted-strong)]">{card.body}</p>
+                </Link>
               ))}
             </div>
           </section>
