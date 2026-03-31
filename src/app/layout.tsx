@@ -1,5 +1,4 @@
 import "./globals.css";
-import "./app-shell.css";
 import type { Metadata } from "next";
 import Script from "next/script";
 import AssistantAttributionEvents from "@/components/AssistantAttributionEvents";
@@ -35,6 +34,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 const paddleToken = paddleBrowserToken();
 const paddleEnvForClient = paddleBrowserEnv();
+const isVercelDeployment = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getNavigationSessionState();
@@ -58,8 +58,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <ErrorBoundary>
-          <Analytics />
-          <SpeedInsights />
+          {isVercelDeployment ? <Analytics /> : null}
+          {isVercelDeployment ? <SpeedInsights /> : null}
           <GoogleAnalytics />
           <AnalyticsQueryEvents />
           <AssistantAttributionEvents />

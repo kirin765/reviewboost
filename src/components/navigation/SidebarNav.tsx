@@ -4,72 +4,54 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/app/(auth)/actions";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { buttonStyles } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 import { planLabel, type PlanTier } from "@/lib/plan";
-import { useTranslation } from "@/lib/i18n";
 
 export type SidebarVariant = "app" | "dashboard";
 
-export type SidebarNavItem = {
+type SidebarNavItem = {
   href: string;
-  icon: "dashboard" | "csv" | "history" | "pricing" | "features" | "help" | "blog";
+  icon: "home" | "analyze" | "csv";
   label: string;
   matches: (pathname: string) => boolean;
 };
 
-export type SidebarFooterState = {
+type SidebarNavProps = {
+  variant: SidebarVariant;
   plan: PlanTier;
   userEmail: string | null;
-};
-
-type SidebarNavProps = SidebarFooterState & {
-  variant: SidebarVariant;
   firstLinkRef?: React.Ref<HTMLAnchorElement>;
   onNavigate?: () => void;
 };
 
-const NAV_ITEMS: SidebarNavItem[] = [
+const PRIMARY_ITEMS: SidebarNavItem[] = [
   {
     href: "/dashboard",
-    icon: "dashboard",
-    label: "분석하기",
-    matches: (pathname) => pathname === "/dashboard"
+    icon: "home",
+    label: "홈",
+    matches: (pathname) =>
+      pathname === "/dashboard" || pathname.startsWith("/dashboard/history") || pathname.startsWith("/dashboard/analysis/")
+  },
+  {
+    href: "/dashboard/analyze",
+    icon: "analyze",
+    label: "AI분석",
+    matches: (pathname) => pathname.startsWith("/dashboard/analyze")
   },
   {
     href: "/coupang-csv",
     icon: "csv",
-    label: "리뷰 CSV",
+    label: "리뷰 다운",
     matches: (pathname) => pathname.startsWith("/coupang-csv")
-  },
-  {
-    href: "/dashboard/history",
-    icon: "history",
-    label: "저장된 리포트",
-    matches: (pathname) => pathname.startsWith("/dashboard/history") || pathname.startsWith("/dashboard/analysis/")
-  },
-  {
-    href: "/pricing",
-    icon: "pricing",
-    label: "요금제",
-    matches: (pathname) => pathname.startsWith("/pricing")
-  },
-  {
-    href: "/features",
-    icon: "features",
-    label: "기능",
-    matches: (pathname) => pathname.startsWith("/features")
-  },
-  {
-    href: "/help",
-    icon: "help",
-    label: "사용법",
-    matches: (pathname) => pathname.startsWith("/help")
-  },
-  {
-    href: "/blog",
-    icon: "blog",
-    label: "블로그",
-    matches: (pathname) => pathname.startsWith("/blog")
   }
+];
+
+const SECONDARY_LINKS = [
+  { href: "/pricing", label: "요금제" },
+  { href: "/help", label: "사용법" },
+  { href: "/blog", label: "블로그" }
 ];
 
 function humanizeToken(token: string) {
@@ -78,15 +60,16 @@ function humanizeToken(token: string) {
 }
 
 function getDisplayName(userEmail: string | null) {
-  if (!userEmail) return "Guest";
+  if (!userEmail) return "게스트";
   const local = userEmail.split("@")[0]?.trim() ?? "";
-  if (!local) return "Guest";
+  if (!local) return "게스트";
+
   const parts = local
     .split(/[._-]+/)
     .map((part) => part.trim())
     .filter(Boolean);
 
-  if (parts.length === 0) return "Guest";
+  if (parts.length === 0) return "게스트";
   return parts.map(humanizeToken).join(" ");
 }
 
@@ -103,106 +86,26 @@ function getInitials(label: string) {
 
 function renderIcon(icon: SidebarNavItem["icon"]) {
   switch (icon) {
-    case "dashboard":
+    case "home":
       return (
         <svg viewBox="0 0 20 20" aria-hidden="true">
-          <path
-            d="M4.75 15.25h10.5a1.5 1.5 0 0 0 1.5-1.5v-7.5a1.5 1.5 0 0 0-1.5-1.5H4.75a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5Z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path d="M6.8 12.3v-2.2M10 12.3V7.8M13.2 12.3V9.3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          <path d="M4.5 9.2 10 4.75l5.5 4.45v6.05a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1V9.2Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M8.1 15.2v-3.3h3.8v3.3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
-    case "history":
+    case "analyze":
       return (
         <svg viewBox="0 0 20 20" aria-hidden="true">
-          <path
-            d="M6.25 3.75h5.7l2.8 2.8v7.2a1.5 1.5 0 0 1-1.5 1.5H6.25a1.5 1.5 0 0 1-1.5-1.5v-8.5a1.5 1.5 0 0 1 1.5-1.5Z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path d="M11.75 3.9v2.5a1 1 0 0 0 1 1h2.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M7.5 10h5M7.5 12.8h5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          <path d="M4.75 15.25h10.5a1.5 1.5 0 0 0 1.5-1.5v-7.5a1.5 1.5 0 0 0-1.5-1.5H4.75a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6.8 12.3v-2.2M10 12.3V7.8M13.2 12.3V9.3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
         </svg>
       );
     case "csv":
       return (
         <svg viewBox="0 0 20 20" aria-hidden="true">
-          <path
-            d="M6 3.75h5.6l2.65 2.65v9.85a1.05 1.05 0 0 1-1.05 1.05H6a1.05 1.05 0 0 1-1.05-1.05V4.8A1.05 1.05 0 0 1 6 3.75Z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          <path d="M6 3.75h5.6l2.65 2.65v9.85a1.05 1.05 0 0 1-1.05 1.05H6a1.05 1.05 0 0 1-1.05-1.05V4.8A1.05 1.05 0 0 1 6 3.75Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M11.6 3.75v2.7a.9.9 0 0 0 .9.9h2.7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M7.1 10.1h5.8M7.1 12.7h5.8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        </svg>
-      );
-    case "pricing":
-      return (
-        <svg viewBox="0 0 20 20" aria-hidden="true">
-          <path
-            d="M10 4.25c-2.9 0-5.25.84-5.25 1.88S7.1 8 10 8s5.25-.84 5.25-1.87S12.9 4.25 10 4.25Z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path d="M4.75 10c0 1.04 2.35 1.88 5.25 1.88s5.25-.84 5.25-1.88M4.75 13.87c0 1.04 2.35 1.88 5.25 1.88s5.25-.84 5.25-1.88" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M4.75 6.13v7.74M15.25 6.13v7.74" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        </svg>
-      );
-    case "help":
-      return (
-        <svg viewBox="0 0 20 20" aria-hidden="true">
-          <path
-            d="M10 16.25a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path d="M8.45 8.1a1.8 1.8 0 1 1 2.64 1.58c-.66.34-1.09.7-1.09 1.57" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M10 13.65h.01" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "features":
-      return (
-        <svg viewBox="0 0 20 20" aria-hidden="true">
-          <path
-            d="M4.75 10 10 4.75 15.25 10 10 15.25 4.75 10Z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path d="M10 4.75v10.5M4.75 10h10.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        </svg>
-      );
-    case "blog":
-      return (
-        <svg viewBox="0 0 20 20" aria-hidden="true">
-          <path
-            d="M5.5 4.75h9a1.75 1.75 0 0 1 1.75 1.75v7a1.75 1.75 0 0 1-1.75 1.75h-9a1.75 1.75 0 0 1-1.75-1.75v-7A1.75 1.75 0 0 1 5.5 4.75Z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path d="M6.75 7.5h6.5M6.75 10h6.5M6.75 12.5h4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
         </svg>
       );
     default:
@@ -211,102 +114,97 @@ function renderIcon(icon: SidebarNavItem["icon"]) {
 }
 
 export default function SidebarNav({
-  variant,
   plan,
   userEmail,
   firstLinkRef,
   onNavigate
 }: SidebarNavProps) {
   const pathname = usePathname();
-  const { t } = useTranslation();
-  const isAuthenticated = Boolean(userEmail);
-  const items = isAuthenticated ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href !== "/dashboard/history");
-  const currentPlanLabel = planLabel(plan);
   const displayName = getDisplayName(userEmail);
   const initials = getInitials(displayName);
-  const promoLabel = plan === "pro" ? t("sidebar.promoButtonPro") : t("sidebar.promoButtonOther");
-  const promoTitle = plan === "pro" ? t("sidebar.promoTitlePro") : t("sidebar.promoTitleOther");
-  const promoCopy = plan === "pro" ? t("sidebar.promoCopyPro") : t("sidebar.promoCopyOther");
+  const currentPlanLabel = planLabel(plan);
+  const isAuthenticated = Boolean(userEmail);
 
   return (
-    <div className={`sidebarNav sidebarNav${variant === "dashboard" ? "Drawer" : "Rail"}`}>
-      <div className="sidebarNavMain">
-        <Link
-          href={variant === "dashboard" ? "/dashboard" : "/"}
-          className="sidebarNavBrand"
-          onClick={onNavigate}
-        >
-          <span className="sidebarNavBrandMark" aria-hidden="true">
-            <svg viewBox="0 0 52 52">
-              <circle cx="26" cy="26" r="24" />
-              <path d="M14 31.5 23.8 25l8.1 4.1L39 19.4" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="24" cy="25" r="2.8" />
-              <circle cx="38.3" cy="19.7" r="2.8" />
-              <circle cx="14.2" cy="31.5" r="2.8" />
+    <div className="flex h-full flex-col gap-6">
+      <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
+        <Link href="/" className="flex items-center gap-3" onClick={onNavigate}>
+          <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[var(--rb-accent)] text-[#071112]">
+            <svg viewBox="0 0 20 20" className="h-5 w-5">
+              <path d="M4 12.4 8.2 9.6l3.4 1.7 4.4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="4.1" cy="12.5" r="1.2" fill="currentColor" />
+              <circle cx="8.2" cy="9.6" r="1.2" fill="currentColor" />
+              <circle cx="16" cy="7.3" r="1.2" fill="currentColor" />
             </svg>
           </span>
-          <span className="sidebarNavBrandText">
-            <strong>ReviewBoost</strong>
-          </span>
+          <div>
+            <strong className="text-base font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">ReviewBoost</strong>
+            <p className="mt-1 text-xs text-[var(--rb-muted)]">리뷰 분석 작업면</p>
+          </div>
         </Link>
-
-        <nav aria-label={variant === "dashboard" ? "대시보드 메뉴" : "주요 메뉴"}>
-          <ul className="sidebarNavList">
-            {items.map((item, index) => {
-              const active = item.matches(pathname);
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`sidebarNavLink ${active ? "sidebarNavLinkActive" : ""}`}
-                    aria-current={active ? "page" : undefined}
-                    onClick={onNavigate}
-                    ref={index === 0 ? firstLinkRef : undefined}
-                  >
-                    <span className="sidebarNavIcon" aria-hidden="true">
-                      {renderIcon(item.icon)}
-                    </span>
-                    <span className="sidebarNavLabel">{item.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
       </div>
 
-      <div className="sidebarNavFooter">
-        <section className="sidebarNavPromo" aria-label="업그레이드 안내">
-          <div className="sidebarNavPromoCopy">
-            <span className="sidebarNavPromoEyebrow">{plan === "pro" ? "플랜" : "업그레이드"}</span>
-            <strong>{promoTitle}</strong>
-            <p>{promoCopy}</p>
-          </div>
-          <Link href="/pricing" className="sidebarNavPromoButton" onClick={onNavigate}>
-            {promoLabel}
-          </Link>
-        </section>
+      <nav aria-label="주요 메뉴" className="space-y-2">
+        {PRIMARY_ITEMS.map((item, index) => {
+          const active = item.matches(pathname);
 
-        <div className="sidebarNavAccount">
-          <div className={`sidebarNavAvatar ${isAuthenticated ? "" : "sidebarNavAvatarGuest"}`}>{initials}</div>
-          <div className="sidebarNavAccountText">
-            <strong>{displayName}</strong>
-            <span>{isAuthenticated ? `${currentPlanLabel} 플랜` : "로그인 후 리포트 저장"}</span>
-          </div>
-          {isAuthenticated ? (
-            <form action={signOutAction} className="sidebarNavAccountAction">
-              <button type="submit" className="sidebarNavActionButton" aria-label="로그아웃">
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="M7.5 5.2H5.8A1.8 1.8 0 0 0 4 7v6a1.8 1.8 0 0 0 1.8 1.8h1.7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M10.2 6.5 14 10l-3.8 3.5M14 10H7.7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </form>
-          ) : (
-            <Link href="/login" className="sidebarNavActionButton sidebarNavLoginButton" onClick={onNavigate}>
-              로그인
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-[16px] border px-4 py-3.5 text-sm transition",
+                active
+                  ? "border-[color:rgba(107,210,193,0.3)] bg-[rgba(107,210,193,0.1)] text-[var(--rb-fg)]"
+                  : "border-transparent bg-transparent text-[var(--rb-muted-strong)] hover:border-[color:rgba(222,230,242,0.08)] hover:bg-[rgba(255,255,255,0.03)] hover:text-[var(--rb-fg)]"
+              )}
+              aria-current={active ? "page" : undefined}
+              onClick={onNavigate}
+              ref={index === 0 ? firstLinkRef : undefined}
+            >
+              <span className="h-5 w-5 shrink-0">{renderIcon(item.icon)}</span>
+              <span>{item.label}</span>
             </Link>
-          )}
+          );
+        })}
+      </nav>
+
+      <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
+        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">바로가기</p>
+        <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--rb-muted-strong)]">
+          {SECONDARY_LINKS.map((item) => (
+            <Link key={item.href} href={item.href} className="hover:text-[var(--rb-fg)]" onClick={onNavigate}>
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-auto space-y-4">
+        <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-sm font-semibold text-[var(--rb-fg)]">
+              {initials}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--rb-fg)]">{displayName}</p>
+              <p className="mt-1 text-xs text-[var(--rb-muted)]">{currentPlanLabel}</p>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <LanguageSwitcher />
+            {isAuthenticated ? (
+              <form action={signOutAction} className="flex-1">
+                <button className={buttonStyles({ variant: "ghost", className: "w-full justify-center" })} type="submit">
+                  로그아웃
+                </button>
+              </form>
+            ) : (
+              <Link href="/login" className={buttonStyles({ variant: "secondary", className: "flex-1 justify-center" })} onClick={onNavigate}>
+                로그인
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </div>

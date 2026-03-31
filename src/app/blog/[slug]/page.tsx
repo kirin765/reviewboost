@@ -1,7 +1,10 @@
+import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import StructuredData from "@/components/seo/StructuredData";
+import { buttonStyles } from "@/components/ui/Button";
+import { ShellContainer } from "@/components/ui/Primitives";
 import { blogPosts, type ContentBlock } from "@/lib/blog-posts";
 import { generatePageMetadata } from "@/lib/seo/metadata";
 import { getSeoPageRecordByPath } from "@/lib/seo/page-registry";
@@ -42,14 +45,14 @@ function getContentBlockKey(block: ContentBlock, index: number) {
 function renderContentBlock(block: ContentBlock, key: string) {
   switch (block.type) {
     case "h2":
-      return <h2 key={key}>{block.text}</h2>;
+      return <h2 key={key} className="articleHeading2">{block.text}</h2>;
     case "h3":
-      return <h3 key={key}>{block.text}</h3>;
+      return <h3 key={key} className="articleHeading3">{block.text}</h3>;
     case "p":
-      return <p key={key}>{block.text}</p>;
+      return <p key={key} className="articleParagraph">{block.text}</p>;
     case "ul":
       return (
-        <ul key={key}>
+        <ul key={key} className="articleList">
           {block.items.map((item, itemIndex) => (
             <li key={`${item}-${itemIndex}`}>{item}</li>
           ))}
@@ -57,7 +60,7 @@ function renderContentBlock(block: ContentBlock, key: string) {
       );
     case "ol":
       return (
-        <ol key={key}>
+        <ol key={key} className="articleList articleListOrdered">
           {block.items.map((item, itemIndex) => (
             <li key={`${item}-${itemIndex}`}>{item}</li>
           ))}
@@ -65,7 +68,7 @@ function renderContentBlock(block: ContentBlock, key: string) {
       );
     case "callout":
       return (
-        <div className="blogCallout" key={key}>
+        <div className="blogCallout articleCallout" key={key}>
           {block.text}
         </div>
       );
@@ -82,38 +85,36 @@ export default async function BlogDetailPage(props: BlogDetailPageProps) {
     notFound();
   }
 
+  const record = getSeoPageRecordByPath(`/blog/${post.slug}`);
+
   return (
-    <main className="pageMain marketingPage">
-      <StructuredData data={createArticleStructuredData(getSeoPageRecordByPath(`/blog/${post.slug}`)!)} />
-      <nav className="blogBreadcrumb">
-        <Link href="/blog">← 블로그</Link>
-      </nav>
+    <main className="pageMain pb-8 pt-8 md:pt-12">
+      {record ? <StructuredData data={createArticleStructuredData(record)} /> : null}
+      <ShellContainer className="max-w-[980px] space-y-6">
+        <nav className="text-sm text-[var(--rb-muted-strong)]">
+          <Link href="/blog">← 블로그</Link>
+        </nav>
 
-      <section className="card blogPostHeader">
-        <span className="badge">{post.tag}</span>
-        <h1>{post.title}</h1>
-        <p className="contentPageLead">{post.summary}</p>
-      </section>
+        <section className="rounded-[30px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(20,27,35,0.96),rgba(14,20,28,0.92))] px-6 py-7 md:px-8 md:py-9">
+          <span className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-accent)]">{post.tag}</span>
+          <h1 className="mt-4 text-[clamp(2.2rem,4vw,4rem)] font-semibold tracking-[-0.06em] text-[var(--rb-fg)]">{post.title}</h1>
+          <p className="mt-5 text-base leading-8 text-[var(--rb-muted-strong)]">{post.summary}</p>
+        </section>
 
-      <article className="card blogPostBody">
-        {post.content.map((block, index) => renderContentBlock(block, getContentBlockKey(block, index)))}
-      </article>
+        <article className="articleBody px-2 py-2 md:px-4">
+          {post.content.map((block, index) => renderContentBlock(block, getContentBlockKey(block, index)))}
+        </article>
 
-      <section className="card marketingCallout">
-        <div>
-          <p className="sectionEyebrow">Start free</p>
-          <h2>리뷰 분석, 지금 바로 시작해보세요.</h2>
-          <p className="muted">CSV 업로드만으로 감성 분류, 키워드 추출, 개선 제안까지 한 번에 확인할 수 있습니다.</p>
-        </div>
-        <div className="actionRow">
-          <a className="btn btnPrimary" href="/dashboard">
-            무료로 분석 시작
-          </a>
-          <a className="btn btnOutline" href="/sample.csv" download>
-            샘플 CSV 다운로드
-          </a>
-        </div>
-      </section>
+        <section className="rounded-[26px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(20,27,35,0.96),rgba(14,20,28,0.92))] px-6 py-6 md:px-8">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Start free</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--rb-fg)]">리뷰 분석, 지금 바로 시작해보세요.</h2>
+          <p className="mt-4 text-sm leading-7 text-[var(--rb-muted-strong)]">CSV 업로드만으로 감성 분류, 키워드 추출, 개선 제안까지 한 번에 확인할 수 있습니다.</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a className={buttonStyles({ variant: "primary" })} href="/dashboard/analyze">무료로 분석 시작</a>
+            <a className={buttonStyles({ variant: "secondary" })} href="/sample.csv" download>샘플 CSV 다운로드</a>
+          </div>
+        </section>
+      </ShellContainer>
     </main>
   );
 }

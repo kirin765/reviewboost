@@ -6,6 +6,7 @@ import { signUpAction } from "@/app/(auth)/actions";
 import AuthPendingSubmitButton from "@/components/Auth/AuthPendingSubmitButton";
 import FeedbackModal from "@/components/FeedbackModal";
 import AuthShell from "@/components/Auth/AuthShell";
+import { buttonStyles } from "@/components/ui/Button";
 import { useTranslation } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -82,16 +83,26 @@ export default function SignupPage() {
             <input type="checkbox" name="agreeMarketing" value="yes" />
             <span>{t("signup.agreeMarketing")}</span>
           </label>
-          <AuthPendingSubmitButton idleLabel={t("signup.submit")} pendingLabel={t("signup.submitting")} />
+          <AuthPendingSubmitButton
+            idleLabel={t("signup.submit")}
+            pendingLabel={t("signup.submitting")}
+            className={buttonStyles({ variant: "primary", className: "formSubmit w-full justify-center" })}
+          />
         </form>
 
         <div className="authPanelFooter">
           <p className="muted formBottomNote">{t("signup.hasAccount")}</p>
           <div className="actionRow authActions">
-            <a className="btn" href={`/login?next=${encodeURIComponent(next)}`}>
+            <a className={buttonStyles({ variant: "secondary" })} href={`/login?next=${encodeURIComponent(next)}`}>
               {t("common.login")}
             </a>
-            <a className="btn btnOutline" href="/dashboard">
+            <a
+              className={buttonStyles({
+                variant: "ghost",
+                className: "border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.04)] text-[var(--rb-fg)] hover:bg-[rgba(255,255,255,0.08)]"
+              })}
+              href="/dashboard/analyze"
+            >
               {t("common.goToAnalysis")}
             </a>
           </div>

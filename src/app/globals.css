@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* Ensure text renders immediately while web font loads */
 @font-face {
   font-family: "Pretendard";
@@ -2872,7 +2874,7 @@ h2,
 .authPanelHeader h2,
 .pricingHero h1 {
   margin: 0;
-  color: #171c4b;
+  color: #ffffff;
   font-size: clamp(24px, 3vw, 36px);
   line-height: 1.12;
 }
@@ -4433,7 +4435,7 @@ a.btn {
   padding: 0 18px;
   border-radius: 16px;
   border: 1px solid transparent;
-  background: rgba(91, 92, 234, 0.08);
+  background: rgba(255, 255, 255, 0.02);
   color: var(--color-text);
   font-weight: 700;
   font-size: 14px;
@@ -4447,20 +4449,22 @@ a.btn {
 a.btn:hover,
 button.btn:hover {
   transform: translateY(-1px);
-  border-color: rgba(91, 92, 234, 0.2);
-  background: rgba(91, 92, 234, 0.12);
+  border-color: rgba(95, 198, 183, 0.24);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .btnPrimary,
 .leftNavButton.primary {
-  background: linear-gradient(135deg, #5b5cea 0%, #7a6cf4 100%);
-  color: #fff;
-  box-shadow: 0 16px 28px rgba(91, 92, 234, 0.24);
+  border-color: var(--rb-accent);
+  background: var(--rb-accent);
+  color: #061111;
+  box-shadow: 0 18px 30px rgba(95, 198, 183, 0.18);
 }
 
 .btnPrimary:hover,
 .leftNavButton.primary:hover {
-  background: linear-gradient(135deg, #5054dd 0%, #705ff0 100%);
+  background: #74d5c8;
+  border-color: #74d5c8;
   border-color: transparent;
 }
 
@@ -4649,7 +4653,7 @@ h2,
 .authPanelHeader h2,
 .pricingHero h1 {
   margin: 0;
-  color: #171c4b;
+  color: #ffffff;
   font-size: clamp(24px, 3vw, 36px);
   line-height: 1.12;
 }
@@ -6717,4 +6721,398 @@ body:has(.dashboardShell) .appContainer,
 .simulationGridSingleColumn .simulationCard {
   min-width: 0;
   width: 100%;
+}
+
+@theme inline {
+  --font-sans: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+:root {
+  color-scheme: dark;
+  --rb-bg: #0d1218;
+  --rb-bg-soft: #151c25;
+  --rb-surface: rgba(24, 32, 42, 0.92);
+  --rb-surface-strong: #1b2430;
+  --rb-surface-muted: rgba(255, 255, 255, 0.045);
+  --rb-border: rgba(222, 230, 242, 0.12);
+  --rb-border-strong: rgba(222, 230, 242, 0.22);
+  --rb-fg: #f6f1e8;
+  --rb-muted-strong: #c8d0db;
+  --rb-muted: #91a0b2;
+  --rb-accent: #6bd2c1;
+  --rb-danger: #ff8f8f;
+  --rb-warning: #f5b96e;
+}
+
+html,
+body {
+  background: var(--rb-bg);
+}
+
+body {
+  color: var(--rb-fg);
+  background:
+    radial-gradient(circle at top right, rgba(107, 210, 193, 0.1), transparent 28%),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 24%),
+    linear-gradient(180deg, #0f141b 0%, #0d1218 100%),
+    var(--rb-bg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(95, 198, 183, 0.28);
+  color: var(--rb-fg);
+}
+
+a {
+  color: inherit;
+}
+
+main {
+  width: 100%;
+}
+
+.pageMain,
+.marketingPage,
+.pricingPage,
+.workspacePage,
+.dashboardPageSurface,
+.authPage {
+  display: grid;
+  gap: 24px;
+}
+
+.card {
+  border: 1px solid var(--rb-border);
+  background: var(--rb-surface);
+  color: var(--rb-fg);
+  border-radius: 16px;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.24);
+}
+
+.btn,
+.btnOutline,
+.btnGhost,
+.btnPrimary {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 14px;
+  padding-inline: 16px;
+  border: 1px solid var(--rb-border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--rb-fg);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: 180ms ease;
+}
+
+.btn:hover,
+.btnOutline:hover,
+.btnGhost:hover,
+.btnPrimary:hover {
+  transform: translateY(-1px);
+}
+
+.btnPrimary {
+  background: var(--rb-accent);
+  border-color: var(--rb-accent);
+  color: #071112;
+}
+
+.btnGhost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--rb-muted-strong);
+}
+
+.btnSmall {
+  min-height: 36px;
+  padding-inline: 14px;
+  font-size: 12px;
+}
+
+.input,
+select.input,
+textarea.input {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid var(--rb-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--rb-fg);
+  padding: 0 14px;
+  outline: none;
+}
+
+textarea.input {
+  padding-block: 12px;
+  min-height: 120px;
+}
+
+.input:focus,
+select.input:focus,
+textarea.input:focus {
+  border-color: rgba(95, 198, 183, 0.36);
+  box-shadow: 0 0 0 4px rgba(95, 198, 183, 0.12);
+}
+
+.muted,
+.hint,
+.formNote,
+.panelHintText,
+.contentPageLead,
+.dashboardPageLead,
+.authLead {
+  color: var(--rb-muted-strong);
+}
+
+.danger {
+  color: var(--rb-danger);
+}
+
+.sectionEyebrow,
+.authEyebrow {
+  color: var(--rb-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 11px;
+}
+
+.fieldRow {
+  display: grid;
+  gap: 16px;
+}
+
+.formInputLabel {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.actionRow,
+.authActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.consentRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--rb-muted-strong);
+  font-size: 14px;
+}
+
+.consentSummary {
+  border: 1px solid var(--rb-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--rb-muted-strong);
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.authPage .consentRow {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--rb-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--rb-fg);
+  line-height: 1.6;
+}
+
+.authPage .consentRow.optional {
+  color: var(--rb-muted-strong);
+}
+
+.authPage .consentRow input {
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  accent-color: var(--rb-accent);
+}
+
+.authPage .consentRow span {
+  color: inherit;
+}
+
+.authPage .consentRow .formNote {
+  color: var(--rb-accent);
+  font-weight: 600;
+}
+
+.authPage .consentSummary {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--rb-fg);
+}
+
+.authPanelHeader h2,
+.contentPageHeader h1,
+.appPageTitle,
+.dashboardPageTitle {
+  margin: 8px 0 0;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  letter-spacing: -0.05em;
+  color: var(--rb-fg);
+}
+
+.authPanelFooter,
+.formBottom {
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.link {
+  color: var(--rb-accent);
+}
+
+.tableWrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+th {
+  color: var(--rb-muted);
+}
+
+.loadingBar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.loadingBarFill {
+  height: 100%;
+  width: 40%;
+  border-radius: inherit;
+  background: var(--rb-accent);
+  animation: rb-loading 1.2s linear infinite;
+}
+
+@keyframes rb-loading {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+h1,
+.heroTitle,
+.dashboardPageTitle,
+.authTitle,
+.marketingTitle,
+.resultsHeroTitle {
+  margin: 0;
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+h2,
+.dashboardSectionTitle,
+.resultsHeroTitle,
+.dashboardPageTitle,
+.authPanelHeader h2,
+.pricingHero h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1.12;
+}
+
+h3 {
+  color: #ffffff;
+}
+
+.btnPrimary,
+.leftNavButton.primary,
+button.btn.btnPrimary,
+a.btn.btnPrimary {
+  color: #071112 !important;
+  border-color: var(--rb-accent) !important;
+  background: var(--rb-accent) !important;
+  box-shadow: 0 18px 30px rgba(95, 198, 183, 0.22) !important;
+}
+
+.btnPrimary:hover,
+.leftNavButton.primary:hover,
+button.btn.btnPrimary:hover,
+a.btn.btnPrimary:hover {
+  color: #071112 !important;
+  border-color: #74d5c8 !important;
+  background: #74d5c8 !important;
+}
+
+.articleBody {
+  display: grid;
+  gap: 1.35rem;
+  max-width: 760px;
+}
+
+.articleHeading2 {
+  margin-top: 1.2rem;
+  font-size: clamp(1.7rem, 2.4vw, 2.4rem);
+  line-height: 1.14;
+  letter-spacing: -0.05em;
+  color: #ffffff;
+}
+
+.articleHeading3 {
+  margin-top: 0.8rem;
+  font-size: 1.2rem;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.articleParagraph {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.95;
+  color: var(--rb-muted-strong);
+}
+
+.articleList,
+.articleListOrdered {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.7rem;
+  color: var(--rb-muted-strong);
+}
+
+.articleList li,
+.articleListOrdered li {
+  padding-left: 0.15rem;
+  font-size: 0.98rem;
+  line-height: 1.9;
+}
+
+.articleCallout {
+  margin-top: 0.5rem;
+  border-left: 3px solid var(--rb-accent);
+  border-radius: 18px;
+  background: rgba(95, 198, 183, 0.08);
+  color: var(--rb-fg);
+  padding: 1rem 1.1rem;
+  line-height: 1.8;
 }

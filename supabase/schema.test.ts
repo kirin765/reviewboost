@@ -32,4 +32,9 @@ describe('supabase billing schema migration safety', () => {
     expect(schema).toContain('alter table public.subscriptions alter column paddle_customer_id set not null;');
     expect(schema).toContain('alter table public.subscriptions alter column paddle_subscription_id set not null;');
   });
+
+  it('adds result payload storage for richer saved analyses', () => {
+    expect(schema).toContain('result_payload jsonb null');
+    expect(schema).toContain('alter table public.analyses add column if not exists result_payload jsonb null;');
+  });
 });
