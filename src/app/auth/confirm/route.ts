@@ -38,18 +38,12 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type");
+  const code = requestUrl.searchParams.get("code");
   const next = safeNextPath(requestUrl.searchParams.get("next"), "/dashboard");
 
   const baseUrl = getBaseUrl(request);
   const loginUrl = new URL("/login", baseUrl);
   loginUrl.searchParams.set("next", next);
-
-  if (!tokenHash || !type || !OTP_TYPES.has(type as EmailOtpType)) {
-    loginUrl.searchParams.set("error", "유효하지 않은 이메일 인증 링크입니다.");
-    const res = NextResponse.redirect(loginUrl);
-    applySecurityHeaders(res.headers);
-    return res;
-  }
 
   const secureContext = requestUrl.protocol === "https:" || process.env.NODE_ENV === "production";
   let response = NextResponse.next({ request });
@@ -67,6 +61,29 @@ export async function GET(request: NextRequest) {
       }
     }
   });
+
+  // PKCE flow: Supabase redirects with ?code= instead of ?token_hash=
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      loginUrl.searchParams.set("error", "이메일 인증에 실패했습니다. 링크가 만료되었거나 이미 사용되었을 수 있습니다.");
+      const res = NextResponse.redirect(loginUrl);
+      applySecurityHeaders(res.headers);
+      return res;
+    }
+    loginUrl.searchParams.set("notice", "이메일 인증이 완료되었습니다. 로그인해주세요.");
+    const res = NextResponse.redirect(loginUrl);
+    applySecurityHeaders(res.headers);
+    return res;
+  }
+
+  // OTP flow: token_hash + type
+  if (!tokenHash || !type || !OTP_TYPES.has(type as EmailOtpType)) {
+    loginUrl.searchParams.set("error", "유효하지 않은 이메일 인증 링크입니다.");
+    const res = NextResponse.redirect(loginUrl);
+    applySecurityHeaders(res.headers);
+    return res;
+  }
 
   const { error } = await supabase.auth.verifyOtp({
     type: type as EmailOtpType,
