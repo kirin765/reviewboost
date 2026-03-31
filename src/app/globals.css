@@ -6919,6 +6919,40 @@ textarea.input:focus {
   line-height: 1.7;
 }
 
+.authPage .consentRow {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--rb-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--rb-fg);
+  line-height: 1.6;
+}
+
+.authPage .consentRow.optional {
+  color: var(--rb-muted-strong);
+}
+
+.authPage .consentRow input {
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  accent-color: var(--rb-accent);
+}
+
+.authPage .consentRow span {
+  color: inherit;
+}
+
+.authPage .consentRow .formNote {
+  color: var(--rb-accent);
+  font-weight: 600;
+}
+
+.authPage .consentSummary {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--rb-fg);
+}
+
 .authPanelHeader h2,
 .contentPageHeader h1,
 .appPageTitle,
@@ -7026,4 +7060,59 @@ a.btn.btnPrimary:hover {
   color: #071112 !important;
   border-color: #74d5c8 !important;
   background: #74d5c8 !important;
+}
+
+.articleBody {
+  display: grid;
+  gap: 1.35rem;
+  max-width: 760px;
+}
+
+.articleHeading2 {
+  margin-top: 1.2rem;
+  font-size: clamp(1.7rem, 2.4vw, 2.4rem);
+  line-height: 1.14;
+  letter-spacing: -0.05em;
+  color: #ffffff;
+}
+
+.articleHeading3 {
+  margin-top: 0.8rem;
+  font-size: 1.2rem;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.articleParagraph {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.95;
+  color: var(--rb-muted-strong);
+}
+
+.articleList,
+.articleListOrdered {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.7rem;
+  color: var(--rb-muted-strong);
+}
+
+.articleList li,
+.articleListOrdered li {
+  padding-left: 0.15rem;
+  font-size: 0.98rem;
+  line-height: 1.9;
+}
+
+.articleCallout {
+  margin-top: 0.5rem;
+  border-left: 3px solid var(--rb-accent);
+  border-radius: 18px;
+  background: rgba(95, 198, 183, 0.08);
+  color: var(--rb-fg);
+  padding: 1rem 1.1rem;
+  line-height: 1.8;
 }

@@ -55,8 +55,8 @@ describe("AppShell", () => {
       </AppShell>
     );
 
-    expect(screen.getByRole("link", { name: "Pricing" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "CSV" })).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: "요금제" }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByRole("link", { name: "리뷰 CSV" })).toBeTruthy();
     expect(screen.getAllByRole("navigation").length).toBe(1);
     expect(screen.getByText("support@reviewboost.co.kr")).toBeTruthy();
   });
@@ -96,5 +96,19 @@ describe("AppShell", () => {
 
     expect(screen.getByRole("button", { name: "메뉴 닫기" })).toBeTruthy();
     expect(screen.getAllByRole("complementary", { name: "주요 메뉴" }).length).toBe(1);
+  });
+
+  it("removes the marketing chrome on auth routes", () => {
+    mockPathname = "/login";
+
+    renderWithI18n(
+      <AppShell userEmail={null} plan="free">
+        <div>로그인 화면</div>
+      </AppShell>
+    );
+
+    expect(screen.queryByRole("link", { name: "요금제" })).toBeNull();
+    expect(screen.queryByText("support@reviewboost.co.kr")).toBeNull();
+    expect(screen.getByText("로그인 화면")).toBeTruthy();
   });
 });

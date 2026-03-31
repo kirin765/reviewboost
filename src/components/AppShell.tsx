@@ -132,14 +132,14 @@ function MarketingHeader({ userEmail }: { userEmail: string | null }) {
             </span>
             <div>
               <strong className="block text-sm font-semibold tracking-[-0.02em] text-[var(--rb-fg)]">ReviewBoost</strong>
-              <span className="block text-[11px] text-[var(--rb-muted)]">AI review analysis for sellers</span>
+              <span className="block text-[11px] text-[var(--rb-muted)]">셀러를 위한 AI 리뷰 분석</span>
             </div>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-[var(--rb-muted-strong)] lg:flex">
-            <Link href="/pricing" className="hover:text-[var(--rb-fg)]">Pricing</Link>
-            <Link href="/coupang-csv" className="hover:text-[var(--rb-fg)]">CSV</Link>
-            <Link href="/help" className="hover:text-[var(--rb-fg)]">Help</Link>
-            <Link href="/blog" className="hover:text-[var(--rb-fg)]">Blog</Link>
+            <Link href="/pricing" className="hover:text-[var(--rb-fg)]">요금제</Link>
+            <Link href="/coupang-csv" className="hover:text-[var(--rb-fg)]">리뷰 CSV</Link>
+            <Link href="/help" className="hover:text-[var(--rb-fg)]">사용법</Link>
+            <Link href="/blog" className="hover:text-[var(--rb-fg)]">블로그</Link>
           </nav>
         </div>
 
@@ -147,7 +147,7 @@ function MarketingHeader({ userEmail }: { userEmail: string | null }) {
           <LanguageSwitcher />
           {userEmail ? (
             <Link href="/dashboard" className={buttonStyles({ variant: "secondary", size: "sm" })}>
-              Dashboard
+              대시보드
             </Link>
           ) : (
             <Link href="/login" className={buttonStyles({ variant: "ghost", size: "sm" })}>

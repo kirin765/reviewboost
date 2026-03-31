@@ -182,4 +182,26 @@ describe("AnalysisResults", () => {
     expect(screen.getByText("요약 저장 완료")).toBeTruthy();
     expect(screen.getByText("기본 요약만 저장되었습니다. 확장 상세는 DB 업데이트 후 저장됩니다.")).toBeTruthy();
   });
+
+  it("shows legacy guidance and unavailable-section messages for old saved reports", () => {
+    render(
+      <PlanProvider plan="pro">
+        <AnalysisResults
+          result={result}
+          caps={caps}
+          busy={false}
+          onDownloadPdf={vi.fn()}
+          resultContext={{
+            source: "saved_legacy",
+            legacyNotice: "이 저장본은 이전 형식으로 저장되어 일부 섹션은 추정값 또는 비어 있는 상태로 표시됩니다.",
+            unavailableSections: ["simulation", "positiveKeywords"]
+          }}
+        />
+      </PlanProvider>
+    );
+
+    expect(screen.getByText("이전 형식 저장본")).toBeTruthy();
+    expect(screen.getByText("이 저장본은 이전 형식으로 저장되어 일부 섹션은 추정값 또는 비어 있는 상태로 표시됩니다.")).toBeTruthy();
+    expect(screen.getAllByText("이 저장본에는 해당 데이터가 없습니다.").length).toBeGreaterThanOrEqual(2);
+  });
 });

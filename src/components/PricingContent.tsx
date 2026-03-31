@@ -57,7 +57,7 @@ export default function PricingContent({ userId, userEmail, basicPriceId, proPri
                   </div>
                   {plan.recommended ? (
                     <span className="rounded-full border border-[color:rgba(95,198,183,0.18)] bg-[rgba(95,198,183,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[var(--rb-accent)]">
-                      Recommended
+                      추천
                     </span>
                   ) : null}
                 </div>
@@ -93,7 +93,7 @@ export default function PricingContent({ userId, userEmail, basicPriceId, proPri
 
       <ShellContainer className="mt-8">
         <Surface className="px-6 py-6 md:px-8">
-          <SectionHeader eyebrow="Note" title={content.noteTitle} description={content.noteLead} />
+          <SectionHeader eyebrow="안내" title={content.noteTitle} description={content.noteLead} />
         </Surface>
       </ShellContainer>
     </main>
