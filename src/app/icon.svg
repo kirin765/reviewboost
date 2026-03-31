@@ -1,13 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2563eb"/>
-      <stop offset="100%" stop-color="#0ea5e9"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <text x="256" y="280" text-anchor="middle" dominant-baseline="central"
-        font-family="Arial,Helvetica,sans-serif" font-weight="800"
-        font-size="240" fill="#ffffff" letter-spacing="-8">RB</text>
-  <path d="M380 340 L420 310 L420 370 Z" fill="rgba(255,255,255,0.5)"/>
+  <rect width="512" height="512" rx="96" fill="#111111"/>
+  <circle cx="256" cy="256" r="192" fill="none" stroke="#ffffff" stroke-width="24"/>
+  <path d="M138 308 230 249l78 40 94-101" fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="231" cy="249" r="22" fill="#ffffff"/>
+  <circle cx="369" cy="189" r="22" fill="#ffffff"/>
+  <circle cx="139" cy="308" r="22" fill="#ffffff"/>
 </svg>
