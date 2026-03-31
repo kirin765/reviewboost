@@ -1,4 +1,8 @@
+import React from "react";
 import type { Metadata } from "next";
+import { buttonStyles } from "@/components/ui/Button";
+import { ShellContainer } from "@/components/ui/Primitives";
+import { getSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "사용법 - ReviewBoost CSV 업로드 & 리뷰 분석 가이드",
@@ -7,128 +11,112 @@ export const metadata: Metadata = {
 };
 
 export default function HelpPage() {
+  const content = getSiteContent("ko");
+
   return (
-    <main className="pageMain pageTop">
-      <section className="card contentPageHeader">
-        <p className="sectionEyebrow">Guide</p>
-        <h1>CSV 업로드부터 결과 활용까지</h1>
-        <p className="contentPageLead">개발 지식 없이도 CSV만 있으면 바로 리뷰 분석을 시작할 수 있습니다.</p>
-      </section>
-
-      {/* 4-Step Guide */}
-      <div className="helpStepGrid">
-        <div className="step completed">
-          <span className="stepNumber">1</span>
-          <span>CSV 준비</span>
-        </div>
-        <div className="step">
-          <span className="stepNumber">2</span>
-          <span>업로드</span>
-        </div>
-        <div className="step">
-          <span className="stepNumber">3</span>
-          <span>분석</span>
-        </div>
-        <div className="step">
-          <span className="stepNumber">4</span>
-          <span>결과 활용</span>
-        </div>
-      </div>
-
-      <div className="grid">
-        <div className="card">
-          <h2>1) CSV 준비</h2>
-          <div className="list">
-            <div className="row">
-              <div className="left">필수</div>
-              <div className="right">리뷰 내용(텍스트)</div>
+    <main className="pageMain pb-8 pt-8 md:pt-12">
+      <ShellContainer className="space-y-10">
+        <section className="space-y-8">
+          <div className="grid gap-6 border-b border-[color:rgba(222,230,242,0.08)] pb-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(280px,420px)]">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">Guide</p>
+              <h1 className="mt-4 max-w-3xl text-[clamp(2.6rem,5vw,4.8rem)] font-semibold leading-[0.96] tracking-[-0.07em] text-white">
+                CSV 업로드부터 결과 활용까지
+              </h1>
             </div>
-            <div className="row">
-              <div className="left">권장</div>
-              <div className="right">별점(0~5)</div>
+            <p className="text-base leading-8 text-[var(--rb-muted-strong)]">
+              개발 지식 없이도 CSV만 있으면 바로 분석을 시작할 수 있습니다. 업로드, 열 확인, 결과 활용까지 한 번에 이어지는 기본 흐름만 보여줍니다.
+            </p>
+          </div>
+
+          <div className="rounded-[30px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(24,31,39,0.96),rgba(17,23,31,0.92))] p-5 md:p-7">
+            <div className="grid gap-4 xl:grid-cols-4">
+              {content.home.solution.strip.map((step) => (
+                <div key={step.title} className="rounded-[24px] border border-[color:rgba(222,230,242,0.08)] bg-[rgba(255,255,255,0.03)] p-5">
+                  <div className="flex h-24 items-center justify-center rounded-[18px] border border-[color:rgba(222,230,242,0.08)] bg-[rgba(255,255,255,0.04)]">
+                    <span className="rounded-full border border-[color:rgba(107,210,193,0.28)] bg-[rgba(107,210,193,0.1)] px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-[var(--rb-accent)]">
+                      {step.meta}
+                    </span>
+                  </div>
+                  <h2 className="mt-5 text-xl font-semibold tracking-[-0.04em] text-white">{step.title}</h2>
+                  <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">{step.body}</p>
+                </div>
+              ))}
             </div>
-            <div className="row">
-              <div className="left">선택</div>
-              <div className="right">작성일(최근 이슈 확인용)</div>
+
+            <div className="mt-7 flex flex-wrap gap-3">
+              <a className={buttonStyles({ variant: "secondary" })} href="/sample.csv" download>
+                샘플 CSV(컬럼 많음)
+              </a>
+              <a className={buttonStyles({ variant: "secondary" })} href="/sample_simple.csv" download>
+                샘플 CSV(간단)
+              </a>
             </div>
           </div>
-          <p className="hint muted sectionSpacing">
-            엑셀에서 저장할 때는 보통 <strong>CSV(쉼표로 구분)</strong> 형식으로 저장하면 됩니다.
-          </p>
-          <div className="actionRow">
-            <a className="btn" href="/sample.csv" download>
-              샘플 CSV(컬럼 많음)
-            </a>
-            <a className="btn" href="/sample_simple.csv" download>
-              샘플 CSV(간단)
-            </a>
-          </div>
-        </div>
+        </section>
 
-        <div className="card">
-          <h2>2) 업로드 후 컬럼 확인</h2>
-          <p className="muted">
-            업로드하면 미리보기로 &ldquo;어느 열이 리뷰 내용인지, 별점인지, 작성일인지&rdquo;를 한 번 확인합니다.
-          </p>
-          <p className="hint muted">
-            컬럼명이 <code>review_text</code>, <code>내용</code>, <code>리뷰</code> 처럼 다양해도 괜찮습니다. 화면에서 선택만
-            해주면 됩니다.
-          </p>
-        </div>
-      </div>
+        <section className="rounded-[30px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.94),rgba(13,19,26,0.92))] p-5 md:p-7">
+          <div className="grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="space-y-6">
+              <div className="border-b border-[color:rgba(222,230,242,0.08)] pb-5">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">1. CSV 준비</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">리뷰 내용은 필수, 별점은 권장, 작성일은 최근성 계산에 유용합니다. CSV(쉼표 구분) 형식이 가장 안정적입니다.</p>
+              </div>
+              <div className="border-b border-[color:rgba(222,230,242,0.08)] pb-5">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">2. 업로드</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">파일을 올리면 미리보기가 생성되고 열 이름을 자동으로 추정합니다.</p>
+              </div>
+              <div className="border-b border-[color:rgba(222,230,242,0.08)] pb-5">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">3. 열 확인</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">리뷰 내용, 별점, 작성일 열을 한 번만 확인하면 분석 준비가 완료됩니다.</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">4. 결과 활용</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">카테고리 분포, 긴급 리뷰, 우선순위, 액션 아이템을 읽고 PDF로 공유할 수 있습니다.</p>
+              </div>
+            </div>
 
-      <div className="grid">
-        <div className="card">
-          <h2>3) 결과 활용</h2>
-          <p className="muted">분석 결과에서 확인 가능한 항목들:</p>
-          <ul className="muted mutedList">
-            <li>핵심 지표 (리뷰 수, 부정 비율, 평균 별점, 우선순위 점수)</li>
-            <li>부정 키워드 TOP10</li>
-            <li>카테고리별 문제 분포</li>
-            <li>긴급 대응 필요 리뷰</li>
-            <li>우선순위 매트릭스</li>
-            <li>별점 시뮬레이션</li>
-            <li>개선 제안 (상세페이지 문구, CS응대, FAQ)</li>
-          </ul>
-          <p className="hint muted sectionSpacing">
-            결과에 나오는 문구는 바로 복사해서 상세페이지/CS 답변/FAQ에 붙여 넣을 수 있습니다.
-          </p>
-          <div className="actionRow">
-            <a className="btn btnPrimary" href="/dashboard">
-              지금 분석하기
-            </a>
+            <div className="rounded-[24px] border border-[color:rgba(222,230,242,0.08)] bg-[rgba(255,255,255,0.03)] p-5">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Upload → Analyze → Save</p>
+              <div className="mt-5 grid gap-5">
+                <div className="rounded-[20px] border border-[color:rgba(222,230,242,0.08)] bg-[rgba(255,255,255,0.03)] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <strong className="text-base tracking-[-0.03em] text-white">업로드 화면</strong>
+                    <span className="text-xs text-[var(--rb-muted)]">CSV / sample</span>
+                  </div>
+                  <div className="mt-4 h-11 rounded-[14px] border border-[color:rgba(222,230,242,0.08)] bg-[rgba(255,255,255,0.04)]" />
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-[20px] border border-[color:rgba(222,230,242,0.08)] bg-[rgba(255,255,255,0.03)] p-4">
+                    <strong className="text-base tracking-[-0.03em] text-white">분석 진행</strong>
+                    <div className="mt-4 space-y-3 text-sm text-[var(--rb-muted-strong)]">
+                      <p>리뷰 수집 중...</p>
+                      <p>감정 분석 진행 중...</p>
+                      <p>카테고리 분류 중...</p>
+                    </div>
+                  </div>
+                  <div className="rounded-[20px] border border-[color:rgba(222,230,242,0.08)] bg-[rgba(255,255,255,0.03)] p-4">
+                    <strong className="text-base tracking-[-0.03em] text-white">결과 화면</strong>
+                    <div className="mt-4 space-y-3 text-sm text-[var(--rb-muted-strong)]">
+                      <p>총 리뷰 / 부정 비율 / 평균 별점</p>
+                      <p>카테고리 탭과 긴급 리뷰</p>
+                      <p>우선순위와 액션 아이템</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <a className={buttonStyles({ variant: "primary" })} href="/dashboard/analyze">
+                    지금 분석하기
+                  </a>
+                  <a className={buttonStyles({ variant: "ghost" })} href="/coupang-csv">
+                    URL로 CSV 받기
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="card">
-          <h2>저장(선택)</h2>
-          <p className="muted">
-            로그인 기능을 켜면 분석 결과를 저장하고, 나중에 &ldquo;저장된 리포트&rdquo;에서 다시 볼 수 있습니다.
-          </p>
-          <p className="hint muted">
-            PDF 다운로드로 분석 결과를 공유할 수도 있습니다.
-          </p>
-        </div>
-      </div>
-
-      {/* FAQ Section */}
-      <div className="card sectionSpacing">
-        <h2>자주 묻는 질문 (FAQ)</h2>
-        <div className="list">
-          <div className="row rowColumn">
-            <div className="textBold textSmall">Q: 리뷰가 너무 많으면 어떻게 되나요?</div>
-            <div className="muted textSmall">A: 대량 리뷰는 샘플링하여 분석합니다. (Basic 이상은 180건, Pro는 대량 우선 처리)</div>
-          </div>
-          <div className="row rowColumn">
-            <div className="textBold textSmall">Q: 분석 결과는 어디서 보나요?</div>
-            <div className="muted textSmall">A: 분석 완료 후 화면에 바로 표시되며, PDF로도 다운로드 가능합니다.</div>
-          </div>
-          <div className="row rowColumn">
-            <div className="textBold textSmall">Q: 로그인 없이도 분석 가능한가요?</div>
-            <div className="muted textSmall">A: 네, 로그인 없이도 CSV만 업로드하면 분석을 진행할 수 있습니다.</div>
-          </div>
-        </div>
-      </div>
+        </section>
+      </ShellContainer>
     </main>
   );
 }
