@@ -45,39 +45,42 @@ describe("SidebarNav", () => {
     expect(screen.getByText("Guest")).toBeTruthy();
     expect(screen.getByText("로그인 후 리포트 저장")).toBeTruthy();
     expect(screen.getByRole("link", { name: "로그인" })).toBeTruthy();
-    expect(screen.queryByRole("link", { name: "저장된 리포트" })).toBeNull();
-    expect(screen.getByRole("link", { name: "리뷰 CSV" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "홈" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "AI분석" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "리뷰 다운" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "업그레이드" })).toBeTruthy();
   });
 
-  it("renders authenticated profile footer and keeps history link", () => {
+  it("renders authenticated profile footer with the primary workspace links", () => {
     renderWithI18n(<SidebarNav variant="app" plan="basic" userEmail="tester@example.com" />);
 
     expect(screen.getByText("Tester")).toBeTruthy();
     expect(screen.getByText("Basic 플랜")).toBeTruthy();
     expect(screen.getByRole("button", { name: "로그아웃" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "저장된 리포트" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "홈" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "AI분석" })).toBeTruthy();
   });
 
-  it("marks matching route active and switches promo copy for pro plan", () => {
-    mockPathname = "/pricing";
+  it("keeps resource links available and shows the pro plan button", () => {
+    mockPathname = "/dashboard/analyze";
     renderWithI18n(<SidebarNav variant="dashboard" plan="pro" userEmail="owner@example.com" />);
 
-    expect(screen.getByRole("link", { name: "요금제" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "AI분석" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("link", { name: "플랜 보기" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Pricing" })).toBeTruthy();
   });
 
-  it("treats saved report detail routes as history-active", () => {
+  it("treats saved report detail routes as home-active", () => {
     mockPathname = "/dashboard/analysis/abc123";
     renderWithI18n(<SidebarNav variant="dashboard" plan="basic" userEmail="owner@example.com" />);
 
-    expect(screen.getByRole("link", { name: "저장된 리포트" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "홈" }).getAttribute("aria-current")).toBe("page");
   });
 
   it("marks coupang csv route active", () => {
     mockPathname = "/coupang-csv";
     renderWithI18n(<SidebarNav variant="dashboard" plan="basic" userEmail="owner@example.com" />);
 
-    expect(screen.getByRole("link", { name: "리뷰 CSV" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "리뷰 다운" }).getAttribute("aria-current")).toBe("page");
   });
 });

@@ -27,6 +27,9 @@ const ko: Dictionary = {
   "common.fullView": "전체보기",
 
   // ── Navigation ──
+  "nav.home": "홈",
+  "nav.aiAnalyze": "AI분석",
+  "nav.reviewDownload": "리뷰 다운",
   "nav.analyze": "분석하기",
   "nav.savedReports": "저장된 리포트",
   "nav.coupangCsv": "리뷰 CSV",

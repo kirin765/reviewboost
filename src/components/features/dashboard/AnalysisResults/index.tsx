@@ -77,11 +77,12 @@ export default function AnalysisResults({ result, caps, busy, onDownloadPdf }: A
   const view = useMemo(() => mapDashboardViewModel(result), [result]);
   const [selectedCategory, setSelectedCategory] = useState(view.categories.find((item) => item.count > 0)?.key ?? view.categories[0]?.key);
   const activeCategory = view.categories.find((item) => item.key === selectedCategory) ?? view.categories[0];
+  const activeCategoryKey = activeCategory?.key;
 
   useEffect(() => {
-    if (!activeCategory) return;
-    setSelectedCategory(activeCategory.key);
-  }, [activeCategory?.key]);
+    if (!activeCategoryKey) return;
+    setSelectedCategory(activeCategoryKey);
+  }, [activeCategoryKey]);
 
   useEffect(() => {
     if (!summaryRef.current) return;
@@ -104,8 +105,8 @@ export default function AnalysisResults({ result, caps, busy, onDownloadPdf }: A
               <button className={buttonStyles({ variant: "primary" })} onClick={onDownloadPdf} disabled={busy}>
                 PDF 다운로드
               </button>
-              <a className={buttonStyles({ variant: "secondary" })} href={storageEnabled ? "/dashboard/history" : "/dashboard"}>
-                {storageEnabled ? "저장된 리포트" : "새 분석"}
+              <a className={buttonStyles({ variant: "secondary" })} href={storageEnabled ? "/dashboard" : "/dashboard/analyze"}>
+                {storageEnabled ? "홈" : "새 분석"}
               </a>
             </div>
           }

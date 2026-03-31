@@ -86,7 +86,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
           title="문제가 발생했어요"
           description="분석을 찾을 수 없거나 접근 권한이 없습니다."
           tone="error"
-          actions={<a className={buttonStyles({ variant: "secondary" })} href="/dashboard/history">히스토리</a>}
+          actions={<a className={buttonStyles({ variant: "secondary" })} href="/dashboard">홈</a>}
         />
       </main>
     );
@@ -124,8 +124,8 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
           description={`${created} · 우선순위 ${priorityScore.toFixed(1)}`}
           action={
             <div className="flex flex-wrap gap-3">
-              <a className={buttonStyles({ variant: "secondary" })} href="/dashboard/history">히스토리</a>
-              <a className={buttonStyles({ variant: "primary" })} href="/dashboard">새 분석</a>
+              <a className={buttonStyles({ variant: "secondary" })} href="/dashboard">홈</a>
+              <a className={buttonStyles({ variant: "primary" })} href="/dashboard/analyze">AI분석</a>
               <a className={buttonStyles({ variant: "secondary" })} href={`/api/report/${row.id}`}>PDF 다운로드</a>
             </div>
           }

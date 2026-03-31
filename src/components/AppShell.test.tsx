@@ -71,8 +71,10 @@ describe("AppShell", () => {
     );
 
     const sidebar = screen.getByRole("complementary", { name: "주요 메뉴" });
-    expect(within(sidebar).getByRole("link", { name: "분석하기" }).getAttribute("aria-current")).toBe("page");
-    expect(screen.getByRole("heading", { name: "리뷰 분석 작업면" })).toBeTruthy();
+    expect(within(sidebar).getByRole("link", { name: "홈" }).getAttribute("aria-current")).toBe("page");
+    expect(within(sidebar).getByRole("link", { name: "AI분석" })).toBeTruthy();
+    expect(within(sidebar).getByRole("link", { name: "리뷰 다운" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "홈" })).toBeTruthy();
     expect(screen.queryByText("support@reviewboost.co.kr")).toBeNull();
     expect(screen.getAllByRole("navigation").length).toBe(1);
   });

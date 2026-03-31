@@ -80,7 +80,7 @@ export default function LoginPage() {
             <a className="btn" href={`/signup?next=${encodeURIComponent(next)}`}>
               {t("common.signup")}
             </a>
-            <a className="btn btnOutline" href="/dashboard">
+            <a className="btn btnOutline" href="/dashboard/analyze">
               {t("common.goToAnalysis")}
             </a>
           </div>

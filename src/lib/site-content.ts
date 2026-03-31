@@ -5,6 +5,12 @@ type FlowStep = {
   body: string;
 };
 
+type StepStripItem = {
+  title: string;
+  body: string;
+  meta: string;
+};
+
 type PlanFeature = {
   label: string;
   value: string;
@@ -26,6 +32,19 @@ type FaqItem = {
   answer: string;
 };
 
+type GraphDescriptor = {
+  heroMetricLabel: string;
+  heroMetricValue: string;
+  heroMetricBody: string;
+  lineChartTitle: string;
+  lineChartCompare: string;
+  donutTitle: string;
+  donutBody: string;
+  trendTitle: string;
+  trendValue: string;
+  trendBody: string;
+};
+
 type HomeContent = {
   hero: {
     eyebrow: string;
@@ -34,6 +53,8 @@ type HomeContent = {
     primaryCta: string;
     secondaryCta: string;
     tertiaryCta: string;
+    previewLabel: string;
+    previewLead: string;
   };
   problem: {
     eyebrow: string;
@@ -46,6 +67,8 @@ type HomeContent = {
     title: string;
     lead: string;
     flow: FlowStep[];
+    strip: StepStripItem[];
+    assurances: string[];
   };
   product: {
     eyebrow: string;
@@ -60,6 +83,7 @@ type HomeContent = {
     metrics: Array<{ label: string; value: string }>;
     categories: Array<{ label: string; share: string; impact: number }>;
     simulations: Array<{ label: string; value: string; delta: string }>;
+    graph: GraphDescriptor;
   };
   pricing: {
     eyebrow: string;
@@ -102,66 +126,91 @@ const ko: SiteContent = {
       title: "리뷰에서 상품의 문제를 찾아 매출을 개선하세요",
       lead: "AI가 리뷰를 감정과 카테고리로 분석해 가장 먼저 해결할 문제를 보여줍니다.",
       primaryCta: "리뷰 분석",
-      secondaryCta: "URL로 CSV 받기",
-      tertiaryCta: "무료 회원가입"
+      secondaryCta: "URL을 통한 CSV 다운로드",
+      tertiaryCta: "무료 회원가입",
+      previewLabel: "Analytical preview",
+      previewLead: "부정 비율, 카테고리 분포, 긴급 리뷰, 개선 시뮬레이션을 한 화면에서 읽습니다."
     },
     problem: {
       eyebrow: "Problem",
-      title: "리뷰가 쌓여도 어떤 문제가 매출을 깎는지 바로 보이지 않습니다.",
-      lead: "낮은 별점만 보는 방식으로는 배송 이슈와 품질 이슈, 최근 악화 신호와 장기 누적 신호를 구분하기 어렵습니다.",
+      title: "리뷰는 쌓이는데 무엇이 매출을 깎는지 바로 보이지 않습니다.",
+      lead: "낮은 별점만 보는 방식으로는 배송 문제와 품질 문제, 오래된 불만과 최근 악화 신호를 구분하기 어렵습니다.",
       items: [
         {
-          title: "문제의 성격이 섞여 있습니다",
-          body: "배송, 품질, 사용성 문제가 같은 리뷰 안에 섞여 있어 사람이 빠르게 분류하기 어렵습니다."
+          title: "문제의 종류가 한 리뷰 안에 섞여 있습니다",
+          body: "배송, 품질, 사용성 이슈가 한 문장 안에 같이 들어와 수작업 분류가 느리고 흔들립니다."
         },
         {
-          title: "최근 악화 신호를 놓치기 쉽습니다",
-          body: "오래된 불만과 최근 급증한 이슈를 같은 무게로 보면 실제 긴급도를 잘못 판단하게 됩니다."
+          title: "최근 악화 신호가 묻히기 쉽습니다",
+          body: "오래된 불만과 최근 증가한 불만을 같은 무게로 보면 지금 급한 문제를 놓치게 됩니다."
         },
         {
-          title: "실행 우선순위가 불명확합니다",
-          body: "어떤 카테고리를 먼저 고쳐야 별점과 전환율에 가장 큰 영향을 주는지 바로 연결되지 않습니다."
+          title: "대응 우선순위가 실행으로 연결되지 않습니다",
+          body: "어떤 문제를 먼저 고쳐야 별점과 전환율에 영향이 큰지 바로 판단하기 어렵습니다."
         }
       ]
     },
     solution: {
       eyebrow: "Solution",
-      title: "입력부터 개선까지 하나의 분석 흐름으로 연결합니다.",
-      lead: "URL 또는 CSV에서 시작해 리뷰를 수집하고, 감정과 카테고리를 분류하고, 우선순위를 계산해 바로 실행 가능한 액션으로 정리합니다.",
+      title: "입력에서 개선까지 하나의 차분한 작업 흐름으로 연결합니다.",
+      lead: "URL 입력 → 리뷰 수집 → AI 분석 → 문제 도출 → 개선 흐름을 기준으로, 실제 화면에서는 셀러가 바로 따라갈 수 있는 4단계 온보딩 스트립으로 압축해 보여줍니다.",
       flow: [
-        { title: "URL 입력", body: "쿠팡 또는 스마트스토어 상품 URL을 넣습니다." },
+        { title: "URL 입력", body: "쿠팡 또는 스마트스토어 URL을 넣습니다." },
         { title: "리뷰 수집", body: "리뷰 데이터를 CSV 또는 수집 결과로 정리합니다." },
-        { title: "AI 분석", body: "감정 분류와 카테고리 분류를 동시에 진행합니다." },
+        { title: "AI 분석", body: "감정 분류와 카테고리 분류를 동시에 실행합니다." },
         { title: "문제 도출", body: "부정 비율, 최근성, 영향도를 합쳐 우선순위를 계산합니다." },
-        { title: "개선", body: "상세페이지, CS, FAQ에 바로 반영할 액션을 확인합니다." }
-      ]
+        { title: "개선", body: "상세페이지, CS, FAQ에 반영할 액션을 확인합니다." }
+      ],
+      strip: [
+        {
+          title: "CSV 준비",
+          body: "리뷰 내용과 별점, 작성일 열만 있으면 바로 시작할 수 있습니다.",
+          meta: "필수 열만 확인"
+        },
+        {
+          title: "업로드",
+          body: "파일을 올리면 열을 자동 추정하고 미리보기를 바로 보여줍니다.",
+          meta: "미리보기 즉시 생성"
+        },
+        {
+          title: "열 확인",
+          body: "리뷰 내용, 별점, 작성일 열을 한 번만 맞추면 분석 준비가 끝납니다.",
+          meta: "수동 보정 가능"
+        },
+        {
+          title: "결과 활용",
+          body: "긴급 리뷰, 우선순위, 액션 아이템으로 바로 운영 결정을 내립니다.",
+          meta: "저장·PDF 공유"
+        }
+      ],
+      assurances: ["전체 비용이 보이도록 단순한 플랜", "리뷰 운영을 위한 보수적 분류", "팀 공유까지 이어지는 같은 흐름"]
     },
     product: {
       eyebrow: "Product detail",
-      title: "분석 결과는 예쁜 대시보드가 아니라 운영 결정을 위한 작업면으로 정리됩니다.",
-      lead: "카드 모자이크 대신 상단 지표, 카테고리 탭, 긴급 리뷰와 우선순위 목록, 시뮬레이션과 액션 아이템으로 한 번에 읽히는 구조입니다.",
+      title: "화면은 예쁜 대시보드가 아니라 운영자가 바로 읽을 수 있는 작업면입니다.",
+      lead: "상단에는 핵심 지표를, 중간에는 카테고리 탭을, 하단에는 긴급 리뷰와 우선순위, 시뮬레이션과 액션 아이템을 배치합니다.",
       items: [
         {
           title: "감정 분석",
-          body: "부정 비율과 평균 별점으로 현재 만족도 수준을 빠르게 판단합니다.",
+          body: "부정 비율과 평균 별점으로 현재 고객 경험의 상태를 빠르게 읽습니다.",
           stat: "Negative rate 33%"
         },
         {
           title: "카테고리 분류",
-          body: "배송, 품질, 사용성, CS, 가격, 기타로 문제를 나누어 실제 원인을 파악합니다.",
+          body: "배송, 품질, 사용성, CS, 가격, 기타로 문제를 나누어 실제 원인을 구분합니다.",
           stat: "품질 33.3%"
         },
         {
           title: "이슈 우선순위화",
-          body: "발생 비중과 영향도를 합쳐 지금 먼저 해결해야 할 항목을 드러냅니다.",
+          body: "발생 비중과 영향도를 합쳐 지금 먼저 해결해야 할 문제를 드러냅니다.",
           stat: "Priority 46.7"
         }
       ]
     },
     result: {
       eyebrow: "Result",
-      title: "같은 리뷰 데이터도 해석 방식이 달라지면 대응 순서가 달라집니다.",
-      lead: "예시 데이터 기준으로 품질 이슈가 가장 큰 비중과 영향도를 차지했고, 일부만 해결해도 평균 별점 개선 폭이 분명하게 나타납니다.",
+      title: "같은 리뷰 데이터도 구조화해서 읽으면 대응 순서가 달라집니다.",
+      lead: "예시 데이터에서는 품질 이슈가 가장 큰 비중과 영향도를 차지했고, 일부만 해결해도 평균 별점의 개선 폭이 뚜렷하게 나타납니다.",
       metrics: [
         { label: "Negative rate", value: "33%" },
         { label: "Avg rating", value: "3.33 / 5" },
@@ -179,12 +228,24 @@ const ko: SiteContent = {
       simulations: [
         { label: "25% fix", value: "3.67", delta: "+0.33" },
         { label: "75% fix", value: "4.67", delta: "+1.33" }
-      ]
+      ],
+      graph: {
+        heroMetricLabel: "우선 대응 시점",
+        heroMetricValue: "5x",
+        heroMetricBody: "품질 이슈를 먼저 줄이면 평균 별점 개선 속도가 배송 보정만 했을 때보다 더 크게 나타납니다.",
+        lineChartTitle: "별점 개선 추세",
+        lineChartCompare: "개선 전 대비 개선 후",
+        donutTitle: "부정 비율 구성",
+        donutBody: "전체 리뷰 중 33%가 부정 리뷰이며, 대부분 품질과 사용성에서 발생합니다.",
+        trendTitle: "개선 시뮬레이션",
+        trendValue: "296%",
+        trendBody: "우선순위 상위 카테고리를 집중 개선할수록 예상 별점이 빠르게 회복됩니다."
+      }
     },
     pricing: {
       eyebrow: "Pricing",
-      title: "무료로 시작하고, 저장과 대량 분석은 필요할 때 확장하세요.",
-      lead: "무료 플랜으로 먼저 결과 품질을 확인한 뒤, 운영 빈도에 따라 Basic 또는 Pro로 확장할 수 있습니다."
+      title: "무료로 정확도를 먼저 확인하고, 저장과 반복 분석이 필요할 때 확장하세요.",
+      lead: "무료 플랜으로 첫 결과를 검증한 뒤, 운영 빈도와 저장 필요에 맞게 Basic 또는 Pro로 확장할 수 있습니다."
     },
     faq: {
       eyebrow: "FAQ",
@@ -192,11 +253,11 @@ const ko: SiteContent = {
       items: [
         {
           question: "로그인 없이도 바로 분석할 수 있나요?",
-          answer: "가능합니다. 무료 사용자는 업로드 후 바로 분석과 PDF 다운로드를 진행할 수 있습니다."
+          answer: "가능합니다. 무료 사용자는 CSV 업로드 후 바로 분석과 PDF 다운로드를 진행할 수 있습니다."
         },
         {
           question: "리뷰가 많으면 얼마나 걸리나요?",
-          answer: "분석은 보통 수십 초 내로 끝나지만, 대량 데이터는 최대 5분까지 걸릴 수 있습니다."
+          answer: "일반적으로 수십 초 내로 끝나지만, 데이터가 많으면 최대 5분까지 걸릴 수 있습니다."
         },
         {
           question: "어떤 문제를 먼저 고칠지 정말 알 수 있나요?",
@@ -207,7 +268,7 @@ const ko: SiteContent = {
     cta: {
       eyebrow: "Start free",
       title: "리뷰를 읽는 시간을 줄이고, 먼저 고쳐야 할 문제부터 바로 확인하세요.",
-      lead: "무료로 가입하고 첫 분석을 시작하거나, 상품 URL로 CSV를 바로 받아서 같은 흐름으로 이어갈 수 있습니다.",
+      lead: "무료 가입으로 첫 분석을 시작하거나, 상품 URL에서 리뷰 CSV를 받아 같은 흐름으로 이어갈 수 있습니다.",
       primary: "무료로 시작하기",
       secondary: "URL로 CSV 받기"
     }
@@ -215,7 +276,7 @@ const ko: SiteContent = {
   pricing: {
     eyebrow: "Pricing",
     title: "운영 빈도와 저장 필요도에 맞는 플랜",
-    lead: "무료로 정확도를 확인하고, 저장/공유/대량 분석이 필요할 때 Basic과 Pro로 확장할 수 있습니다.",
+    lead: "무료로 정확도를 확인하고, 저장·공유·대량 분석이 필요할 때 Basic과 Pro로 확장할 수 있습니다.",
     pills: ["안전한 카드 결제", "저장/공유 기능 연계", "오픈베타 할인 중"],
     noteTitle: "대량 리뷰는 플랜별 처리량에 맞춰 안정적으로 분석됩니다.",
     noteLead: "처리량을 초과하는 경우 일부 리뷰가 샘플링될 수 있으며, 분석 결과의 우선순위 판단에는 최근성과 영향도가 계속 반영됩니다.",
@@ -276,44 +337,69 @@ const en: SiteContent = {
       title: "Find product problems in reviews and improve revenue",
       lead: "AI analyzes sentiment and issue categories to show what should be fixed first.",
       primaryCta: "Analyze Reviews",
-      secondaryCta: "Get CSV by URL",
-      tertiaryCta: "Start Free"
+      secondaryCta: "Download CSV by URL",
+      tertiaryCta: "Start Free",
+      previewLabel: "Analytical preview",
+      previewLead: "Read negative rate, category spread, urgent reviews, and rating simulations in one calm workspace."
     },
     problem: {
       eyebrow: "Problem",
-      title: "Even when reviews pile up, the revenue-impacting issue is rarely obvious at a glance.",
-      lead: "Looking at star ratings alone makes it hard to separate shipping issues from quality issues, and recent deterioration from long-tail noise.",
+      title: "Reviews pile up, but the real revenue issue is rarely obvious at a glance.",
+      lead: "Looking only at star ratings makes it hard to separate shipping problems from quality problems, or old complaints from recent deterioration.",
       items: [
         {
-          title: "Multiple issues are mixed together",
-          body: "Shipping, quality, and usability complaints often appear in the same review, making fast manual sorting unreliable."
+          title: "Different issue types are mixed together",
+          body: "Shipping, quality, and usability complaints often appear in the same review, which makes manual sorting slow and unreliable."
         },
         {
           title: "Recent signals get buried",
-          body: "If old complaints and new spikes are weighted equally, the real urgent issue is easy to miss."
+          body: "If old complaints and new spikes are weighted the same, urgent issues are easy to miss."
         },
         {
-          title: "Execution order stays unclear",
-          body: "Teams still need to guess which category to fix first to affect rating and conversion."
+          title: "Priority does not translate into action",
+          body: "Teams still need to guess which issue to fix first to move rating and conversion."
         }
       ]
     },
     solution: {
       eyebrow: "Solution",
-      title: "Connect input to action in one review-analysis flow.",
-      lead: "Start from a URL or CSV, collect reviews, classify sentiment and category, calculate urgency, and turn the output into immediate actions.",
+      title: "Connect input to action in one calm operational flow.",
+      lead: "The core flow is Enter URL → Collect reviews → AI analysis → Extract problems → Improve. On screen, it is compressed into a four-step onboarding strip teams can scan instantly.",
       flow: [
         { title: "Enter URL", body: "Paste a Coupang or Smart Store product URL." },
         { title: "Collect reviews", body: "Prepare review data as CSV or crawler output." },
         { title: "AI analysis", body: "Run sentiment and category classification together." },
         { title: "Extract problems", body: "Combine negative rate, recency, and impact into priority." },
         { title: "Improve", body: "Act on product page, CS, and FAQ recommendations." }
-      ]
+      ],
+      strip: [
+        {
+          title: "Prepare CSV",
+          body: "You only need review text, rating, and date columns to begin.",
+          meta: "Essential columns only"
+        },
+        {
+          title: "Upload",
+          body: "The file is parsed immediately and the likely columns are inferred for you.",
+          meta: "Instant preview"
+        },
+        {
+          title: "Confirm columns",
+          body: "Check review text, rating, and date once, then the run is ready.",
+          meta: "Manual correction available"
+        },
+        {
+          title: "Use the result",
+          body: "Read urgent reviews, priorities, and action items for immediate next steps.",
+          meta: "Save and share as PDF"
+        }
+      ],
+      assurances: ["Simple pricing with no hidden workflow cost", "Conservative classification for operations", "One flow from upload to team sharing"]
     },
     product: {
       eyebrow: "Product detail",
-      title: "The output is not a flashy dashboard. It is an analytical operating surface for decisions.",
-      lead: "Instead of card mosaics, the workspace is organized around top metrics, category tabs, urgent reviews, priority lists, simulations, and action items.",
+      title: "The surface is not a flashy dashboard. It is an operating layout for decisions.",
+      lead: "Top metrics sit above category tabs, then urgent reviews, priority lists, simulations, and action items fill the working area below.",
       items: [
         {
           title: "Sentiment analysis",
@@ -334,7 +420,7 @@ const en: SiteContent = {
     },
     result: {
       eyebrow: "Result",
-      title: "The same review data leads to different decisions when it is read with structure.",
+      title: "The same review data leads to different decisions once it is read with structure.",
       lead: "In the sample dataset, quality issues dominate both share and impact, and even partial fixes move the projected rating meaningfully.",
       metrics: [
         { label: "Negative rate", value: "33%" },
@@ -353,11 +439,23 @@ const en: SiteContent = {
       simulations: [
         { label: "25% fix", value: "3.67", delta: "+0.33" },
         { label: "75% fix", value: "4.67", delta: "+1.33" }
-      ]
+      ],
+      graph: {
+        heroMetricLabel: "Intervention timing",
+        heroMetricValue: "5x",
+        heroMetricBody: "Addressing quality first improves projected rating recovery more strongly than shipping-only fixes.",
+        lineChartTitle: "Rating recovery curve",
+        lineChartCompare: "Before improvements vs after improvements",
+        donutTitle: "Negative review mix",
+        donutBody: "33% of all reviews are negative, and most of them cluster around quality and usability.",
+        trendTitle: "Fix simulation",
+        trendValue: "296%",
+        trendBody: "Projected rating recovery accelerates as higher-priority categories are fixed first."
+      }
     },
     pricing: {
       eyebrow: "Pricing",
-      title: "Start free, then expand when storage and higher volume matter.",
+      title: "Start free, then expand when saved history and repeat analysis matter.",
       lead: "Validate the output quality on the free plan first, then move to Basic or Pro as review operations become more frequent."
     },
     faq: {
@@ -380,10 +478,10 @@ const en: SiteContent = {
     },
     cta: {
       eyebrow: "Start free",
-      title: "Spend less time reading reviews and see the most urgent product issue first.",
+      title: "Spend less time reading reviews and see the most urgent issue first.",
       lead: "Start with a free signup or pull a review CSV from a product URL and continue in the same analytical flow.",
       primary: "Start Free",
-      secondary: "Get CSV by URL"
+      secondary: "Download CSV by URL"
     }
   },
   pricing: {

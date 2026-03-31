@@ -31,9 +31,9 @@ function getChromeConfig(pathname: string): ChromeConfig {
     return {
       label: "Saved report",
       title: "저장된 분석",
-      description: "저장된 리포트를 다시 열어 핵심 요약과 PDF를 확인합니다.",
-      actionHref: "/dashboard/history",
-      actionLabel: "히스토리",
+      description: "저장한 리포트를 다시 열어 요약과 PDF를 확인합니다.",
+      actionHref: "/dashboard",
+      actionLabel: "홈",
       showHeader: true,
       showFooter: false,
       isWorkspace: true
@@ -42,11 +42,11 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
   if (pathname.startsWith("/dashboard/history")) {
     return {
-      label: "History",
-      title: "저장된 리포트",
-      description: "최근 분석 결과를 빠르게 다시 열고 비교합니다.",
-      actionHref: "/dashboard",
-      actionLabel: "새 분석",
+      label: "Dashboard home",
+      title: "홈",
+      description: "지금까지 분석한 리뷰 통계와 이전 결과를 확인합니다.",
+      actionHref: "/dashboard/analyze",
+      actionLabel: "AI분석",
       showHeader: true,
       showFooter: false,
       isWorkspace: true
@@ -56,10 +56,36 @@ function getChromeConfig(pathname: string): ChromeConfig {
   if (pathname === "/dashboard") {
     return {
       label: "Workspace",
-      title: "리뷰 분석 작업면",
-      description: "업로드, 열 매핑, 분석, 결과 확인까지 한 흐름으로 진행합니다.",
-      actionHref: "/dashboard/history",
-      actionLabel: "저장된 리포트",
+      title: "홈",
+      description: "총 리뷰, 부정 비율, 평균 별점, 최근 30일 비중과 저장된 결과 목록을 봅니다.",
+      actionHref: "/dashboard/analyze",
+      actionLabel: "AI분석",
+      showHeader: true,
+      showFooter: false,
+      isWorkspace: true
+    };
+  }
+
+  if (pathname.startsWith("/dashboard/analyze")) {
+    return {
+      label: "Analysis flow",
+      title: "AI분석",
+      description: "업로드, 열 확인, 분석 진행, 결과 확인을 같은 흐름으로 진행합니다.",
+      actionHref: "/dashboard",
+      actionLabel: "홈",
+      showHeader: true,
+      showFooter: false,
+      isWorkspace: true
+    };
+  }
+
+  if (pathname.startsWith("/coupang-csv")) {
+    return {
+      label: "Review download",
+      title: "리뷰 다운",
+      description: "상품 URL에서 리뷰 CSV를 내려받고 같은 흐름으로 분석까지 이어갈 수 있습니다.",
+      actionHref: "/dashboard/analyze",
+      actionLabel: "AI분석",
       showHeader: true,
       showFooter: false,
       isWorkspace: true
@@ -112,7 +138,7 @@ function MarketingHeader({ userEmail }: { userEmail: string | null }) {
               로그인
             </Link>
           )}
-          <Link href="/dashboard" className={buttonStyles({ variant: "primary", size: "sm" })}>
+          <Link href="/dashboard/analyze" className={buttonStyles({ variant: "primary", size: "sm" })}>
             리뷰 분석
           </Link>
         </div>
@@ -130,7 +156,7 @@ function MarketingFooter() {
           <p className="mt-3 max-w-xs leading-7">쿠팡과 스마트스토어 셀러를 위한 AI 리뷰 분석 작업면.</p>
         </div>
         <div className="space-y-3">
-          <Link href="/dashboard" className="block hover:text-[var(--rb-fg)]">분석하기</Link>
+          <Link href="/dashboard/analyze" className="block hover:text-[var(--rb-fg)]">분석하기</Link>
           <Link href="/pricing" className="block hover:text-[var(--rb-fg)]">요금제</Link>
           <Link href="/help" className="block hover:text-[var(--rb-fg)]">사용법</Link>
         </div>
@@ -182,7 +208,7 @@ export default function AppShell({ children, userEmail = null, plan = "free" }: 
     <div className="min-h-screen bg-[var(--rb-bg)] text-[var(--rb-fg)]">
       {!isMobile ? (
         <aside
-          className="fixed inset-y-0 left-0 z-40 w-[296px] border-r border-[color:rgba(255,255,255,0.06)] bg-[rgba(9,13,14,0.92)] px-5 py-6 backdrop-blur-xl"
+          className="fixed inset-y-0 left-0 z-40 w-[296px] border-r border-[color:rgba(222,230,242,0.08)] bg-[rgba(15,20,27,0.9)] px-5 py-6 backdrop-blur-xl"
           aria-label="주요 메뉴"
         >
           <SidebarNav variant="app" plan={plan} userEmail={userEmail} firstLinkRef={drawerFirstLinkRef} onNavigate={() => setOpen(false)} />
@@ -207,7 +233,7 @@ export default function AppShell({ children, userEmail = null, plan = "free" }: 
               <aside
                 id="workspace-navigation"
                 aria-label="주요 메뉴"
-                className="fixed inset-y-0 left-0 z-40 w-[296px] border-r border-[color:rgba(255,255,255,0.06)] bg-[rgba(9,13,14,0.96)] px-5 py-6 backdrop-blur-xl xl:hidden"
+                className="fixed inset-y-0 left-0 z-40 w-[296px] border-r border-[color:rgba(222,230,242,0.08)] bg-[rgba(15,20,27,0.96)] px-5 py-6 backdrop-blur-xl xl:hidden"
               >
                 <SidebarNav variant="app" plan={plan} userEmail={userEmail} firstLinkRef={drawerFirstLinkRef} onNavigate={() => setOpen(false)} />
               </aside>
@@ -217,12 +243,12 @@ export default function AppShell({ children, userEmail = null, plan = "free" }: 
       ) : null}
 
       <div className="xl:pl-[296px]">
-        <ShellContainer className="py-6">
+        <ShellContainer className="py-6 md:py-8">
           {config.showHeader ? (
-            <header className="mb-6 flex flex-col gap-4 rounded-[18px] border border-[color:var(--rb-border)] bg-[var(--rb-surface)] px-5 py-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)] md:flex-row md:items-end md:justify-between">
+            <header className="mb-8 flex flex-col gap-4 border-b border-[color:rgba(222,230,242,0.08)] pb-5 md:flex-row md:items-end md:justify-between">
               <div>
                 {config.label ? <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">{config.label}</p> : null}
-                <h1 className="mt-2 text-[clamp(1.8rem,3vw,2.8rem)] font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">{config.title}</h1>
+                <h1 className="mt-2 text-[clamp(2rem,4vw,3.4rem)] font-semibold leading-[0.98] tracking-[-0.06em] text-[var(--rb-fg)]">{config.title}</h1>
                 {config.description ? <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--rb-muted-strong)]">{config.description}</p> : null}
               </div>
               <div className="flex items-center gap-3">
