@@ -42,18 +42,32 @@ import AnalysisDetailPage from "./page";
 function createSupabaseMock({
   user = { id: "user-1" },
   analysisRow,
+  payloadRow,
+  payloadError,
   reviews = []
 }: {
   user?: { id: string } | null;
   analysisRow?: Record<string, unknown> | null;
+  payloadRow?: Record<string, unknown> | null;
+  payloadError?: { message: string } | null;
   reviews?: Record<string, unknown>[];
 }) {
-  const analysisQuery = {
+  const baseAnalysisQuery = {
     eq: vi.fn(),
     single: vi.fn()
   };
-  analysisQuery.eq.mockReturnValue(analysisQuery);
-  analysisQuery.single.mockResolvedValue({ data: analysisRow, error: analysisRow ? null : { message: "missing" } });
+  baseAnalysisQuery.eq.mockReturnValue(baseAnalysisQuery);
+  baseAnalysisQuery.single.mockResolvedValue({ data: analysisRow, error: analysisRow ? null : { message: "missing" } });
+
+  const payloadAnalysisQuery = {
+    eq: vi.fn(),
+    single: vi.fn()
+  };
+  payloadAnalysisQuery.eq.mockReturnValue(payloadAnalysisQuery);
+  payloadAnalysisQuery.single.mockResolvedValue({
+    data: payloadRow ?? (analysisRow && "result_payload" in analysisRow ? { result_payload: analysisRow.result_payload } : null),
+    error: payloadError ?? null
+  });
 
   const reviewsQuery = {
     eq: vi.fn(),
@@ -71,7 +85,7 @@ function createSupabaseMock({
     from: vi.fn((table: string) => {
       if (table === "analyses") {
         return {
-          select: vi.fn().mockReturnValue(analysisQuery)
+          select: vi.fn((query: string) => (query === "result_payload" ? payloadAnalysisQuery : baseAnalysisQuery))
         };
       }
 
@@ -115,6 +129,8 @@ describe("/dashboard/analysis/[id] page", () => {
             recentness: { hasDates: true, last30Share: 0.5, last90Share: 0.8, last30NegativeRatio: 0.2 }
           },
           suggestions: { detailPageCopy: [], csResponseTemplates: [], faqRecommendations: [], notes: [] },
+        },
+        payloadRow: {
           result_payload: {
             stats: {
               total: 10,
@@ -179,8 +195,8 @@ describe("/dashboard/analysis/[id] page", () => {
             faqRecommendations: ["배송 소요일 FAQ 추가"],
             notes: ["이 저장본은 이전 버전 결과입니다."]
           },
-          result_payload: null
         },
+        payloadRow: { result_payload: null },
         reviews: [
           {
             id: "review-1",
@@ -206,6 +222,61 @@ describe("/dashboard/analysis/[id] page", () => {
     expect(html).toContain("배송 지연 사과 템플릿");
     expect(html).toContain("data-tone=\"legacy-note\"");
     expect(html).toContain("활용 제안");
+  });
+
+  it("result_payload 컬럼이 없어도 legacy fallback을 계속 렌더한다", async () => {
+    mockCreateSupabaseServerComponentClient.mockResolvedValue(
+      createSupabaseMock({
+        analysisRow: {
+          id: "analysis-schema-fallback",
+          created_at: "2026-03-31T00:00:00.000Z",
+          input_filename: "schema-fallback.csv",
+          priority_score: 38.2,
+          stats: {
+            total: 6,
+            negative: 2,
+            negativeRatio: 0.33,
+            avgRating: 3.6,
+            positive: 2,
+            neutral: 2,
+            positiveRatio: 0.33,
+            negativeKeywordsTop10: [{ keyword: "품질", count: 2 }],
+            categoryCounts: { 배송: 0, 품질: 2, 가격: 0, 사용성: 0, CS: 0, 기타: 0 },
+            priorityScore: 38.2,
+            recentness: { hasDates: true, last30Share: 0.5, last90Share: 0.8, last30NegativeRatio: 0.33 }
+          },
+          suggestions: {
+            detailPageCopy: ["제품 상세 설명에 품질 보증 범위를 명시하세요."],
+            csResponseTemplates: [],
+            faqRecommendations: [],
+            notes: ["스키마 호환 저장 테스트"]
+          }
+        },
+        payloadError: {
+          message: "Could not find the 'result_payload' column of 'analyses' in the schema cache"
+        },
+        reviews: [
+          {
+            id: "review-compat-1",
+            reviewed_at: "2026-03-29T00:00:00.000Z",
+            rating: 2,
+            text: "품질이 일정하지 않아요",
+            sentiment: "negative",
+            category: "품질"
+          }
+        ]
+      })
+    );
+
+    const html = renderToStaticMarkup(
+      await AnalysisDetailPage({
+        params: Promise.resolve({ id: "analysis-schema-fallback" })
+      })
+    );
+
+    expect(html).toContain("일부 고급 섹션이 축약 표시됩니다");
+    expect(html).toContain("품질이 일정하지 않아요");
+    expect(html).toContain("제품 상세 설명에 품질 보증 범위를 명시하세요.");
   });
 
   it("redirects unauthenticated users to login", async () => {

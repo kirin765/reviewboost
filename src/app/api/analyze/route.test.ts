@@ -104,6 +104,44 @@ function makeAdminClientForFailedStorage(insertErrorMessage: string) {
   return { from };
 }
 
+function makeAdminClientWithCompatFallback() {
+  const analysisPayloads: Array<Record<string, unknown>> = [];
+  let analysisInsertCount = 0;
+
+  const from = vi.fn((table: string) => {
+    if (table === "analyses") {
+      return {
+        insert: vi.fn((payload: Record<string, unknown>) => {
+          analysisPayloads.push(payload);
+          const currentAttempt = analysisInsertCount++;
+
+          return {
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue(
+                currentAttempt === 0
+                  ? {
+                      data: null,
+                      error: { message: "Could not find the 'result_payload' column of 'analyses' in the schema cache" }
+                    }
+                  : {
+                      data: { id: "analysis-compat-1" },
+                      error: null
+                    }
+              )
+            })
+          };
+        })
+      };
+    }
+
+    return {
+      insert: vi.fn().mockResolvedValue({ error: null })
+    };
+  });
+
+  return { from, analysisPayloads };
+}
+
 function makeSupabaseClientWithAuth(userId = "user-1") {
   return {
     auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: userId, email: "test@example.com" } } }) }
@@ -165,6 +203,42 @@ describe("POST /api/analyze", () => {
     const payload = await res.json();
     expect(payload.meta.storageAttempted).toBe(true);
     expect(payload.meta.storageError).toContain("analyses_insert_admin_failed");
+  });
+
+  it("result_payload 컬럼이 없어도 기본 요약 저장으로 재시도한다", async () => {
+    const admin = makeAdminClientWithCompatFallback();
+
+    mocks.readUploadedCsvText.mockResolvedValue({
+      filename: "reviews.csv",
+      csvText: ["review,rating", "좋아요,5"].join("\n"),
+      form: new FormData()
+    });
+    mocks.runAnalysisPipeline.mockResolvedValue(runResponsePayload());
+    mocks.resolvePlanTierForUser.mockResolvedValue("basic");
+    mocks.monthlyLimitForPlan.mockReturnValue(null);
+    mocks.getCapabilitiesBase.mockReturnValue({ supabaseConfigured: true });
+    mocks.devForcedAnalysisMode.mockReturnValue("auto" as never);
+    mocks.devAllowAdvancedAiBypass.mockReturnValue(false);
+    mocks.getGatesForPlan.mockReturnValue({ allowLLM: true, maxReviewsPerAnalysis: 1000 } as never);
+    mocks.getSupabaseAdminClient.mockReturnValue(admin);
+    mocks.createSupabaseServerActionClient.mockReturnValue(makeSupabaseClientWithAuth());
+
+    const res = await POST(
+      new Request("https://reviewboost.app/api/analyze", {
+        method: "POST",
+        headers: { origin: "https://reviewboost.app" }
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const payload = await res.json();
+    expect(payload.meta.storageAttempted).toBe(true);
+    expect(payload.meta.stored).toBe(true);
+    expect(payload.meta.analysisId).toBe("analysis-compat-1");
+    expect(payload.meta.storageWarning).toContain("기본 요약만 저장되었습니다");
+    expect(admin.analysisPayloads).toHaveLength(2);
+    expect(admin.analysisPayloads[0]).toHaveProperty("result_payload");
+    expect(admin.analysisPayloads[1]).not.toHaveProperty("result_payload");
   });
 
   it("analysis pipeline fallback meta가 응답에 유지된다", async () => {

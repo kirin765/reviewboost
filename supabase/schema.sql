@@ -10,6 +10,7 @@ create table if not exists public.analyses (
   input_filename text null,
   stats jsonb not null,
   suggestions jsonb not null,
+  result_payload jsonb null,
   priority_score numeric not null default 0
 );
 
@@ -74,6 +75,7 @@ alter table public.subscriptions add column if not exists current_period_end tim
 alter table public.subscriptions add column if not exists cancel_at_period_end boolean not null default false;
 alter table public.subscriptions add column if not exists created_at timestamptz not null default now();
 alter table public.subscriptions add column if not exists updated_at timestamptz not null default now();
+alter table public.analyses add column if not exists result_payload jsonb null;
 create unique index if not exists subscriptions_paddle_subscription_id_uniq on public.subscriptions (paddle_subscription_id) where paddle_subscription_id is not null;
 
 -- Backfill-friendly constraints: only enforce NOT NULL after legacy rows are populated.
