@@ -610,7 +610,7 @@ export default function HomePageContent() {
                       </div>
                       {plan.recommended ? (
                         <span className="rounded-full border border-[color:rgba(107,210,193,0.22)] bg-[rgba(107,210,193,0.1)] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[var(--rb-accent)]">
-                          Recommended
+                          추천
                         </span>
                       ) : null}
                     </div>

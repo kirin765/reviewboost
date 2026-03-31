@@ -13,7 +13,7 @@ async function renderPricingPage(searchParams?: { billing?: string; payment_succ
 describe("/pricing page billing hints", () => {
   it("emphasizes the recommended Basic plan", async () => {
     const html = await renderPricingPage();
-    expect(html).toContain("Recommended");
+    expect(html).toContain("추천");
     expect(html).toContain("Basic");
   });
 

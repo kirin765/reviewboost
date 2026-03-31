@@ -203,9 +203,26 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 
 - 테이블 정의: `supabase/schema.sql`
   - 포함: analyses/reviews 테이블 + RLS 정책(본인 데이터만 조회/삭제)
-- 운영 DB 스키마 변경 시에는 `supabase/migrations`도 함께 적용하세요.
-  - 특히 저장된 분석 상세 화면을 쓰려면 `supabase/migrations/20260331102000_add_analysis_result_payload.sql`이 운영 DB에 반영되어 있어야 합니다.
+- 신규 환경:
+  - `supabase/schema.sql` 전체를 적용하면 됩니다.
+- 기존 운영 환경 업그레이드:
+  - 저장된 분석 상세 화면을 정상적으로 쓰려면 `public.analyses.result_payload jsonb` 컬럼이 있어야 합니다.
+  - Supabase SQL Editor에서 `supabase/fix_missing_analysis_result_payload.sql`을 실행하세요.
+  - migration 기반으로 관리 중이면 `supabase/migrations/20260331102000_add_analysis_result_payload.sql`을 적용해도 됩니다.
+- 변경 내용:
+  - `public.analyses.result_payload jsonb null`
+- 확인 방법:
+  - SQL Editor에서 아래 조회 결과에 `result_payload`가 나오면 반영 완료입니다.
+    ```sql
+    select column_name, data_type, is_nullable
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'analyses'
+      and column_name = 'result_payload';
+    ```
+- 참고:
   - 미적용 상태에서도 앱은 기본 요약 저장으로 폴백하지만, 확장 상세(`result_payload`)는 저장되지 않습니다.
+  - 컬럼 적용 후 생성되는 새 분석부터 상세 결과가 함께 저장됩니다.
 
 ## 설정 파일(.env) 운영 가이드
 

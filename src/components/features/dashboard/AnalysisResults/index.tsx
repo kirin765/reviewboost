@@ -18,6 +18,11 @@ interface AnalysisResultsProps {
   headerDescription?: string;
   secondaryHref?: string;
   secondaryLabel?: string;
+  resultContext?: {
+    source: "live" | "saved_full" | "saved_legacy";
+    legacyNotice?: string;
+    unavailableSections?: ReadonlyArray<"simulation" | "positiveKeywords">;
+  };
 }
 
 type ResultTone = "danger" | "warning" | "info" | "accent" | "neutral";
@@ -201,7 +206,8 @@ export default function AnalysisResults({
   downloadHref,
   headerDescription,
   secondaryHref,
-  secondaryLabel
+  secondaryLabel,
+  resultContext
 }: AnalysisResultsProps) {
   const gates = useGates();
   const summaryRef = useRef<HTMLDivElement>(null);
@@ -221,8 +227,12 @@ export default function AnalysisResults({
   }, [result]);
 
   const storageEnabled = caps?.supabaseConfigured === true;
-  const positiveKeywordsVisible = gates.showPositiveKeywords && (result.positiveKeywords?.length ?? 0) > 0;
-  const simulationsVisible = gates.showRatingSimulation && view.simulations.length > 0;
+  const unavailableSections = new Set(resultContext?.unavailableSections ?? []);
+  const positiveKeywordsEnabled = gates.showPositiveKeywords;
+  const positiveKeywordsAvailable = !unavailableSections.has("positiveKeywords");
+  const positiveKeywordItems = result.positiveKeywords?.slice(0, 8) ?? [];
+  const simulationsEnabled = gates.showRatingSimulation;
+  const simulationsAvailable = !unavailableSections.has("simulation");
   const resolvedHeaderDescription =
     headerDescription ?? `${result.meta.stored ? "저장된 리포트" : "이번 분석 결과"} · ${storageEnabled ? `${caps?.planLabel ?? "계정"} 플랜` : "게스트 모드"}`;
   const resolvedSecondaryHref = secondaryHref ?? (storageEnabled ? "/dashboard" : "/dashboard/analyze");
@@ -272,6 +282,16 @@ export default function AnalysisResults({
             <div className={`h-1.5 w-12 rounded-full ${storageNotice.tone.bar}`} aria-hidden="true" />
             <p className={`mt-4 text-[11px] uppercase tracking-[0.2em] ${storageNotice.tone.label}`}>{storageNotice.title}</p>
             <p className="mt-2 text-sm leading-7 text-[var(--rb-muted-strong)]">{storageNotice.message}</p>
+          </div>
+        ) : null}
+
+        {resultContext?.source === "saved_legacy" ? (
+          <div className={`mt-5 rounded-[16px] border px-4 py-4 ${TONE_STYLES.info.panel}`}>
+            <div className={`h-1.5 w-12 rounded-full ${TONE_STYLES.info.bar}`} aria-hidden="true" />
+            <p className={`mt-4 text-[11px] uppercase tracking-[0.2em] ${TONE_STYLES.info.label}`}>이전 형식 저장본</p>
+            <p className="mt-2 text-sm leading-7 text-[var(--rb-muted-strong)]">
+              {resultContext.legacyNotice ?? "이 저장본은 이전 형식으로 저장되어 일부 섹션은 추정값 또는 비어 있는 상태로 표시됩니다."}
+            </p>
           </div>
         ) : null}
 
@@ -441,7 +461,7 @@ export default function AnalysisResults({
 
             <TonedSection tone="info" eyebrow="개선 시뮬레이션" title="문제를 해결하면 바뀌는 수치" dataTone="simulation">
               <div className="grid gap-4">
-                {simulationsVisible ? (
+                {simulationsAvailable && simulationsEnabled && view.simulations.length > 0 ? (
                   view.simulations.map((simulation) => (
                     <div
                       key={simulation.label}
@@ -459,16 +479,20 @@ export default function AnalysisResults({
                       </div>
                     </div>
                   ))
-                ) : (
+                ) : !simulationsAvailable ? (
+                  <p className="text-sm text-[var(--rb-muted)]">이 저장본에는 해당 데이터가 없습니다.</p>
+                ) : !simulationsEnabled ? (
                   <p className="text-sm text-[var(--rb-muted)]">시뮬레이션은 Pro 플랜에서 제공됩니다.</p>
+                ) : (
+                  <p className="text-sm text-[var(--rb-muted)]">시뮬레이션 데이터가 없습니다.</p>
                 )}
               </div>
             </TonedSection>
 
             <TonedSection tone="neutral" eyebrow="긍정 키워드" title="유지해야 할 강점" dataTone="positive">
               <div className="space-y-3">
-                {positiveKeywordsVisible ? (
-                  result.positiveKeywords?.slice(0, 8).map((item) => (
+                {positiveKeywordsAvailable && positiveKeywordsEnabled && positiveKeywordItems.length > 0 ? (
+                  positiveKeywordItems.map((item) => (
                     <div
                       key={item.keyword}
                       className="flex items-center justify-between gap-4 rounded-[14px] border border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm"
@@ -477,8 +501,12 @@ export default function AnalysisResults({
                       <span className="text-[var(--rb-muted)]">{item.count}건</span>
                     </div>
                   ))
-                ) : (
+                ) : !positiveKeywordsAvailable ? (
+                  <p className="text-sm text-[var(--rb-muted)]">이 저장본에는 해당 데이터가 없습니다.</p>
+                ) : !positiveKeywordsEnabled ? (
                   <p className="text-sm text-[var(--rb-muted)]">긍정 키워드는 Pro 플랜에서 제공됩니다.</p>
+                ) : (
+                  <p className="text-sm text-[var(--rb-muted)]">긍정 키워드가 없습니다.</p>
                 )}
               </div>
             </TonedSection>
