@@ -1,203 +1,150 @@
-/** @vitest-environment jsdom */
-
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { CsvPreview as CsvPreviewType } from "@/lib/csv";
-import type { DashboardAnalysisResult } from "@/lib/api/analysis";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 
-const previewData = {
-  columns: ["content", "rating", "date"],
-  headerMode: "header" as const,
-  inferred: {
-    headerMode: "header" as const,
-    textCol: "content",
-    textColSource: "explicit" as const,
-    ratingCol: "rating",
-    dateCol: "date"
-  },
-  sampleRows: [
-    { content: "빠르고 좋아요", rating: "5", date: "2026-02-22" }
-  ],
-  totalRows: 1,
-  warnings: []
-};
+const { mockCreateSupabaseServerComponentClient } = vi.hoisted(() => ({
+  mockCreateSupabaseServerComponentClient: vi.fn()
+}));
 
-const analyzeResult: DashboardAnalysisResult = {
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServerComponentClient: mockCreateSupabaseServerComponentClient
+}));
+
+import DashboardHomePage from "./page";
+
+type DashboardRow = {
+  id: string;
+  created_at: string;
+  input_filename: string | null;
+  priority_score: number;
   stats: {
-    total: 12,
-    positive: 7,
-    negative: 2,
-    neutral: 3,
-    positiveRatio: 0.58,
-    negativeRatio: 0.17,
-    avgRating: 4.4,
-    negativeKeywordsTop10: [],
-    categoryCounts: {
-      배송: 1,
-      품질: 2,
-      가격: 0,
-      사용성: 0,
-      CS: 0,
-      기타: 0
-    },
-    priorityScore: 54.2,
+    total: number;
+    negative: number;
+    negativeRatio: number;
+    avgRating: number | null;
     recentness: {
-      hasDates: true,
-      last30Share: 0.27,
-      last90Share: 0.51,
-      last30NegativeRatio: 0.09
-    }
-  },
-  suggestions: {
-    detailPageCopy: [],
-    csResponseTemplates: [],
-    faqRecommendations: [],
-    notes: []
-  },
-  urgentReviews: [],
-  priorityMatrix: [],
-  ratingSimulation: { currentAvg: 4.7, scenarios: [] },
-  actionItems: [],
-  classified: [],
-  meta: {
-    filename: "sample.csv",
-    stored: false,
-    storageAttempted: true
-  }
+      hasDates: boolean;
+      last30Share: number;
+    };
+  } | null;
 };
 
-const capabilities = {
-  supabaseConfigured: false,
-  openaiConfigured: true,
-  plan: "free",
-  planLabel: "Free",
-  monthlyLimit: 50,
-  monthlyUsed: 1,
-  aiAdvancedAvailable: false
-};
+function createSupabaseMock({
+  user,
+  rows = [],
+  error = null
+}: {
+  user: { id: string } | null;
+  rows?: DashboardRow[];
+  error?: unknown;
+}) {
+  const query = {
+    eq: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn()
+  };
 
-vi.mock("@/components/Dashboard/DashboardTabs", () => ({
-  default: ({
-    activeTab,
-    onChange
-  }: {
-    activeTab: "analysis" | "results";
-    onChange: (next: "analysis" | "results") => void;
-  }) => (
-    <div role="tablist" aria-label="분석 단계 탭">
-      <button type="button" role="tab" aria-selected={activeTab === "analysis"} onClick={() => onChange("analysis")}>
-        분석하기
-      </button>
-      <button type="button" role="tab" aria-selected={activeTab === "results"} onClick={() => onChange("results")}>
-        결과 보기
-      </button>
-    </div>
-  )
-}));
+  query.eq.mockReturnValue(query);
+  query.order.mockReturnValue(query);
+  query.limit.mockResolvedValue({ data: rows, error });
 
-vi.mock("@/components/features/dashboard/AnalysisPanel", () => ({
-  default: ({
-    file,
-    busy,
-    preview,
-    onFileSelect,
-    onAnalyze
-  }: {
-    file: File | null;
-    busy: boolean;
-    preview: CsvPreviewType | null;
-    onFileSelect: (file: File | null) => void;
-    onAnalyze: () => void;
-  }) => (
-    <section aria-label="분석 패널">
-      <label htmlFor="test-csv-file">CSV 파일 업로드</label>
-      <input
-        id="test-csv-file"
-        type="file"
-        disabled={busy}
-        onChange={(e) => onFileSelect(e.target.files?.[0] ?? null)}
-      />
-      <button type="button" disabled={!file || busy} onClick={onAnalyze}>
-        {preview ? "분석 시작" : "다음: 미리보기"}
-      </button>
-    </section>
-  )
-}));
-
-vi.mock("@/components/features/dashboard/AnalysisResults", () => ({
-  default: () => <div>분석 결과 표시</div>
-}));
-
-import DashboardPage from "./page";
-
-function jsonResponse<T>(payload: T, status = 200) {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
+  return {
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user } })
+    },
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue(query)
+    })
+  };
 }
 
-function buildMockedFetch() {
-  const mockedFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = String(input);
-    if (url === "/api/capabilities") {
-      return jsonResponse(capabilities);
-    }
-
-    if (url === "/api/preview" && init?.method === "POST") {
-      return jsonResponse(previewData);
-    }
-
-    if (url === "/api/analyze" && init?.method === "POST") {
-      return jsonResponse(analyzeResult, 200);
-    }
-
-    return new Response("not found", { status: 404 });
-  });
-
-  vi.stubGlobal("fetch", mockedFetch);
-  return mockedFetch;
+async function renderDashboardHomePage() {
+  const element = await DashboardHomePage();
+  return renderToStaticMarkup(element);
 }
 
-type FetchCall = [RequestInfo | URL, RequestInit | undefined];
-
-describe("DashboardPage 분석 파이프라인", () => {
+describe("/dashboard home page", () => {
   beforeEach(() => {
-    buildMockedFetch();
+    vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  it("renders aggregate metrics and previous analysis rows", async () => {
+    const rows: DashboardRow[] = [
+      {
+        id: "analysis-1",
+        created_at: "2026-03-30T09:00:00.000Z",
+        input_filename: "march_reviews.csv",
+        priority_score: 61.4,
+        stats: {
+          total: 100,
+          negative: 30,
+          negativeRatio: 0.3,
+          avgRating: 3.5,
+          recentness: { hasDates: true, last30Share: 0.8 }
+        }
+      },
+      {
+        id: "analysis-2",
+        created_at: "2026-03-29T09:00:00.000Z",
+        input_filename: "april_reviews.csv",
+        priority_score: 42.1,
+        stats: {
+          total: 50,
+          negative: 10,
+          negativeRatio: 0.2,
+          avgRating: 4.1,
+          recentness: { hasDates: true, last30Share: 0.4 }
+        }
+      }
+    ];
+
+    mockCreateSupabaseServerComponentClient.mockResolvedValue(
+      createSupabaseMock({
+        user: { id: "user-1" },
+        rows
+      })
+    );
+
+    const html = await renderDashboardHomePage();
+
+    expect(html).toContain("총 리뷰");
+    expect(html).toContain(">150<");
+    expect(html).toContain("부정비율");
+    expect(html).toContain(">27%<");
+    expect(html).toContain("평균 별점");
+    expect(html).toContain(">3.70 / 5<");
+    expect(html).toContain("최근 30일 비중");
+    expect(html).toContain(">67%<");
+    expect(html).toContain("이전 분석 결과");
+    expect(html).toContain("march_reviews.csv");
+    expect(html).toContain("Priority 61.4");
+    expect(html).toContain("href=\"/dashboard/analysis/analysis-1\"");
   });
 
-  it("파일 업로드 후 미리보기 -> 분석까지 상태가 전환된다", async () => {
-    render(<DashboardPage />);
+  it("renders guest empty state without redirecting", async () => {
+    mockCreateSupabaseServerComponentClient.mockResolvedValue(
+      createSupabaseMock({
+        user: null
+      })
+    );
 
-    expect(screen.queryByText("리뷰 CSV를 업로드하고 개선 액션까지 바로 확인하세요.")).toBeNull();
-    expect(screen.queryByText("현재 워크스페이스 안내")).toBeNull();
+    const html = await renderDashboardHomePage();
 
-    const file = new File(["content,rating,date\n좋아요,5,2026-02-22"], "sample.csv", {
-      type: "text/csv"
-    });
+    expect(html).toContain("여기도 채워주세요");
+    expect(html).toContain("로그인하면 지금까지 분석한 리뷰의 누적 통계와 이전 결과 목록을 홈에서 바로 볼 수 있습니다.");
+  });
 
-    const fileInput = screen.getByLabelText("CSV 파일 업로드");
-    fireEvent.change(fileInput, { target: { files: [file] } });
+  it("renders load failure state when saved analyses cannot be fetched", async () => {
+    mockCreateSupabaseServerComponentClient.mockResolvedValue(
+      createSupabaseMock({
+        user: { id: "user-1" },
+        error: { message: "db failure" }
+      })
+    );
 
-    const previewButton = screen.getByRole("button", { name: "다음: 미리보기" });
-    fireEvent.click(previewButton);
+    const html = await renderDashboardHomePage();
 
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: "분석 시작" })).toBeTruthy();
-      expect((global.fetch as unknown as { mock: { calls: FetchCall[] } }).mock.calls.some(([url]) => String(url).includes("/api/preview"))).toBe(true);
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "분석 시작" }));
-
-    expect(await screen.findByText("분석 결과 표시")).toBeTruthy();
-    expect(screen.getByRole("tab", { name: "결과 보기" }).getAttribute("aria-selected")).toBe("true");
-    expect((global.fetch as unknown as { mock: { calls: FetchCall[] } }).mock.calls.some(([url]) => String(url).includes("/api/analyze"))).toBe(true);
+    expect(html).toContain("문제가 발생했어요");
+    expect(html).toContain("저장된 분석을 불러오지 못했습니다.");
   });
 });

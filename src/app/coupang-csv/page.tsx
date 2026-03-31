@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function CoupangCsvPage() {
   return (
     <main className="pageMain pb-8 pt-8 md:pt-12">
-      <ShellContainer className="max-w-[1080px]">
+      <ShellContainer className="max-w-[960px]">
         <CoupangCsvDownloadTool />
       </ShellContainer>
     </main>

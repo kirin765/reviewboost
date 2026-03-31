@@ -16,7 +16,7 @@ describe("HomePageContent", () => {
 
     expect(screen.getByRole("heading", { name: "리뷰에서 상품의 문제를 찾아 매출을 개선하세요" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "리뷰 분석" })).toBeTruthy();
-    expect(screen.getAllByRole("link", { name: "URL로 CSV 받기" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: "URL을 통한 CSV 다운로드" }).length).toBeGreaterThan(0);
     expect(Array.from(document.querySelectorAll("[data-home-section]")).map((node) => node.getAttribute("data-home-section"))).toEqual([
       "hero",
       "problem",

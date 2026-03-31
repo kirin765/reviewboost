@@ -1,210 +1,160 @@
-"use client";
-
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
-import type { Capabilities } from "@/lib/capabilities";
-import FeedbackModal from "@/components/FeedbackModal";
-import { PlanProvider } from "@/contexts/PlanContext";
-import type { PlanTier } from "@/types/user";
-import DashboardTabs, { type DashboardTab } from "@/components/Dashboard/DashboardTabs";
-import DashboardAnalysisPanel from "@/components/features/dashboard/AnalysisPanel";
+import React from "react";
+import Link from "next/link";
 import { buttonStyles } from "@/components/ui/Button";
-import { StatePanel } from "@/components/ui/Primitives";
-import { useReviewAnalysis } from "@/hooks/useReviewAnalysis";
-import { fetchCapabilities } from "@/lib/api/user";
-import { getErrorMessage } from "@/types/common";
+import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
+import { mapDashboardHomeView, type DashboardHomeAnalysisRow } from "@/lib/dashboard-home-view";
 
-const LazyAnalysisResults = dynamic(async () => import("@/components/features/dashboard/AnalysisResults"), {
-  ssr: false,
-  loading: () => <p className="muted">분석 결과를 불러오는 중입니다...</p>
-});
+export const dynamic = "force-dynamic";
 
-function DashboardContent({ caps }: { caps: Capabilities | null }) {
-  const [activeTab, setActiveTab] = useState<DashboardTab>("analysis");
-  const [localError, setLocalError] = useState<string | null>(null);
-  const [analysisDoneNotice, setAnalysisDoneNotice] = useState<string | null>(null);
+function formatMetricValue(value: number | null, kind: "count" | "percent" | "rating") {
+  if (kind === "count") return `${value ?? 0}`;
+  if (value === null || !Number.isFinite(value)) return "-";
+  if (kind === "percent") return `${Math.round(value * 100)}%`;
+  return `${value.toFixed(2)} / 5`;
+}
 
-  const { state, actions, modal } = useReviewAnalysis({
-    onNotice: setAnalysisDoneNotice
-  });
-
-  const step = useMemo(() => state.step, [state.step]);
-  const shownError = localError ?? state.error;
-
-  useEffect(() => {
-    if (!state.result) return;
-
-    if (state.result.stats.total === 0) {
-      setAnalysisDoneNotice("분석 결과가 없습니다. 데이터 행을 확인해주세요.");
-      return;
-    }
-
-    if (!caps?.supabaseConfigured) {
-      setAnalysisDoneNotice("분석이 완료되었습니다. 저장 기능이 비활성 상태여서 PDF로만 보관 가능합니다.");
-      return;
-    }
-
-    setAnalysisDoneNotice(null);
-  }, [caps?.supabaseConfigured, state.result]);
-
-  useEffect(() => {
-    if (state.result) {
-      setActiveTab("results");
-    }
-  }, [state.result]);
-
-  useEffect(() => {
-    if (!modal.open) return;
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") actions.closeCellModal();
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [actions, modal.open]);
-
-  const handleFileSelect = useCallback(
-    (nextFile: File | null) => {
-      setLocalError(null);
-      actions.onReset();
-      actions.setFile(nextFile);
-    },
-    [actions]
-  );
-
-  const handleAnalyze = useCallback(async () => {
-    if (!state.file) {
-      setLocalError("파일을 먼저 선택해주세요.");
-      return;
-    }
-
-    setLocalError(null);
-    try {
-      await actions.onAnalyze();
-    } catch (error: unknown) {
-      setLocalError(getErrorMessage(error));
-    }
-  }, [actions, state.file]);
-
-  const handleDownloadPdf = useCallback(async () => {
-    const blob = await actions.onDownloadPdf();
-    if (!blob) return;
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `reviewboost-report-${Date.now()}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [actions]);
-
-  const handleCellClick = useCallback(
-    (col: string, value: string) => {
-      actions.onCellClick(col, value);
-    },
-    [actions]
-  );
-
+function EmptyHomeState({ title, description }: { title: string; description: string }) {
   return (
-    <main className="pageMain workspacePage">
-      {shownError ? (
-        <FeedbackModal
-          title="문제가 발생했어요"
-          message={shownError}
-          tone="error"
-          onClose={() => setLocalError(null)}
-          actions={[
-            { label: "다시 시도", onClick: handleAnalyze, variant: "primary" },
-            { label: "새로 시작", onClick: actions.onReset }
-          ]}
-        />
-      ) : null}
-      {!shownError && analysisDoneNotice ? (
-        <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
-      ) : null}
-
-      <DashboardTabs activeTab={activeTab} onChange={(next) => setActiveTab(next)} />
-
-      <div className="workspaceSurface">
-        {activeTab === "analysis" ? (
-          <DashboardAnalysisPanel
-            file={state.file}
-            busy={state.busy}
-            preview={state.preview}
-            caps={caps}
-            step={step}
-            analysisStage={state.analysisStage}
-            textCol={state.textCol}
-            ratingCol={state.ratingCol}
-            dateCol={state.dateCol}
-            showAllPreviewCols={state.showAllPreviewCols}
-            cellModal={modal.payload}
-            onFileSelect={handleFileSelect}
-            onReset={actions.onReset}
-            onSample={actions.onSample}
-            onAnalyze={handleAnalyze}
-            onTextColChange={actions.setTextCol}
-            onRatingColChange={actions.setRatingCol}
-            onDateColChange={actions.setDateCol}
-            onTogglePreviewCols={() => actions.setShowAllPreviewCols((value) => !value)}
-            onCellClick={handleCellClick}
-            onCellModalClose={actions.closeCellModal}
-          />
-        ) : state.result ? (
-          <section id="results-panel" role="tabpanel" aria-labelledby="results-tab">
-            <LazyAnalysisResults result={state.result} caps={caps} busy={state.busy} onDownloadPdf={handleDownloadPdf} />
-          </section>
-        ) : (
-          <section id="results-panel" role="tabpanel" aria-labelledby="results-tab">
-            <StatePanel
-              title="여기도 채워주세요"
-              description="CSV를 업로드하고 분석을 실행하면 핵심 지표, 우선순위, 액션 아이템이 이곳에 표시됩니다."
-              actions={
-                <button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => setActiveTab("analysis")} aria-label="분석하기 탭으로 이동">
-                  분석하기로 이동
-                </button>
-              }
-            />
-          </section>
-        )}
+    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(19,26,34,0.94),rgba(14,20,28,0.92))] px-5 py-7 md:px-7">
+      <h2 className="text-2xl font-semibold tracking-[-0.04em] text-white">{title}</h2>
+      <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--rb-muted-strong)]">{description}</p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link href="/dashboard/analyze" className={buttonStyles({ variant: "primary" })}>
+          AI분석 시작
+        </Link>
+        <Link href="/coupang-csv" className={buttonStyles({ variant: "ghost" })}>
+          URL로 CSV 받기
+        </Link>
       </div>
-    </main>
+    </section>
   );
 }
 
-export default function DashboardPage() {
-  const [caps, setCaps] = useState<Capabilities | null>(null);
-  const [plan, setPlan] = useState<PlanTier>("free");
+export default async function DashboardHomePage() {
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerComponentClient>> | null = null;
 
-  useEffect(() => {
-    let cancelled = false;
+  try {
+    supabase = await createSupabaseServerComponentClient();
+  } catch {
+    supabase = null;
+  }
 
-    async function loadCapabilities() {
-      try {
-        const next = await fetchCapabilities();
-        if (!cancelled) {
-          setCaps(next);
-          setPlan(next.plan);
-        }
-      } catch {
-        if (!cancelled) {
-          setCaps(null);
-          setPlan("free");
-        }
-      }
-    }
+  if (!supabase) {
+    return (
+      <main className="pageMain space-y-8">
+        <section className="grid gap-4 rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(19,26,34,0.94),rgba(14,20,28,0.92))] px-5 py-6 md:grid-cols-4 md:px-7">
+          {[
+            { label: "총 리뷰", value: "0" },
+            { label: "부정비율", value: "-" },
+            { label: "평균 별점", value: "-" },
+            { label: "최근 30일 비중", value: "-" }
+          ].map((item) => (
+            <div key={item.label}>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--rb-muted)]">{item.label}</p>
+              <strong className="mt-3 block text-[clamp(1.8rem,3vw,2.6rem)] font-semibold tracking-[-0.05em] text-white">{item.value}</strong>
+            </div>
+          ))}
+        </section>
+        <EmptyHomeState title="여기도 채워주세요" description="저장 기능이 비활성화되어 있어 누적 홈 통계는 표시되지 않습니다. 분석은 계속 진행할 수 있습니다." />
+      </main>
+    );
+  }
 
-    loadCapabilities();
+  const { data: userData } = await supabase.auth.getUser();
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  if (!userData.user) {
+    return (
+      <main className="pageMain space-y-8">
+        <section className="grid gap-4 rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(19,26,34,0.94),rgba(14,20,28,0.92))] px-5 py-6 md:grid-cols-4 md:px-7">
+          {[
+            { label: "총 리뷰", value: "0" },
+            { label: "부정비율", value: "-" },
+            { label: "평균 별점", value: "-" },
+            { label: "최근 30일 비중", value: "-" }
+          ].map((item) => (
+            <div key={item.label}>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--rb-muted)]">{item.label}</p>
+              <strong className="mt-3 block text-[clamp(1.8rem,3vw,2.6rem)] font-semibold tracking-[-0.05em] text-white">{item.value}</strong>
+            </div>
+          ))}
+        </section>
+        <EmptyHomeState title="여기도 채워주세요" description="로그인하면 지금까지 분석한 리뷰의 누적 통계와 이전 결과 목록을 홈에서 바로 볼 수 있습니다." />
+      </main>
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("analyses")
+    .select("id, created_at, input_filename, priority_score, stats")
+    .eq("user_id", userData.user.id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    return (
+      <main className="pageMain">
+        <EmptyHomeState title="문제가 발생했어요" description="저장된 분석을 불러오지 못했습니다. 잠시 후 다시 시도하거나 바로 새 분석을 시작해 주세요." />
+      </main>
+    );
+  }
+
+  const view = mapDashboardHomeView((data ?? []) as DashboardHomeAnalysisRow[]);
+  const metrics = [
+    { label: "총 리뷰", value: formatMetricValue(view.totalReviews, "count") },
+    { label: "부정비율", value: formatMetricValue(view.negativeRate, "percent") },
+    { label: "평균 별점", value: formatMetricValue(view.averageRating, "rating") },
+    { label: "최근 30일 비중", value: formatMetricValue(view.recent30DayWeight, "percent") }
+  ];
 
   return (
-    <PlanProvider plan={plan}>
-      <DashboardContent caps={caps} />
-    </PlanProvider>
+    <main className="pageMain space-y-8">
+      <section className="grid gap-4 rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(19,26,34,0.94),rgba(14,20,28,0.92))] px-5 py-6 md:grid-cols-4 md:px-7">
+        {metrics.map((item) => (
+          <div key={item.label}>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--rb-muted)]">{item.label}</p>
+            <strong className="mt-3 block text-[clamp(1.8rem,3vw,2.8rem)] font-semibold tracking-[-0.05em] text-white">{item.value}</strong>
+          </div>
+        ))}
+      </section>
+
+      <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(19,26,34,0.94),rgba(14,20,28,0.92))] px-5 py-6 md:px-7">
+        <div className="flex flex-col gap-4 border-b border-[color:rgba(222,230,242,0.08)] pb-5 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Previous analyses</p>
+            <h2 className="mt-3 text-[clamp(1.8rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-white">이전 분석 결과</h2>
+          </div>
+          <Link href="/dashboard/analyze" className={buttonStyles({ variant: "secondary" })}>
+            새 분석
+          </Link>
+        </div>
+
+        {view.recentReports.length === 0 ? (
+          <p className="mt-6 text-sm leading-7 text-[var(--rb-muted-strong)]">
+            저장된 분석이 없습니다. 먼저 AI분석 화면에서 CSV를 업로드해 첫 결과를 만들어 주세요.
+          </p>
+        ) : (
+          <div className="mt-4 border-t border-[color:rgba(222,230,242,0.08)]">
+            {view.recentReports.map((report) => (
+              <Link
+                key={report.id}
+                href={report.href}
+                className="grid gap-3 border-b border-[color:rgba(222,230,242,0.08)] py-5 transition hover:bg-[rgba(255,255,255,0.015)] md:grid-cols-[minmax(0,1.1fr)_120px_120px_120px_40px] md:items-center"
+              >
+                <div>
+                  <strong className="block text-base font-semibold tracking-[-0.03em] text-white">{report.title}</strong>
+                  <span className="mt-1 block text-xs text-[var(--rb-muted)]">{report.createdLabel}</span>
+                </div>
+                <div className="text-sm text-[var(--rb-muted-strong)]">{report.totalReviewsLabel}</div>
+                <div className="text-sm text-[var(--rb-muted-strong)]">{report.negativeRateLabel}</div>
+                <div className="text-sm text-[var(--rb-muted-strong)]">Priority {report.priorityLabel}</div>
+                <span className="text-right text-2xl text-[var(--rb-muted)]" aria-hidden="true">
+                  →
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
   );
 }

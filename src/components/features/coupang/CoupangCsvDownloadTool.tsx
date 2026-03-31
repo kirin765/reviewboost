@@ -2,7 +2,6 @@
 
 import React, { useCallback, useState } from "react";
 import { buttonStyles } from "@/components/ui/Button";
-import { SectionHeader, Surface } from "@/components/ui/Primitives";
 import { downloadCoupangCsv } from "@/lib/api/coupang";
 import { useTranslation } from "@/lib/i18n";
 import { getErrorMessage } from "@/types/common";
@@ -40,45 +39,43 @@ export default function CoupangCsvDownloadTool() {
   }, [productUrl, t]);
 
   return (
-    <Surface className="px-6 py-7 md:px-8 md:py-9">
-      <SectionHeader eyebrow="CSV tool" title={t("coupangCsv.title")} description={t("coupangCsv.lead")} />
+    <section className="max-w-[820px] py-4">
+      <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">Review download</p>
+      <h1 className="mt-4 max-w-3xl text-[clamp(2.5rem,5vw,4.6rem)] font-semibold leading-[0.96] tracking-[-0.07em] text-white">
+        {t("coupangCsv.title")}
+      </h1>
+      <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--rb-muted-strong)]">{t("coupangCsv.lead")}</p>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div>
-          <label className="mb-3 block text-sm text-[var(--rb-muted-strong)]" htmlFor="coupangProductUrl">
-            {t("coupangCsv.inputLabel")}
-          </label>
-          <input
-            id="coupangProductUrl"
-            className="input"
-            value={productUrl}
-            onChange={(event) => setProductUrl(event.target.value)}
-            placeholder={t("coupangCsv.inputPlaceholder")}
-            disabled={busy}
-          />
+      <div className="mt-12">
+        <label className="mb-3 block text-sm text-[var(--rb-muted-strong)]" htmlFor="coupangProductUrl">
+          {t("coupangCsv.inputLabel")}
+        </label>
+        <input
+          id="coupangProductUrl"
+          className="input"
+          value={productUrl}
+          onChange={(event) => setProductUrl(event.target.value)}
+          placeholder={t("coupangCsv.inputPlaceholder")}
+          disabled={busy}
+        />
 
-          <div className="mt-5 flex flex-wrap gap-3">
-            <button type="button" className={buttonStyles({ variant: "primary" })} onClick={onDownload} disabled={busy}>
-              {busy ? t("coupangCsv.downloading") : t("coupangCsv.downloadButton")}
-            </button>
-            <a className={buttonStyles({ variant: "secondary" })} href="/dashboard">
-              {t("coupangCsv.goDashboard")}
-            </a>
-          </div>
-
-          {error ? <p className="mt-4 text-sm text-[var(--rb-danger)]">{error}</p> : null}
-          {!error && notice ? <p className="mt-4 text-sm text-[var(--rb-accent)]">{notice}</p> : null}
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button type="button" className={buttonStyles({ variant: "primary" })} onClick={onDownload} disabled={busy}>
+            {busy ? t("coupangCsv.downloading") : t("coupangCsv.downloadButton")}
+          </button>
+          <a className={buttonStyles({ variant: "ghost" })} href="/dashboard/analyze">
+            {t("coupangCsv.goDashboard")}
+          </a>
         </div>
 
-        <div className="rounded-[16px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)] p-5">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Flow</p>
-          <ol className="mt-4 space-y-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
-            <li>1. 상품 URL을 입력합니다.</li>
-            <li>2. 리뷰 CSV를 생성해 다운로드합니다.</li>
-            <li>3. 같은 파일을 분석 작업면으로 바로 이어갑니다.</li>
-          </ol>
+        {error ? <p className="mt-4 text-sm text-[var(--rb-danger)]">{error}</p> : null}
+        {!error && notice ? <p className="mt-4 text-sm text-[var(--rb-accent)]">{notice}</p> : null}
+
+        <div className="mt-8 flex flex-wrap gap-6 border-t border-[color:rgba(222,230,242,0.08)] pt-6 text-sm text-[var(--rb-muted-strong)]">
+          <span>상품 URL 한 개만 입력하면 됩니다.</span>
+          <span>생성된 CSV는 바로 분석 흐름으로 이어집니다.</span>
         </div>
       </div>
-    </Surface>
+    </section>
   );
 }

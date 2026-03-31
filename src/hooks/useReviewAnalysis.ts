@@ -40,11 +40,11 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
   const stageTimerRef = useRef<number | null>(null);
 
   const step = useMemo<1 | 2 | 3 | 4>(() => {
-    if (!file) return 1;
-    if (!preview) return 2;
-    if (!result) return 3;
-    return 4;
-  }, [file, preview, result]);
+    if (result) return 4;
+    if (busy && preview) return 3;
+    if (preview) return 2;
+    return 1;
+  }, [busy, preview, result]);
 
   const setNoticeState = useCallback(
     (value: string | null) => {

@@ -22,6 +22,7 @@ describe("DashboardAnalysisPanel", () => {
           file={new File([""], "sample.csv")}
           busy={true}
           preview={null}
+          result={null}
           caps={null}
           step={3}
           analysisStage="sentiment"
@@ -34,6 +35,7 @@ describe("DashboardAnalysisPanel", () => {
           onReset={() => {}}
           onSample={() => {}}
           onAnalyze={() => {}}
+          onDownloadPdf={() => {}}
           onTextColChange={() => {}}
           onRatingColChange={() => {}}
           onDateColChange={() => {}}
