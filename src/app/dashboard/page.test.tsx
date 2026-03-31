@@ -115,9 +115,11 @@ describe("/dashboard home page", () => {
     expect(html).toContain(">3.70 / 5<");
     expect(html).toContain("최근 30일 비중");
     expect(html).toContain(">67%<");
+    expect(html).toContain("최근 분석 부정 비율");
+    expect(html).toContain("리뷰 구성 비율");
     expect(html).toContain("이전 분석 결과");
     expect(html).toContain("march_reviews.csv");
-    expect(html).toContain("Priority 61.4");
+    expect(html).toContain(">61.4<");
     expect(html).toContain("href=\"/dashboard/analysis/analysis-1\"");
   });
 
