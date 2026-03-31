@@ -147,13 +147,17 @@ describe("/dashboard/analyze page", () => {
     fireEvent.click(screen.getByRole("button", { name: "다음: 미리보기" }));
 
     await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "미리보기 완료" })).toBeTruthy();
       expect(screen.getByRole("button", { name: "분석 시작" })).toBeTruthy();
       expect((global.fetch as unknown as { mock: { calls: FetchCall[] } }).mock.calls.some(([url]) => String(url).includes("/api/preview"))).toBe(true);
     });
 
+    fireEvent.click(screen.getAllByRole("button", { name: "닫기" })[1]!);
+
     fireEvent.click(screen.getByRole("button", { name: "분석 시작" }));
 
     await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "분석 완료" })).toBeTruthy();
       expect(screen.getByText("분석 결과 표시")).toBeTruthy();
       expect((global.fetch as unknown as { mock: { calls: FetchCall[] } }).mock.calls.some(([url]) => String(url).includes("/api/analyze"))).toBe(true);
     });

@@ -8,14 +8,13 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { buttonStyles } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { planLabel, type PlanTier } from "@/lib/plan";
-import { useTranslation } from "@/lib/i18n";
 
 export type SidebarVariant = "app" | "dashboard";
 
 type SidebarNavItem = {
   href: string;
   icon: "home" | "analyze" | "csv";
-  labelKey: string;
+  label: string;
   matches: (pathname: string) => boolean;
 };
 
@@ -31,28 +30,28 @@ const PRIMARY_ITEMS: SidebarNavItem[] = [
   {
     href: "/dashboard",
     icon: "home",
-    labelKey: "nav.home",
+    label: "홈",
     matches: (pathname) =>
       pathname === "/dashboard" || pathname.startsWith("/dashboard/history") || pathname.startsWith("/dashboard/analysis/")
   },
   {
     href: "/dashboard/analyze",
     icon: "analyze",
-    labelKey: "nav.aiAnalyze",
+    label: "AI분석",
     matches: (pathname) => pathname.startsWith("/dashboard/analyze")
   },
   {
     href: "/coupang-csv",
     icon: "csv",
-    labelKey: "nav.reviewDownload",
+    label: "리뷰 다운",
     matches: (pathname) => pathname.startsWith("/coupang-csv")
   }
 ];
 
 const SECONDARY_LINKS = [
-  { href: "/pricing", label: "Pricing" },
-  { href: "/help", label: "Help" },
-  { href: "/blog", label: "Blog" }
+  { href: "/pricing", label: "요금제" },
+  { href: "/help", label: "사용법" },
+  { href: "/blog", label: "블로그" }
 ];
 
 function humanizeToken(token: string) {
@@ -61,16 +60,16 @@ function humanizeToken(token: string) {
 }
 
 function getDisplayName(userEmail: string | null) {
-  if (!userEmail) return "Guest";
+  if (!userEmail) return "게스트";
   const local = userEmail.split("@")[0]?.trim() ?? "";
-  if (!local) return "Guest";
+  if (!local) return "게스트";
 
   const parts = local
     .split(/[._-]+/)
     .map((part) => part.trim())
     .filter(Boolean);
 
-  if (parts.length === 0) return "Guest";
+  if (parts.length === 0) return "게스트";
   return parts.map(humanizeToken).join(" ");
 }
 
@@ -121,7 +120,6 @@ export default function SidebarNav({
   onNavigate
 }: SidebarNavProps) {
   const pathname = usePathname();
-  const { t } = useTranslation();
   const displayName = getDisplayName(userEmail);
   const initials = getInitials(displayName);
   const currentPlanLabel = planLabel(plan);
@@ -142,12 +140,12 @@ export default function SidebarNav({
           </span>
           <div>
             <strong className="text-base font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">ReviewBoost</strong>
-            <p className="mt-1 text-xs text-[var(--rb-muted)]">AI review operations</p>
+            <p className="mt-1 text-xs text-[var(--rb-muted)]">리뷰 분석 작업면</p>
           </div>
         </Link>
       </div>
 
-      <nav aria-label={t("nav.mainMenu")} className="space-y-2">
+      <nav aria-label="주요 메뉴" className="space-y-2">
         {PRIMARY_ITEMS.map((item, index) => {
           const active = item.matches(pathname);
 
@@ -166,14 +164,14 @@ export default function SidebarNav({
               ref={index === 0 ? firstLinkRef : undefined}
             >
               <span className="h-5 w-5 shrink-0">{renderIcon(item.icon)}</span>
-              <span>{t(item.labelKey)}</span>
+              <span>{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
       <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
-        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Resources</p>
+        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">바로가기</p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--rb-muted-strong)]">
           {SECONDARY_LINKS.map((item) => (
             <Link key={item.href} href={item.href} className="hover:text-[var(--rb-fg)]" onClick={onNavigate}>
@@ -184,8 +182,8 @@ export default function SidebarNav({
       </div>
 
       <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
-        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Plan</p>
-        <p className="mt-3 text-lg font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">{plan === "pro" ? "Current Pro workspace" : "Upgrade when repeat runs matter"}</p>
+        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">플랜</p>
+        <p className="mt-3 text-lg font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">{plan === "pro" ? "현재 Pro 작업면" : "반복 분석이 늘면 업그레이드"}</p>
         <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">
           {plan === "pro"
             ? "저장, 공유, 반복 분석 기능을 같은 워크플로에서 사용할 수 있습니다."
@@ -206,20 +204,18 @@ export default function SidebarNav({
           </div>
           <div className="min-w-0">
             <strong className="block truncate text-sm font-medium text-[var(--rb-fg)]">{displayName}</strong>
-            <span className="block truncate text-xs text-[var(--rb-muted)]">{isAuthenticated ? `${currentPlanLabel} 플랜` : t("nav.loginToSave")}</span>
+            <span className="block truncate text-xs text-[var(--rb-muted)]">{isAuthenticated ? `${currentPlanLabel} 플랜` : "로그인하고 리포트 저장하기"}</span>
           </div>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-3">
           {isAuthenticated ? (
             <form action={signOutAction}>
-              <button type="submit" className={buttonStyles({ variant: "ghost", size: "sm" })}>
-                {t("common.logout")}
-              </button>
+              <button type="submit" className={buttonStyles({ variant: "ghost", size: "sm" })}>로그아웃</button>
             </form>
           ) : (
             <Link href="/login" className={buttonStyles({ variant: "secondary", size: "sm" })} onClick={onNavigate}>
-              {t("common.login")}
+              로그인
             </Link>
           )}
         </div>

@@ -11,6 +11,12 @@ import type { CsvPreview } from "@/lib/csv";
 
 type DashboardResult = DashboardAnalysisResult;
 
+export type AnalysisNotice = {
+  kind: "preview" | "analysis";
+  title: string;
+  message: string;
+};
+
 function toNotice(raw: string): string {
   const s = String(raw || "").trim();
   if (!s) return "처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
@@ -20,7 +26,7 @@ function toNotice(raw: string): string {
 }
 
 type UseReviewAnalysisProps = {
-  onNotice?: (value: string | null) => void;
+  onNotice?: (value: AnalysisNotice | null) => void;
 };
 
 export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
@@ -33,7 +39,7 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
   const [ratingCol, setRatingCol] = useState("");
   const [dateCol, setDateCol] = useState("");
   const [showAllPreviewCols, setShowAllPreviewCols] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<AnalysisNotice | null>(null);
   const [analysisStage, setAnalysisStage] = useState<AnalysisStage>("done");
   const [lastTextCol, setLastTextCol] = useLocalStorage("reviewboost:last-text-col", "");
   const previewModal = useModal<{ col: string; value: string }>();
@@ -47,7 +53,7 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
   }, [busy, preview, result]);
 
   const setNoticeState = useCallback(
-    (value: string | null) => {
+    (value: AnalysisNotice | null) => {
       setNotice(value);
       onNotice?.(value);
     },
@@ -92,7 +98,11 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
       setTextCol(nextPreview.inferred.textCol ?? "");
       setRatingCol((nextPreview.inferred.ratingCol ?? "") || "");
       setDateCol((nextPreview.inferred.dateCol ?? "") || "");
-      setNoticeState("미리보기가 준비되었습니다. 다음은 분석을 진행해 주세요.");
+      setNoticeState({
+        kind: "preview",
+        title: "미리보기 완료",
+        message: "CSV 미리보기가 준비되었습니다. 열을 확인한 뒤 분석을 시작해 주세요."
+      });
       gtagEvent("csv_upload", {
         file_name: nextFile.name,
         file_size: nextFile.size,
@@ -134,7 +144,11 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
 
       setResult(next);
       stopStageProgress("done");
-      setNoticeState("분석이 완료되었습니다.");
+      setNoticeState({
+        kind: "analysis",
+        title: "분석 완료",
+        message: "분석 결과가 준비되었습니다."
+      });
       gtagEvent("analysis_complete", {
         total_reviews: next.stats.total,
         priority_score: Number(next.stats.priorityScore.toFixed(1)),
@@ -172,7 +186,11 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
       setDateCol("");
       await loadPreview(f);
       stopStageProgress("done");
-      setNoticeState("샘플 파일이 업로드되어 미리보기가 준비되었습니다.");
+      setNoticeState({
+        kind: "preview",
+        title: "미리보기 완료",
+        message: "샘플 CSV 미리보기가 준비되었습니다. 열을 확인한 뒤 분석을 시작해 주세요."
+      });
     } catch (error: unknown) {
       stopStageProgress("done");
       normalizeError(error);
@@ -198,6 +216,15 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
     setDateCol("");
     stopStageProgress("done");
   }, [lastTextCol, setNoticeState, stopStageProgress]);
+
+  const onBackToUpload = useCallback(() => {
+    setPreview(null);
+    setResult(null);
+    setError(null);
+    setNoticeState(null);
+    setShowAllPreviewCols(false);
+    stopStageProgress("done");
+  }, [setNoticeState, stopStageProgress]);
 
   useEffect(() => () => stopStageProgress("done"), [stopStageProgress]);
 
@@ -253,6 +280,7 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
       clearError,
       onAnalyze,
       onReset,
+      onBackToUpload,
       onSample,
       onSampleAndAnalyze,
       onDownloadPdf,

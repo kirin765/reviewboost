@@ -127,15 +127,17 @@ describe("AnalysisResults", () => {
   });
 
   it("adds single-column layout hooks across the desktop result surface", () => {
-    const { container } = render(
+    const { container, getByText } = render(
       <PlanProvider plan="pro">
         <AnalysisResults result={result} caps={caps} busy={false} onDownloadPdf={vi.fn()} />
       </PlanProvider>
     );
 
-    expect(container.querySelector(".resultsHeroStatsSingleColumn")).toBeTruthy();
-    expect(container.querySelector(".analysisResultsGridSingleColumn")).toBeTruthy();
-    expect(container.querySelector(".priorityMatrixSingleColumn")).toBeTruthy();
-    expect(container.querySelector(".simulationGridSingleColumn")).toBeTruthy();
+    expect(container.textContent).toContain("부정 비율");
+    expect(container.textContent).toContain("액션 아이템");
+    expect(getByText("상세페이지 반영")).toBeTruthy();
+    expect(getByText("CS 응대 템플릿")).toBeTruthy();
+    expect(container.querySelector('[data-tone="urgent"]')).toBeTruthy();
+    expect(container.querySelector('[data-tone="simulation"]')).toBeTruthy();
   });
 });

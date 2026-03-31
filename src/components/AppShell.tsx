@@ -24,12 +24,28 @@ type ChromeConfig = {
   showHeader: boolean;
   showFooter: boolean;
   isWorkspace: boolean;
+  isAuth?: boolean;
 };
 
 function getChromeConfig(pathname: string): ChromeConfig {
+  if (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password")
+  ) {
+    return {
+      title: "ReviewBoost",
+      showHeader: false,
+      showFooter: false,
+      isWorkspace: false,
+      isAuth: true
+    };
+  }
+
   if (pathname.startsWith("/dashboard/analysis/")) {
     return {
-      label: "Saved report",
+      label: "저장된 분석",
       title: "저장된 분석",
       description: "저장한 리포트를 다시 열어 요약과 PDF를 확인합니다.",
       actionHref: "/dashboard",
@@ -42,7 +58,7 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
   if (pathname.startsWith("/dashboard/history")) {
     return {
-      label: "Dashboard home",
+      label: "홈",
       title: "홈",
       description: "지금까지 분석한 리뷰 통계와 이전 결과를 확인합니다.",
       actionHref: "/dashboard/analyze",
@@ -55,7 +71,7 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
   if (pathname === "/dashboard") {
     return {
-      label: "Workspace",
+      label: "작업 홈",
       title: "홈",
       description: "총 리뷰, 부정 비율, 평균 별점, 최근 30일 비중과 저장된 결과 목록을 봅니다.",
       actionHref: "/dashboard/analyze",
@@ -68,7 +84,7 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
   if (pathname.startsWith("/dashboard/analyze")) {
     return {
-      label: "Analysis flow",
+      label: "분석 흐름",
       title: "AI분석",
       description: "업로드, 열 확인, 분석 진행, 결과 확인을 같은 흐름으로 진행합니다.",
       actionHref: "/dashboard",
@@ -81,7 +97,7 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
   if (pathname.startsWith("/coupang-csv")) {
     return {
-      label: "Review download",
+      label: "리뷰 다운",
       title: "리뷰 다운",
       description: "상품 URL에서 리뷰 CSV를 내려받고 같은 흐름으로 분석까지 이어갈 수 있습니다.",
       actionHref: "/dashboard/analyze",
@@ -195,6 +211,14 @@ export default function AppShell({ children, userEmail = null, plan = "free" }: 
   }, [isMobile, open]);
 
   if (!config.isWorkspace) {
+    if (config.isAuth) {
+      return (
+        <div className="min-h-screen bg-[var(--rb-bg)] text-[var(--rb-fg)]">
+          {children}
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-[var(--rb-bg)] text-[var(--rb-fg)]">
         <MarketingHeader userEmail={userEmail} />

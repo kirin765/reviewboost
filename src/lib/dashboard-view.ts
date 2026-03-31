@@ -97,22 +97,22 @@ export function mapDashboardViewModel(result: Pick<DashboardAnalysisResult, keyo
   return {
     summaryMetrics: [
       {
-        label: "Negative rate",
+        label: "부정 비율",
         value: formatPercent(result.stats.negativeRatio),
         detail: `부정 ${result.stats.negative ?? 0}건`
       },
       {
-        label: "Avg rating",
+        label: "평균 별점",
         value: result.stats.avgRating === null ? "미기재" : `${result.stats.avgRating.toFixed(2)} / 5`,
         detail: "별점 열 기준"
       },
       {
-        label: "Priority score",
+        label: "우선순위 점수",
         value: result.stats.priorityScore.toFixed(1),
         detail: "지금 먼저 고칠 가치"
       },
       {
-        label: "Recent weight",
+        label: "최근 30일 비중",
         value: result.stats.recentness?.hasDates ? formatPercent(result.stats.recentness.last30Share) : "날짜 없음",
         detail: result.stats.recentness?.hasDates ? "최근 30일 비중" : "작성일 열 필요"
       }
