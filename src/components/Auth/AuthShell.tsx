@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useTranslation } from "@/lib/i18n";
+import React, { type ReactNode } from "react";
+import Link from "next/link";
+import { ShellContainer, Surface } from "@/components/ui/Primitives";
 
 interface AuthShellProps {
   eyebrow: string;
@@ -14,60 +15,50 @@ interface AuthShellProps {
 }
 
 export default function AuthShell({ eyebrow, title, lead, bullets, note, children, asideFooter }: AuthShellProps) {
-  const { locale } = useTranslation();
-  const visualMain = locale === "en" ? "Upload CSV, map columns, and share results in one workflow." : "CSV 업로드, 매핑, 결과 공유를 한 흐름으로 정리합니다.";
-  const visualSide = locale === "en" ? "Recent negative review response speed improved" : "최근 부정 리뷰 대응 속도 개선";
-
   return (
-    <main className="pageMain authPage">
-      <div className="authShell">
-        <section className="authAside" aria-label="Service intro">
-          <a className="authBrand" href="/">
-            <span className="authBrandMark" aria-hidden="true">
-              <span className="authBrandMarkDot" />
-              <span className="authBrandMarkLine authBrandMarkLineOne" />
-              <span className="authBrandMarkLine authBrandMarkLineTwo" />
-            </span>
-            <span className="authBrandText">
-              <strong>ReviewBoost</strong>
-              <small>AI 리뷰 운영 대시보드</small>
-            </span>
-          </a>
-
-          <p className="authEyebrow">{eyebrow}</p>
-          <h1 className="authTitle">{title}</h1>
-          <p className="authLead">{lead}</p>
-
-          <div className="authVisual" aria-hidden="true">
-            <div className="authVisualOrb authVisualOrbPrimary" />
-            <div className="authVisualOrb authVisualOrbWarm" />
-            <div className="authVisualCard authVisualCardMain">
-              <span className="authVisualCardLabel">워크스페이스</span>
-              <strong>리뷰 분석</strong>
-              <span>{visualMain}</span>
-            </div>
-            <div className="authVisualCard authVisualCardSide">
-              <span className="authVisualMiniLabel">주간 신호</span>
-              <strong>+24%</strong>
-              <span>{visualSide}</span>
-            </div>
-          </div>
-
-          <div className="authBulletList">
-            {bullets.map((bullet) => (
-              <div className="authBullet" key={bullet}>
-                <span className="authBulletDot" aria-hidden="true" />
-                <span>{bullet}</span>
+    <main className="pageMain authPage pb-10 pt-8 md:pt-12">
+      <ShellContainer>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(420px,0.78fr)] lg:items-start">
+          <div className="px-2 py-2 md:px-4">
+            <Link href="/" className="inline-flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[var(--rb-accent)] text-[#071112]">
+                <svg viewBox="0 0 20 20" className="h-5 w-5">
+                  <path d="M4 12.4 8.2 9.6l3.4 1.7 4.4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="4.1" cy="12.5" r="1.2" fill="currentColor" />
+                  <circle cx="8.2" cy="9.6" r="1.2" fill="currentColor" />
+                  <circle cx="16" cy="7.3" r="1.2" fill="currentColor" />
+                </svg>
+              </span>
+              <div>
+                <strong className="block text-sm font-semibold tracking-[-0.02em] text-[var(--rb-fg)]">ReviewBoost</strong>
+                <span className="block text-[11px] text-[var(--rb-muted)]">Analytical seller workspace</span>
               </div>
-            ))}
+            </Link>
+
+            <p className="mt-8 text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">{eyebrow}</p>
+            <h1 className="mt-4 max-w-2xl text-[clamp(2.4rem,5vw,4.6rem)] font-semibold leading-[0.96] tracking-[-0.07em] text-[var(--rb-fg)]">{title}</h1>
+            <p className="mt-5 max-w-xl text-base leading-8 text-[var(--rb-muted-strong)]">{lead}</p>
+
+            <div className="mt-10 grid gap-4 border-t border-[color:rgba(222,230,242,0.08)] pt-6">
+              {bullets.map((bullet) => (
+                <div key={bullet} className="grid gap-3 border-b border-[color:rgba(222,230,242,0.08)] pb-4 text-sm leading-7 text-[var(--rb-muted-strong)] last:border-b-0">
+                  <div className="inline-flex items-center gap-3">
+                    <span className="h-2 w-2 rounded-full bg-[var(--rb-accent)]" aria-hidden="true" />
+                    <span>{bullet}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {note ? <p className="mt-8 max-w-xl text-sm leading-7 text-[var(--rb-muted)]">{note}</p> : null}
+            {asideFooter ? <div className="mt-6">{asideFooter}</div> : null}
           </div>
 
-          {note ? <div className="authNote">{note}</div> : null}
-          {asideFooter ? <div className="authAsideFooter">{asideFooter}</div> : null}
-        </section>
-
-        <section className="authPanel">{children}</section>
-      </div>
+          <Surface className="px-6 py-7 md:px-8 md:py-8">
+            {children}
+          </Surface>
+        </div>
+      </ShellContainer>
     </main>
   );
 }

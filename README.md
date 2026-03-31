@@ -203,6 +203,9 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 
 - 테이블 정의: `supabase/schema.sql`
   - 포함: analyses/reviews 테이블 + RLS 정책(본인 데이터만 조회/삭제)
+- 운영 DB 스키마 변경 시에는 `supabase/migrations`도 함께 적용하세요.
+  - 특히 저장된 분석 상세 화면을 쓰려면 `supabase/migrations/20260331102000_add_analysis_result_payload.sql`이 운영 DB에 반영되어 있어야 합니다.
+  - 미적용 상태에서도 앱은 기본 요약 저장으로 폴백하지만, 확장 상세(`result_payload`)는 저장되지 않습니다.
 
 ## 설정 파일(.env) 운영 가이드
 

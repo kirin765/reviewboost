@@ -27,6 +27,9 @@ const en: Dictionary = {
   "common.fullView": "Full View",
 
   // ── Navigation ──
+  "nav.home": "Home",
+  "nav.aiAnalyze": "AI Analyze",
+  "nav.reviewDownload": "Review Download",
   "nav.analyze": "Analyze",
   "nav.savedReports": "Saved Reports",
   "nav.coupangCsv": "Review CSV",

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { cn } from "@/lib/cn";
 import { useTranslation } from "@/lib/i18n";
 
 export type DashboardTab = "analysis" | "results";
@@ -21,7 +22,6 @@ export default function DashboardTabs({
     const isEnd = event.key === "End";
 
     if (!isNext && !isPrev && !isHome && !isEnd) return;
-
     event.preventDefault();
 
     if (isHome || (isPrev && activeTab === "results")) {
@@ -35,33 +35,29 @@ export default function DashboardTabs({
   }
 
   return (
-    <div className="dashboardTabs" role="tablist" aria-label={t("tabs.ariaLabel")}>
-      <button
-        id="analysis-tab"
-        type="button"
-        className={`dashboardTab ${activeTab === "analysis" ? "isActive" : ""}`}
-        role="tab"
-        aria-selected={activeTab === "analysis"}
-        aria-controls="analysis-panel"
-        tabIndex={activeTab === "analysis" ? 0 : -1}
-        onKeyDown={onKeyDown}
-        onClick={() => onChange("analysis")}
-      >
-        {t("tabs.analysis")}
-      </button>
-      <button
-        id="results-tab"
-        type="button"
-        className={`dashboardTab ${activeTab === "results" ? "isActive" : ""}`}
-        role="tab"
-        aria-selected={activeTab === "results"}
-        aria-controls="results-panel"
-        tabIndex={activeTab === "results" ? 0 : -1}
-        onKeyDown={onKeyDown}
-        onClick={() => onChange("results")}
-      >
-        {t("tabs.results")}
-      </button>
+    <div className="inline-flex rounded-[16px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)] p-1" role="tablist" aria-label={t("tabs.ariaLabel")}>
+      {([
+        ["analysis", t("tabs.analysis")],
+        ["results", t("tabs.results")]
+      ] as const).map(([tab, label]) => (
+        <button
+          key={tab}
+          id={`${tab}-tab`}
+          type="button"
+          className={cn(
+            "rounded-[12px] px-4 py-2.5 text-sm font-medium transition",
+            activeTab === tab ? "bg-[var(--rb-accent)] text-[#071112]" : "text-[var(--rb-muted-strong)] hover:text-[var(--rb-fg)]"
+          )}
+          role="tab"
+          aria-selected={activeTab === tab}
+          aria-controls={`${tab}-panel`}
+          tabIndex={activeTab === tab ? 0 : -1}
+          onKeyDown={onKeyDown}
+          onClick={() => onChange(tab)}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   );
 }
