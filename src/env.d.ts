@@ -4,6 +4,7 @@ declare namespace NodeJS {
     APP_BASE_URL?: string;
     NODE_ENV?: "development" | "production" | "test";
 
+    GOOGLE_SITE_VERIFICATION?: string;
     NEXT_PUBLIC_GA_MEASUREMENT_ID?: string;
     NEXT_PUBLIC_PADDLE_TOKEN?: string;
     NEXT_PUBLIC_PADDLE_TOKEN_LIVE?: string;

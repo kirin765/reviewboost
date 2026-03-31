@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signInAction } from "@/app/(auth)/actions";
+import AuthPendingSubmitButton from "@/components/Auth/AuthPendingSubmitButton";
 import FeedbackModal from "@/components/FeedbackModal";
 import AuthShell from "@/components/Auth/AuthShell";
 import { useTranslation } from "@/lib/i18n";
@@ -64,9 +65,7 @@ export default function LoginPage() {
             <label className="muted formInputLabel" htmlFor="login-password">{t("login.passwordLabel")}</label>
             <input id="login-password" className="input" name="password" type="password" placeholder={t("login.passwordPlaceholder")} required />
           </div>
-          <button className="btn btnPrimary formSubmit" type="submit">
-            {t("login.submit")}
-          </button>
+          <AuthPendingSubmitButton idleLabel={t("login.submit")} pendingLabel={t("login.submitting")} />
           <div className="formHintRow">
             <a className="link formNote" href={`/forgot-password?next=${encodeURIComponent(next)}`}>
               {t("login.forgotPassword")}

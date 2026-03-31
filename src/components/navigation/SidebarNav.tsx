@@ -11,7 +11,7 @@ export type SidebarVariant = "app" | "dashboard";
 
 export type SidebarNavItem = {
   href: string;
-  icon: "dashboard" | "csv" | "history" | "pricing" | "help" | "blog";
+  icon: "dashboard" | "csv" | "history" | "pricing" | "features" | "help" | "blog";
   label: string;
   matches: (pathname: string) => boolean;
 };
@@ -51,6 +51,12 @@ const NAV_ITEMS: SidebarNavItem[] = [
     icon: "pricing",
     label: "요금제",
     matches: (pathname) => pathname.startsWith("/pricing")
+  },
+  {
+    href: "/features",
+    icon: "features",
+    label: "기능",
+    matches: (pathname) => pathname.startsWith("/features")
   },
   {
     href: "/help",
@@ -169,6 +175,20 @@ function renderIcon(icon: SidebarNavItem["icon"]) {
           />
           <path d="M8.45 8.1a1.8 1.8 0 1 1 2.64 1.58c-.66.34-1.09.7-1.09 1.57" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M10 13.65h.01" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    case "features":
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M4.75 10 10 4.75 15.25 10 10 15.25 4.75 10Z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path d="M10 4.75v10.5M4.75 10h10.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
         </svg>
       );
     case "blog":

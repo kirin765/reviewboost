@@ -31,6 +31,23 @@ export default function HomePageContent() {
     }
   ];
   const stepDescs = [t("home.stepDesc1"), t("home.stepDesc2"), t("home.stepDesc3"), t("home.stepDesc4")];
+  const resourceCards = [
+    {
+      href: "/features",
+      title: "핵심 기능 보기",
+      body: "AI 리뷰 분석, CSV 추출, 부정리뷰 대응, FAQ 생성 흐름을 한 번에 확인합니다."
+    },
+    {
+      href: "/help",
+      title: "사용법 빠르게 읽기",
+      body: "CSV 준비부터 쿠팡·스마트스토어 리뷰 추출, FAQ 운영까지 단계별 가이드를 확인합니다."
+    },
+    {
+      href: "/blog",
+      title: "실전 운영 사례 읽기",
+      body: "부정리뷰 대응, 별점 관리, 매출 개선 전략을 블로그 글로 살펴볼 수 있습니다."
+    }
+  ];
 
   return (
     <>
@@ -123,6 +140,22 @@ export default function HomePageContent() {
               <h3>{step}</h3>
               <p className="muted">{stepDescs[index]}</p>
             </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="card marketingSection">
+        <div className="marketingSectionIntro">
+          <p className="sectionEyebrow">Explore</p>
+          <h2>검색과 탐색에 맞춘 주요 허브</h2>
+          <p className="muted">기능 소개, 사용 가이드, 실전 운영 글을 각각 허브 형태로 정리했습니다.</p>
+        </div>
+        <div className="marketingFeatureGrid">
+          {resourceCards.map((card) => (
+            <a className="marketingFeatureCard blogCardLink" href={card.href} key={card.href}>
+              <h3>{card.title}</h3>
+              <p className="muted">{card.body}</p>
+            </a>
           ))}
         </div>
       </section>

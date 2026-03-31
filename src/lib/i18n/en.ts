@@ -335,6 +335,7 @@ const en: Dictionary = {
   "login.passwordLabel": "Password",
   "login.passwordPlaceholder": "Password",
   "login.submit": "Log In",
+  "login.submitting": "Logging in...",
   "login.forgotPassword": "Forgot your password?",
   "login.noAccount": "Don't have an account?",
 
@@ -354,6 +355,7 @@ const en: Dictionary = {
   "signup.consentSummary": "Purpose: Member identification/login/account management | Data: Email | Retention: Until account deletion (legal requirements excluded) | Refusal: Cannot sign up",
   "signup.agreeMarketing": "[Optional] Agree to receive marketing emails (events/offers)",
   "signup.submit": "Sign Up",
+  "signup.submitting": "Creating account...",
   "signup.hasAccount": "Already have an account?",
 
   // ── Auth - Forgot password ──
@@ -369,6 +371,7 @@ const en: Dictionary = {
   "forgot.panelLead": "Enter your registered email and we'll send a password reset link. If you don't see it, check your spam folder.",
   "forgot.emailLabel": "Email",
   "forgot.submit": "Send Reset Email",
+  "forgot.submitting": "Sending email...",
   "forgot.otherRoutes": "Want to go somewhere else?",
   "forgot.goToLogin": "Go to Login",
 

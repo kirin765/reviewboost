@@ -1,19 +1,15 @@
 "use client";
 
 import React from "react";
-import Script from "next/script";
 import PricingActions from "@/components/PricingActions";
 import { useTranslation } from "@/lib/i18n";
 
 interface PricingContentProps {
   userId: string | null;
-  userEmail: string | null;
-  basicPriceId: string | undefined;
-  proPriceId: string | undefined;
   billing: string | undefined;
 }
 
-export default function PricingContent({ userId, userEmail, basicPriceId, proPriceId, billing }: PricingContentProps) {
+export default function PricingContent({ userId, billing }: PricingContentProps) {
   const { t } = useTranslation();
 
   const pricingStats = [
@@ -24,8 +20,6 @@ export default function PricingContent({ userId, userEmail, basicPriceId, proPri
 
   return (
     <main className="pageMain pricingPage">
-      <Script src="https://cdn.paddle.com/paddle/v2/paddle.js" strategy="afterInteractive" />
-
       <section className="card pricingHero">
         <div className="pricingHeroHeader">
           <div>
@@ -113,7 +107,7 @@ export default function PricingContent({ userId, userEmail, basicPriceId, proPri
           </div>
           <footer className="pricingCardFooter">
             <div className="pricingCardActionRow">
-              <PricingActions plan="basic" priceId={basicPriceId} userId={userId ?? undefined} userEmail={userEmail ?? undefined} />
+              <PricingActions plan="basic" userId={userId ?? undefined} />
             </div>
           </footer>
         </article>
@@ -153,7 +147,7 @@ export default function PricingContent({ userId, userEmail, basicPriceId, proPri
           </div>
           <footer className="pricingCardFooter">
             <div className="pricingCardActionRow">
-              <PricingActions plan="pro" priceId={proPriceId} userId={userId ?? undefined} userEmail={userEmail ?? undefined} />
+              <PricingActions plan="pro" userId={userId ?? undefined} />
             </div>
           </footer>
         </article>

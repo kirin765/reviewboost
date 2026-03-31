@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
+import { generatePageMetadata } from "@/lib/seo/metadata";
+import { getRequiredSeoPageRecord } from "@/lib/seo/page-registry";
 
-export const metadata: Metadata = {
-  title: "비밀번호 찾기",
-  description: "ReviewBoost 비밀번호를 재설정하세요.",
-  robots: { index: false, follow: false }
-};
+const record = getRequiredSeoPageRecord("/forgot-password");
+
+export const metadata: Metadata = generatePageMetadata(record);
 
 export default function ForgotPasswordLayout({ children }: { children: React.ReactNode }) {
   return children;

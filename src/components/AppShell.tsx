@@ -75,6 +75,19 @@ function getChromeConfig(pathname: string): ChromeConfig {
     };
   }
 
+  if (pathname.startsWith("/features")) {
+    return {
+      label: "기능",
+      title: "핵심 기능",
+      description: "리뷰 분석, CSV 확보, 부정리뷰 대응, FAQ 운영 기능을 한 번에 살펴볼 수 있습니다.",
+      actionHref: "/dashboard",
+      actionLabel: "분석 시작",
+      showHeader: true,
+      showFooter: true,
+      isWorkspace: false
+    };
+  }
+
   if (pathname.startsWith("/help")) {
     return {
       label: "가이드",
@@ -249,12 +262,13 @@ export default function AppShell({ children, userEmail = null, plan = "free" }: 
             <div className="appChromeFooterSection">
               <h2>ReviewBoost</h2>
               <a href="/dashboard">분석하기</a>
+              <a href="/features">기능</a>
               <a href="/help">사용법</a>
               <a href="/pricing">요금제</a>
             </div>
             <div className="appChromeFooterSection">
               <h2>정책</h2>
-              <a href="/term">서비스 이용약관</a>
+              <a href="/terms">서비스 이용약관</a>
               <a href="/privacy">개인정보 처리방침</a>
             </div>
             <div className="appChromeFooterSection">

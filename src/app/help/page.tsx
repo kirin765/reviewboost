@@ -1,134 +1,59 @@
 import type { Metadata } from "next";
+import StructuredData from "@/components/seo/StructuredData";
+import { MarketingHubPage } from "@/components/marketing/MarketingPages";
+import { generatePageMetadata } from "@/lib/seo/metadata";
+import { getRequiredSeoPageRecord } from "@/lib/seo/page-registry";
+import { createCollectionPageStructuredData } from "@/lib/seo/structured-data";
 
-export const metadata: Metadata = {
-  title: "사용법 - ReviewBoost CSV 업로드 & 리뷰 분석 가이드",
-  description: "ReviewBoost 사용법을 단계별로 안내합니다. CSV 준비, 열 매핑, AI 분석, PDF 리포트 다운로드까지 2분이면 시작할 수 있습니다.",
-  alternates: { canonical: "/help" }
-};
+const helpRecord = getRequiredSeoPageRecord("/help");
+
+const helpCards = [
+  {
+    href: "/help/csv-checklist",
+    title: "CSV 업로드 체크리스트",
+    description: "파일 형식, 필수 컬럼, 인코딩, 업로드 직후 점검 포인트를 빠르게 확인합니다.",
+    tag: "기본"
+  },
+  {
+    href: "/help/coupang-review-csv-export",
+    title: "쿠팡 리뷰 CSV 추출 가이드",
+    description: "쿠팡 리뷰 데이터를 추출하고 바로 분석으로 넘기는 운영 흐름을 정리했습니다.",
+    tag: "쿠팡"
+  },
+  {
+    href: "/help/smartstore-review-csv-export",
+    title: "스마트스토어 리뷰 CSV 추출 가이드",
+    description: "스마트스토어 리뷰 다운로드부터 FAQ 생성까지 이어지는 흐름을 다룹니다.",
+    tag: "스마트스토어"
+  },
+  {
+    href: "/help/faq",
+    title: "리뷰 FAQ 운영 가이드",
+    description: "리뷰 데이터를 FAQ, 상세페이지 문구, CS 답변 템플릿으로 바꾸는 방법을 설명합니다.",
+    tag: "FAQ"
+  }
+] as const;
+
+export const metadata: Metadata = generatePageMetadata(helpRecord);
 
 export default function HelpPage() {
   return (
-    <main className="pageMain pageTop">
-      <section className="card contentPageHeader">
-        <p className="sectionEyebrow">Guide</p>
-        <h1>CSV 업로드부터 결과 활용까지</h1>
-        <p className="contentPageLead">개발 지식 없이도 CSV만 있으면 바로 리뷰 분석을 시작할 수 있습니다.</p>
-      </section>
-
-      {/* 4-Step Guide */}
-      <div className="helpStepGrid">
-        <div className="step completed">
-          <span className="stepNumber">1</span>
-          <span>CSV 준비</span>
-        </div>
-        <div className="step">
-          <span className="stepNumber">2</span>
-          <span>업로드</span>
-        </div>
-        <div className="step">
-          <span className="stepNumber">3</span>
-          <span>분석</span>
-        </div>
-        <div className="step">
-          <span className="stepNumber">4</span>
-          <span>결과 활용</span>
-        </div>
-      </div>
-
-      <div className="grid">
-        <div className="card">
-          <h2>1) CSV 준비</h2>
-          <div className="list">
-            <div className="row">
-              <div className="left">필수</div>
-              <div className="right">리뷰 내용(텍스트)</div>
-            </div>
-            <div className="row">
-              <div className="left">권장</div>
-              <div className="right">별점(0~5)</div>
-            </div>
-            <div className="row">
-              <div className="left">선택</div>
-              <div className="right">작성일(최근 이슈 확인용)</div>
-            </div>
-          </div>
-          <p className="hint muted sectionSpacing">
-            엑셀에서 저장할 때는 보통 <strong>CSV(쉼표로 구분)</strong> 형식으로 저장하면 됩니다.
-          </p>
-          <div className="actionRow">
-            <a className="btn" href="/sample.csv" download>
-              샘플 CSV(컬럼 많음)
-            </a>
-            <a className="btn" href="/sample_simple.csv" download>
-              샘플 CSV(간단)
-            </a>
-          </div>
-        </div>
-
-        <div className="card">
-          <h2>2) 업로드 후 컬럼 확인</h2>
-          <p className="muted">
-            업로드하면 미리보기로 &ldquo;어느 열이 리뷰 내용인지, 별점인지, 작성일인지&rdquo;를 한 번 확인합니다.
-          </p>
-          <p className="hint muted">
-            컬럼명이 <code>review_text</code>, <code>내용</code>, <code>리뷰</code> 처럼 다양해도 괜찮습니다. 화면에서 선택만
-            해주면 됩니다.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid">
-        <div className="card">
-          <h2>3) 결과 활용</h2>
-          <p className="muted">분석 결과에서 확인 가능한 항목들:</p>
-          <ul className="muted mutedList">
-            <li>핵심 지표 (리뷰 수, 부정 비율, 평균 별점, 우선순위 점수)</li>
-            <li>부정 키워드 TOP10</li>
-            <li>카테고리별 문제 분포</li>
-            <li>긴급 대응 필요 리뷰</li>
-            <li>우선순위 매트릭스</li>
-            <li>별점 시뮬레이션</li>
-            <li>개선 제안 (상세페이지 문구, CS응대, FAQ)</li>
-          </ul>
-          <p className="hint muted sectionSpacing">
-            결과에 나오는 문구는 바로 복사해서 상세페이지/CS 답변/FAQ에 붙여 넣을 수 있습니다.
-          </p>
-          <div className="actionRow">
-            <a className="btn btnPrimary" href="/dashboard">
-              지금 분석하기
-            </a>
-          </div>
-        </div>
-
-        <div className="card">
-          <h2>저장(선택)</h2>
-          <p className="muted">
-            로그인 기능을 켜면 분석 결과를 저장하고, 나중에 &ldquo;저장된 리포트&rdquo;에서 다시 볼 수 있습니다.
-          </p>
-          <p className="hint muted">
-            PDF 다운로드로 분석 결과를 공유할 수도 있습니다.
-          </p>
-        </div>
-      </div>
-
-      {/* FAQ Section */}
-      <div className="card sectionSpacing">
-        <h2>자주 묻는 질문 (FAQ)</h2>
-        <div className="list">
-          <div className="row rowColumn">
-            <div className="textBold textSmall">Q: 리뷰가 너무 많으면 어떻게 되나요?</div>
-            <div className="muted textSmall">A: 대량 리뷰는 샘플링하여 분석합니다. (Basic 이상은 180건, Pro는 대량 우선 처리)</div>
-          </div>
-          <div className="row rowColumn">
-            <div className="textBold textSmall">Q: 분석 결과는 어디서 보나요?</div>
-            <div className="muted textSmall">A: 분석 완료 후 화면에 바로 표시되며, PDF로도 다운로드 가능합니다.</div>
-          </div>
-          <div className="row rowColumn">
-            <div className="textBold textSmall">Q: 로그인 없이도 분석 가능한가요?</div>
-            <div className="muted textSmall">A: 네, 로그인 없이도 CSV만 업로드하면 분석을 진행할 수 있습니다.</div>
-          </div>
-        </div>
-      </div>
-    </main>
+    <>
+      <StructuredData
+        data={createCollectionPageStructuredData(
+          helpRecord,
+          helpCards.map((card) => ({ name: card.title, path: card.href }))
+        )}
+      />
+      <MarketingHubPage
+        eyebrow="Guide"
+        title="ReviewBoost 사용법 허브"
+        lead="CSV 준비부터 쿠팡·스마트스토어 리뷰 추출, FAQ 활용까지 자주 찾는 운영 가이드를 모았습니다."
+        cards={[...helpCards]}
+        highlights={["CSV 준비", "쿠팡/스마트스토어", "FAQ 운영", "로그인 없이 체험 가능"]}
+        ctaTitle="가이드만 읽고 끝내지 말고 실제 데이터로 확인해보세요."
+        ctaLead="샘플 CSV나 실제 리뷰 파일로 바로 테스트할 수 있습니다."
+      />
+    </>
   );
 }

@@ -3,21 +3,42 @@ import { createServerClient } from "@supabase/ssr";
 import { applySecurityHeaders, normalizeCookieOptions } from "@/lib/security";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/keys";
 
+function withSecurity(response: NextResponse) {
+  applySecurityHeaders(response.headers);
+  return response;
+}
+
+function isPublicPath(pathname: string) {
+  return (
+    pathname === "/" ||
+    pathname === "/pricing" ||
+    pathname === "/coupang-csv" ||
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname.startsWith("/features") ||
+    pathname.startsWith("/help") ||
+    pathname.startsWith("/blog") ||
+    pathname.startsWith("/sitemaps/")
+  );
+}
+
 export async function middleware(request: NextRequest) {
-  // /help is owned by root in some environments; serve the writable checklist page instead.
-  if (request.nextUrl.pathname === "/help") {
+  if (request.nextUrl.pathname === "/term") {
     const url = request.nextUrl.clone();
-    url.pathname = "/help-checklist";
-    return NextResponse.rewrite(url);
+    url.pathname = "/terms";
+    return withSecurity(NextResponse.redirect(url, 301));
   }
 
-  // Skip Supabase session refresh on public routes to reduce TTFB
-  const publicPaths = ["/help", "/help-checklist", "/pricing", "/term", "/privacy", "/blog", "/coupang-csv"];
-  const isPublicRoute = publicPaths.some(p => request.nextUrl.pathname === p);
-  if (isPublicRoute) {
-    const passthrough = NextResponse.next();
-    applySecurityHeaders(passthrough.headers);
-    return passthrough;
+  if (request.nextUrl.pathname === "/help-checklist") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/help/csv-checklist";
+    return withSecurity(NextResponse.redirect(url, 301));
+  }
+
+  if (isPublicPath(request.nextUrl.pathname)) {
+    return withSecurity(NextResponse.next());
   }
 
   let supabaseUrl: string;
@@ -27,9 +48,7 @@ export async function middleware(request: NextRequest) {
     supabaseUrl = getSupabaseUrl();
     supabaseAnonKey = getSupabaseAnonKey();
   } catch {
-    const passthrough = NextResponse.next();
-    applySecurityHeaders(passthrough.headers);
-    return passthrough;
+    return withSecurity(NextResponse.next());
   }
 
   const secureContext = request.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production";
@@ -59,10 +78,9 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  applySecurityHeaders(response.headers);
-  return response;
+  return withSecurity(response);
 }
 
 export const config = {
-  matcher: ["/((?!$|_next/static|_next/image|favicon.ico|manifest.json|robots.txt|sitemap.xml|sample\\.csv|sample_simple\\.csv).*)"]
+  matcher: ["/((?!$|_next/static|_next/image|favicon.ico|manifest.json|sample\\.csv|sample_simple\\.csv).*)"]
 };

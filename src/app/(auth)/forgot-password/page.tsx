@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { requestPasswordResetAction } from "@/app/(auth)/actions";
+import AuthPendingSubmitButton from "@/components/Auth/AuthPendingSubmitButton";
 import FeedbackModal from "@/components/FeedbackModal";
 import AuthShell from "@/components/Auth/AuthShell";
 import { useTranslation } from "@/lib/i18n";
@@ -50,9 +51,7 @@ export default function ForgotPasswordPage() {
             <label className="muted formInputLabel" htmlFor="reset-request-email">{t("forgot.emailLabel")}</label>
             <input id="reset-request-email" className="input" name="email" type="email" placeholder="email@example.com" required />
           </div>
-          <button className="btn btnPrimary formSubmit" type="submit">
-            {t("forgot.submit")}
-          </button>
+          <AuthPendingSubmitButton idleLabel={t("forgot.submit")} pendingLabel={t("forgot.submitting")} />
         </form>
 
         <div className="authPanelFooter">

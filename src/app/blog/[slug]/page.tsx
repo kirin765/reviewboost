@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import StructuredData from "@/components/seo/StructuredData";
 import { blogPosts, type ContentBlock } from "@/lib/blog-posts";
+import { generatePageMetadata } from "@/lib/seo/metadata";
+import { getSeoPageRecordByPath } from "@/lib/seo/page-registry";
+import { createArticleStructuredData } from "@/lib/seo/structured-data";
 
 type BlogDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -16,17 +20,15 @@ export async function generateMetadata(props: BlogDetailPageProps): Promise<Meta
   const post = blogPosts.find((item) => item.slug === slug);
 
   if (!post) {
-    return {
-      title: "블로그 - ReviewBoost",
-      alternates: { canonical: "/blog" }
-    };
+    return generatePageMetadata(getSeoPageRecordByPath("/blog")!);
   }
 
-  return {
-    title: `${post.title} - ReviewBoost 블로그`,
-    description: post.summary,
-    alternates: { canonical: `/blog/${post.slug}` }
-  };
+  const record = getSeoPageRecordByPath(`/blog/${post.slug}`);
+  if (!record) {
+    return generatePageMetadata(getSeoPageRecordByPath("/blog")!);
+  }
+
+  return generatePageMetadata(record, { openGraphType: "article", publishedTime: record.updatedAt });
 }
 
 function getContentBlockKey(block: ContentBlock, index: number) {
@@ -82,6 +84,7 @@ export default async function BlogDetailPage(props: BlogDetailPageProps) {
 
   return (
     <main className="pageMain marketingPage">
+      <StructuredData data={createArticleStructuredData(getSeoPageRecordByPath(`/blog/${post.slug}`)!)} />
       <nav className="blogBreadcrumb">
         <Link href="/blog">← 블로그</Link>
       </nav>
