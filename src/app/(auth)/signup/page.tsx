@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signUpAction } from "@/app/(auth)/actions";
+import AuthPendingSubmitButton from "@/components/Auth/AuthPendingSubmitButton";
 import FeedbackModal from "@/components/FeedbackModal";
 import AuthShell from "@/components/Auth/AuthShell";
 import { useTranslation } from "@/lib/i18n";
@@ -81,9 +82,7 @@ export default function SignupPage() {
             <input type="checkbox" name="agreeMarketing" value="yes" />
             <span>{t("signup.agreeMarketing")}</span>
           </label>
-          <button className="btn btnPrimary formSubmit" type="submit">
-            {t("signup.submit")}
-          </button>
+          <AuthPendingSubmitButton idleLabel={t("signup.submit")} pendingLabel={t("signup.submitting")} />
         </form>
 
         <div className="authPanelFooter">

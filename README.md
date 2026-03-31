@@ -5,6 +5,7 @@
 ## 릴리즈 노트
 
 - `RELEASE_NOTES.md`
+- SEO/AI discoverability 운영 문서: `docs/seo-discoverability-mvp.md`
 
 ## 기능
 
@@ -65,6 +66,8 @@ Vercel 배포:
 
 ## 환경변수
 
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID`: GA4 측정 ID. `assistant_landing` 이벤트 추적에 사용합니다.
+- `GOOGLE_SITE_VERIFICATION`: Search Console HTML verification meta 값.
 - `OPENAI_API_KEY`: 있으면 LLM 기반 개선 제안이 더 정교해집니다. 없으면 템플릿 기반으로 fallback 합니다.
 - (선택) 대시보드에서 `LLM 고급 분석`을 켜면 감성/카테고리 분류에도 OpenAI를 사용합니다.
 - `OPENAI_CLASSIFY_TIMEOUT_MS`(선택, 기본 `12000`): LLM 분류 요청 타임아웃(ms)
@@ -226,6 +229,7 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 - 체크리스트: `docs/deployment-checklist.md`
 - 브랜치/배포 플로우: `docs/branch-deployment-flow.md`
 - CI/CD 가드레일: `docs/ci-cd-guardrails.md`
+- SEO/AI discoverability: `docs/seo-discoverability-mvp.md`
 
 ## PDF 한글 폰트 복구(운영권장)
 
