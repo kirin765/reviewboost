@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import StructuredData from "@/components/seo/StructuredData";
 import HomePageContent from "@/components/home/HomePageContent";

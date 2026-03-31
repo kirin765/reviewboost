@@ -1,203 +1,363 @@
-"use client";
+import React from "react";
+import Link from "next/link";
+import { buttonStyles } from "@/components/ui/Button";
+import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
+import { mapDashboardHomeView, type DashboardHomeAnalysisRow } from "@/lib/dashboard-home-view";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
-import type { Capabilities } from "@/lib/capabilities";
-import FeedbackModal from "@/components/FeedbackModal";
-import { PlanProvider } from "@/contexts/PlanContext";
-import type { PlanTier } from "@/types/user";
-import DashboardTabs, { type DashboardTab } from "@/components/Dashboard/DashboardTabs";
-import DashboardAnalysisPanel from "@/components/features/dashboard/AnalysisPanel";
-import { useReviewAnalysis } from "@/hooks/useReviewAnalysis";
-import { fetchCapabilities } from "@/lib/api/user";
-import { getErrorMessage } from "@/types/common";
+export const dynamic = "force-dynamic";
 
-const LazyAnalysisResults = dynamic(async () => import("@/components/features/dashboard/AnalysisResults"), {
-  ssr: false,
-  loading: () => <p className="muted">분석 결과를 불러오는 중입니다...</p>
-});
+function formatMetricValue(value: number | null, kind: "count" | "percent" | "rating") {
+  if (kind === "count") return `${value ?? 0}`;
+  if (value === null || !Number.isFinite(value)) return "-";
+  if (kind === "percent") return `${Math.round(value * 100)}%`;
+  return `${value.toFixed(2)} / 5`;
+}
 
-function DashboardContent({ caps }: { caps: Capabilities | null }) {
-  const [activeTab, setActiveTab] = useState<DashboardTab>("analysis");
-  const [localError, setLocalError] = useState<string | null>(null);
-  const [analysisDoneNotice, setAnalysisDoneNotice] = useState<string | null>(null);
+function buildLinePath(values: number[], width: number, height: number) {
+  if (values.length === 0) return "";
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = Math.max(max - min, 0.01);
 
-  const { state, actions, modal } = useReviewAnalysis({
-    onNotice: setAnalysisDoneNotice
-  });
+  return values
+    .map((value, index) => {
+      const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * width;
+      const y = height - ((value - min) / range) * height;
+      return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(" ");
+}
 
-  const step = useMemo(() => state.step, [state.step]);
-  const shownError = localError ?? state.error;
-
-  useEffect(() => {
-    if (!state.result) return;
-
-    if (state.result.stats.total === 0) {
-      setAnalysisDoneNotice("분석 결과가 없습니다. 데이터 행을 확인해주세요.");
-      return;
-    }
-
-    if (!caps?.supabaseConfigured) {
-      setAnalysisDoneNotice("분석이 완료되었습니다. 저장 기능이 비활성 상태여서 PDF로만 보관 가능합니다.");
-      return;
-    }
-
-    setAnalysisDoneNotice(null);
-  }, [caps?.supabaseConfigured, state.result]);
-
-  useEffect(() => {
-    if (state.result) {
-      setActiveTab("results");
-    }
-  }, [state.result]);
-
-  useEffect(() => {
-    if (!modal.open) return;
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") actions.closeCellModal();
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [actions, modal.open]);
-
-  const handleFileSelect = useCallback(
-    (nextFile: File | null) => {
-      setLocalError(null);
-      actions.onReset();
-      actions.setFile(nextFile);
-    },
-    [actions]
-  );
-
-  const handleAnalyze = useCallback(async () => {
-    if (!state.file) {
-      setLocalError("파일을 먼저 선택해주세요.");
-      return;
-    }
-
-    setLocalError(null);
-    try {
-      await actions.onAnalyze();
-    } catch (error: unknown) {
-      setLocalError(getErrorMessage(error));
-    }
-  }, [actions, state.file]);
-
-  const handleDownloadPdf = useCallback(async () => {
-    const blob = await actions.onDownloadPdf();
-    if (!blob) return;
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `reviewboost-report-${Date.now()}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [actions]);
-
-  const handleCellClick = useCallback(
-    (col: string, value: string) => {
-      actions.onCellClick(col, value);
-    },
-    [actions]
-  );
-
+function OverviewMetricBand({
+  metrics,
+  title,
+  description
+}: {
+  metrics: Array<{ label: string; value: string; detail?: string }>;
+  title: string;
+  description: string;
+}) {
   return (
-    <main className="pageMain workspacePage">
-      {shownError ? (
-        <FeedbackModal
-          title="분석 처리 오류"
-          message={shownError}
-          tone="error"
-          onClose={() => setLocalError(null)}
-          actions={[
-            { label: "다시 시도", onClick: handleAnalyze, variant: "primary" },
-            { label: "새로 시작", onClick: actions.onReset }
-          ]}
-        />
-      ) : null}
-      {!shownError && analysisDoneNotice ? (
-        <FeedbackModal title="분석 완료" message={analysisDoneNotice} onClose={() => setAnalysisDoneNotice(null)} />
-      ) : null}
-
-      <DashboardTabs activeTab={activeTab} onChange={(next) => setActiveTab(next)} />
-
-      <div className="workspaceSurface">
-        {activeTab === "analysis" ? (
-          <DashboardAnalysisPanel
-            file={state.file}
-            busy={state.busy}
-            preview={state.preview}
-            caps={caps}
-            step={step}
-            textCol={state.textCol}
-            ratingCol={state.ratingCol}
-            dateCol={state.dateCol}
-            showAllPreviewCols={state.showAllPreviewCols}
-            cellModal={modal.payload}
-            onFileSelect={handleFileSelect}
-            onReset={actions.onReset}
-            onSample={actions.onSample}
-            onAnalyze={handleAnalyze}
-            onTextColChange={actions.setTextCol}
-            onRatingColChange={actions.setRatingCol}
-            onDateColChange={actions.setDateCol}
-            onTogglePreviewCols={() => actions.setShowAllPreviewCols((value) => !value)}
-            onCellClick={handleCellClick}
-            onCellModalClose={actions.closeCellModal}
-          />
-        ) : state.result ? (
-          <section id="results-panel" role="tabpanel" aria-labelledby="results-tab">
-            <LazyAnalysisResults result={state.result} caps={caps} busy={state.busy} onDownloadPdf={handleDownloadPdf} />
-          </section>
-        ) : (
-          <section id="results-panel" role="tabpanel" aria-labelledby="results-tab" className="workspaceEmptyState">
-            <h2>아직 분석 결과가 없습니다</h2>
-            <p className="hint">CSV를 업로드하고 분석을 실행하면 핵심 지표와 개선 액션이 이곳에 표시됩니다.</p>
-            <button type="button" className="btn btnPrimary" onClick={() => setActiveTab("analysis")} aria-label="분석하기 탭으로 이동">
-              분석하기로 이동
-            </button>
-          </section>
-        )}
+    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.98),rgba(13,18,25,0.94))] p-6 md:p-7">
+      <div className="flex flex-col gap-4 border-b border-[color:rgba(255,255,255,0.06)] pb-5 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">작업 개요</p>
+          <h2 className="mt-3 text-[clamp(1.8rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-white">{title}</h2>
+        </div>
+        <p className="max-w-xl text-sm leading-7 text-[var(--rb-muted-strong)]">{description}</p>
       </div>
-    </main>
+      <div className="mt-6 grid gap-4 md:grid-cols-4">
+        {metrics.map((item) => (
+          <div key={item.label} className="rounded-[18px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--rb-muted)]">{item.label}</p>
+            <strong className="mt-3 block text-[clamp(1.9rem,3vw,2.8rem)] font-semibold tracking-[-0.05em] text-white">{item.value}</strong>
+            {item.detail ? <p className="mt-2 text-sm text-[var(--rb-muted-strong)]">{item.detail}</p> : null}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
-export default function DashboardPage() {
-  const [caps, setCaps] = useState<Capabilities | null>(null);
-  const [plan, setPlan] = useState<PlanTier>("free");
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadCapabilities() {
-      try {
-        const next = await fetchCapabilities();
-        if (!cancelled) {
-          setCaps(next);
-          setPlan(next.plan);
-        }
-      } catch {
-        if (!cancelled) {
-          setCaps(null);
-          setPlan("free");
-        }
-      }
-    }
-
-    loadCapabilities();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+function TrendSurface({
+  title,
+  description,
+  points
+}: {
+  title: string;
+  description: string;
+  points: Array<{ id: string; label: string; negativeRate: number; averageRating: number | null; total: number }>;
+}) {
+  const chartWidth = 420;
+  const chartHeight = 180;
+  const linePath = buildLinePath(points.map((point) => point.negativeRate * 100), chartWidth, chartHeight);
+  const areaPath = linePath ? `${linePath} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z` : "";
 
   return (
-    <PlanProvider plan={plan}>
-      <DashboardContent caps={caps} />
-    </PlanProvider>
+    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.98),rgba(13,18,25,0.94))] p-6 md:p-7">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">최근 추이</p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-white">{title}</h2>
+        </div>
+        <p className="max-w-xs text-sm leading-7 text-[var(--rb-muted-strong)]">{description}</p>
+      </div>
+
+      {points.length > 0 ? (
+        <>
+          <div className="mt-6 overflow-hidden rounded-[22px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="h-[220px] w-full" role="img" aria-label="최근 분석 부정 비율 추세">
+              <defs>
+                <linearGradient id="dashboardTrendArea" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(95,198,183,0.22)" />
+                  <stop offset="100%" stopColor="rgba(95,198,183,0.01)" />
+                </linearGradient>
+              </defs>
+              {Array.from({ length: 5 }).map((_, index) => {
+                const y = (chartHeight / 4) * index;
+                return <line key={index} x1="0" y1={y} x2={chartWidth} y2={y} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 5" />;
+              })}
+              {Array.from({ length: points.length }).map((_, index) => {
+                const x = points.length === 1 ? chartWidth / 2 : (index / (points.length - 1)) * chartWidth;
+                return <line key={index} x1={x} y1="0" x2={x} y2={chartHeight} stroke="rgba(255,255,255,0.03)" />;
+              })}
+              {areaPath ? <path d={areaPath} fill="url(#dashboardTrendArea)" /> : null}
+              {linePath ? <path d={linePath} fill="none" stroke="var(--rb-accent)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /> : null}
+            </svg>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {points.slice(-3).map((point) => (
+              <div key={point.id} className="rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
+                <p className="text-xs text-[var(--rb-muted)]">{point.label}</p>
+                <strong className="mt-2 block text-lg font-semibold tracking-[-0.03em] text-white">{Math.round(point.negativeRate * 100)}%</strong>
+                <p className="mt-1 text-xs text-[var(--rb-muted-strong)]">{point.total}건 분석</p>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="mt-6 rounded-[22px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-6 text-sm leading-7 text-[var(--rb-muted-strong)]">
+          아직 누적된 분석이 없어 추세선이 비어 있습니다. 첫 분석을 저장하면 최근 부정 비율의 흐름이 이 영역에 표시됩니다.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CompositionSurface({
+  negativeReviews,
+  nonNegativeReviews,
+  recent30DayWeight
+}: {
+  negativeReviews: number;
+  nonNegativeReviews: number;
+  recent30DayWeight: number | null;
+}) {
+  const total = Math.max(negativeReviews + nonNegativeReviews, 1);
+  const negativeAngle = (negativeReviews / total) * 360;
+  const recentShare = recent30DayWeight === null ? 0 : recent30DayWeight;
+
+  return (
+    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.98),rgba(13,18,25,0.94))] p-6 md:p-7">
+      <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">리뷰 구성</p>
+      <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-white">리뷰 구성 비율</h2>
+      <div className="mt-6 flex flex-col items-center gap-6 lg:flex-row lg:items-start">
+        <div
+          className="h-[220px] w-[220px] rounded-full border border-[color:rgba(255,255,255,0.06)]"
+          style={{
+            background: `conic-gradient(var(--rb-accent) 0deg ${negativeAngle}deg, rgba(255,255,255,0.08) ${negativeAngle}deg 360deg)`
+          }}
+          aria-hidden="true"
+        >
+          <div className="m-[26px] flex h-[168px] w-[168px] items-center justify-center rounded-full bg-[var(--rb-bg)]">
+            <div className="text-center">
+              <strong className="block text-[2rem] font-semibold tracking-[-0.05em] text-white">{Math.round((negativeReviews / total) * 100)}%</strong>
+              <span className="text-sm text-[var(--rb-muted)]">부정 리뷰</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 space-y-4">
+          <div className="rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm text-[var(--rb-muted-strong)]">부정 리뷰</span>
+              <strong className="text-lg font-semibold text-white">{negativeReviews}건</strong>
+            </div>
+          </div>
+          <div className="rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm text-[var(--rb-muted-strong)]">긍정·중립 리뷰</span>
+              <strong className="text-lg font-semibold text-white">{nonNegativeReviews}건</strong>
+            </div>
+          </div>
+          <div className="rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm text-[var(--rb-muted-strong)]">최근 30일 비중</span>
+              <strong className="text-lg font-semibold text-white">{recent30DayWeight === null ? "-" : `${Math.round(recentShare * 100)}%`}</strong>
+            </div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+              <div className="h-full rounded-full bg-[var(--rb-accent)]" style={{ width: `${Math.max(recentShare * 100, recentShare > 0 ? 4 : 0)}%` }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function EmptyHomeState({ title, description }: { title: string; description: string }) {
+  return (
+    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(19,26,34,0.94),rgba(14,20,28,0.92))] px-5 py-7 md:px-7">
+      <h2 className="text-2xl font-semibold tracking-[-0.04em] text-white">{title}</h2>
+      <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--rb-muted-strong)]">{description}</p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link href="/dashboard/analyze" className={buttonStyles({ variant: "primary" })}>
+          AI분석 시작
+        </Link>
+        <Link href="/coupang-csv" className={buttonStyles({ variant: "ghost" })}>
+          URL로 CSV 받기
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function HomeListSection({
+  recentReports
+}: {
+  recentReports: Array<{
+    id: string;
+    href: string;
+    title: string;
+    createdLabel: string;
+    totalReviewsLabel: string;
+    negativeRateLabel: string;
+    priorityLabel: string;
+  }>;
+}) {
+  return (
+    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(19,26,34,0.94),rgba(14,20,28,0.92))] px-5 py-6 md:px-7">
+      <div className="flex flex-col gap-4 border-b border-[color:rgba(222,230,242,0.08)] pb-5 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">이전 분석 결과</p>
+          <h2 className="mt-3 text-[clamp(1.8rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-white">이전 분석 결과</h2>
+        </div>
+        <Link href="/dashboard/analyze" className={buttonStyles({ variant: "secondary" })}>
+          새 분석
+        </Link>
+      </div>
+
+      {recentReports.length === 0 ? (
+        <p className="mt-6 text-sm leading-7 text-[var(--rb-muted-strong)]">
+          저장된 분석이 없습니다. 먼저 AI분석 화면에서 CSV를 업로드해 첫 결과를 만들어 주세요.
+        </p>
+      ) : (
+        <div className="mt-4 overflow-hidden rounded-[18px] border border-[color:rgba(255,255,255,0.06)]">
+          <div className="hidden grid-cols-[minmax(0,1.1fr)_120px_120px_120px_100px] gap-3 border-b border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-xs uppercase tracking-[0.18em] text-[var(--rb-muted)] md:grid">
+            <span>파일</span>
+            <span>총 리뷰</span>
+            <span>부정비율</span>
+            <span>우선순위</span>
+            <span>생성일</span>
+          </div>
+          {recentReports.map((report) => (
+            <Link
+              key={report.id}
+              href={report.href}
+              className="grid gap-3 border-b border-[color:rgba(255,255,255,0.06)] px-4 py-5 transition last:border-b-0 hover:bg-[rgba(255,255,255,0.015)] md:grid-cols-[minmax(0,1.1fr)_120px_120px_120px_100px] md:items-center"
+            >
+              <div>
+                <strong className="block text-base font-semibold tracking-[-0.03em] text-white">{report.title}</strong>
+                <span className="mt-1 block text-xs text-[var(--rb-muted)] md:hidden">{report.createdLabel}</span>
+              </div>
+              <span className="text-sm text-[var(--rb-muted-strong)]">{report.totalReviewsLabel}</span>
+              <span className="text-sm text-[var(--rb-muted-strong)]">{report.negativeRateLabel}</span>
+              <span className="text-sm text-[var(--rb-muted-strong)]">{report.priorityLabel}</span>
+              <span className="text-sm text-[var(--rb-muted)]">{report.createdLabel}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default async function DashboardHomePage() {
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerComponentClient>> | null = null;
+
+  try {
+    supabase = await createSupabaseServerComponentClient();
+  } catch {
+    supabase = null;
+  }
+
+  const zeroMetrics = [
+    { label: "총 리뷰", value: "0" },
+    { label: "부정비율", value: "-" },
+    { label: "평균 별점", value: "-" },
+    { label: "최근 30일 비중", value: "-" }
+  ];
+
+  if (!supabase) {
+    return (
+      <main className="pageMain space-y-6">
+        <OverviewMetricBand
+          title="누적 분석 홈"
+          description="저장 기능이 비활성화된 환경이라 차트와 누적 통계는 비어 있습니다."
+          metrics={zeroMetrics}
+        />
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_380px]">
+          <TrendSurface title="부정 비율 추세" description="저장된 분석이 생기면 최근 부정 비율의 흐름을 이 영역에서 읽습니다." points={[]} />
+          <CompositionSurface negativeReviews={0} nonNegativeReviews={0} recent30DayWeight={null} />
+        </div>
+        <EmptyHomeState title="여기도 채워주세요" description="저장 기능이 비활성화되어 있어 누적 홈 통계는 표시되지 않습니다. 분석은 계속 진행할 수 있습니다." />
+      </main>
+    );
+  }
+
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData.user) {
+    return (
+      <main className="pageMain space-y-6">
+        <OverviewMetricBand
+          title="누적 분석 홈"
+          description="로그인하면 저장된 분석을 기준으로 운영 지표와 추세 차트가 채워집니다."
+          metrics={zeroMetrics}
+        />
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_380px]">
+          <TrendSurface title="부정 비율 추세" description="아직 로그인하지 않아 최근 분석 추세를 불러오지 못했습니다." points={[]} />
+          <CompositionSurface negativeReviews={0} nonNegativeReviews={0} recent30DayWeight={null} />
+        </div>
+        <EmptyHomeState title="여기도 채워주세요" description="로그인하면 지금까지 분석한 리뷰의 누적 통계와 이전 결과 목록을 홈에서 바로 볼 수 있습니다." />
+      </main>
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("analyses")
+    .select("id, created_at, input_filename, priority_score, stats")
+    .eq("user_id", userData.user.id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    return (
+      <main className="pageMain">
+        <EmptyHomeState title="문제가 발생했어요" description="저장된 분석을 불러오지 못했습니다. 잠시 후 다시 시도하거나 바로 새 분석을 시작해 주세요." />
+      </main>
+    );
+  }
+
+  const view = mapDashboardHomeView((data ?? []) as DashboardHomeAnalysisRow[]);
+  const metrics = [
+    { label: "총 리뷰", value: formatMetricValue(view.totalReviews, "count"), detail: "누적 저장 분석 기준" },
+    { label: "부정비율", value: formatMetricValue(view.negativeRate, "percent"), detail: `${view.negativeReviews}건 부정 리뷰` },
+    { label: "평균 별점", value: formatMetricValue(view.averageRating, "rating"), detail: "가중 평균" },
+    { label: "최근 30일 비중", value: formatMetricValue(view.recent30DayWeight, "percent"), detail: "최근성 신호" }
+  ];
+
+  return (
+    <main className="pageMain space-y-6">
+      <OverviewMetricBand
+        title="누적 분석 홈"
+        description="지금까지 저장된 분석을 기준으로 최근 흐름과 구성 비율을 같이 읽어, 다시 분석할 대상과 우선순위를 빠르게 판단합니다."
+        metrics={metrics}
+      />
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_380px]">
+        <TrendSurface
+          title="최근 분석 부정 비율"
+          description="최근 저장된 분석 8~12건의 부정 비율 변화를 읽고, 언제 악화됐는지 빠르게 확인합니다."
+          points={view.trend}
+        />
+        <CompositionSurface
+          negativeReviews={view.negativeReviews}
+          nonNegativeReviews={view.nonNegativeReviews}
+          recent30DayWeight={view.recent30DayWeight}
+        />
+      </div>
+
+      <HomeListSection recentReports={view.recentReports} />
+    </main>
   );
 }

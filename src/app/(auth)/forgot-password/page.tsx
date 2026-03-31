@@ -6,6 +6,7 @@ import { requestPasswordResetAction } from "@/app/(auth)/actions";
 import AuthPendingSubmitButton from "@/components/Auth/AuthPendingSubmitButton";
 import FeedbackModal from "@/components/FeedbackModal";
 import AuthShell from "@/components/Auth/AuthShell";
+import { buttonStyles } from "@/components/ui/Button";
 import { useTranslation } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -51,16 +52,20 @@ export default function ForgotPasswordPage() {
             <label className="muted formInputLabel" htmlFor="reset-request-email">{t("forgot.emailLabel")}</label>
             <input id="reset-request-email" className="input" name="email" type="email" placeholder="email@example.com" required />
           </div>
-          <AuthPendingSubmitButton idleLabel={t("forgot.submit")} pendingLabel={t("forgot.submitting")} />
+          <AuthPendingSubmitButton
+            idleLabel={t("forgot.submit")}
+            pendingLabel={t("forgot.submitting")}
+            className={buttonStyles({ variant: "primary", className: "formSubmit w-full justify-center" })}
+          />
         </form>
 
         <div className="authPanelFooter">
           <p className="muted formBottomNote">{t("forgot.otherRoutes")}</p>
           <div className="actionRow authActions">
-            <a className="btn" href={`/login?next=${encodeURIComponent(next)}`}>
+            <a className={buttonStyles({ variant: "secondary" })} href={`/login?next=${encodeURIComponent(next)}`}>
               {t("forgot.goToLogin")}
             </a>
-            <a className="btn btnOutline" href={`/signup?next=${encodeURIComponent(next)}`}>
+            <a className={buttonStyles({ variant: "ghost" })} href={`/signup?next=${encodeURIComponent(next)}`}>
               {t("common.signup")}
             </a>
           </div>
