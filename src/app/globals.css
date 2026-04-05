@@ -8,23 +8,24 @@
 }
 
 :root {
-  --color-bg: #0b0b0b;
-  --color-bg-soft: #121212;
-  --color-panel: #18181b;
-  --color-panel2: #202024;
-  --color-text: #e5e7eb;
-  --color-muted: #9ca3af;
-  --color-primary: #5b6cff;
-  --color-success: #5b6cff;
+  --color-bg: #080a0e;
+  --color-bg-soft: #0f1117;
+  --color-panel: #131720;
+  --color-panel2: #1a1f2a;
+  --color-text: #e8eaf0;
+  --color-muted: #8b92a5;
+  --color-primary: #4f7fff;
+  --color-primary-glow: rgba(79, 127, 255, 0.32);
+  --color-success: #34d399;
   --color-warning: #f2c94c;
   --color-danger: #f87171;
-  --color-surface: #18181b;
-  --color-border: rgba(255, 255, 255, 0.08);
+  --color-surface: #131720;
+  --color-border: rgba(255, 255, 255, 0.07);
   --color-border-strong: rgba(255, 255, 255, 0.14);
-  --color-success-bg: rgba(91, 108, 255, 0.12);
+  --color-success-bg: rgba(52, 211, 153, 0.1);
   --color-warning-bg: rgba(242, 201, 76, 0.12);
   --color-danger-bg: rgba(248, 113, 113, 0.12);
-  --color-text-tertiary: #6b7280;
+  --color-text-tertiary: #5c6480;
 
   --surface-soft: var(--color-bg-soft);
   --surface-border: var(--color-border);
@@ -93,7 +94,41 @@ textarea {
   font: inherit;
 }
 
-/* No decorative gradients — clean Vercel neutral background */
+/* Grain texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.028;
+  pointer-events: none;
+  z-index: 9998;
+  mix-blend-mode: overlay;
+}
+
+/* Shimmer animation for buttons */
+@keyframes shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* Pulse dot */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.8); }
+}
+
+/* Fade-in up */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
 
 .appShell {
   min-height: 100%;
@@ -2862,41 +2897,24 @@ textarea.input:focus {
   background: linear-gradient(135deg, #5b5cea 0%, #7f76f8 100%);
 }
 
-h1,
+/* Legacy class helpers — no longer control heading color/size/weight (Tailwind utilities take precedence via @layer) */
 .heroTitle,
 .dashboardPageTitle,
 .authTitle,
 .marketingTitle,
 .resultsHeroTitle {
   margin: 0;
-  color: #171c4b;
-  font-weight: 800;
-  letter-spacing: -0.04em;
 }
 
-h1,
-.marketingTitle,
-.authTitle,
-.dashboardPageTitle {
-  font-size: clamp(34px, 4.8vw, 56px);
-  line-height: 1.02;
-}
-
-h2,
 .dashboardSectionTitle,
 .resultsHeroTitle,
 .dashboardPageTitle,
-.authPanelHeader h2,
-.pricingHero h1 {
+.authPanelHeader h2 {
   margin: 0;
-  color: #171c4b;
-  font-size: clamp(24px, 3vw, 36px);
-  line-height: 1.12;
 }
 
-h3 {
+h1, h2, h3 {
   margin: 0;
-  color: #171c4b;
 }
 
 .heroLead,
@@ -3462,7 +3480,7 @@ h3 {
   font-size: 34px;
   line-height: 1;
   font-weight: 800;
-  color: #171c4b;
+  color: inherit;
 }
 
 .pricingPlanMeta {

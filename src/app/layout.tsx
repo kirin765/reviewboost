@@ -7,6 +7,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import LayoutClient from "@/components/LayoutClient";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Agentation } from "agentation";
 
 const baseUrl = process.env.APP_BASE_URL || "https://reviewboost.co.kr";
 
@@ -105,6 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </LayoutClient>
         </ErrorBoundary>
+        {process.env.NODE_ENV === "development" && <Agentation />}
       </body>
     </html>
   );
