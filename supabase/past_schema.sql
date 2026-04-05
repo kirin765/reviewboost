@@ -47,10 +47,22 @@ create table if not exists public.subscriptions (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.user_coupang_credentials (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  vendor_id_encrypted text not null,
+  access_key_encrypted text not null,
+  secret_key_encrypted text not null,
+  access_key_last4 text null,
+  market text not null default 'KR',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists profiles_paddle_customer_id_idx on public.profiles (paddle_customer_id);
 create unique index if not exists profiles_paddle_customer_id_uniq on public.profiles (paddle_customer_id) where paddle_customer_id is not null;
 create index if not exists subscriptions_user_id_idx on public.subscriptions (user_id);
 create index if not exists subscriptions_customer_id_idx on public.subscriptions (paddle_customer_id);
+create index if not exists user_coupang_credentials_updated_at_idx on public.user_coupang_credentials (updated_at);
 
 -- Migrations for existing installs (safe to re-run)
 alter table public.reviews add column if not exists reviewed_at timestamptz null;
@@ -62,12 +74,20 @@ alter table public.subscriptions add column if not exists paddle_price_id text n
 alter table public.subscriptions add column if not exists plan_tier text not null default 'free';
 alter table public.subscriptions add column if not exists cancel_at_period_end boolean not null default false;
 alter table public.subscriptions add column if not exists updated_at timestamptz not null default now();
+alter table public.user_coupang_credentials add column if not exists vendor_id_encrypted text;
+alter table public.user_coupang_credentials add column if not exists access_key_encrypted text;
+alter table public.user_coupang_credentials add column if not exists secret_key_encrypted text;
+alter table public.user_coupang_credentials add column if not exists access_key_last4 text null;
+alter table public.user_coupang_credentials add column if not exists market text not null default 'KR';
+alter table public.user_coupang_credentials add column if not exists created_at timestamptz not null default now();
+alter table public.user_coupang_credentials add column if not exists updated_at timestamptz not null default now();
 
 -- RLS: users can only see/delete their own analyses.
 alter table public.analyses enable row level security;
 alter table public.reviews enable row level security;
 alter table public.profiles enable row level security;
 alter table public.subscriptions enable row level security;
+alter table public.user_coupang_credentials enable row level security;
 
 drop policy if exists "analyses_select_own" on public.analyses;
 create policy "analyses_select_own"
@@ -146,3 +166,25 @@ on public.subscriptions
 for select
 to authenticated
 using (user_id = auth.uid());
+
+drop policy if exists "user_coupang_credentials_select_own" on public.user_coupang_credentials;
+create policy "user_coupang_credentials_select_own"
+on public.user_coupang_credentials
+for select
+to authenticated
+using (user_id = auth.uid());
+
+drop policy if exists "user_coupang_credentials_insert_own" on public.user_coupang_credentials;
+create policy "user_coupang_credentials_insert_own"
+on public.user_coupang_credentials
+for insert
+to authenticated
+with check (user_id = auth.uid());
+
+drop policy if exists "user_coupang_credentials_update_own" on public.user_coupang_credentials;
+create policy "user_coupang_credentials_update_own"
+on public.user_coupang_credentials
+for update
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());

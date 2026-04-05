@@ -18,6 +18,7 @@ export default function DashboardShell({ children, userEmail = null, plan = "fre
     () => [
       { href: "/dashboard", label: "분석 홈", active: pathname === "/dashboard" || pathname.startsWith("/dashboard/history") || pathname.startsWith("/dashboard/analysis/") },
       { href: "/dashboard/analyze", label: "분석하기", active: pathname.startsWith("/dashboard/analyze") },
+      { href: "/dashboard/integrations/coupang", label: "쿠팡 연동", active: pathname.startsWith("/dashboard/integrations/coupang") },
       { href: "/coupang-csv", label: "상품리뷰 가져오기", active: pathname.startsWith("/coupang-csv") }
     ],
     [pathname]

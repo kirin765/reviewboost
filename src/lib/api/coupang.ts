@@ -1,5 +1,7 @@
 import { ApiClientError } from "@/lib/apiClient";
 import { isApiErrorBody } from "@/lib/api_error";
+import { get } from "@/lib/apiClient";
+import type { CoupangSellerProductsQuery, CoupangSellerProductsResponse } from "@/lib/coupang_openapi";
 
 export type CoupangCsvDownloadPayload = {
   productUrl: string;
@@ -52,4 +54,17 @@ export async function downloadCoupangCsv(payload: CoupangCsvDownloadPayload): Pr
   const blob = await response.blob();
   const filename = parseFilename(response.headers.get("content-disposition")) ?? `store-reviews-${Date.now()}.csv`;
   return { blob, filename };
+}
+
+export type { CoupangSellerProduct, CoupangSellerProductsResponse, CoupangSellerProductsQuery } from "@/lib/coupang_openapi";
+
+export async function getCoupangSellerProducts(query: CoupangSellerProductsQuery): Promise<CoupangSellerProductsResponse> {
+  const params: Record<string, string | number | boolean> = {};
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined || value === null || value === "") continue;
+    params[key] = value;
+  }
+
+  return get<CoupangSellerProductsResponse>("/coupang/products", params);
 }

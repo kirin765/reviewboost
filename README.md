@@ -97,6 +97,13 @@ Vercel 배포:
   - `COUPANG_CRAWLER_PRODUCT_URL_FIELD` (기본 `url`)
   - `COUPANG_CRAWLER_EXTRA_BODY_JSON` (추가 파라미터 JSON)
   - 운영 주소는 코드에 하드코딩하지 말고 배포 환경변수/시크릿으로만 주입하세요.
+- 쿠팡 Open API 상품 목록 조회(선택):
+  - 문서: [상품 목록 페이징 조회](https://developers.coupangcorp.com/hc/ko/articles/360033645034-%EC%83%81%ED%92%88-%EB%AA%A9%EB%A1%9D-%ED%8E%98%EC%9D%B4%EC%A7%95-%EC%A1%B0%ED%9A%8C)
+  - 서버 route: `GET /api/coupang/products`
+  - 사용자가 `/dashboard/integrations/coupang`에서 `vendorId`, `accessKey`, `secretKey`, `market`를 직접 저장합니다.
+  - 서버 환경변수는 자격증명 자체가 아니라 암호화용 `APP_CRYPTO_SECRET`와 타임아웃 `COUPANG_OPENAPI_TIMEOUT_MS`만 사용합니다.
+  - 인증 헤더는 쿠팡 공식 가이드의 HMAC 포맷(`Authorization`, `X-Requested-By`, `X-MARKET`)으로 서버에서 생성합니다.
+  - 자격증명은 DB에 암호화 저장되며, 상품 조회 route는 로그인한 사용자의 저장된 쿠팡 키만 사용합니다.
 
 ## 월결제 연동
 
