@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getErrorMessage } from "@/types/common";
-import { Panel, primaryButtonClass } from "@/components/marketing/MarketingPrimitives";
+import { Panel, primaryButtonClass, secondaryButtonClass } from "@/components/marketing/MarketingPrimitives";
 
 type Summary = {
   configured: boolean;
@@ -107,10 +107,11 @@ export default function CoupangCredentialForm() {
         </label>
       </div>
 
-      <div className="mt-6 flex items-center gap-3">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
         <button type="button" className={`${primaryButtonClass} border-0`} onClick={onSubmit} disabled={loading || saving}>
           {saving ? "저장 중..." : "연동 정보 저장"}
         </button>
+        <a href="/dashboard/integrations/coupang/guide" className={secondaryButtonClass}>발급 가이드 보기</a>
         {summary.configured ? <span className="text-sm text-[var(--color-muted)]">최근 저장: {summary.updatedAt ? new Date(summary.updatedAt).toLocaleString("ko-KR") : "-"}</span> : null}
       </div>
 

@@ -1,7 +1,7 @@
 import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import CoupangCredentialForm from "@/components/features/coupang/CoupangCredentialForm";
-import { Eyebrow } from "@/components/marketing/MarketingPrimitives";
+import { Eyebrow, secondaryButtonClass } from "@/components/marketing/MarketingPrimitives";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +21,9 @@ export default async function DashboardCoupangIntegrationPage() {
         <p className="mt-5 text-base leading-8 text-[var(--color-muted)]">
           각 사용자가 본인 쿠팡 Wing에서 발급받은 `vendorId`, `accessKey`, `secretKey`를 등록합니다. 저장 후 상품 목록 조회에서 자동으로 사용됩니다.
         </p>
+        <div className="mt-6">
+          <a href="/dashboard/integrations/coupang/guide" className={secondaryButtonClass}>자체개발 발급 가이드 보기</a>
+        </div>
       </section>
       <CoupangCredentialForm />
     </main>
