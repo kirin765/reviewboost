@@ -37,7 +37,11 @@ function websiteNode() {
     name: "ReviewBoost",
     inLanguage: "ko",
     description:
-      "쿠팡·스마트스토어 리뷰 데이터를 분석하고 부정리뷰 대응, FAQ 작성, 상세페이지 개선 문구까지 연결하는 AI 리뷰 분석 도구"
+      "쿠팡·스마트스토어 리뷰 데이터를 분석하고 부정리뷰 대응, FAQ 작성, 상세페이지 개선 문구까지 연결하는 AI 리뷰 분석 도구",
+    potentialAction: {
+      "@type": "ViewAction",
+      target: absoluteUrl("/help")
+    }
   };
 }
 
@@ -66,6 +70,7 @@ export function createSoftwareApplicationStructuredData(record: SeoPageRecord) {
     "@context": "https://schema.org",
     "@graph": [
       organizationNode(),
+      websiteNode(),
       {
         "@type": "SoftwareApplication",
         "@id": `${absoluteUrl(record.canonicalPath)}#software`,
@@ -75,12 +80,44 @@ export function createSoftwareApplicationStructuredData(record: SeoPageRecord) {
         url: absoluteUrl(record.canonicalPath),
         description: record.description,
         inLanguage: "ko",
+        featureList: [
+          "리뷰 CSV 업로드와 자동 컬럼 확인",
+          "감성 분석과 이슈 카테고리 분류",
+          "부정 키워드와 긴급 리뷰 탐지",
+          "상세페이지·CS·FAQ 개선 액션 제안",
+          "PDF 리포트 생성"
+        ],
         offers: {
-          "@type": "Offer",
-          price: "0",
+          "@type": "AggregateOffer",
+          lowPrice: "0",
+          highPrice: "45000",
           priceCurrency: "KRW",
-          description: "무료 플랜"
+          offerCount: "3"
         }
+      },
+      breadcrumbList(record.breadcrumbs)
+    ]
+  };
+}
+
+export function createFaqStructuredData(
+  record: SeoPageRecord,
+  items: Array<{ question: string; answer: string }>
+) {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "FAQPage",
+        "@id": `${absoluteUrl(record.canonicalPath)}#faq`,
+        mainEntity: items.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer
+          }
+        }))
       },
       breadcrumbList(record.breadcrumbs)
     ]
