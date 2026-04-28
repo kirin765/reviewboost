@@ -4,18 +4,18 @@ import { CSV_PARSE_FAILED_HELP } from "@/lib/csv_errors";
 import { getSupabaseAdminClient } from "@/lib/supabase_server";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { readUploadedCsvText } from "@/lib/upload_csv";
-import { monthStartIso, monthlyLimitForPlan, resolvePlanTierForUser } from "@/lib/plan";
+import { monthlyLimitForPlan, resolvePlanTierForUser } from "@/lib/plan";
 import { getCapabilitiesBase } from "@/lib/capabilities";
 import { devForcedAnalysisMode, devAllowAdvancedAiBypass } from "@/lib/dev_flags";
 import { getGatesForPlan } from "@/lib/plan_gates";
 import { runAnalysisPipeline } from "@/lib/analysis_pipeline";
 import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
-import { createStoredAnalysisPayload } from "@/lib/saved-analysis";
-import { isResultPayloadSchemaMismatch, RESULT_PAYLOAD_STORAGE_WARNING } from "@/lib/result-payload-compat";
 import { getErrorMessage } from "@/types/common";
 import { logger } from "@/lib/logger";
 import { getClientIp } from "@/lib/request-utils";
+import { checkMonthlyQuota } from "./_helpers/quota";
+import { insertAnalysisWithCompat, toStorageError, buildStorageMeta, RESULT_PAYLOAD_STORAGE_WARNING } from "./_helpers/persistence";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -33,104 +33,12 @@ type StorageStatus = {
   warning?: string | null;
 };
 
-type AnalysisPayload = Awaited<ReturnType<typeof runAnalysisPipeline>>["payload"];
-
 function delimiterHint(csvText: string): string[] {
   const delimiter = inferDelimiter(csvText);
   if (delimiter === ",") return [];
   return [
     `구분자가 '${delimiter === "\t" ? "TAB" : delimiter}' 로 감지되었습니다. 엑셀에서 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'로 저장하면 가장 안정적입니다.`
   ];
-}
-
-function toStorageError(message?: string | null) {
-  return message && String(message).trim() ? String(message).trim() : "저장에 실패했습니다.";
-}
-
-function buildStorageMeta(base: AnalysisPayload["meta"], storage: StorageStatus) {
-  return {
-    ...base,
-    filename: base.filename,
-    stored: storage.success,
-    analysisId: storage.analysisId,
-    truncated: base.truncated,
-    storageAttempted: storage.attempted,
-    storageError: storage.success ? null : storage.error,
-    storageWarning: storage.warning ?? null,
-    storageStep: storage.step ?? null
-  };
-}
-
-function buildAnalysisInsertRecord({
-  userId,
-  clientIp,
-  filename,
-  payload,
-  includeResultPayload
-}: {
-  userId: string;
-  clientIp: string | null;
-  filename: string | null;
-  payload: AnalysisPayload;
-  includeResultPayload: boolean;
-}) {
-  return {
-    user_id: userId,
-    client_ip: clientIp,
-    input_filename: filename,
-    stats: payload.stats,
-    suggestions: payload.suggestions,
-    priority_score: payload.stats.priorityScore,
-    ...(includeResultPayload ? { result_payload: createStoredAnalysisPayload(payload) } : {})
-  };
-}
-
-async function insertAnalysisWithCompat({
-  client,
-  userId,
-  clientIp,
-  filename,
-  payload
-}: {
-  client: { from: (table: string) => any };
-  userId: string;
-  clientIp: string | null;
-  filename: string | null;
-  payload: AnalysisPayload;
-}) {
-  const firstAttempt = await client
-    .from("analyses")
-    .insert(buildAnalysisInsertRecord({ userId, clientIp, filename, payload, includeResultPayload: true }))
-    .select("id")
-    .single();
-
-  if (!firstAttempt.error) {
-    return {
-      data: firstAttempt.data,
-      error: null,
-      usedCompatFallback: false
-    };
-  }
-
-  if (!isResultPayloadSchemaMismatch(firstAttempt.error)) {
-    return {
-      data: null,
-      error: firstAttempt.error,
-      usedCompatFallback: false
-    };
-  }
-
-  const secondAttempt = await client
-    .from("analyses")
-    .insert(buildAnalysisInsertRecord({ userId, clientIp, filename, payload, includeResultPayload: false }))
-    .select("id")
-    .single();
-
-  return {
-    data: secondAttempt.data,
-    error: secondAttempt.error,
-    usedCompatFallback: true
-  };
 }
 
 export async function POST(req: Request) {
@@ -224,46 +132,11 @@ export async function POST(req: Request) {
     forcedMode
   });
 
-  if (monthlyLimit !== null && userId && supabaseAuth) {
+  if (monthlyLimit !== null) {
     try {
-      const { count } = await supabaseAuth
-        .from("analyses")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("created_at", monthStartIso());
-      if ((count ?? 0) >= monthlyLimit) {
-        return apiErrorResponse(
-          new ApiError(429, "MONTHLY_LIMIT_EXCEEDED", `이번 달 분석 한도(${monthlyLimit}회)를 초과했습니다.`, {
-            help: ["다음 달에 다시 시도하거나 상위 요금제로 업그레이드해주세요."]
-          })
-        );
-      }
-    } catch {
-      // ignore count failure and continue analysis
-    }
-  }
-
-  // IP-based limiting for free users (no userId)
-  // This helps prevent abuse from anonymous users
-  if (monthlyLimit !== null && !userId && clientIp && plan === "free") {
-    try {
-      const admin = getSupabaseAdminClient();
-      if (admin) {
-        const { count } = await admin
-          .from("analyses")
-          .select("id", { count: "exact", head: true })
-          .eq("client_ip", clientIp)
-          .gte("created_at", monthStartIso());
-        if ((count ?? 0) >= monthlyLimit) {
-          return apiErrorResponse(
-            new ApiError(429, "MONTHLY_LIMIT_EXCEEDED", `이번 달 분석 한도(${monthlyLimit}회)를 초과했습니다. 로그인하면 더 많은 분석을 이용할 수 있습니다.`, {
-              help: ["로그인하여 무제한 분석을 이용하거나, 다음 달에 다시 시도해주세요."]
-            })
-          );
-        }
-      }
-    } catch {
-      // ignore count failure and continue analysis
+      await checkMonthlyQuota({ userId, clientIp, plan, monthlyLimit, supabaseAuth });
+    } catch (e) {
+      if (e instanceof ApiError) return apiErrorResponse(e);
     }
   }
 
