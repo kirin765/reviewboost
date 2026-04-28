@@ -1,4 +1,4 @@
-﻿import { findUserIdByPaddleCustomerId, upsertProfileCustomer, upsertSubscription } from "@/lib/billing";
+﻿import { claimPaddleWebhookEvent, findUserIdByPaddleCustomerId, upsertProfileCustomer, upsertSubscription } from "@/lib/billing";
 import { paddlePlanForPriceId } from "@/lib/paddle";
 import {
   extractCustomerId,
@@ -249,6 +249,13 @@ export async function POST(req: Request) {
     const type = String(event?.event_type ?? "");
     const eventId = String(event?.event_id ?? "").trim() || null;
     const data = event.data;
+
+    if (eventId) {
+      const claimed = await claimPaddleWebhookEvent(eventId, type);
+      if (!claimed) {
+        return Response.json({ received: true, duplicate: true });
+      }
+    }
 
     if (type === "transaction.completed" || type === "order.completed") {
       await handleEntitlementEvent(type, eventId, data);

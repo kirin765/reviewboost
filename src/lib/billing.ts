@@ -182,6 +182,28 @@ export async function findPaddleCustomerIdByUserId(userId: string): Promise<stri
   return id || null;
 }
 
+/**
+ * Attempts to claim a Paddle webhook event by inserting its event_id.
+ * Returns true if the event is new (should be processed), false if already seen.
+ * Returns true when Supabase is not configured (fail-open to avoid blocking prod).
+ */
+export async function claimPaddleWebhookEvent(eventId: string, eventType: string): Promise<boolean> {
+  const admin = getSupabaseAdminClient();
+  if (!admin) return true;
+
+  const { error } = await admin.from("paddle_webhook_events").insert({
+    event_id: eventId,
+    event_type: eventType,
+    received_at: new Date().toISOString()
+  });
+
+  if (!error) return true;
+  // PostgreSQL unique-violation code — event already processed
+  if ((error as { code?: string }).code === "23505") return false;
+  // On unexpected errors, fail-open rather than blocking the webhook
+  return true;
+}
+
 export async function upsertSubscription(args: {
   userId: string;
   paddleSubscriptionId: string;

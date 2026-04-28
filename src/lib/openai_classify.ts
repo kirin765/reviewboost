@@ -188,6 +188,14 @@ export async function classifyReviewsWithOpenAI(args: {
       return;
     }
 
+    if (resp.usage) {
+      console.log(
+        `[LLM:classify][TOKEN_USAGE] model=${model}, batchOffset=${offset}, ` +
+        `prompt=${resp.usage.prompt_tokens}, completion=${resp.usage.completion_tokens}, ` +
+        `total=${resp.usage.total_tokens}`
+      );
+    }
+
     const text = resp.choices?.[0]?.message?.content ?? "";
     const parsedItems = parseOpenAiResponse(text);
     if (!parsedItems) {
