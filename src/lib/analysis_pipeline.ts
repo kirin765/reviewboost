@@ -26,18 +26,17 @@ import {
   extractPositiveKeywords
 } from "@/lib/v2/features";
 import type { ClassifiedReview, Suggestions, AnalysisStats } from "@/lib/types";
-
-const LLM_DIAGNOSTIC_REASONS = [
-  "LLM_NOT_REQUESTED",
-  "LLM_REQUESTED_NO_TARGET",
-  "LLM_CLASSIFY_OK",
-  "LLM_CLASSIFY_LEN_MISMATCH",
-  "LLM_CLASSIFY_ERROR"
-] as const;
+import { logger } from "./logger";
+import { normalizeTimeBudget, normalizeHeaderMode, normalizeMaxCount } from "./normalizers";
 
 type AiFallbackReason = "time_budget_exhausted" | "llm_classify_len_mismatch" | "llm_classify_error" | "llm_not_requested";
 
-type LlmDiagnosticReason = (typeof LLM_DIAGNOSTIC_REASONS)[number];
+type LlmDiagnosticReason =
+  | "LLM_NOT_REQUESTED"
+  | "LLM_REQUESTED_NO_TARGET"
+  | "LLM_CLASSIFY_OK"
+  | "LLM_CLASSIFY_LEN_MISMATCH"
+  | "LLM_CLASSIFY_ERROR";
 
 const FALLBACK_LLM_LIMITS: Record<PlanTier, number> = {
   free: 60,
@@ -83,23 +82,6 @@ export interface AnalysisPipelineOutput {
     actionItems?: import("@/lib/types").ActionItem[];
   };
   classified: ClassifiedReview[];
-}
-
-function normalizeTimeBudget(raw: number | undefined): number {
-  if (raw === undefined || !Number.isFinite(raw)) return Number.POSITIVE_INFINITY;
-  if (raw <= 0) return 0;
-  return Math.floor(raw);
-}
-
-function normalizeHeaderMode(value: string | null | undefined): CsvHeaderMode {
-  return value === "headerless" ? "headerless" : "header";
-}
-
-function normalizeMaxCount(raw: number, fallback: number): number {
-  if (!Number.isFinite(raw)) return fallback;
-  const next = Math.floor(raw);
-  if (next < 1) return fallback;
-  return next;
 }
 
 function readMaxLlmReviews(plan: PlanTier): number {
@@ -186,7 +168,7 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
   if (rows.length > maxReviews) {
     rows.length = maxReviews;
     truncated = true;
-    console.log(`[analyze] 리뷰 ${maxReviews}개로 제한 — 초과분 버림`);
+    logger.debug('[analyze] 리뷰 제한 — 초과분 버림', { maxReviews });
   }
 
   // 1) Heuristic classification (baseline)
@@ -196,7 +178,7 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
 
   // 2) Optional: LLM classification for sentiment/category
   let aiDiagnosticReason: LlmDiagnosticReason = "LLM_NOT_REQUESTED";
-  console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan}, 총건=${classified.length}, target=${Math.min(classified.length, maxLlmReviews)}, maxLlmReviews=${maxLlmReviews}`);
+  logger.debug('[LLM:analyze] 초기 진단', { reason: aiDiagnosticReason, plan, total: classified.length, target: Math.min(classified.length, maxLlmReviews), maxLlmReviews });
 
   if (useLLM) {
     try {
@@ -204,9 +186,9 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
       if (targetIdx.length === 0) {
         aiDiagnosticReason = "LLM_REQUESTED_NO_TARGET";
         aiFallbackReason = "llm_not_requested";
-        console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} maxLlmReviews=${maxLlmReviews}`);
+        logger.debug('[LLM:analyze] 분류 대상 없음', { reason: aiDiagnosticReason, plan, total: classified.length, maxLlmReviews });
       } else {
-        console.log(`[LLM:analyze] 분류 요청 — plan=${plan}, 전체=${classified.length}건, LLM대상=${targetIdx.length}건`);
+        logger.debug('[LLM:analyze] 분류 요청', { plan, total: classified.length, llmTarget: targetIdx.length });
         const targetTexts = targetIdx.map((i) => classified[i]!.text);
         const targetFallbacks = targetIdx.map((i) => ({
           sentiment: classified[i]!.sentiment,
@@ -237,31 +219,29 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
           }
           llmApplied = appliedFromLlm > 0;
           aiDiagnosticReason = "LLM_CLASSIFY_OK";
-          console.log(
-            `[LLM:analyze] 분류 적용 완료 — target=${targetIdx.length}건, llmApplied=${appliedFromLlm}건, failedBatches=${llm.failedBatchCount}`
-          );
-          console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 대상=${targetIdx.length} maxLlmReviews=${maxLlmReviews}`);
+          logger.debug('[LLM:analyze] 분류 적용 완료', { target: targetIdx.length, llmApplied: appliedFromLlm, failedBatches: llm.failedBatchCount });
+          logger.debug('[LLM:analyze] 분류 결과', { reason: aiDiagnosticReason, plan, total: classified.length, target: targetIdx.length, maxLlmReviews });
         } else {
           aiDiagnosticReason = "LLM_CLASSIFY_LEN_MISMATCH";
           aiFallbackReason =
             classifyBudgetMs < env.openai.classifyTimeoutMs + CLASSIFY_TIMEOUT_GUARD_MS
               ? "time_budget_exhausted"
               : "llm_classify_len_mismatch";
-          console.warn(`[LLM:analyze] 분류 결과 null 또는 길이 불일치 — heuristic 유지`);
-          console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 대상=${targetIdx.length} 최대=${maxLlmReviews}`);
+          logger.warn('[LLM:analyze] 분류 결과 null 또는 길이 불일치 — heuristic 유지');
+          logger.debug('[LLM:analyze] 분류 불일치 진단', { reason: aiDiagnosticReason, plan, total: classified.length, target: targetIdx.length, maxLlmReviews });
         }
       }
     } catch (err) {
       aiDiagnosticReason = "LLM_CLASSIFY_ERROR";
       aiFallbackReason = "llm_classify_error";
-      console.error(`[LLM:analyze] 분류 중 예외 — error=${err instanceof Error ? err.message : String(err)} → heuristic 유지`);
-      console.error(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 최대=${maxLlmReviews} error=${err instanceof Error ? err.message : String(err)}`);
+      logger.error('[LLM:analyze] 분류 중 예외 — heuristic 유지', { error: err instanceof Error ? err.message : String(err) });
+      logger.error('[LLM:analyze] 분류 예외 진단', { reason: aiDiagnosticReason, plan, total: classified.length, maxLlmReviews, error: err instanceof Error ? err.message : String(err) });
     }
   } else {
-    console.log(`[LLM:analyze][${aiDiagnosticReason}] plan=${plan} 총건=${classified.length} 최대=${maxLlmReviews}`);
+    logger.debug('[LLM:analyze] LLM 미사용', { reason: aiDiagnosticReason, plan, total: classified.length, maxLlmReviews });
   }
 
-  console.log(`[LLM:analyze] finalDiagnostic=${aiDiagnosticReason}`);
+  logger.debug('[LLM:analyze] 최종 진단', { finalDiagnostic: aiDiagnosticReason });
 
   const { stats } = computeAnalysisFromClassified(classified);
 
@@ -276,9 +256,7 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
     : false;
   if (llmApplied && !useAiNarrativeForSuggestions) {
     aiFallbackReason = "time_budget_exhausted";
-    console.warn(
-      `[LLM:analyze] Suggestion time budget 부족으로 템플릿 폴백 — remaining=${suggestBudgetMs}ms, timeout=${env.openai.suggestTimeoutMs}ms`
-    );
+    logger.warn('[LLM:analyze] Suggestion time budget 부족으로 템플릿 폴백', { remaining: suggestBudgetMs, timeout: env.openai.suggestTimeoutMs });
   }
 
   const suggestions = await generateSuggestions(stats, {
