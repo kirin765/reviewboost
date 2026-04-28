@@ -14,6 +14,8 @@ import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 import { createStoredAnalysisPayload } from "@/lib/saved-analysis";
 import { isResultPayloadSchemaMismatch, RESULT_PAYLOAD_STORAGE_WARNING } from "@/lib/result-payload-compat";
 import { getErrorMessage } from "@/types/common";
+import { logger } from "@/lib/logger";
+import { getClientIp } from "@/lib/request-utils";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -32,35 +34,6 @@ type StorageStatus = {
 };
 
 type AnalysisPayload = Awaited<ReturnType<typeof runAnalysisPipeline>>["payload"];
-
-/**
- * Extract client IP address from request headers.
- * Handles proxies and load balancers (x-forwarded-for, etc.)
- */
-function getClientIp(req: Request): string | null {
-  const headers = req.headers;
-
-  // Check x-forwarded-for header (common for proxies/load balancers)
-  const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) {
-    // x-forwarded-for can contain multiple IPs, take the first one (original client)
-    return forwarded.split(",")[0].trim();
-  }
-
-  // Check x-real-ip header (commonly set by nginx, etc.)
-  const realIp = headers.get("x-real-ip");
-  if (realIp) {
-    return realIp.trim();
-  }
-
-  // Check cf-connecting-ip (Cloudflare)
-  const cfIp = headers.get("cf-connecting-ip");
-  if (cfIp) {
-    return cfIp.trim();
-  }
-
-  return null;
-}
 
 function delimiterHint(csvText: string): string[] {
   const delimiter = inferDelimiter(csvText);
@@ -233,24 +206,23 @@ export async function POST(req: Request) {
   if (!gates.allowLLM && !devBypass) {
     effectiveUseLLM = false;
     aiDecisionTag = "AI_DECISION:SKIPPED_PLANK";
-    console.log(`[LLM:analyze] LLM 비활성화 — plan=${plan}, allowLLM=${gates.allowLLM}`);
+    logger.debug('[LLM:analyze] LLM 비활성화', { plan, allowLLM: gates.allowLLM });
   } else if (forcedMode === "heuristic") {
     aiDecisionTag = "AI_DECISION:FORCED_HEURISTIC";
   } else if (forcedMode === "llm") {
     aiDecisionTag = "AI_DECISION:FORCED_LLM";
   }
 
-  console.log(
-    `[LLM:analyze:decision] ${aiDecisionTag} payload=${JSON.stringify({
-      useLLM,
-      effectiveUseLLM,
-      plan,
-      allowLLM: gates.allowLLM,
-      devBypass,
-      openaiConfigured: openaiAvailable,
-      forcedMode
-    })}`
-  );
+  logger.debug('[LLM:analyze:decision]', {
+    tag: aiDecisionTag,
+    useLLM,
+    effectiveUseLLM,
+    plan,
+    allowLLM: gates.allowLLM,
+    devBypass,
+    openaiConfigured: openaiAvailable,
+    forcedMode
+  });
 
   if (monthlyLimit !== null && userId && supabaseAuth) {
     try {
