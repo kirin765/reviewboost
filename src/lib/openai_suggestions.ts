@@ -213,6 +213,14 @@ export async function generateSuggestions(stats: AnalysisStats, opts?: Suggestio
     return fallbackSuggestions(stats, opts);
   }
 
+  if (resp.usage) {
+    console.log(
+      `[LLM:suggest][TOKEN_USAGE] model=${model}, ` +
+      `prompt=${resp.usage.prompt_tokens}, completion=${resp.usage.completion_tokens}, ` +
+      `total=${resp.usage.total_tokens}`
+    );
+  }
+
   const text = resp.choices?.[0]?.message?.content ?? "";
   try {
     const parsed = JSON.parse(text) as SuggestionRaw;
