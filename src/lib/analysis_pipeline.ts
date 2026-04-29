@@ -29,13 +29,13 @@ import type { ClassifiedReview, Suggestions, AnalysisStats } from "@/lib/types";
 import { logger } from "./logger";
 import { normalizeTimeBudget, normalizeHeaderMode, normalizeMaxCount } from "./normalizers";
 
-type AiFallbackReason = "time_budget_exhausted" | "llm_classify_len_mismatch" | "llm_classify_error" | "llm_not_requested";
+type AiFallbackReason = "time_budget_exhausted" | "llm_classify_error" | "llm_not_requested";
 
 type LlmDiagnosticReason =
   | "LLM_NOT_REQUESTED"
   | "LLM_REQUESTED_NO_TARGET"
   | "LLM_CLASSIFY_OK"
-  | "LLM_CLASSIFY_LEN_MISMATCH"
+  | "LLM_CLASSIFY_FAILED"
   | "LLM_CLASSIFY_ERROR";
 
 const FALLBACK_LLM_LIMITS: Record<PlanTier, number> = {
@@ -222,11 +222,11 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
           logger.debug('[LLM:analyze] 분류 적용 완료', { target: targetIdx.length, llmApplied: appliedFromLlm, failedBatches: llm.failedBatchCount });
           logger.debug('[LLM:analyze] 분류 결과', { reason: aiDiagnosticReason, plan, total: classified.length, target: targetIdx.length, maxLlmReviews });
         } else {
-          aiDiagnosticReason = "LLM_CLASSIFY_LEN_MISMATCH";
+          aiDiagnosticReason = "LLM_CLASSIFY_FAILED";
           aiFallbackReason =
             classifyBudgetMs < env.openai.classifyTimeoutMs + CLASSIFY_TIMEOUT_GUARD_MS
               ? "time_budget_exhausted"
-              : "llm_classify_len_mismatch";
+              : "llm_classify_error";
           logger.warn('[LLM:analyze] 분류 결과 null 또는 길이 불일치 — heuristic 유지');
           logger.debug('[LLM:analyze] 분류 불일치 진단', { reason: aiDiagnosticReason, plan, total: classified.length, target: targetIdx.length, maxLlmReviews });
         }
