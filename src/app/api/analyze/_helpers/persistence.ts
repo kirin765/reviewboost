@@ -103,4 +103,86 @@ export async function insertAnalysisWithCompat({
   };
 }
 
+export type { StorageStatus };
+
+export interface PersistAndRespondInput {
+  userId: string;
+  clientIp: string | null;
+  filename: string | null;
+  payload: AnalysisPayload;
+  classified: import("@/lib/types").ClassifiedReview[];
+  storageStatus: StorageStatus;
+  clientLabel: string;
+}
+
+/**
+ * Attempts to persist an analysis via the given Supabase client.
+ * Mutates `storageStatus` in place.
+ * Returns a `Response` on success, or `null` if no analysisId was returned
+ * (caller should continue to the next fallback path).
+ * Throws on Supabase insert errors so the caller's catch block can handle them.
+ */
+export async function executePersistAndRespond(
+  client: { from: (table: string) => any },
+  { userId, clientIp, filename, payload, classified, storageStatus, clientLabel }: PersistAndRespondInput
+): Promise<Response | null> {
+  const insertAnalysis = await insertAnalysisWithCompat({
+    client,
+    userId,
+    clientIp,
+    filename,
+    payload
+  });
+
+  if (insertAnalysis.usedCompatFallback) {
+    storageStatus.warning = RESULT_PAYLOAD_STORAGE_WARNING;
+    storageStatus.step = `analyses_insert_${clientLabel}_compat`;
+  }
+
+  if (insertAnalysis.error) {
+    const step = insertAnalysis.usedCompatFallback
+      ? `analyses_insert_${clientLabel}_compat_failed`
+      : `analyses_insert_${clientLabel}_failed`;
+    storageStatus.error = toStorageError(
+      `${step}: ${insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)}`
+    );
+    throw new Error(storageStatus.error);
+  }
+
+  const analysisId = insertAnalysis.data?.id as string | undefined;
+  if (!analysisId) {
+    storageStatus.error = `analyses_insert_${clientLabel}_no_id`;
+    return null;
+  }
+
+  const reviews = classified.slice(0, 5000).map((r) => ({
+    analysis_id: analysisId,
+    rating: r.rating,
+    text: r.text,
+    sentiment: r.sentiment,
+    category: r.category,
+    reviewed_at: r.reviewedAt ?? null
+  }));
+
+  if (reviews.length) {
+    storageStatus.step = `reviews_insert_${clientLabel}`;
+    const insertReviews = await client.from("reviews").insert(reviews);
+    if (insertReviews.error) {
+      storageStatus.error = toStorageError(
+        `reviews_insert_${clientLabel}_failed: ${insertReviews.error.message ?? JSON.stringify(insertReviews.error)}`
+      );
+      throw new Error(storageStatus.error);
+    }
+  }
+
+  storageStatus.success = true;
+  storageStatus.analysisId = analysisId;
+  storageStatus.error = null;
+
+  return Response.json({
+    ...payload,
+    meta: buildStorageMeta(payload.meta, storageStatus)
+  });
+}
+
 export { RESULT_PAYLOAD_STORAGE_WARNING };

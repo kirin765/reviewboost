@@ -1,4 +1,3 @@
-import { inferDelimiter } from "@/lib/csv";
 import { ApiError, apiErrorResponse } from "@/lib/api_error";
 import { CSV_PARSE_FAILED_HELP } from "@/lib/csv_errors";
 import { getSupabaseAdminClient } from "@/lib/supabase_server";
@@ -15,12 +14,11 @@ import { getErrorMessage } from "@/types/common";
 import { logger } from "@/lib/logger";
 import { getClientIp } from "@/lib/request-utils";
 import { checkMonthlyQuota } from "./_helpers/quota";
-import { insertAnalysisWithCompat, toStorageError, buildStorageMeta, RESULT_PAYLOAD_STORAGE_WARNING } from "./_helpers/persistence";
+import { toStorageError, buildStorageMeta, executePersistAndRespond } from "./_helpers/persistence";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
-const ANALYZE_MAX_DURATION_SEC = maxDuration;
-const ANALYZE_REQUEST_BUDGET_MS = Math.max(0, ANALYZE_MAX_DURATION_SEC * 1000 - 1500);
+const ANALYZE_REQUEST_BUDGET_MS = Math.max(0, maxDuration * 1000 - 1500);
 
 const MAX_BYTES = 6 * 1024 * 1024;
 
@@ -32,14 +30,6 @@ type StorageStatus = {
   error: string | null;
   warning?: string | null;
 };
-
-function delimiterHint(csvText: string): string[] {
-  const delimiter = inferDelimiter(csvText);
-  if (delimiter === ",") return [];
-  return [
-    `구분자가 '${delimiter === "\t" ? "TAB" : delimiter}' 로 감지되었습니다. 엑셀에서 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'로 저장하면 가장 안정적입니다.`
-  ];
-}
 
 export async function POST(req: Request) {
   if (!isSameOriginRequest(req)) return csrfErrorResponse();
@@ -189,104 +179,38 @@ export async function POST(req: Request) {
   try {
     const admin = getSupabaseAdminClient();
     if (admin) {
-      storageStatus.attempted = true;
-      storageStatus.step = "analyses_insert_admin";
-
       if (!userId) {
         storageStatus.attempted = false;
         storageStatus.error = "로그인 후 히스토리에 저장됩니다.";
       } else {
-        const insertAnalysis = await insertAnalysisWithCompat({
-          client: admin,
+        storageStatus.attempted = true;
+        storageStatus.step = "analyses_insert_admin";
+        const adminResponse = await executePersistAndRespond(admin, {
           userId,
           clientIp,
           filename,
-          payload
+          payload,
+          classified,
+          storageStatus,
+          clientLabel: "admin"
         });
-
-        if (insertAnalysis.usedCompatFallback) {
-          storageStatus.warning = RESULT_PAYLOAD_STORAGE_WARNING;
-          storageStatus.step = "analyses_insert_admin_compat";
-        }
-
-        if (insertAnalysis.error) {
-          storageStatus.error = toStorageError(
-            `${insertAnalysis.usedCompatFallback ? "analyses_insert_admin_compat_failed" : "analyses_insert_admin_failed"}: ${
-              insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)
-            }`
-          );
-          throw new Error(storageStatus.error);
-        }
-
-        const analysisId = insertAnalysis.data?.id as string | undefined;
-        if (analysisId) {
-          const reviews = classified.slice(0, 5000).map((r) => ({
-            analysis_id: analysisId,
-            rating: r.rating,
-            text: r.text,
-            sentiment: r.sentiment,
-            category: r.category,
-            reviewed_at: r.reviewedAt ?? null
-          }));
-          if (reviews.length) {
-            storageStatus.step = "reviews_insert_admin";
-            const insertReviews = await admin.from("reviews").insert(reviews);
-            if (insertReviews.error) {
-              storageStatus.error = toStorageError(`reviews_insert_admin_failed: ${insertReviews.error.message ?? JSON.stringify(insertReviews.error)}`);
-              throw new Error(storageStatus.error);
-            }
-          }
-
-          storageStatus.success = true;
-          storageStatus.analysisId = analysisId;
-          storageStatus.error = null;
-          return Response.json({
-            ...payload,
-            meta: buildStorageMeta(payload.meta, storageStatus)
-          });
-        }
-
-        storageStatus.error = "analyses_insert_admin_no_id";
+        if (adminResponse) return adminResponse;
       }
     }
 
     if (userId && supabaseAuth) {
       storageStatus.attempted = true;
       storageStatus.step = "analyses_insert_auth";
-      const insertAnalysis = await insertAnalysisWithCompat({
-        client: supabaseAuth,
+      const authResponse = await executePersistAndRespond(supabaseAuth, {
         userId,
         clientIp,
         filename,
-        payload
+        payload,
+        classified,
+        storageStatus,
+        clientLabel: "auth"
       });
-
-      if (insertAnalysis.usedCompatFallback) {
-        storageStatus.warning = RESULT_PAYLOAD_STORAGE_WARNING;
-        storageStatus.step = "analyses_insert_auth_compat";
-      }
-
-      if (insertAnalysis.error) {
-        storageStatus.error = toStorageError(
-          `${insertAnalysis.usedCompatFallback ? "analyses_insert_auth_compat_failed" : "analyses_insert_auth_failed"}: ${
-            insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)
-          }`
-        );
-        throw new Error(storageStatus.error);
-      }
-
-      const analysisId = insertAnalysis.data?.id as string | undefined;
-      if (analysisId) {
-        storageStatus.success = true;
-        storageStatus.analysisId = analysisId;
-        storageStatus.error = null;
-        return Response.json({
-          ...payload,
-          meta: buildStorageMeta(payload.meta, storageStatus)
-        });
-      }
-
-      storageStatus.error = "analyses_insert_auth_no_id";
+      if (authResponse) return authResponse;
     }
 
     if (!storageStatus.error) {
