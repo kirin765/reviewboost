@@ -1,6 +1,17 @@
 import type { AnalysisOutput, AnalysisStats, Category, ClassifiedReview, ReviewRow, Sentiment } from "@/lib/types";
 import { topKeywords } from "@/lib/keywords";
 
+const POSITIVE_HINTS = [
+  "좋아요",
+  "만족",
+  "최고",
+  "훌륭",
+  "추천",
+  "완벽",
+  "신뢰",
+  "감사"
+];
+
 const NEGATIVE_HINTS = [
   "불량",
   "하자",
@@ -50,8 +61,9 @@ function guessSentiment(row: ReviewRow): Sentiment {
     return "neutral";
   }
   const t = row.text;
-  const neg = NEGATIVE_HINTS.some((h) => t.includes(h));
-  return neg ? "negative" : "neutral";
+  if (POSITIVE_HINTS.some((h) => t.includes(h))) return "positive";
+  if (NEGATIVE_HINTS.some((h) => t.includes(h))) return "negative";
+  return "neutral";
 }
 
 function categorize(text: string): Category {
