@@ -1,24 +1,24 @@
-import { inferDelimiter } from "@/lib/csv";
 import { ApiError, apiErrorResponse } from "@/lib/api_error";
 import { CSV_PARSE_FAILED_HELP } from "@/lib/csv_errors";
 import { getSupabaseAdminClient } from "@/lib/supabase_server";
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { readUploadedCsvText } from "@/lib/upload_csv";
-import { monthStartIso, monthlyLimitForPlan, resolvePlanTierForUser } from "@/lib/plan";
+import { monthlyLimitForPlan, resolvePlanTierForUser } from "@/lib/plan";
 import { getCapabilitiesBase } from "@/lib/capabilities";
 import { devForcedAnalysisMode, devAllowAdvancedAiBypass } from "@/lib/dev_flags";
 import { getGatesForPlan } from "@/lib/plan_gates";
 import { runAnalysisPipeline } from "@/lib/analysis_pipeline";
 import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
-import { createStoredAnalysisPayload } from "@/lib/saved-analysis";
-import { isResultPayloadSchemaMismatch, RESULT_PAYLOAD_STORAGE_WARNING } from "@/lib/result-payload-compat";
 import { getErrorMessage } from "@/types/common";
+import { logger } from "@/lib/logger";
+import { getClientIp } from "@/lib/request-utils";
+import { checkMonthlyQuota } from "./_helpers/quota";
+import { toStorageError, buildStorageMeta, executePersistAndRespond } from "./_helpers/persistence";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
-const ANALYZE_MAX_DURATION_SEC = maxDuration;
-const ANALYZE_REQUEST_BUDGET_MS = Math.max(0, ANALYZE_MAX_DURATION_SEC * 1000 - 1500);
+const ANALYZE_REQUEST_BUDGET_MS = Math.max(0, maxDuration * 1000 - 1500);
 
 const MAX_BYTES = 6 * 1024 * 1024;
 
@@ -30,135 +30,6 @@ type StorageStatus = {
   error: string | null;
   warning?: string | null;
 };
-
-type AnalysisPayload = Awaited<ReturnType<typeof runAnalysisPipeline>>["payload"];
-
-/**
- * Extract client IP address from request headers.
- * Handles proxies and load balancers (x-forwarded-for, etc.)
- */
-function getClientIp(req: Request): string | null {
-  const headers = req.headers;
-
-  // Check x-forwarded-for header (common for proxies/load balancers)
-  const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) {
-    // x-forwarded-for can contain multiple IPs, take the first one (original client)
-    return forwarded.split(",")[0].trim();
-  }
-
-  // Check x-real-ip header (commonly set by nginx, etc.)
-  const realIp = headers.get("x-real-ip");
-  if (realIp) {
-    return realIp.trim();
-  }
-
-  // Check cf-connecting-ip (Cloudflare)
-  const cfIp = headers.get("cf-connecting-ip");
-  if (cfIp) {
-    return cfIp.trim();
-  }
-
-  return null;
-}
-
-function delimiterHint(csvText: string): string[] {
-  const delimiter = inferDelimiter(csvText);
-  if (delimiter === ",") return [];
-  return [
-    `구분자가 '${delimiter === "\t" ? "TAB" : delimiter}' 로 감지되었습니다. 엑셀에서 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'로 저장하면 가장 안정적입니다.`
-  ];
-}
-
-function toStorageError(message?: string | null) {
-  return message && String(message).trim() ? String(message).trim() : "저장에 실패했습니다.";
-}
-
-function buildStorageMeta(base: AnalysisPayload["meta"], storage: StorageStatus) {
-  return {
-    ...base,
-    filename: base.filename,
-    stored: storage.success,
-    analysisId: storage.analysisId,
-    truncated: base.truncated,
-    storageAttempted: storage.attempted,
-    storageError: storage.success ? null : storage.error,
-    storageWarning: storage.warning ?? null,
-    storageStep: storage.step ?? null
-  };
-}
-
-function buildAnalysisInsertRecord({
-  userId,
-  clientIp,
-  filename,
-  payload,
-  includeResultPayload
-}: {
-  userId: string;
-  clientIp: string | null;
-  filename: string | null;
-  payload: AnalysisPayload;
-  includeResultPayload: boolean;
-}) {
-  return {
-    user_id: userId,
-    client_ip: clientIp,
-    input_filename: filename,
-    stats: payload.stats,
-    suggestions: payload.suggestions,
-    priority_score: payload.stats.priorityScore,
-    ...(includeResultPayload ? { result_payload: createStoredAnalysisPayload(payload) } : {})
-  };
-}
-
-async function insertAnalysisWithCompat({
-  client,
-  userId,
-  clientIp,
-  filename,
-  payload
-}: {
-  client: { from: (table: string) => any };
-  userId: string;
-  clientIp: string | null;
-  filename: string | null;
-  payload: AnalysisPayload;
-}) {
-  const firstAttempt = await client
-    .from("analyses")
-    .insert(buildAnalysisInsertRecord({ userId, clientIp, filename, payload, includeResultPayload: true }))
-    .select("id")
-    .single();
-
-  if (!firstAttempt.error) {
-    return {
-      data: firstAttempt.data,
-      error: null,
-      usedCompatFallback: false
-    };
-  }
-
-  if (!isResultPayloadSchemaMismatch(firstAttempt.error)) {
-    return {
-      data: null,
-      error: firstAttempt.error,
-      usedCompatFallback: false
-    };
-  }
-
-  const secondAttempt = await client
-    .from("analyses")
-    .insert(buildAnalysisInsertRecord({ userId, clientIp, filename, payload, includeResultPayload: false }))
-    .select("id")
-    .single();
-
-  return {
-    data: secondAttempt.data,
-    error: secondAttempt.error,
-    usedCompatFallback: true
-  };
-}
 
 export async function POST(req: Request) {
   if (!isSameOriginRequest(req)) return csrfErrorResponse();
@@ -233,65 +104,29 @@ export async function POST(req: Request) {
   if (!gates.allowLLM && !devBypass) {
     effectiveUseLLM = false;
     aiDecisionTag = "AI_DECISION:SKIPPED_PLANK";
-    console.log(`[LLM:analyze] LLM 비활성화 — plan=${plan}, allowLLM=${gates.allowLLM}`);
+    logger.debug('[LLM:analyze] LLM 비활성화', { plan, allowLLM: gates.allowLLM });
   } else if (forcedMode === "heuristic") {
     aiDecisionTag = "AI_DECISION:FORCED_HEURISTIC";
   } else if (forcedMode === "llm") {
     aiDecisionTag = "AI_DECISION:FORCED_LLM";
   }
 
-  console.log(
-    `[LLM:analyze:decision] ${aiDecisionTag} payload=${JSON.stringify({
-      useLLM,
-      effectiveUseLLM,
-      plan,
-      allowLLM: gates.allowLLM,
-      devBypass,
-      openaiConfigured: openaiAvailable,
-      forcedMode
-    })}`
-  );
+  logger.debug('[LLM:analyze:decision]', {
+    tag: aiDecisionTag,
+    useLLM,
+    effectiveUseLLM,
+    plan,
+    allowLLM: gates.allowLLM,
+    devBypass,
+    openaiConfigured: openaiAvailable,
+    forcedMode
+  });
 
-  if (monthlyLimit !== null && userId && supabaseAuth) {
+  if (monthlyLimit !== null) {
     try {
-      const { count } = await supabaseAuth
-        .from("analyses")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("created_at", monthStartIso());
-      if ((count ?? 0) >= monthlyLimit) {
-        return apiErrorResponse(
-          new ApiError(429, "MONTHLY_LIMIT_EXCEEDED", `이번 달 분석 한도(${monthlyLimit}회)를 초과했습니다.`, {
-            help: ["다음 달에 다시 시도하거나 상위 요금제로 업그레이드해주세요."]
-          })
-        );
-      }
-    } catch {
-      // ignore count failure and continue analysis
-    }
-  }
-
-  // IP-based limiting for free users (no userId)
-  // This helps prevent abuse from anonymous users
-  if (monthlyLimit !== null && !userId && clientIp && plan === "free") {
-    try {
-      const admin = getSupabaseAdminClient();
-      if (admin) {
-        const { count } = await admin
-          .from("analyses")
-          .select("id", { count: "exact", head: true })
-          .eq("client_ip", clientIp)
-          .gte("created_at", monthStartIso());
-        if ((count ?? 0) >= monthlyLimit) {
-          return apiErrorResponse(
-            new ApiError(429, "MONTHLY_LIMIT_EXCEEDED", `이번 달 분석 한도(${monthlyLimit}회)를 초과했습니다. 로그인하면 더 많은 분석을 이용할 수 있습니다.`, {
-              help: ["로그인하여 무제한 분석을 이용하거나, 다음 달에 다시 시도해주세요."]
-            })
-          );
-        }
-      }
-    } catch {
-      // ignore count failure and continue analysis
+      await checkMonthlyQuota({ userId, clientIp, plan, monthlyLimit, supabaseAuth });
+    } catch (e) {
+      if (e instanceof ApiError) return apiErrorResponse(e);
     }
   }
 
@@ -344,104 +179,38 @@ export async function POST(req: Request) {
   try {
     const admin = getSupabaseAdminClient();
     if (admin) {
-      storageStatus.attempted = true;
-      storageStatus.step = "analyses_insert_admin";
-
       if (!userId) {
         storageStatus.attempted = false;
         storageStatus.error = "로그인 후 히스토리에 저장됩니다.";
       } else {
-        const insertAnalysis = await insertAnalysisWithCompat({
-          client: admin,
+        storageStatus.attempted = true;
+        storageStatus.step = "analyses_insert_admin";
+        const adminResponse = await executePersistAndRespond(admin, {
           userId,
           clientIp,
           filename,
-          payload
+          payload,
+          classified,
+          storageStatus,
+          clientLabel: "admin"
         });
-
-        if (insertAnalysis.usedCompatFallback) {
-          storageStatus.warning = RESULT_PAYLOAD_STORAGE_WARNING;
-          storageStatus.step = "analyses_insert_admin_compat";
-        }
-
-        if (insertAnalysis.error) {
-          storageStatus.error = toStorageError(
-            `${insertAnalysis.usedCompatFallback ? "analyses_insert_admin_compat_failed" : "analyses_insert_admin_failed"}: ${
-              insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)
-            }`
-          );
-          throw new Error(storageStatus.error);
-        }
-
-        const analysisId = insertAnalysis.data?.id as string | undefined;
-        if (analysisId) {
-          const reviews = classified.slice(0, 5000).map((r) => ({
-            analysis_id: analysisId,
-            rating: r.rating,
-            text: r.text,
-            sentiment: r.sentiment,
-            category: r.category,
-            reviewed_at: r.reviewedAt ?? null
-          }));
-          if (reviews.length) {
-            storageStatus.step = "reviews_insert_admin";
-            const insertReviews = await admin.from("reviews").insert(reviews);
-            if (insertReviews.error) {
-              storageStatus.error = toStorageError(`reviews_insert_admin_failed: ${insertReviews.error.message ?? JSON.stringify(insertReviews.error)}`);
-              throw new Error(storageStatus.error);
-            }
-          }
-
-          storageStatus.success = true;
-          storageStatus.analysisId = analysisId;
-          storageStatus.error = null;
-          return Response.json({
-            ...payload,
-            meta: buildStorageMeta(payload.meta, storageStatus)
-          });
-        }
-
-        storageStatus.error = "analyses_insert_admin_no_id";
+        if (adminResponse) return adminResponse;
       }
     }
 
     if (userId && supabaseAuth) {
       storageStatus.attempted = true;
       storageStatus.step = "analyses_insert_auth";
-      const insertAnalysis = await insertAnalysisWithCompat({
-        client: supabaseAuth,
+      const authResponse = await executePersistAndRespond(supabaseAuth, {
         userId,
         clientIp,
         filename,
-        payload
+        payload,
+        classified,
+        storageStatus,
+        clientLabel: "auth"
       });
-
-      if (insertAnalysis.usedCompatFallback) {
-        storageStatus.warning = RESULT_PAYLOAD_STORAGE_WARNING;
-        storageStatus.step = "analyses_insert_auth_compat";
-      }
-
-      if (insertAnalysis.error) {
-        storageStatus.error = toStorageError(
-          `${insertAnalysis.usedCompatFallback ? "analyses_insert_auth_compat_failed" : "analyses_insert_auth_failed"}: ${
-            insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)
-          }`
-        );
-        throw new Error(storageStatus.error);
-      }
-
-      const analysisId = insertAnalysis.data?.id as string | undefined;
-      if (analysisId) {
-        storageStatus.success = true;
-        storageStatus.analysisId = analysisId;
-        storageStatus.error = null;
-        return Response.json({
-          ...payload,
-          meta: buildStorageMeta(payload.meta, storageStatus)
-        });
-      }
-
-      storageStatus.error = "analyses_insert_auth_no_id";
+      if (authResponse) return authResponse;
     }
 
     if (!storageStatus.error) {
