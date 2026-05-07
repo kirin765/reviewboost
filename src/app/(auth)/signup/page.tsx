@@ -46,7 +46,12 @@ export default function SignupPage() {
           <p className="muted">{t("signup.panelLead")}</p>
         </div>
 
-        <form className="fieldRow" action={signUpAction}>
+        <div style={{ padding: "12px 16px", background: "rgba(234,179,8,0.12)", border: "1px solid rgba(234,179,8,0.4)", borderRadius: "8px", color: "var(--rb-fg)", fontSize: "0.875rem", lineHeight: "1.5" }}>
+          <strong>회원가입이 일시적으로 중단되었습니다.</strong><br />
+          현재 서비스 준비 중으로 신규 가입을 받지 않고 있습니다. 준비가 완료되는 대로 안내드리겠습니다.
+        </div>
+
+        <form className="fieldRow" action={signUpAction} style={{ opacity: 0.4, pointerEvents: "none" }}>
           <input type="hidden" name="next" value={next} />
           <div>
             <label className="muted formInputLabel" htmlFor="signup-email">{t("signup.emailLabel")}</label>
