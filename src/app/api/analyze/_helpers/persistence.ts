@@ -1,6 +1,6 @@
 import { runAnalysisPipeline } from "@/lib/analysis_pipeline";
 import { createStoredAnalysisPayload } from "@/lib/saved-analysis";
-import { isResultPayloadSchemaMismatch, RESULT_PAYLOAD_STORAGE_WARNING } from "@/lib/result-payload-compat";
+import { insertAnalysisForUser, insertReviewsForAnalysis } from "@/lib/db/queries";
 
 type AnalysisPayload = Awaited<ReturnType<typeof runAnalysisPipeline>>["payload"];
 
@@ -31,78 +31,6 @@ export function buildStorageMeta(base: AnalysisPayload["meta"], storage: Storage
   };
 }
 
-export function buildAnalysisInsertRecord({
-  userId,
-  clientIp,
-  filename,
-  payload,
-  includeResultPayload
-}: {
-  userId: string;
-  clientIp: string | null;
-  filename: string | null;
-  payload: AnalysisPayload;
-  includeResultPayload: boolean;
-}) {
-  return {
-    user_id: userId,
-    client_ip: clientIp,
-    input_filename: filename,
-    stats: payload.stats,
-    suggestions: payload.suggestions,
-    priority_score: payload.stats.priorityScore,
-    ...(includeResultPayload ? { result_payload: createStoredAnalysisPayload(payload) } : {})
-  };
-}
-
-export async function insertAnalysisWithCompat({
-  client,
-  userId,
-  clientIp,
-  filename,
-  payload
-}: {
-  client: { from: (table: string) => any };
-  userId: string;
-  clientIp: string | null;
-  filename: string | null;
-  payload: AnalysisPayload;
-}) {
-  const firstAttempt = await client
-    .from("analyses")
-    .insert(buildAnalysisInsertRecord({ userId, clientIp, filename, payload, includeResultPayload: true }))
-    .select("id")
-    .single();
-
-  if (!firstAttempt.error) {
-    return {
-      data: firstAttempt.data,
-      error: null,
-      usedCompatFallback: false
-    };
-  }
-
-  if (!isResultPayloadSchemaMismatch(firstAttempt.error)) {
-    return {
-      data: null,
-      error: firstAttempt.error,
-      usedCompatFallback: false
-    };
-  }
-
-  const secondAttempt = await client
-    .from("analyses")
-    .insert(buildAnalysisInsertRecord({ userId, clientIp, filename, payload, includeResultPayload: false }))
-    .select("id")
-    .single();
-
-  return {
-    data: secondAttempt.data,
-    error: secondAttempt.error,
-    usedCompatFallback: true
-  };
-}
-
 export type { StorageStatus };
 
 export interface PersistAndRespondInput {
@@ -116,64 +44,46 @@ export interface PersistAndRespondInput {
 }
 
 /**
- * Attempts to persist an analysis via the given Supabase client.
+ * Persists an analysis via Drizzle (Neon).
  * Mutates `storageStatus` in place.
- * Returns a `Response` on success, or `null` if no analysisId was returned
- * (caller should continue to the next fallback path).
- * Throws on Supabase insert errors so the caller's catch block can handle them.
+ * Returns a `Response` on success, or `null` if no analysisId was returned.
+ * Throws on insert errors so the caller's catch block can handle them.
  */
-export async function executePersistAndRespond(
-  client: { from: (table: string) => any },
-  { userId, clientIp, filename, payload, classified, storageStatus, clientLabel }: PersistAndRespondInput
-): Promise<Response | null> {
-  const insertAnalysis = await insertAnalysisWithCompat({
-    client,
+export async function executePersistAndRespond({
+  userId,
+  clientIp,
+  filename,
+  payload,
+  classified,
+  storageStatus,
+  clientLabel
+}: PersistAndRespondInput): Promise<Response | null> {
+  const analysisId = await insertAnalysisForUser({
     userId,
     clientIp,
-    filename,
-    payload
+    inputFilename: filename,
+    stats: payload.stats,
+    suggestions: payload.suggestions,
+    resultPayload: createStoredAnalysisPayload(payload),
+    priorityScore: payload.stats.priorityScore
   });
 
-  if (insertAnalysis.usedCompatFallback) {
-    storageStatus.warning = RESULT_PAYLOAD_STORAGE_WARNING;
-    storageStatus.step = `analyses_insert_${clientLabel}_compat`;
-  }
-
-  if (insertAnalysis.error) {
-    const step = insertAnalysis.usedCompatFallback
-      ? `analyses_insert_${clientLabel}_compat_failed`
-      : `analyses_insert_${clientLabel}_failed`;
-    storageStatus.error = toStorageError(
-      `${step}: ${insertAnalysis.error.message ?? JSON.stringify(insertAnalysis.error)}`
-    );
-    throw new Error(storageStatus.error);
-  }
-
-  const analysisId = insertAnalysis.data?.id as string | undefined;
   if (!analysisId) {
     storageStatus.error = `analyses_insert_${clientLabel}_no_id`;
     return null;
   }
 
-  const reviews = classified.slice(0, 5000).map((r) => ({
-    analysis_id: analysisId,
-    rating: r.rating,
-    text: r.text,
-    sentiment: r.sentiment,
-    category: r.category,
-    reviewed_at: r.reviewedAt ?? null
-  }));
-
-  if (reviews.length) {
-    storageStatus.step = `reviews_insert_${clientLabel}`;
-    const insertReviews = await client.from("reviews").insert(reviews);
-    if (insertReviews.error) {
-      storageStatus.error = toStorageError(
-        `reviews_insert_${clientLabel}_failed: ${insertReviews.error.message ?? JSON.stringify(insertReviews.error)}`
-      );
-      throw new Error(storageStatus.error);
-    }
-  }
+  storageStatus.step = `reviews_insert_${clientLabel}`;
+  await insertReviewsForAnalysis(
+    analysisId,
+    classified.slice(0, 5000).map((r) => ({
+      rating: r.rating,
+      text: r.text,
+      sentiment: r.sentiment,
+      category: r.category,
+      reviewedAt: r.reviewedAt ?? null
+    }))
+  );
 
   storageStatus.success = true;
   storageStatus.analysisId = analysisId;
@@ -184,5 +94,3 @@ export async function executePersistAndRespond(
     meta: buildStorageMeta(payload.meta, storageStatus)
   });
 }
-
-export { RESULT_PAYLOAD_STORAGE_WARNING };

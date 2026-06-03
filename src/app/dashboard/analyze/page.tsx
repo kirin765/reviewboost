@@ -32,7 +32,7 @@ function AnalyzeWorkspace({ caps }: { caps: Capabilities | null }) {
       return;
     }
 
-    if (!caps?.supabaseConfigured) {
+    if (!caps?.databaseConfigured) {
       setAnalysisNotice({
         kind: "analysis",
         title: "분석 완료",
@@ -46,7 +46,7 @@ function AnalyzeWorkspace({ caps }: { caps: Capabilities | null }) {
       title: "분석 완료",
       message: "분석 결과가 준비되었습니다. 아래 화면에서 우선순위와 액션 아이템을 확인해 주세요."
     });
-  }, [caps?.supabaseConfigured, state.result]);
+  }, [caps?.databaseConfigured, state.result]);
 
   useEffect(() => {
     if (!modal.open) return;

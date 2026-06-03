@@ -97,7 +97,7 @@ export default function DashboardAnalysisPanel({
   onCellModalClose
 }: DashboardAnalysisPanelProps) {
   const sectionHint =
-    caps?.supabaseConfigured === false
+    caps?.databaseConfigured === false
       ? "저장 없이 PDF 다운로드 중심으로 결과를 확인합니다."
       : `현재 플랜: ${planDisplayLabel(caps)} · 결과는 저장 또는 PDF 공유로 이어집니다.`;
   const handleBackToUpload = onBackToUpload ?? onReset;

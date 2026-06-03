@@ -22,7 +22,8 @@ vi.mock("next/link", () => ({
 }));
 
 const caps: Capabilities = {
-  supabaseConfigured: true,
+  databaseConfigured: true,
+  authConfigured: true,
   openaiConfigured: true,
   plan: "pro",
   planLabel: "Pro",

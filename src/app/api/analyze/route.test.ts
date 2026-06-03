@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { AnalysisPipelineOutput } from "@/lib/analysis_pipeline";
 import { POST } from "./route";
 
@@ -12,8 +12,10 @@ const mocks = vi.hoisted(() => ({
   devForcedAnalysisMode: vi.fn(),
   devAllowAdvancedAiBypass: vi.fn(),
   getGatesForPlan: vi.fn(),
-  getSupabaseAdminClient: vi.fn(),
-  createSupabaseServerActionClient: vi.fn(),
+  authFn: vi.fn(),
+  currentUser: vi.fn(),
+  checkMonthlyQuota: vi.fn(),
+  executePersistAndRespond: vi.fn(),
   logApiError: vi.fn()
 }));
 
@@ -44,13 +46,22 @@ vi.mock("@/lib/plan_gates", () => ({
   getGatesForPlan: mocks.getGatesForPlan
 }));
 
-vi.mock("@/lib/supabase_server", () => ({
-  getSupabaseAdminClient: mocks.getSupabaseAdminClient
+vi.mock("@clerk/nextjs/server", () => ({
+  auth: mocks.authFn,
+  currentUser: mocks.currentUser
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerActionClient: mocks.createSupabaseServerActionClient
+vi.mock("./_helpers/quota", () => ({
+  checkMonthlyQuota: mocks.checkMonthlyQuota
 }));
+
+vi.mock("./_helpers/persistence", async () => {
+  const actual = await vi.importActual<typeof import("./_helpers/persistence")>("./_helpers/persistence");
+  return {
+    ...actual,
+    executePersistAndRespond: mocks.executePersistAndRespond
+  };
+});
 
 vi.mock("@/lib/api_log", () => ({
   logApiError: mocks.logApiError
@@ -96,174 +107,93 @@ function runResponsePayload(): AnalysisPipelineOutput {
   };
 }
 
-function makeAdminClientForFailedStorage(insertErrorMessage: string) {
-  const single = vi.fn().mockResolvedValue({ error: { message: insertErrorMessage } });
-  const select = vi.fn().mockReturnValue({ single });
-  const insert = vi.fn().mockReturnValue({ select });
-  const from = vi.fn().mockReturnValue({ insert });
-  return { from };
-}
-
-function makeAdminClientWithCompatFallback() {
-  const analysisPayloads: Array<Record<string, unknown>> = [];
-  let analysisInsertCount = 0;
-
-  const from = vi.fn((table: string) => {
-    if (table === "analyses") {
-      return {
-        insert: vi.fn((payload: Record<string, unknown>) => {
-          analysisPayloads.push(payload);
-          const currentAttempt = analysisInsertCount++;
-
-          return {
-            select: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue(
-                currentAttempt === 0
-                  ? {
-                      data: null,
-                      error: { message: "Could not find the 'result_payload' column of 'analyses' in the schema cache" }
-                    }
-                  : {
-                      data: { id: "analysis-compat-1" },
-                      error: null
-                    }
-              )
-            })
-          };
-        })
-      };
-    }
-
-    return {
-      insert: vi.fn().mockResolvedValue({ error: null })
-    };
+function makeRequest() {
+  return new Request("https://reviewboost.app/api/analyze", {
+    method: "POST",
+    headers: { origin: "https://reviewboost.app" }
   });
-
-  return { from, analysisPayloads };
 }
 
-function makeSupabaseClientWithAuth(userId = "user-1") {
-  return {
-    auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: userId, email: "test@example.com" } } }) }
-  };
+function setupCommonMocks() {
+  mocks.readUploadedCsvText.mockResolvedValue({
+    filename: "reviews.csv",
+    csvText: ["review,rating", "좋아요,5"].join("\n"),
+    form: new FormData()
+  });
+  mocks.runAnalysisPipeline.mockResolvedValue(runResponsePayload());
+  mocks.resolvePlanTierForUser.mockResolvedValue("free");
+  mocks.monthlyLimitForPlan.mockReturnValue(null);
+  mocks.monthStartIso.mockReturnValue("2026-01-01T00:00:00.000Z");
+  mocks.devForcedAnalysisMode.mockReturnValue("auto" as never);
+  mocks.devAllowAdvancedAiBypass.mockReturnValue(false);
+  mocks.getGatesForPlan.mockReturnValue({ allowLLM: true, maxReviewsPerAnalysis: 1000 } as never);
+  mocks.checkMonthlyQuota.mockResolvedValue(undefined);
+  mocks.executePersistAndRespond.mockResolvedValue(null);
 }
 
 describe("POST /api/analyze", () => {
-  it("returns analysis payload even when storage is skipped", async () => {
-    mocks.readUploadedCsvText.mockResolvedValue({
-      filename: "reviews.csv",
-      csvText: ["review,rating", "좋아요,5"].join("\n"),
-      form: new FormData()
-    });
-    mocks.runAnalysisPipeline.mockResolvedValue(runResponsePayload());
-    mocks.resolvePlanTierForUser.mockResolvedValue("free");
-    mocks.monthlyLimitForPlan.mockReturnValue(null);
-    mocks.getCapabilitiesBase.mockReturnValue({ supabaseConfigured: false });
-    mocks.devForcedAnalysisMode.mockReturnValue("auto" as never);
-    mocks.devAllowAdvancedAiBypass.mockReturnValue(false);
-    mocks.getGatesForPlan.mockReturnValue({ allowLLM: true, maxReviewsPerAnalysis: 1000 } as never);
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupCommonMocks();
+  });
 
-    const res = await POST(
-      new Request("https://reviewboost.app/api/analyze", {
-        method: "POST",
-        headers: { origin: "https://reviewboost.app" }
-      })
-    );
+  it("게스트(미인증)는 저장을 시도하지 않고 분석 결과를 반환한다", async () => {
+    mocks.getCapabilitiesBase.mockReturnValue({ databaseConfigured: true, authConfigured: false, openaiConfigured: true });
+    mocks.authFn.mockResolvedValue({ userId: null });
+
+    const res = await POST(makeRequest());
 
     expect(res.status).toBe(200);
     const payload = await res.json();
     expect(payload.meta.storageAttempted).toBe(false);
     expect(payload.meta.stored).toBe(false);
+    expect(mocks.executePersistAndRespond).not.toHaveBeenCalled();
+  });
+
+  it("인증 사용자는 Drizzle 저장 경로로 결과를 반환한다", async () => {
+    mocks.getCapabilitiesBase.mockReturnValue({ databaseConfigured: true, authConfigured: true, openaiConfigured: true });
+    mocks.authFn.mockResolvedValue({ userId: "user-1" });
+    mocks.currentUser.mockResolvedValue({ emailAddresses: [{ emailAddress: "test@example.com" }] });
+    mocks.executePersistAndRespond.mockImplementation(async (input: any) => {
+      input.storageStatus.success = true;
+      input.storageStatus.analysisId = "analysis-1";
+      input.storageStatus.error = null;
+      return Response.json({ meta: { stored: true, storageAttempted: true, analysisId: "analysis-1" } });
+    });
+
+    const res = await POST(makeRequest());
+
+    expect(res.status).toBe(200);
+    const payload = await res.json();
+    expect(payload.meta.stored).toBe(true);
+    expect(payload.meta.analysisId).toBe("analysis-1");
+    expect(mocks.executePersistAndRespond).toHaveBeenCalledTimes(1);
   });
 
   it("저장 실패가 발생해도 200 분석 결과는 반환한다", async () => {
-    mocks.readUploadedCsvText.mockResolvedValue({
-      filename: "reviews.csv",
-      csvText: ["review,rating", "좋아요,5"].join("\n"),
-      form: new FormData()
-    });
-    mocks.runAnalysisPipeline.mockResolvedValue(runResponsePayload());
-    mocks.resolvePlanTierForUser.mockResolvedValue("basic");
-    mocks.monthlyLimitForPlan.mockReturnValue(null);
-    mocks.getCapabilitiesBase.mockReturnValue({ supabaseConfigured: true });
-    mocks.devForcedAnalysisMode.mockReturnValue("auto" as never);
-    mocks.devAllowAdvancedAiBypass.mockReturnValue(false);
-    mocks.getGatesForPlan.mockReturnValue({ allowLLM: true, maxReviewsPerAnalysis: 1000 } as never);
-    mocks.getSupabaseAdminClient.mockReturnValue(makeAdminClientForFailedStorage("insert failed"));
-    mocks.createSupabaseServerActionClient.mockReturnValue(makeSupabaseClientWithAuth());
+    mocks.getCapabilitiesBase.mockReturnValue({ databaseConfigured: true, authConfigured: true, openaiConfigured: true });
+    mocks.authFn.mockResolvedValue({ userId: "user-1" });
+    mocks.currentUser.mockResolvedValue({ emailAddresses: [{ emailAddress: "test@example.com" }] });
+    mocks.executePersistAndRespond.mockRejectedValue(new Error("insert failed"));
 
-    const res = await POST(
-      new Request("https://reviewboost.app/api/analyze", {
-        method: "POST",
-        headers: { origin: "https://reviewboost.app" }
-      })
-    );
+    const res = await POST(makeRequest());
 
     expect(res.status).toBe(200);
     const payload = await res.json();
     expect(payload.meta.storageAttempted).toBe(true);
-    expect(payload.meta.storageError).toContain("analyses_insert_admin_failed");
-  });
-
-  it("result_payload 컬럼이 없어도 기본 요약 저장으로 재시도한다", async () => {
-    const admin = makeAdminClientWithCompatFallback();
-
-    mocks.readUploadedCsvText.mockResolvedValue({
-      filename: "reviews.csv",
-      csvText: ["review,rating", "좋아요,5"].join("\n"),
-      form: new FormData()
-    });
-    mocks.runAnalysisPipeline.mockResolvedValue(runResponsePayload());
-    mocks.resolvePlanTierForUser.mockResolvedValue("basic");
-    mocks.monthlyLimitForPlan.mockReturnValue(null);
-    mocks.getCapabilitiesBase.mockReturnValue({ supabaseConfigured: true });
-    mocks.devForcedAnalysisMode.mockReturnValue("auto" as never);
-    mocks.devAllowAdvancedAiBypass.mockReturnValue(false);
-    mocks.getGatesForPlan.mockReturnValue({ allowLLM: true, maxReviewsPerAnalysis: 1000 } as never);
-    mocks.getSupabaseAdminClient.mockReturnValue(admin);
-    mocks.createSupabaseServerActionClient.mockReturnValue(makeSupabaseClientWithAuth());
-
-    const res = await POST(
-      new Request("https://reviewboost.app/api/analyze", {
-        method: "POST",
-        headers: { origin: "https://reviewboost.app" }
-      })
-    );
-
-    expect(res.status).toBe(200);
-    const payload = await res.json();
-    expect(payload.meta.storageAttempted).toBe(true);
-    expect(payload.meta.stored).toBe(true);
-    expect(payload.meta.analysisId).toBe("analysis-compat-1");
-    expect(payload.meta.storageWarning).toContain("기본 요약만 저장되었습니다");
-    expect(admin.analysisPayloads).toHaveLength(2);
-    expect(admin.analysisPayloads[0]).toHaveProperty("result_payload");
-    expect(admin.analysisPayloads[1]).not.toHaveProperty("result_payload");
+    expect(payload.meta.stored).toBe(false);
+    expect(payload.meta.storageError).toContain("insert failed");
   });
 
   it("analysis pipeline fallback meta가 응답에 유지된다", async () => {
     const fallbackPayload = runResponsePayload();
     fallbackPayload.payload.meta.aiFallbackReason = "time_budget_exhausted";
     fallbackPayload.payload.meta.llmApplied = false;
-    mocks.readUploadedCsvText.mockResolvedValue({
-      filename: "reviews.csv",
-      csvText: ["review,rating", "좋아요,5"].join("\n"),
-      form: new FormData()
-    });
     mocks.runAnalysisPipeline.mockResolvedValue(fallbackPayload);
-    mocks.resolvePlanTierForUser.mockResolvedValue("free");
-    mocks.monthlyLimitForPlan.mockReturnValue(null);
-    mocks.getCapabilitiesBase.mockReturnValue({ supabaseConfigured: false });
-    mocks.devForcedAnalysisMode.mockReturnValue("auto" as never);
-    mocks.devAllowAdvancedAiBypass.mockReturnValue(false);
-    mocks.getGatesForPlan.mockReturnValue({ allowLLM: true, maxReviewsPerAnalysis: 1000 } as never);
+    mocks.getCapabilitiesBase.mockReturnValue({ databaseConfigured: true, authConfigured: false, openaiConfigured: true });
+    mocks.authFn.mockResolvedValue({ userId: null });
 
-    const res = await POST(
-      new Request("https://reviewboost.app/api/analyze", {
-        method: "POST",
-        headers: { origin: "https://reviewboost.app" }
-      })
-    );
+    const res = await POST(makeRequest());
 
     expect(res.status).toBe(200);
     const payload = await res.json();

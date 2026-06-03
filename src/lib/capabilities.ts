@@ -1,7 +1,8 @@
 import type { PlanTier } from "@/lib/plan";
 
 export type Capabilities = {
-  supabaseConfigured: boolean;
+  databaseConfigured: boolean;
+  authConfigured: boolean;
   openaiConfigured: boolean;
   plan: PlanTier;
   planLabel: string;
@@ -10,15 +11,17 @@ export type Capabilities = {
   aiAdvancedAvailable: boolean;
 };
 
-export function isSupabaseConfigured() {
-  return Boolean(
-    (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL) &&
-      (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY)
-  );
+export function isDatabaseConfigured() {
+  return Boolean(process.env.DATABASE_URL);
+}
+
+export function isAuthConfigured() {
+  return Boolean(process.env.CLERK_SECRET_KEY);
 }
 
 export function getCapabilitiesBase() {
-  const supabaseConfigured = isSupabaseConfigured();
+  const databaseConfigured = isDatabaseConfigured();
+  const authConfigured = isAuthConfigured();
   const openaiConfigured = Boolean(process.env.OPENAI_API_KEY);
-  return { supabaseConfigured, openaiConfigured };
+  return { databaseConfigured, authConfigured, openaiConfigured };
 }
