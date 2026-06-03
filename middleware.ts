@@ -12,8 +12,7 @@ const isProtectedRoute = createRouteMatcher([
   "/api/analyze(.*)",
   "/api/report(.*)",
   "/api/capabilities(.*)",
-  "/api/billing/checkout(.*)",
-  "/api/billing/credits(.*)"
+  "/api/billing/checkout(.*)"
   // NOTE: /api/billing/webhook 는 공개 — Paddle 서명검증으로 보호
 ]);
 
