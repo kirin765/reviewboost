@@ -1,6 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import Script from "next/script";
+import { ClerkProvider } from "@clerk/nextjs";
+import { koKR } from "@clerk/localizations";
 import AssistantAttributionEvents from "@/components/AssistantAttributionEvents";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import AnalyticsQueryEvents from "@/components/AnalyticsQueryEvents";
@@ -38,8 +40,9 @@ const isVercelDeployment = Boolean(process.env.VERCEL || process.env.VERCEL_ENV)
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getNavigationSessionState();
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-  return (
+  const body = (
     <html lang="ko">
       <head>
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
@@ -72,4 +75,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </body>
     </html>
   );
+
+  return clerkKey ? <ClerkProvider localization={koKR}>{body}</ClerkProvider> : body;
 }
