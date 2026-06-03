@@ -1,6 +1,5 @@
-import { getCapabilitiesBase } from "@/lib/capabilities";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { resolvePlanTierForUser, type PlanTier } from "@/lib/plan";
-import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 
 export type NavigationSessionState = {
   authenticated: boolean;
@@ -10,27 +9,23 @@ export type NavigationSessionState = {
 };
 
 export async function getNavigationSessionState(): Promise<NavigationSessionState> {
-  const { supabaseConfigured } = getCapabilitiesBase();
-  let userEmail: string | null = null;
   let userId: string | null = null;
+  let userEmail: string | null = null;
   let plan: PlanTier = "free";
 
   try {
-    if (supabaseConfigured) {
-      const supabase = await createSupabaseServerComponentClient();
-      const { data } = await supabase.auth.getUser();
-      userEmail = data.user?.email ?? null;
-      userId = data.user?.id ?? null;
-      plan = await resolvePlanTierForUser({ userId, email: userEmail });
+    if (process.env.CLERK_SECRET_KEY) {
+      const { userId: uid } = await auth();
+      userId = uid ?? null;
+      if (userId) {
+        const user = await currentUser();
+        userEmail = user?.emailAddresses?.[0]?.emailAddress ?? null;
+        plan = await resolvePlanTierForUser({ userId, email: userEmail });
+      }
     }
   } catch {
     // Non-auth environments keep the sidebar in guest mode.
   }
 
-  return {
-    authenticated: Boolean(userEmail),
-    userId,
-    userEmail,
-    plan
-  };
+  return { authenticated: Boolean(userId), userId, userEmail, plan };
 }
