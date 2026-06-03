@@ -66,7 +66,8 @@ const analyzeResult: DashboardAnalysisResult = {
 };
 
 const capabilities = {
-  supabaseConfigured: false,
+  databaseConfigured: false,
+  authConfigured: false,
   openaiConfigured: true,
   plan: "free",
   planLabel: "Free",
