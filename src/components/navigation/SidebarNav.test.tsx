@@ -25,8 +25,8 @@ vi.mock("next/link", () => ({
   })()
 }));
 
-vi.mock("@/app/(auth)/actions", () => ({
-  signOutAction: "/logout"
+vi.mock("@clerk/nextjs", () => ({
+  SignOutButton: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
 describe("SidebarNav", () => {

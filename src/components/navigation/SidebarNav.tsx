@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOutAction } from "@/app/(auth)/actions";
+import { SignOutButton } from "@clerk/nextjs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { buttonStyles } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -194,11 +194,13 @@ export default function SidebarNav({
           <div className="mt-4 flex items-center gap-3">
             <LanguageSwitcher />
             {isAuthenticated ? (
-              <form action={signOutAction} className="flex-1">
-                <button className={buttonStyles({ variant: "ghost", className: "w-full justify-center" })} type="submit">
-                  로그아웃
-                </button>
-              </form>
+              <div className="flex-1">
+                <SignOutButton redirectUrl="/login">
+                  <button className={buttonStyles({ variant: "ghost", className: "w-full justify-center" })} type="button">
+                    로그아웃
+                  </button>
+                </SignOutButton>
+              </div>
             ) : (
               <Link href="/login" className={buttonStyles({ variant: "secondary", className: "flex-1 justify-center" })} onClick={onNavigate}>
                 로그인
