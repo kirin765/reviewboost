@@ -89,7 +89,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
     aiAdvancedAvailable: plan !== "free"
   };
 
-  const reviewRows = await getReviewsForAnalysis(row.id, 120);
+  const reviewRows = await getReviewsForAnalysis(row.id, userId, 120);
 
   const reviews: SavedAnalysisReviewRow[] = reviewRows.map((r) => ({
     id: r.id,

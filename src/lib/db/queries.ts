@@ -68,7 +68,8 @@ export async function getAnalysisDetailForUser(analysisId: string, userId: strin
   return rows[0] ?? null;
 }
 
-export async function getReviewsForAnalysis(analysisId: string, limit = 120) {
+export async function getReviewsForAnalysis(analysisId: string, userId: string, limit = 120) {
+  const uid = requireUserId(userId);
   const db = getDb();
   if (!db) return [];
   return db
@@ -81,7 +82,8 @@ export async function getReviewsForAnalysis(analysisId: string, limit = 120) {
       category: reviews.category
     })
     .from(reviews)
-    .where(eq(reviews.analysisId, analysisId))
+    .innerJoin(analyses, eq(reviews.analysisId, analyses.id))
+    .where(and(eq(reviews.analysisId, analysisId), eq(analyses.userId, uid)))
     .orderBy(desc(reviews.reviewedAt))
     .limit(limit);
 }
