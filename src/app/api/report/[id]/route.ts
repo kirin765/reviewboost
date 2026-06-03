@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { createSupabaseServerActionClient } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
+import { getAnalysisForUser } from "@/lib/db/queries";
 import { renderReportHtml } from "@/lib/report_html";
 import { renderReportPdf, type ReportRenderSuccess } from "@/lib/report_renderer";
 import { logApiError } from "@/lib/api_log";
@@ -66,25 +67,22 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
 
   let analysis: AnalysisRecord | null = null;
   try {
-    const supabase = await createSupabaseServerActionClient();
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
+    const { userId } = await auth();
+    if (!userId) {
       const url = new URL(req.url);
       url.pathname = "/login";
       url.search = `next=${encodeURIComponent(`/api/report/${id}`)}`;
       return Response.redirect(url, 307);
     }
 
-    const { data, error } = await supabase
-      .from("analyses")
-      .select("id, created_at, input_filename, stats, suggestions")
-      .eq("id", id)
-      .eq("user_id", userData.user.id)
-      .single();
+    const data = await getAnalysisForUser(id, userId);
+    if (!data) return textError(404, "분석을 찾을 수 없습니다.");
 
-    if (error || !data) return textError(404, "분석을 찾을 수 없습니다.");
-
-    const parsed = AnalysisRecordSchema.safeParse(data);
+    const parsed = AnalysisRecordSchema.safeParse({
+      ...data,
+      created_at: data.createdAt instanceof Date ? data.createdAt.toISOString() : data.createdAt,
+      input_filename: data.inputFilename
+    });
     if (!parsed.success) {
       throw new Error(parsed.error.message);
     }
