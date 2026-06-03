@@ -19,6 +19,8 @@
     "deploy:dev": "APP_ENV=staging NODE_ENV=production PADDLE_ENV=sandbox APP_BASE_URL=https://dev.reviewboost.co.kr npm run build && (pm2 describe reviewboost-dev >/dev/null 2>&1 && pm2 restart reviewboost-dev --update-env || APP_ENV=staging NODE_ENV=production PADDLE_ENV=sandbox APP_BASE_URL=https://dev.reviewboost.co.kr pm2 start npm --name reviewboost-dev -- run start:dev)",
     "lint": "next lint",
     "typecheck": "next typegen && tsc --incremental false --noEmit -p tsconfig.typecheck.json",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
     "puppeteer-install": "npx puppeteer browsers install chrome",
     "test:billing-schema": "node scripts/test-billing-schema.mjs",
     "test:paddle-utils": "node scripts/test-paddle-utils.mjs",
