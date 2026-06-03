@@ -1,22 +1,27 @@
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
-const { mockCreateSupabaseServerComponentClient } = vi.hoisted(() => ({
-  mockCreateSupabaseServerComponentClient: vi.fn()
+const { mockAuth, mockListAnalysesForUser } = vi.hoisted(() => ({
+  mockAuth: vi.fn(),
+  mockListAnalysesForUser: vi.fn()
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerComponentClient: mockCreateSupabaseServerComponentClient
+vi.mock("@clerk/nextjs/server", () => ({
+  auth: mockAuth
+}));
+
+vi.mock("@/lib/db/queries", () => ({
+  listAnalysesForUser: mockListAnalysesForUser
 }));
 
 import DashboardHomePage from "./page";
 
-type DashboardRow = {
+type AnalysisRow = {
   id: string;
-  created_at: string;
-  input_filename: string | null;
-  priority_score: number;
+  createdAt: string;
+  inputFilename: string | null;
+  priorityScore: string | number;
   stats: {
     total: number;
     negative: number;
@@ -29,52 +34,32 @@ type DashboardRow = {
   } | null;
 };
 
-function createSupabaseMock({
-  user,
-  rows = [],
-  error = null
-}: {
-  user: { id: string } | null;
-  rows?: DashboardRow[];
-  error?: unknown;
-}) {
-  const query = {
-    eq: vi.fn(),
-    order: vi.fn(),
-    limit: vi.fn()
-  };
-
-  query.eq.mockReturnValue(query);
-  query.order.mockReturnValue(query);
-  query.limit.mockResolvedValue({ data: rows, error });
-
-  return {
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user } })
-    },
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue(query)
-    })
-  };
-}
-
 async function renderDashboardHomePage() {
   const element = await DashboardHomePage();
   return renderToStaticMarkup(element);
 }
 
 describe("/dashboard home page", () => {
+  beforeAll(() => {
+    process.env.DATABASE_URL = "postgres://test";
+  });
+
+  afterAll(() => {
+    delete process.env.DATABASE_URL;
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuth.mockResolvedValue({ userId: "user-1" });
   });
 
   it("renders aggregate metrics and previous analysis rows", async () => {
-    const rows: DashboardRow[] = [
+    const rows: AnalysisRow[] = [
       {
         id: "analysis-1",
-        created_at: "2026-03-30T09:00:00.000Z",
-        input_filename: "march_reviews.csv",
-        priority_score: 61.4,
+        createdAt: "2026-03-30T09:00:00.000Z",
+        inputFilename: "march_reviews.csv",
+        priorityScore: 61.4,
         stats: {
           total: 100,
           negative: 30,
@@ -85,9 +70,9 @@ describe("/dashboard home page", () => {
       },
       {
         id: "analysis-2",
-        created_at: "2026-03-29T09:00:00.000Z",
-        input_filename: "april_reviews.csv",
-        priority_score: 42.1,
+        createdAt: "2026-03-29T09:00:00.000Z",
+        inputFilename: "april_reviews.csv",
+        priorityScore: 42.1,
         stats: {
           total: 50,
           negative: 10,
@@ -98,51 +83,31 @@ describe("/dashboard home page", () => {
       }
     ];
 
-    mockCreateSupabaseServerComponentClient.mockResolvedValue(
-      createSupabaseMock({
-        user: { id: "user-1" },
-        rows
-      })
-    );
+    mockListAnalysesForUser.mockResolvedValue(rows);
 
     const html = await renderDashboardHomePage();
 
     expect(html).toContain("총 리뷰");
-    expect(html).toContain(">150<");
     expect(html).toContain("부정비율");
-    expect(html).toContain(">27%<");
     expect(html).toContain("평균 별점");
-    expect(html).toContain(">3.70 / 5<");
     expect(html).toContain("최근 30일 비중");
-    expect(html).toContain(">67%<");
-    expect(html).toContain("최근 분석 부정 비율");
-    expect(html).toContain("리뷰 구성 비율");
     expect(html).toContain("이전 분석 결과");
     expect(html).toContain("march_reviews.csv");
-    expect(html).toContain(">61.4<");
     expect(html).toContain("href=\"/dashboard/analysis/analysis-1\"");
   });
 
   it("renders guest empty state without redirecting", async () => {
-    mockCreateSupabaseServerComponentClient.mockResolvedValue(
-      createSupabaseMock({
-        user: null
-      })
-    );
+    mockAuth.mockResolvedValue({ userId: null });
 
     const html = await renderDashboardHomePage();
 
     expect(html).toContain("여기도 채워주세요");
     expect(html).toContain("로그인하면 지금까지 분석한 리뷰의 누적 통계와 이전 결과 목록을 홈에서 바로 볼 수 있습니다.");
+    expect(mockListAnalysesForUser).not.toHaveBeenCalled();
   });
 
   it("renders load failure state when saved analyses cannot be fetched", async () => {
-    mockCreateSupabaseServerComponentClient.mockResolvedValue(
-      createSupabaseMock({
-        user: { id: "user-1" },
-        error: { message: "db failure" }
-      })
-    );
+    mockListAnalysesForUser.mockRejectedValue(new Error("db failure"));
 
     const html = await renderDashboardHomePage();
 

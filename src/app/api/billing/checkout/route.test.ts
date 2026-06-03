@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  getUser: vi.fn(),
+  auth: vi.fn(),
+  currentUser: vi.fn(),
   isPaddleConfigured: vi.fn(),
   paddlePriceIdForPlan: vi.fn(),
   paddleEnv: vi.fn(),
@@ -10,12 +11,9 @@ const mocks = vi.hoisted(() => ({
   findPaddleCustomerIdByUserId: vi.fn()
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerActionClient: () => ({
-    auth: {
-      getUser: mocks.getUser
-    }
-  })
+vi.mock("@clerk/nextjs/server", () => ({
+  auth: mocks.auth,
+  currentUser: mocks.currentUser
 }));
 
 vi.mock("@/lib/paddle", () => ({
@@ -35,7 +33,8 @@ import { POST } from "./route";
 describe("POST /api/billing/checkout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "user@example.com" } } });
+    mocks.auth.mockResolvedValue({ userId: "user-1" });
+    mocks.currentUser.mockResolvedValue({ emailAddresses: [{ emailAddress: "user@example.com" }] });
     mocks.isPaddleConfigured.mockReturnValue(true);
     mocks.paddlePriceIdForPlan.mockReturnValue("pri_123");
     mocks.paddleEnv.mockReturnValue("sandbox");
@@ -49,7 +48,8 @@ describe("POST /api/billing/checkout", () => {
   });
 
   it("returns 401 when user is not authenticated", async () => {
-    mocks.getUser.mockResolvedValue({ data: { user: null } });
+    mocks.auth.mockResolvedValue({ userId: null });
+    mocks.currentUser.mockResolvedValue(null);
 
     const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", { method: "POST" }));
 

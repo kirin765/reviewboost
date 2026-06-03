@@ -48,6 +48,44 @@ export async function getAnalysisForUser(analysisId: string, userId: string) {
   return rows[0] ?? null;
 }
 
+export async function getAnalysisDetailForUser(analysisId: string, userId: string) {
+  const uid = requireUserId(userId);
+  const db = getDb();
+  if (!db) return null;
+  const rows = await db
+    .select({
+      id: analyses.id,
+      createdAt: analyses.createdAt,
+      inputFilename: analyses.inputFilename,
+      priorityScore: analyses.priorityScore,
+      stats: analyses.stats,
+      suggestions: analyses.suggestions,
+      resultPayload: analyses.resultPayload
+    })
+    .from(analyses)
+    .where(and(eq(analyses.id, analysisId), eq(analyses.userId, uid)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getReviewsForAnalysis(analysisId: string, limit = 120) {
+  const db = getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: reviews.id,
+      reviewedAt: reviews.reviewedAt,
+      rating: reviews.rating,
+      text: reviews.text,
+      sentiment: reviews.sentiment,
+      category: reviews.category
+    })
+    .from(reviews)
+    .where(eq(reviews.analysisId, analysisId))
+    .orderBy(desc(reviews.reviewedAt))
+    .limit(limit);
+}
+
 export async function countAnalysesForUserSince(userId: string, sinceIso: string) {
   const uid = requireUserId(userId);
   const db = getDb();
