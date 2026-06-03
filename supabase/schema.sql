@@ -176,3 +176,14 @@ on public.subscriptions
 for select
 to authenticated
 using (user_id = auth.uid());
+
+-- Paddle webhook idempotency: deduplicates events by provider event_id.
+-- Service role only — no user-facing RLS needed.
+create table if not exists public.paddle_webhook_events (
+  event_id text primary key,
+  event_type text not null,
+  received_at timestamptz not null default now()
+);
+
+create index if not exists paddle_webhook_events_received_at_idx
+  on public.paddle_webhook_events (received_at);
