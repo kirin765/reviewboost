@@ -1,7 +1,6 @@
 import { ApiError, apiErrorResponse } from "@/lib/api_error";
 import { CSV_PARSE_FAILED_HELP } from "@/lib/csv_errors";
-import { getSupabaseAdminClient } from "@/lib/supabase_server";
-import { createSupabaseServerActionClient } from "@/lib/supabase/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { readUploadedCsvText } from "@/lib/upload_csv";
 import { monthlyLimitForPlan, resolvePlanTierForUser } from "@/lib/plan";
 import { getCapabilitiesBase } from "@/lib/capabilities";
@@ -78,15 +77,16 @@ export async function POST(req: Request) {
   const useLLM = forcedMode === "llm" ? true : forcedMode === "heuristic" ? false : openaiAvailable;
   const baseCaps = getCapabilitiesBase();
 
-  let supabaseAuth: Awaited<ReturnType<typeof createSupabaseServerActionClient>> | null = null;
   let userId: string | null = null;
   let userEmail: string | null = null;
-  if (baseCaps.supabaseConfigured) {
+  if (baseCaps.authConfigured) {
     try {
-      supabaseAuth = await createSupabaseServerActionClient();
-      const { data } = await supabaseAuth.auth.getUser();
-      userId = data.user?.id ?? null;
-      userEmail = data.user?.email ?? null;
+      const { userId: uid } = await auth();
+      userId = uid ?? null;
+      if (userId) {
+        const user = await currentUser();
+        userEmail = user?.emailAddresses?.[0]?.emailAddress ?? null;
+      }
     } catch {
       // ignore
     }
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
 
   if (monthlyLimit !== null) {
     try {
-      await checkMonthlyQuota({ userId, clientIp, plan, monthlyLimit, supabaseAuth });
+      await checkMonthlyQuota({ userId, clientIp, plan, monthlyLimit });
     } catch (e) {
       if (e instanceof ApiError) return apiErrorResponse(e);
     }
@@ -175,46 +175,28 @@ export async function POST(req: Request) {
     warning: null
   };
 
-  // Optional persistence (Supabase)
+  // Optional persistence (Neon via Drizzle) — only for authenticated users.
   try {
-    const admin = getSupabaseAdminClient();
-    if (admin) {
-      if (!userId) {
-        storageStatus.attempted = false;
-        storageStatus.error = "로그인 후 히스토리에 저장됩니다.";
-      } else {
-        storageStatus.attempted = true;
-        storageStatus.step = "analyses_insert_admin";
-        const adminResponse = await executePersistAndRespond(admin, {
-          userId,
-          clientIp,
-          filename,
-          payload,
-          classified,
-          storageStatus,
-          clientLabel: "admin"
-        });
-        if (adminResponse) return adminResponse;
-      }
-    }
-
-    if (userId && supabaseAuth) {
+    if (!userId) {
+      storageStatus.attempted = false;
+      storageStatus.error = "로그인 후 히스토리에 저장됩니다.";
+    } else {
       storageStatus.attempted = true;
-      storageStatus.step = "analyses_insert_auth";
-      const authResponse = await executePersistAndRespond(supabaseAuth, {
+      storageStatus.step = "analyses_insert";
+      const response = await executePersistAndRespond({
         userId,
         clientIp,
         filename,
         payload,
         classified,
         storageStatus,
-        clientLabel: "auth"
+        clientLabel: "neon"
       });
-      if (authResponse) return authResponse;
-    }
+      if (response) return response;
 
-    if (!storageStatus.error) {
-      storageStatus.error = userId ? "저장 기능을 사용할 수 없는 상태입니다." : "로그인 후 히스토리에 저장됩니다.";
+      if (!storageStatus.error) {
+        storageStatus.error = "저장 기능을 사용할 수 없는 상태입니다.";
+      }
     }
   } catch (e: unknown) {
     if (!storageStatus.error) storageStatus.error = toStorageError(getErrorMessage(e));

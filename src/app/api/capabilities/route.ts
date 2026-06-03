@@ -1,6 +1,7 @@
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { getCapabilitiesBase } from "@/lib/capabilities";
 import { monthStartIso, monthlyLimitForPlan, planLabel, resolvePlanTierForUser } from "@/lib/plan";
-import { createSupabaseServerActionClient } from "@/lib/supabase/server";
+import { countAnalysesForUserSince } from "@/lib/db/queries";
 
 export const runtime = "nodejs";
 
@@ -9,12 +10,14 @@ export async function GET() {
   let email: string | null = null;
   let userId: string | null = null;
 
-  if (base.supabaseConfigured) {
+  if (base.authConfigured) {
     try {
-      const supabase = await createSupabaseServerActionClient();
-      const { data } = await supabase.auth.getUser();
-      email = data.user?.email ?? null;
-      userId = data.user?.id ?? null;
+      const { userId: uid } = await auth();
+      userId = uid ?? null;
+      if (userId) {
+        const user = await currentUser();
+        email = user?.emailAddresses?.[0]?.emailAddress ?? null;
+      }
     } catch {
       // ignore
     }
@@ -24,15 +27,9 @@ export async function GET() {
   const monthlyLimit = monthlyLimitForPlan(plan);
   let monthlyUsed = 0;
 
-  if (base.supabaseConfigured && userId) {
+  if (base.databaseConfigured && userId) {
     try {
-      const supabase = await createSupabaseServerActionClient();
-      const { count } = await supabase
-        .from("analyses")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("created_at", monthStartIso());
-      monthlyUsed = count ?? 0;
+      monthlyUsed = await countAnalysesForUserSince(userId, monthStartIso());
     } catch {
       // ignore
     }

@@ -226,7 +226,7 @@ export default function AnalysisResults({
     summaryRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [result]);
 
-  const storageEnabled = caps?.supabaseConfigured === true;
+  const storageEnabled = caps?.databaseConfigured === true;
   const unavailableSections = new Set(resultContext?.unavailableSections ?? []);
   const positiveKeywordsEnabled = gates.showPositiveKeywords;
   const positiveKeywordsAvailable = !unavailableSections.has("positiveKeywords");

@@ -132,7 +132,8 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
   const planDisplay = planLabel(plan);
 
   const caps = {
-    supabaseConfigured: true,
+    databaseConfigured: true,
+    authConfigured: true,
     openaiConfigured: capabilitiesBase.openaiConfigured,
     plan,
     planLabel: planDisplay,

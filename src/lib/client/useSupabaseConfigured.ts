@@ -12,12 +12,12 @@ export function useSupabaseConfigured(): boolean {
 
     fetch("/api/capabilities", { cache: "no-store", credentials: "same-origin" })
       .then(async (res) => {
-        if (!res.ok) return { supabaseConfigured: fallback };
-        return (await res.json()) as { supabaseConfigured?: boolean };
+        if (!res.ok) return { databaseConfigured: fallback };
+        return (await res.json()) as { databaseConfigured?: boolean };
       })
       .then((json) => {
         if (!active) return;
-        setConfigured(Boolean(json.supabaseConfigured));
+        setConfigured(Boolean(json.databaseConfigured));
       })
       .catch(() => {
         if (active) setConfigured(fallback);
