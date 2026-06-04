@@ -30,7 +30,15 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   }
 
   if (isProtectedRoute(request) && process.env.CLERK_SECRET_KEY) {
-    await auth.protect();
+    const { userId } = await auth();
+    if (!userId) {
+      if (request.nextUrl.pathname.startsWith("/api/")) {
+        return withSecurity(new NextResponse("Unauthorized", { status: 401 }));
+      }
+      const signInUrl = new URL("/login", request.url);
+      signInUrl.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
+      return withSecurity(NextResponse.redirect(signInUrl));
+    }
   }
 
   return withSecurity(NextResponse.next());
