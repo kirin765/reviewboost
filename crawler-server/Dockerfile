@@ -9,8 +9,9 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY src ./src
+COPY start.sh ./start.sh
+RUN chmod +x start.sh
 
 ENV NODE_ENV=production
 ENV PORT=3010
-# xvfb-run이 DISPLAY를 설정하면 crawler.js가 headless:false로 동작
-CMD ["xvfb-run", "-a", "--server-args=-screen 0 1280x960x24", "node", "src/server.js"]
+CMD ["/bin/sh", "start.sh"]
