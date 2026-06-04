@@ -1,4 +1,6 @@
-﻿import { getSupabaseAdminClient } from "@/lib/supabase_server";
+﻿import { getDb } from "@/lib/db";
+import { profiles, subscriptions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import type { PlanTier } from "@/lib/plan";
 
 type SubscriptionStatus =
@@ -82,39 +84,51 @@ export async function resolvePlanTierByBilling(args: {
   const userId = args.userId ?? null;
   if (!userId) return args.fallbackPlan;
 
-  const admin = getSupabaseAdminClient();
-  if (!admin) return args.fallbackPlan;
+  const db = getDb();
+  if (!db) return args.fallbackPlan;
+
+  const selectSubscriptionColumns = {
+    plan_tier: subscriptions.planTier,
+    status: subscriptions.status,
+    current_period_start: subscriptions.currentPeriodStart,
+    current_period_end: subscriptions.currentPeriodEnd,
+    updated_at: subscriptions.updatedAt,
+    paddle_subscription_id: subscriptions.paddleSubscriptionId
+  };
+
+  const toIso = (v: Date | string | null): string | null =>
+    v instanceof Date ? v.toISOString() : v;
 
   try {
-    const { data: userSubscriptions } = await admin
-      .from("subscriptions")
-      .select("plan_tier,status,current_period_start,current_period_end,updated_at,paddle_subscription_id")
-      .eq("user_id", userId)
+    const userSubscriptions = await db
+      .select(selectSubscriptionColumns)
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, userId))
       .limit(50);
 
-    let dataToEvaluate = userSubscriptions ?? [];
+    let dataToEvaluate = userSubscriptions;
 
     if (dataToEvaluate.length === 0) {
       const paddleCustomerId = await findPaddleCustomerIdByUserId(userId);
       if (paddleCustomerId) {
-        const { data: customerSubscriptions } = await admin
-          .from("subscriptions")
-          .select("plan_tier,status,current_period_start,current_period_end,updated_at,paddle_subscription_id")
-          .eq("paddle_customer_id", paddleCustomerId)
+        dataToEvaluate = await db
+          .select(selectSubscriptionColumns)
+          .from(subscriptions)
+          .where(eq(subscriptions.paddleCustomerId, paddleCustomerId))
           .limit(50);
-        dataToEvaluate = customerSubscriptions ?? [];
-
-        if (dataToEvaluate.length > 0) {
-          await admin
-            .from("subscriptions")
-            .update({ user_id: userId, updated_at: new Date().toISOString() })
-            .eq("paddle_customer_id", paddleCustomerId)
-            .is("user_id", null);
-        }
       }
     }
 
-    const activePaidSubscriptions = dataToEvaluate
+    const normalized: BillingSubscriptionRow[] = dataToEvaluate.map((row) => ({
+      plan_tier: row.plan_tier,
+      status: row.status,
+      current_period_start: toIso(row.current_period_start),
+      current_period_end: toIso(row.current_period_end),
+      updated_at: toIso(row.updated_at),
+      paddle_subscription_id: row.paddle_subscription_id
+    }));
+
+    const activePaidSubscriptions = normalized
       .filter((row: BillingSubscriptionRow) => {
         const tier = String(row.plan_tier ?? "");
         return isBillingActiveStatus(row.status) && (tier === "basic" || tier === "pro");
@@ -146,39 +160,42 @@ export async function resolvePlanTierByBilling(args: {
 }
 
 export async function upsertProfileCustomer(userId: string, paddleCustomerId: string) {
-  const admin = getSupabaseAdminClient();
-  if (!admin) return;
+  const db = getDb();
+  if (!db) return;
 
-  await admin.from("profiles").upsert(
-    {
-      user_id: userId,
-      paddle_customer_id: paddleCustomerId,
-      updated_at: new Date().toISOString()
-    },
-    { onConflict: "user_id" }
-  );
+  await db
+    .insert(profiles)
+    .values({ userId, paddleCustomerId, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: profiles.userId,
+      set: { paddleCustomerId, updatedAt: new Date() }
+    });
 }
 
 export async function findUserIdByPaddleCustomerId(paddleCustomerId: string): Promise<string | null> {
-  const admin = getSupabaseAdminClient();
-  if (!admin) return null;
+  const db = getDb();
+  if (!db) return null;
 
-  const { data } = await admin
-    .from("profiles")
-    .select("user_id")
-    .eq("paddle_customer_id", paddleCustomerId)
-    .maybeSingle();
+  const rows = await db
+    .select({ userId: profiles.userId })
+    .from(profiles)
+    .where(eq(profiles.paddleCustomerId, paddleCustomerId))
+    .limit(1);
 
-  return (data?.user_id as string | undefined) ?? null;
+  return rows[0]?.userId ?? null;
 }
 
 export async function findPaddleCustomerIdByUserId(userId: string): Promise<string | null> {
-  const admin = getSupabaseAdminClient();
-  if (!admin) return null;
+  const db = getDb();
+  if (!db) return null;
 
-  const { data } = await admin.from("profiles").select("paddle_customer_id").eq("user_id", userId).maybeSingle();
+  const rows = await db
+    .select({ paddleCustomerId: profiles.paddleCustomerId })
+    .from(profiles)
+    .where(eq(profiles.userId, userId))
+    .limit(1);
 
-  const id = String(data?.paddle_customer_id ?? "").trim();
+  const id = String(rows[0]?.paddleCustomerId ?? "").trim();
   return id || null;
 }
 
@@ -193,22 +210,39 @@ export async function upsertSubscription(args: {
   currentPeriodEnd?: string | number | null;
   cancelAtPeriodEnd?: boolean | null;
 }) {
-  const admin = getSupabaseAdminClient();
-  if (!admin) return;
+  const db = getDb();
+  if (!db) return;
 
-  await admin.from("subscriptions").upsert(
-    {
-      user_id: args.userId,
-      paddle_customer_id: args.paddleCustomerId,
-      paddle_subscription_id: args.paddleSubscriptionId,
-      paddle_price_id: args.paddlePriceId ?? null,
-      status: normalizeSubscriptionStatus(args.status),
-      plan_tier: args.planTier,
-      current_period_start: billingToIso(args.currentPeriodStart),
-      current_period_end: billingToIso(args.currentPeriodEnd),
-      cancel_at_period_end: Boolean(args.cancelAtPeriodEnd),
-      updated_at: new Date().toISOString()
-    },
-    { onConflict: "paddle_subscription_id" }
-  );
+  const startIso = billingToIso(args.currentPeriodStart);
+  const endIso = billingToIso(args.currentPeriodEnd);
+  const values = {
+    userId: args.userId,
+    paddleCustomerId: args.paddleCustomerId,
+    paddleSubscriptionId: args.paddleSubscriptionId,
+    paddlePriceId: args.paddlePriceId ?? null,
+    status: normalizeSubscriptionStatus(args.status),
+    planTier: args.planTier,
+    currentPeriodStart: startIso ? new Date(startIso) : null,
+    currentPeriodEnd: endIso ? new Date(endIso) : null,
+    cancelAtPeriodEnd: Boolean(args.cancelAtPeriodEnd),
+    updatedAt: new Date()
+  };
+
+  await db
+    .insert(subscriptions)
+    .values(values)
+    .onConflictDoUpdate({
+      target: subscriptions.paddleSubscriptionId,
+      set: {
+        userId: values.userId,
+        paddleCustomerId: values.paddleCustomerId,
+        paddlePriceId: values.paddlePriceId,
+        status: values.status,
+        planTier: values.planTier,
+        currentPeriodStart: values.currentPeriodStart,
+        currentPeriodEnd: values.currentPeriodEnd,
+        cancelAtPeriodEnd: values.cancelAtPeriodEnd,
+        updatedAt: values.updatedAt
+      }
+    });
 }

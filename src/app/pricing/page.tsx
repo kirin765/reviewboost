@@ -5,7 +5,7 @@ import PricingContent from "@/components/PricingContent";
 import { generatePageMetadata } from "@/lib/seo/metadata";
 import { getRequiredSeoPageRecord } from "@/lib/seo/page-registry";
 import { createPricingStructuredData } from "@/lib/seo/structured-data";
-import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
 
 const pricingRecord = getRequiredSeoPageRecord("/pricing");
 
@@ -19,9 +19,10 @@ export default async function PricingPage({
   let userId: string | null = null;
 
   try {
-    const supabase = await createSupabaseServerComponentClient();
-    const result = await supabase.auth.getUser();
-    userId = result?.data?.user?.id ?? null;
+    if (process.env.CLERK_SECRET_KEY) {
+      const result = await auth();
+      userId = result.userId ?? null;
+    }
   } catch {
     // ignore and keep unauthenticated state
   }

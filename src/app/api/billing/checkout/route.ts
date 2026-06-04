@@ -1,4 +1,4 @@
-import { createSupabaseServerActionClient } from "@/lib/supabase/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { appBaseUrl, isPaddleConfigured, paddleEnv, paddlePriceIdForPlan, paddleRequest } from "@/lib/paddle";
 import { findPaddleCustomerIdByUserId } from "@/lib/billing";
 import { logApiError } from "@/lib/api_log";
@@ -168,9 +168,10 @@ export async function POST(req: Request) {
 
   try {
     debug.paddleEnv = paddleEnv();
-    const supabase = await createSupabaseServerActionClient();
-    const { data } = await supabase.auth.getUser();
-    const user = data.user;
+    const { userId } = await auth();
+    const clerkUser = userId ? await currentUser() : null;
+    const userEmail = clerkUser?.emailAddresses?.[0]?.emailAddress ?? null;
+    const user = userId ? { id: userId, email: userEmail } : null;
 
     if (!user?.id || !user.email) {
       const payload = {

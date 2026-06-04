@@ -1,7 +1,9 @@
 import React from "react";
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui/Button";
-import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
+import { listAnalysesForUser } from "@/lib/db/queries";
+import { isDatabaseConfigured } from "@/lib/capabilities";
 import { mapDashboardHomeView, type DashboardHomeAnalysisRow } from "@/lib/dashboard-home-view";
 
 export const dynamic = "force-dynamic";
@@ -262,12 +264,14 @@ function HomeListSection({
 }
 
 export default async function DashboardHomePage() {
-  let supabase: Awaited<ReturnType<typeof createSupabaseServerComponentClient>> | null = null;
+  const databaseConfigured = isDatabaseConfigured();
 
+  let userId: string | null = null;
   try {
-    supabase = await createSupabaseServerComponentClient();
+    const { userId: uid } = await auth();
+    userId = uid ?? null;
   } catch {
-    supabase = null;
+    userId = null;
   }
 
   const zeroMetrics = [
@@ -277,7 +281,7 @@ export default async function DashboardHomePage() {
     { label: "최근 30일 비중", value: "-" }
   ];
 
-  if (!supabase) {
+  if (!databaseConfigured) {
     return (
       <main className="pageMain space-y-6">
         <OverviewMetricBand
@@ -294,9 +298,7 @@ export default async function DashboardHomePage() {
     );
   }
 
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData.user) {
+  if (!userId) {
     return (
       <main className="pageMain space-y-6">
         <OverviewMetricBand
@@ -313,14 +315,17 @@ export default async function DashboardHomePage() {
     );
   }
 
-  const { data, error } = await supabase
-    .from("analyses")
-    .select("id, created_at, input_filename, priority_score, stats")
-    .eq("user_id", userData.user.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  if (error) {
+  let rows: DashboardHomeAnalysisRow[];
+  try {
+    const items = await listAnalysesForUser(userId, 50);
+    rows = items.map((item) => ({
+      id: item.id,
+      created_at: item.createdAt instanceof Date ? item.createdAt.toISOString() : String(item.createdAt),
+      input_filename: item.inputFilename,
+      priority_score: item.priorityScore === null ? null : Number(item.priorityScore),
+      stats: item.stats as DashboardHomeAnalysisRow["stats"]
+    }));
+  } catch {
     return (
       <main className="pageMain">
         <EmptyHomeState title="문제가 발생했어요" description="저장된 분석을 불러오지 못했습니다. 잠시 후 다시 시도하거나 바로 새 분석을 시작해 주세요." />
@@ -328,7 +333,7 @@ export default async function DashboardHomePage() {
     );
   }
 
-  const view = mapDashboardHomeView((data ?? []) as DashboardHomeAnalysisRow[]);
+  const view = mapDashboardHomeView(rows);
   const metrics = [
     { label: "총 리뷰", value: formatMetricValue(view.totalReviews, "count"), detail: "누적 저장 분석 기준" },
     { label: "부정비율", value: formatMetricValue(view.negativeRate, "percent"), detail: `${view.negativeReviews}건 부정 리뷰` },

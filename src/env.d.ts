@@ -9,12 +9,6 @@ declare namespace NodeJS {
     NEXT_PUBLIC_PADDLE_TOKEN?: string;
     NEXT_PUBLIC_PADDLE_TOKEN_LIVE?: string;
     NEXT_PUBLIC_PADDLE_TOKEN_SANDBOX?: string;
-    NEXT_PUBLIC_SUPABASE_URL?: string;
-    NEXT_PUBLIC_SUPABASE_ANON_KEY?: string;
-
-    SUPABASE_URL?: string;
-    SUPABASE_ANON_KEY?: string;
-    SUPABASE_SERVICE_ROLE_KEY?: string;
 
     OPENAI_API_KEY?: string;
     OPENAI_MODEL?: string;
@@ -29,7 +23,6 @@ declare namespace NodeJS {
     PADDLE_BASIC_PRICE_ID?: string;
     PADDLE_PRO_PRICE_ID?: string;
 
-    NEXT_PUBLIC_SUPABASE_ACCESS_TOKEN?: string;
     REPORT_FONT_PATH?: string;
     REPORT_ENABLE_PDFKIT_FALLBACK?: string;
     SECURITY_ALLOWLIST_CVES?: string;
