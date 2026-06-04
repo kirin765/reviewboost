@@ -2,11 +2,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const repoRoot = process.cwd();
-const schemaPath = join(repoRoot, 'supabase', 'schema.sql');
-const migrationPath = join(repoRoot, 'supabase', 'migrations', '20260218172500_us01_billing_schema.sql');
+const schemaPath = join(repoRoot, 'src', 'lib', 'db', 'schema.ts');
 
-const schemaSql = readFileSync(schemaPath, 'utf8');
-const migrationSql = readFileSync(migrationPath, 'utf8');
+const schemaTs = readFileSync(schemaPath, 'utf8');
 
 function assertContains(label, content, regex) {
   if (!regex.test(content)) {
@@ -15,51 +13,63 @@ function assertContains(label, content, regex) {
 }
 
 assertContains(
-  'profiles.paddle_customer_id column definition',
-  schemaSql,
-  /create table if not exists public\.profiles[\s\S]*paddle_customer_id\s+text\s+unique\s+null/i,
+  'profiles.paddleCustomerId column (unique)',
+  schemaTs,
+  /paddleCustomerId:\s*text\("paddle_customer_id"\)\.unique\(\)/,
 );
 
 assertContains(
-  'subscriptions.status column definition',
-  schemaSql,
-  /create table if not exists public\.subscriptions[\s\S]*status\s+text\s+not null/i,
+  'subscriptions.status column (notNull)',
+  schemaTs,
+  /status:\s*text\("status"\)\.notNull\(\)/,
 );
 
 assertContains(
-  'subscriptions.plan_tier column definition',
-  schemaSql,
-  /create table if not exists public\.subscriptions[\s\S]*plan_tier\s+text\s+not null/i,
+  'subscriptions.planTier column (notNull, default free)',
+  schemaTs,
+  /planTier:\s*text\("plan_tier"\)\.notNull\(\)\.default\("free"\)/,
 );
 
 assertContains(
-  'subscriptions.paddle_subscription_id column definition',
-  schemaSql,
-  /create table if not exists public\.subscriptions[\s\S]*paddle_subscription_id\s+text\s+not null\s+unique/i,
+  'subscriptions.paddleSubscriptionId column (notNull, unique)',
+  schemaTs,
+  /paddleSubscriptionId:\s*text\("paddle_subscription_id"\)\.notNull\(\)\.unique\(\)/,
 );
 
 assertContains(
-  'subscriptions_select_own RLS policy',
-  schemaSql,
-  /create policy\s+"subscriptions_select_own"[\s\S]*on public\.subscriptions[\s\S]*for select/i,
+  'subscriptions.paddlePriceId column',
+  schemaTs,
+  /paddlePriceId:\s*text\("paddle_price_id"\)/,
 );
 
 assertContains(
-  'idempotent migration unique index for paddle_subscription_id',
-  schemaSql,
-  /create unique index if not exists subscriptions_paddle_subscription_id_uniq[\s\S]*paddle_subscription_id/i,
+  'subscriptions.cancelAtPeriodEnd column (notNull, default false)',
+  schemaTs,
+  /cancelAtPeriodEnd:\s*boolean\("cancel_at_period_end"\)\.notNull\(\)\.default\(false\)/,
 );
 
 assertContains(
-  'migration file includes subscriptions_select_own policy',
-  migrationSql,
-  /create policy\s+"subscriptions_select_own"[\s\S]*on public\.subscriptions/i,
+  'subscriptions current period start/end timestamps',
+  schemaTs,
+  /currentPeriodStart:\s*timestamp\("current_period_start"[\s\S]*currentPeriodEnd:\s*timestamp\("current_period_end"/,
 );
 
 assertContains(
-  'migration file includes unique index for paddle_subscription_id',
-  migrationSql,
-  /create unique index if not exists subscriptions_paddle_subscription_id_uniq[\s\S]*paddle_subscription_id/i,
+  'subscriptions user_id lookup index',
+  schemaTs,
+  /index\("subscriptions_user_id_idx"\)\.on\(t\.userId\)/,
 );
 
-console.log('Billing schema migration checks passed.');
+assertContains(
+  'subscriptions paddle customer lookup index',
+  schemaTs,
+  /index\("subscriptions_customer_id_idx"\)\.on\(t\.paddleCustomerId\)/,
+);
+
+assertContains(
+  'analyses.resultPayload column for richer saved analyses',
+  schemaTs,
+  /resultPayload:\s*jsonb\("result_payload"\)/,
+);
+
+console.log('Billing schema (Drizzle) checks passed.');

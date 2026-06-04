@@ -50,10 +50,6 @@ export const env = {
     basicPriceId: clean(process.env.PADDLE_BASIC_PRICE_ID),
     proPriceId: clean(process.env.PADDLE_PRO_PRICE_ID)
   },
-  supabase: {
-    publicUrl: nextPublic(process.env.NEXT_PUBLIC_SUPABASE_URL) ?? nextPublic(process.env.SUPABASE_URL),
-    publicAnonKey: nextPublic(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ?? nextPublic(process.env.SUPABASE_ANON_KEY)
-  },
   openai: {
     model: nextPublic(process.env.OPENAI_MODEL) || "gpt-4o-mini",
     classifyBatchSize: Number(nextPublic(process.env.OPENAI_CLASSIFY_BATCH_SIZE) ?? "60"),

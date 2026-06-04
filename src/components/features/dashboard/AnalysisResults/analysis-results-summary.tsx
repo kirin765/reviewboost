@@ -19,7 +19,7 @@ type AnalysisResultsSummaryProps = {
 };
 
 export function AnalysisResultsSummary({ result, onDownloadPdf, busy, caps, gates }: AnalysisResultsSummaryProps) {
-  const storageEnabled = caps?.supabaseConfigured === true;
+  const storageEnabled = caps?.databaseConfigured === true;
   const storageLinkLabel = storageEnabled ? "홈으로 이동" : "저장 기능 비활성";
   const negativeRatio = typeof result.stats.negativeRatio === "number" ? `${Math.round(result.stats.negativeRatio * 100)}%` : "-";
   const avgRating = result.stats.avgRating === null ? "미기재" : `${result.stats.avgRating.toFixed(1)}점`;
