@@ -5,10 +5,8 @@ WORKDIR /app
 # xvfb: 가상 디스플레이 (headless:false 지원)
 RUN apt-get update && apt-get install -y --no-install-recommends xvfb && rm -rf /var/lib/apt/lists/*
 
-COPY package.json .
-RUN npm install --omit=dev
-
-RUN npx playwright install chromium
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
 COPY src ./src
 
