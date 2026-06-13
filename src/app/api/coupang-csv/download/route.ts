@@ -5,6 +5,7 @@ import { downloadCoupangCsv } from "@/lib/coupang_crawler";
 import { getErrorMessage } from "@/types/common";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 type RequestBody = {
   productUrl?: string;
