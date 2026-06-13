@@ -1,6 +1,6 @@
 import { ApiError } from "@/lib/api_error";
 
-const DEFAULT_DOWNLOAD_PATH = "/api/coupang/reviews/csv";
+const DEFAULT_DOWNLOAD_PATH = "/api/coupang/reviews/csv"; // crawler-server endpoint
 const DEFAULT_TIMEOUT_MS = 30000;
 const MAX_TIMEOUT_MS = 120000;
 const DEFAULT_REVIEW_LIMIT = 100;
