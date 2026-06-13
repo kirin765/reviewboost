@@ -6,7 +6,18 @@ const MAX_PAGES = 30; // 최대 300건
 // PLAYWRIGHT_HEADLESS=true 명시 시에만 true (기본: false — Mac/Railway+xvfb 모두 headless:false)
 const HEADLESS = process.env.PLAYWRIGHT_HEADLESS === 'true';
 
+const COUPANG_HOSTS = new Set(['www.coupang.com', 'm.coupang.com', 'coupang.com']);
+
 function extractProductId(url) {
+  let host;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    throw new Error('올바른 URL이 아닙니다: ' + url);
+  }
+  if (!COUPANG_HOSTS.has(host)) {
+    throw new Error('쿠팡 상품 URL만 지원합니다: ' + url);
+  }
   const m = url.match(/\/(?:vp\/)?products\/(\d+)/);
   if (!m) throw new Error('상품 ID를 URL에서 추출할 수 없습니다: ' + url);
   return m[1];
