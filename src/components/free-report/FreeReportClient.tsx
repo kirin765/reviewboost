@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import AnalysisResults from "@/components/features/dashboard/AnalysisResults";
+import CrossPromo from "@/components/CrossPromo";
 import { PlanProvider } from "@/contexts/PlanContext";
 import { downloadReportPdf } from "@/lib/api/analysis";
 import type { DashboardAnalysisResult } from "@/lib/api/analysis";
@@ -136,6 +137,7 @@ export default function FreeReportClient() {
               secondaryLabel="가입하고 저장"
             />
           </PlanProvider>
+          <CrossPromo className="mt-8" />
         </div>
 
         {gateOpen ? (

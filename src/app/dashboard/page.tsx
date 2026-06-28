@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui/Button";
+import CrossPromo from "@/components/CrossPromo";
 import { auth } from "@clerk/nextjs/server";
 import { listAnalysesForUser } from "@/lib/db/queries";
 import { isDatabaseConfigured } from "@/lib/capabilities";
@@ -363,6 +364,8 @@ export default async function DashboardHomePage() {
       </div>
 
       <HomeListSection recentReports={view.recentReports} />
+
+      <CrossPromo />
     </main>
   );
 }
