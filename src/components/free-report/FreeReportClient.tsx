@@ -181,12 +181,18 @@ export default function FreeReportClient() {
   return (
     <main className="pageMain" style={{ padding: "48px 16px 64px" }}>
       <div className="mx-auto w-full max-w-[640px]">
-        <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">무료 리뷰 리포트</p>
+        <div className="flex items-center gap-2">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">무료 리뷰 리포트</p>
+          <span className="rounded-full border border-[color:var(--rb-border)] bg-[rgba(91,92,234,0.08)] px-2 py-0.5 text-[10px] font-semibold text-[var(--rb-accent)]">
+            URL 분석 베타
+          </span>
+        </div>
         <h1 className="mt-3 text-[clamp(2rem,4vw,3.2rem)] font-semibold leading-[1.04] tracking-[-0.05em] text-[var(--rb-fg)]">
           쿠팡 상품 URL만 넣으면<br />부정 키워드 TOP과 개선안을 무료로
         </h1>
         <p className="mt-4 text-base leading-8 text-[var(--rb-muted-strong)]">
           상품 상세 URL을 붙여넣으면 리뷰를 모아 감정·카테고리·우선순위까지 분석해 드립니다. 회원가입 없이 바로 확인하세요.
+          <br className="hidden sm:block" />쿠팡 봇 차단으로 실패할 수 있어 <strong className="font-semibold text-[var(--rb-fg)]">리뷰 CSV 업로드가 가장 안정적</strong>입니다.
         </p>
 
         <form onSubmit={onSubmit} className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -203,6 +209,17 @@ export default function FreeReportClient() {
             무료 분석
           </button>
         </form>
+
+        <div className="mt-4 rounded-[14px] border border-[color:var(--rb-border)] bg-[rgba(91,92,234,0.04)] p-4">
+          <p className="text-sm font-medium text-[var(--rb-fg)]">리뷰 CSV가 있으면 더 빠르고 안정적이에요</p>
+          <p className="mt-1 text-sm leading-6 text-[var(--rb-muted-strong)]">
+            URL 분석은 쿠팡 봇 차단으로 실패할 수 있습니다. CSV 업로드는 즉시·안정적으로 분석됩니다.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/dashboard/analyze" className="btn btnPrimary btnSmall">CSV로 분석하기</Link>
+            <Link href="/coupang-csv" className="btn btnSmall">쿠팡 리뷰 CSV 받는 법</Link>
+          </div>
+        </div>
 
         {status === "loading" ? (
           <div className="mt-8 rounded-[16px] border border-[color:var(--rb-border)] bg-[var(--rb-surface)] p-5">

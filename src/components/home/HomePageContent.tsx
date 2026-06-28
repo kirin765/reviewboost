@@ -14,28 +14,39 @@ function HeroUrlForm() {
   const router = useRouter();
   const [url, setUrl] = React.useState("");
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        const v = url.trim();
-        if (!v) return;
-        router.push(`/free-report?url=${encodeURIComponent(v)}`);
-      }}
-      className="mx-auto mt-8 flex w-full max-w-2xl flex-col gap-3 sm:flex-row"
-    >
-      <input
-        type="url"
-        inputMode="url"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="쿠팡 상품 URL 붙여넣기 (https://www.coupang.com/vp/products/...)"
-        aria-label="쿠팡 상품 URL"
-        className="input flex-1"
-      />
-      <button type="submit" className={buttonStyles({ variant: "primary", size: "lg" })} disabled={!url.trim()}>
-        무료로 분석
-      </button>
-    </form>
+    <div className="mx-auto mt-6 w-full max-w-2xl">
+      <div className="flex items-center justify-center gap-2 text-xs text-[var(--rb-muted)]">
+        <span>또는 쿠팡 상품 URL로 바로 분석</span>
+        <span className="rounded-full border border-[color:var(--rb-border)] bg-[rgba(91,92,234,0.08)] px-2 py-0.5 text-[10px] font-semibold text-[var(--rb-accent)]">
+          베타
+        </span>
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const v = url.trim();
+          if (!v) return;
+          router.push(`/free-report?url=${encodeURIComponent(v)}`);
+        }}
+        className="mt-2 flex w-full flex-col gap-2 sm:flex-row"
+      >
+        <input
+          type="url"
+          inputMode="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://www.coupang.com/vp/products/..."
+          aria-label="쿠팡 상품 URL"
+          className="input flex-1"
+        />
+        <button type="submit" className={buttonStyles({ variant: "secondary", size: "lg" })} disabled={!url.trim()}>
+          무료 분석
+        </button>
+      </form>
+      <p className="mt-2 text-center text-[11px] text-[var(--rb-muted)]">
+        쿠팡 봇 차단으로 실패할 수 있어요. 안정적으로는 리뷰 CSV 업로드를 권장합니다.
+      </p>
+    </div>
   );
 }
 
@@ -476,14 +487,18 @@ export default function HomePageContent() {
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-[var(--rb-muted-strong)] md:text-lg">
               {content.home.hero.lead}
             </p>
-            <HeroUrlForm />
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-[var(--rb-muted-strong)]">
-              <Link href="/dashboard/analyze" className="underline-offset-4 hover:underline">CSV로 분석하기</Link>
-              <span aria-hidden="true" className="text-[var(--rb-muted)]">·</span>
-              <Link href="/coupang-csv" className="underline-offset-4 hover:underline">{content.home.hero.secondaryCta}</Link>
-              <span aria-hidden="true" className="text-[var(--rb-muted)]">·</span>
-              <Link href="/signup" className="underline-offset-4 hover:underline">{content.home.hero.tertiaryCta}</Link>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/dashboard/analyze" className={buttonStyles({ variant: "primary", size: "lg" })}>
+                리뷰 CSV로 분석 시작
+              </Link>
+              <Link href="/coupang-csv" className={buttonStyles({ variant: "secondary", size: "lg" })}>
+                {content.home.hero.secondaryCta}
+              </Link>
             </div>
+            <HeroUrlForm />
+            <p className="mt-4 text-sm text-[var(--rb-muted-strong)]">
+              계정이 있으신가요? <Link href="/signup" className="text-[var(--rb-accent)] underline-offset-4 hover:underline">{content.home.hero.tertiaryCta}</Link>
+            </p>
           </div>
 
           <HeroPreview
