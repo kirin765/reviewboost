@@ -19,6 +19,7 @@ const hits = new Map<string, number[]>();
 function rateLimited(ip: string | null): boolean {
   if (!ip) return false;
   const now = Date.now();
+  if (hits.size > 5000) hits.clear(); // defensive bound against unbounded growth
   const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
   if (recent.length >= RATE_MAX) {
     hits.set(ip, recent);

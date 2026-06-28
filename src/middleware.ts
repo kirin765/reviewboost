@@ -10,10 +10,11 @@ function withSecurity(response: NextResponse) {
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/api/analyze(.*)",
-  "/api/report(.*)",
   "/api/capabilities(.*)",
   "/api/billing/checkout(.*)"
   // NOTE: /api/billing/webhook 는 공개 — Paddle 서명검증으로 보호
+  // NOTE: /api/report 는 공개 — 본문(stats/suggestions)으로 PDF만 렌더(DB·유저데이터 미접근),
+  //       same-origin(CSRF)로 보호. 무료 리포트 비로그인 PDF 다운로드에 필요.
 ]);
 
 export default clerkMiddleware(async (auth, request: NextRequest) => {
