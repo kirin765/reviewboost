@@ -87,13 +87,16 @@ export async function scrapeReviews(productUrl, limit = 100) {
 
     const status = typeof resp?.status === 'function' ? resp.status() : 0;
     const title = await page.title();
+    const bodyText = (await page.content()).slice(0, 6000);
 
     // body 기반 차단 감지(가장 위험한 실패 모드: 200 + Access Denied 페이지를 status로는 못 잡음)
-    if (status === 403 || looksBlocked(title)) {
+    if (status === 403 || looksBlocked(title) || looksBlocked(bodyText)) {
       throw new Error('AKAMAI_BLOCKED: 봇 차단으로 상품 페이지 접근이 거부되었습니다. residential 프록시/엔진 설정이 필요합니다.');
     }
+    // URL은 reviewboost 단에서 쿠팡 상품 형식 검증 후 전달되므로, 빈/널 타이틀은 잘못된 URL보다
+    // 봇 차단 챌린지(빈 페이지)일 가능성이 높다.
     if (title.startsWith('null -') || title === '') {
-      throw new Error('상품을 찾을 수 없습니다. URL을 확인해주세요.');
+      throw new Error('AKAMAI_BLOCKED: 빈 응답(봇 차단 추정)을 받았습니다. residential 프록시/엔진 설정이 필요합니다.');
     }
 
     // 모든 리뷰 API 호출을 브라우저 내부에서 실행(Akamai 세션/TLS 유지)
