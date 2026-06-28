@@ -701,7 +701,7 @@ export async function renderReportPdfBuffer(input: RenderInput): Promise<Buffer>
   doc
     .fillColor(THEME.muted)
     .fontSize(8)
-    .text("/dashboard 분석 뷰와 동일한 섹션 기반 구조로 구성", ctx.x, pageBottom(ctx) - 16, {
+    .text("ReviewBoost · reviewboost.co.kr — 쿠팡·스마트스토어 리뷰 AI 분석", ctx.x, pageBottom(ctx) - 16, {
       width: ctx.width,
       align: "center"
     });
