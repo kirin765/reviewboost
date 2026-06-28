@@ -65,3 +65,18 @@ export const subscriptions = pgTable(
     customerIdx: index("subscriptions_customer_id_idx").on(t.paddleCustomerId)
   })
 );
+
+export const leads = pgTable(
+  "leads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    source: text("source").notNull(),
+    productUrl: text("product_url"),
+    clientIp: text("client_ip"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    emailCreatedIdx: index("leads_email_created_at_idx").on(t.email, t.createdAt)
+  })
+);

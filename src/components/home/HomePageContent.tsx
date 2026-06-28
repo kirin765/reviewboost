@@ -2,12 +2,42 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { buttonStyles } from "@/components/ui/Button";
 import { ShellContainer } from "@/components/ui/Primitives";
 import Reveal from "@/components/ui/Reveal";
 import { getSiteContent } from "@/lib/site-content";
 import { useTranslation } from "@/lib/i18n";
+
+function HeroUrlForm() {
+  const router = useRouter();
+  const [url, setUrl] = React.useState("");
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const v = url.trim();
+        if (!v) return;
+        router.push(`/free-report?url=${encodeURIComponent(v)}`);
+      }}
+      className="mx-auto mt-8 flex w-full max-w-2xl flex-col gap-3 sm:flex-row"
+    >
+      <input
+        type="url"
+        inputMode="url"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="쿠팡 상품 URL 붙여넣기 (https://www.coupang.com/vp/products/...)"
+        aria-label="쿠팡 상품 URL"
+        className="input flex-1"
+      />
+      <button type="submit" className={buttonStyles({ variant: "primary", size: "lg" })} disabled={!url.trim()}>
+        무료로 분석
+      </button>
+    </form>
+  );
+}
 
 function useCanObserveInView() {
   const reducedMotion = useReducedMotion();
@@ -446,16 +476,13 @@ export default function HomePageContent() {
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-[var(--rb-muted-strong)] md:text-lg">
               {content.home.hero.lead}
             </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/dashboard/analyze" className={buttonStyles({ variant: "primary", size: "lg" })}>
-                {content.home.hero.primaryCta}
-              </Link>
-              <Link href="/coupang-csv" className={buttonStyles({ variant: "secondary", size: "lg" })}>
-                {content.home.hero.secondaryCta}
-              </Link>
-              <Link href="/signup" className={buttonStyles({ variant: "ghost", size: "lg" })}>
-                {content.home.hero.tertiaryCta}
-              </Link>
+            <HeroUrlForm />
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-[var(--rb-muted-strong)]">
+              <Link href="/dashboard/analyze" className="underline-offset-4 hover:underline">CSV로 분석하기</Link>
+              <span aria-hidden="true" className="text-[var(--rb-muted)]">·</span>
+              <Link href="/coupang-csv" className="underline-offset-4 hover:underline">{content.home.hero.secondaryCta}</Link>
+              <span aria-hidden="true" className="text-[var(--rb-muted)]">·</span>
+              <Link href="/signup" className="underline-offset-4 hover:underline">{content.home.hero.tertiaryCta}</Link>
             </div>
           </div>
 
