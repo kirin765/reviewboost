@@ -29,28 +29,28 @@ type ResultTone = "danger" | "warning" | "info" | "accent" | "neutral";
 
 const TONE_STYLES: Record<ResultTone, { panel: string; bar: string; badge: string; label: string }> = {
   danger: {
-    panel: "border-[color:rgba(255,138,138,0.18)] bg-[rgba(255,122,102,0.10)]",
-    bar: "bg-[#ff8b8b]",
-    badge: "border-[color:rgba(255,138,138,0.2)] bg-[rgba(255,138,138,0.1)] text-[#ffc0c0]",
-    label: "text-[#ffb1b1]"
+    panel: "border-[color:rgba(255,122,102,0.28)] bg-[rgba(255,122,102,0.10)]",
+    bar: "bg-[#ff7a66]",
+    badge: "border-[color:rgba(255,122,102,0.28)] bg-[rgba(255,122,102,0.14)] text-[#993c1d]",
+    label: "text-[#993c1d]"
   },
   warning: {
-    panel: "border-[color:rgba(245,185,110,0.18)] bg-[rgba(255,191,71,0.14)]",
-    bar: "bg-[var(--rb-warning)]",
-    badge: "border-[color:rgba(245,185,110,0.2)] bg-[rgba(245,185,110,0.1)] text-[#ffd09b]",
-    label: "text-[#f4c68d]"
+    panel: "border-[color:rgba(255,191,71,0.32)] bg-[rgba(255,191,71,0.16)]",
+    bar: "bg-[#eda100]",
+    badge: "border-[color:rgba(255,191,71,0.32)] bg-[rgba(255,191,71,0.20)] text-[#854f0b]",
+    label: "text-[#854f0b]"
   },
   info: {
-    panel: "border-[color:rgba(132,162,255,0.2)] bg-[rgba(91,92,234,0.10)]",
-    bar: "bg-[#8ba6ff]",
-    badge: "border-[color:rgba(132,162,255,0.2)] bg-[rgba(132,162,255,0.1)] text-[#becbff]",
-    label: "text-[#b5c5ff]"
+    panel: "border-[color:rgba(91,92,234,0.24)] bg-[rgba(91,92,234,0.10)]",
+    bar: "bg-[#5b5cea]",
+    badge: "border-[color:rgba(91,92,234,0.24)] bg-[rgba(91,92,234,0.12)] text-[#3c3489]",
+    label: "text-[#3c3489]"
   },
   accent: {
-    panel: "border-[color:rgba(91,92,234,0.22)] bg-[rgba(34,181,115,0.12)]",
-    bar: "bg-[var(--rb-accent)]",
-    badge: "border-[color:rgba(91,92,234,0.2)] bg-[rgba(91,92,234,0.1)] text-[#a8ece1]",
-    label: "text-[#9fe4d7]"
+    panel: "border-[color:rgba(34,181,115,0.28)] bg-[rgba(34,181,115,0.12)]",
+    bar: "bg-[#22b573]",
+    badge: "border-[color:rgba(34,181,115,0.28)] bg-[rgba(34,181,115,0.14)] text-[#0f6e56]",
+    label: "text-[#0f6e56]"
   },
   neutral: {
     panel: "border-[color:rgba(31,37,89,0.08)] bg-[var(--rb-surface)]",
@@ -467,7 +467,7 @@ export default function AnalysisResults({
                       key={simulation.label}
                       className="rounded-[16px] border border-[color:rgba(132,162,255,0.18)] bg-[rgba(132,162,255,0.06)] p-4"
                     >
-                      <p className="text-xs text-[#b7c7ff]">{simulation.label}</p>
+                      <p className="text-xs text-[var(--rb-muted)]">{simulation.label}</p>
                       <strong className="mt-2 block text-3xl font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">{simulation.value}</strong>
                       <div className="mt-3 flex flex-wrap gap-3">
                         <span className={`inline-flex rounded-full border px-3 py-1 text-xs ${TONE_STYLES.info.badge}`}>{simulation.delta}</span>

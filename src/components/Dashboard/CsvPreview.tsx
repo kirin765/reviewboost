@@ -92,7 +92,7 @@ export default function CsvPreview({
         <div className="rounded-[18px] border border-[color:rgba(31,37,89,0.12)] bg-[var(--rb-surface)] p-5 shadow-[0_20px_42px_rgba(34,46,121,0.09)]">
           <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">열 매핑 패널</h2>
           {textColNeedsReview ? (
-            <p className="mt-4 whitespace-pre-line rounded-[14px] border border-[color:rgba(255,137,137,0.2)] bg-[rgba(123,22,22,0.18)] px-4 py-4 text-sm leading-7 text-[#ffc5c5]">
+            <p className="mt-4 whitespace-pre-line rounded-[14px] border border-[color:rgba(255,137,137,0.2)] bg-[rgba(255,122,102,0.18)] px-4 py-4 text-sm leading-7 text-[#993c1d]">
               리뷰 내용 열이 자동으로 추정되었는데 정확하지 않을 수 있어요. 지금 선택된 열: <strong>{textCol}</strong>
               {reviewTextHint ? `\n리뷰 텍스트 후보 열: ${reviewTextHint}` : ""}
               <br />원하는 열로 바꿔주세요.
@@ -152,16 +152,16 @@ export default function CsvPreview({
 
           <div className="mt-4 overflow-hidden rounded-[16px] border border-[color:rgba(31,37,89,0.08)] bg-[var(--rb-surface)]">
             <div className="tableWrap bg-[var(--rb-surface)]">
-              <table className="min-w-[720px] bg-[var(--rb-surface)] text-left text-sm text-[#d5dde8]">
+              <table className="min-w-[720px] bg-[var(--rb-surface)] text-left text-sm text-[var(--rb-fg)]">
                 <thead className="bg-[var(--rb-surface)]">
                   <tr>
                     {previewCols.map((column) => (
-                      <th key={column} className="border-b border-[color:rgba(31,37,89,0.08)] px-4 py-3 font-semibold text-[#edf2ea]">
+                      <th key={column} className="border-b border-[color:rgba(31,37,89,0.08)] px-4 py-3 font-semibold text-[var(--rb-muted-strong)]">
                         <div className="flex items-center gap-2">
                           <span>{column}</span>
                           {column === textCol ? <span className="rounded-full border border-[color:rgba(91,92,234,0.18)] bg-[rgba(91,92,234,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[var(--rb-accent)]">리뷰</span> : null}
                           {column === ratingCol ? <span className="rounded-full border border-[color:rgba(245,185,110,0.2)] bg-[rgba(245,185,110,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[var(--rb-warning)]">별점</span> : null}
-                          {column === dateCol ? <span className="rounded-full border border-[color:rgba(120,155,255,0.18)] bg-[rgba(120,155,255,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[#94afff]">작성일</span> : null}
+                          {column === dateCol ? <span className="rounded-full border border-[color:rgba(120,155,255,0.18)] bg-[rgba(120,155,255,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[#3c3489]">작성일</span> : null}
                         </div>
                       </th>
                     ))}

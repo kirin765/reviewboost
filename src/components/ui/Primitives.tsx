@@ -80,7 +80,7 @@ export function StatePanel({
       className={cn(
         "rounded-[16px] border p-6",
         tone === "error"
-          ? "border-[color:rgba(255,137,137,0.24)] bg-[rgba(123,22,22,0.18)]"
+          ? "border-[color:rgba(255,137,137,0.24)] bg-[rgba(255,122,102,0.18)]"
           : "border-[color:rgba(31,37,89,0.08)] bg-[rgba(31,37,89,0.03)]",
         className
       )}
