@@ -41,7 +41,7 @@ export default function CoupangCsvDownloadTool() {
   return (
     <section className="max-w-[820px] py-4">
       <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">Review download</p>
-      <h1 className="mt-4 max-w-3xl text-[clamp(2.5rem,5vw,4.6rem)] font-semibold leading-[0.96] tracking-[-0.07em] text-white">
+      <h1 className="mt-4 max-w-3xl text-[clamp(2.5rem,5vw,4.6rem)] font-semibold leading-[0.96] tracking-[-0.07em] text-[var(--rb-fg)]">
         {t("coupangCsv.title")}
       </h1>
       <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--rb-muted-strong)]">{t("coupangCsv.lead")}</p>
@@ -71,7 +71,7 @@ export default function CoupangCsvDownloadTool() {
         {error ? <p className="mt-4 text-sm text-[var(--rb-danger)]">{error}</p> : null}
         {!error && notice ? <p className="mt-4 text-sm text-[var(--rb-accent)]">{notice}</p> : null}
 
-        <div className="mt-8 flex flex-wrap gap-6 border-t border-[color:rgba(222,230,242,0.08)] pt-6 text-sm text-[var(--rb-muted-strong)]">
+        <div className="mt-8 flex flex-wrap gap-6 border-t border-[color:rgba(31,37,89,0.08)] pt-6 text-sm text-[var(--rb-muted-strong)]">
           <span>상품 URL 한 개만 입력하면 됩니다.</span>
           <span>생성된 CSV는 바로 분석 흐름으로 이어집니다.</span>
         </div>

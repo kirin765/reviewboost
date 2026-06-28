@@ -23,7 +23,7 @@ export function Surface({
   return (
     <Component
       className={cn(
-        "rounded-[16px] border border-[color:var(--rb-border)] bg-[var(--rb-surface)] shadow-[0_24px_48px_rgba(0,0,0,0.2)]",
+        "rounded-[16px] border border-[color:var(--rb-border)] bg-[var(--rb-surface)] shadow-[0_24px_48px_rgba(34,46,121,0.08)]",
         className
       )}
     >
@@ -48,7 +48,7 @@ export function SectionHeader({
   return (
     <div
       className={cn(
-        "flex flex-col gap-5 border-b border-[color:rgba(255,255,255,0.06)] pb-6 lg:flex-row lg:items-end lg:justify-between",
+        "flex flex-col gap-5 border-b border-[color:rgba(31,37,89,0.06)] pb-6 lg:flex-row lg:items-end lg:justify-between",
         className
       )}
     >
@@ -81,7 +81,7 @@ export function StatePanel({
         "rounded-[16px] border p-6",
         tone === "error"
           ? "border-[color:rgba(255,137,137,0.24)] bg-[rgba(123,22,22,0.18)]"
-          : "border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)]",
+          : "border-[color:rgba(31,37,89,0.08)] bg-[rgba(31,37,89,0.03)]",
         className
       )}
     >

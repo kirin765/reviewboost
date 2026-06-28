@@ -102,10 +102,10 @@ export default function HelpPage() {
         )}
       />
       <ShellContainer className="space-y-10">
-        <section className="grid gap-6 border-b border-[color:rgba(222,230,242,0.08)] pb-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(280px,420px)]">
+        <section className="grid gap-6 border-b border-[color:rgba(31,37,89,0.08)] pb-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(280px,420px)]">
           <div>
             <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">사용 가이드</p>
-            <h1 className="mt-4 max-w-4xl text-[clamp(2.6rem,5vw,4.8rem)] font-semibold leading-[0.96] tracking-[-0.07em] text-white">
+            <h1 className="mt-4 max-w-4xl text-[clamp(2.6rem,5vw,4.8rem)] font-semibold leading-[0.96] tracking-[-0.07em] text-[var(--rb-fg)]">
               스크롤하면서 분석 과정을 한 단계씩 확인하세요
             </h1>
           </div>
@@ -116,17 +116,17 @@ export default function HelpPage() {
 
         <section className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-[26px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.96),rgba(13,19,26,0.92))] p-5">
+            <div className="rounded-[26px] border border-[color:rgba(31,37,89,0.12)] bg-[var(--rb-surface)] p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">단계 안내</p>
               <div className="mt-5 space-y-4">
                 {stages.map((stage, index) => (
-                  <a key={stage.title} href={`#help-stage-${index + 1}`} className="flex items-start gap-3 rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-4 transition hover:border-[color:rgba(107,210,193,0.24)] hover:bg-[rgba(255,255,255,0.04)]">
-                    <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-[color:rgba(107,210,193,0.3)] bg-[rgba(107,210,193,0.08)] text-xs font-semibold text-[var(--rb-accent)]">
+                  <a key={stage.title} href={`#help-stage-${index + 1}`} className="flex items-start gap-3 rounded-[16px] border border-[color:rgba(31,37,89,0.06)] bg-[rgba(31,37,89,0.02)] px-4 py-4 transition hover:border-[color:rgba(91,92,234,0.24)] hover:bg-[rgba(31,37,89,0.04)]">
+                    <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-[color:rgba(91,92,234,0.3)] bg-[rgba(91,92,234,0.08)] text-xs font-semibold text-[var(--rb-accent)]">
                       {index + 1}
                     </span>
                     <div>
                       <p className="text-xs uppercase tracking-[0.16em] text-[var(--rb-muted)]">{stage.meta}</p>
-                      <strong className="mt-2 block text-sm font-medium text-white">{stage.title}</strong>
+                      <strong className="mt-2 block text-sm font-medium text-[var(--rb-fg)]">{stage.title}</strong>
                     </div>
                   </a>
                 ))}
@@ -139,17 +139,17 @@ export default function HelpPage() {
               <section
                 id={`help-stage-${index + 1}`}
                 key={stage.title}
-                className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.96),rgba(13,19,26,0.92))] p-5 md:p-7"
+                className="rounded-[28px] border border-[color:rgba(31,37,89,0.12)] bg-[var(--rb-surface)] p-5 md:p-7"
               >
                 <div className="grid gap-8 xl:grid-cols-[minmax(0,0.85fr)_minmax(300px,0.75fr)] xl:items-start">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-accent)]">{stage.eyebrow}</p>
-                    <h2 className="mt-4 text-[clamp(2rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-white">{stage.title}</h2>
+                    <h2 className="mt-4 text-[clamp(2rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">{stage.title}</h2>
                     <p className="mt-5 max-w-3xl text-sm leading-8 text-[var(--rb-muted-strong)]">{stage.lead}</p>
 
                     <div className="mt-6 grid gap-3">
                       {stage.bullets.map((bullet) => (
-                        <div key={bullet} className="flex items-start gap-3 rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
+                        <div key={bullet} className="flex items-start gap-3 rounded-[16px] border border-[color:rgba(31,37,89,0.06)] bg-[rgba(31,37,89,0.02)] px-4 py-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
                           <span className="mt-2 h-2 w-2 rounded-full bg-[var(--rb-accent)]" aria-hidden="true" />
                           <span>{bullet}</span>
                         </div>
@@ -157,15 +157,15 @@ export default function HelpPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-[24px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
+                  <div className="rounded-[24px] border border-[color:rgba(31,37,89,0.06)] bg-[rgba(31,37,89,0.02)] p-5">
                     <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">이 단계에서 하는 일</p>
                     <div className="mt-5 space-y-4">
-                      <div className="rounded-[18px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
-                        <strong className="text-base tracking-[-0.03em] text-white">사용자가 하는 일</strong>
+                      <div className="rounded-[18px] border border-[color:rgba(31,37,89,0.06)] bg-[rgba(31,37,89,0.02)] p-4">
+                        <strong className="text-base tracking-[-0.03em] text-[var(--rb-fg)]">사용자가 하는 일</strong>
                         <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">{stage.body}</p>
                       </div>
-                      <div className="rounded-[18px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
-                        <strong className="text-base tracking-[-0.03em] text-white">다음으로 이어지는 화면</strong>
+                      <div className="rounded-[18px] border border-[color:rgba(31,37,89,0.06)] bg-[rgba(31,37,89,0.02)] p-4">
+                        <strong className="text-base tracking-[-0.03em] text-[var(--rb-fg)]">다음으로 이어지는 화면</strong>
                         <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">
                           {index === 0 ? "업로드 후에는 파일 상태를 확인하고 열 매핑 단계로 이동합니다." : null}
                           {index === 1 ? "업로드가 끝나면 실제 리뷰 데이터 미리보기와 열 선택 UI가 열립니다." : null}

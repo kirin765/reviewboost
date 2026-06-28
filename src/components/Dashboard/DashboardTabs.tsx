@@ -35,7 +35,7 @@ export default function DashboardTabs({
   }
 
   return (
-    <div className="inline-flex rounded-[16px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)] p-1" role="tablist" aria-label={t("tabs.ariaLabel")}>
+    <div className="inline-flex rounded-[16px] border border-[color:var(--rb-border)] bg-[rgba(31,37,89,0.02)] p-1" role="tablist" aria-label={t("tabs.ariaLabel")}>
       {([
         ["analysis", t("tabs.analysis")],
         ["results", t("tabs.results")]
@@ -46,7 +46,7 @@ export default function DashboardTabs({
           type="button"
           className={cn(
             "rounded-[12px] px-4 py-2.5 text-sm font-medium transition",
-            activeTab === tab ? "bg-[var(--rb-accent)] text-[#071112]" : "text-[var(--rb-muted-strong)] hover:text-[var(--rb-fg)]"
+            activeTab === tab ? "bg-[var(--rb-accent)] text-[#ffffff]" : "text-[var(--rb-muted-strong)] hover:text-[var(--rb-fg)]"
           )}
           role="tab"
           aria-selected={activeTab === tab}

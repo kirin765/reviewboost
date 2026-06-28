@@ -22,7 +22,7 @@ export default function AnalysisStepList({ step }: AnalysisStepperProps) {
         return (
           <div
             key={item.n}
-            className="rounded-[18px] border border-[color:rgba(222,230,242,0.08)] bg-[rgba(255,255,255,0.02)] px-4 py-4"
+            className="rounded-[18px] border border-[color:rgba(31,37,89,0.08)] bg-[rgba(31,37,89,0.02)] px-4 py-4"
             role="listitem"
           >
             <div className="flex items-center gap-3">
@@ -30,12 +30,12 @@ export default function AnalysisStepList({ step }: AnalysisStepperProps) {
                 className={cn(
                   "flex h-5 w-5 items-center justify-center rounded-full border",
                   isActive
-                    ? "border-[color:rgba(107,210,193,0.5)] bg-[var(--rb-accent)] shadow-[0_0_18px_rgba(107,210,193,0.35)]"
-                    : "border-[color:rgba(222,230,242,0.14)] bg-[rgba(255,255,255,0.04)]"
+                    ? "border-[color:rgba(91,92,234,0.5)] bg-[var(--rb-accent)] shadow-[0_0_18px_rgba(91,92,234,0.35)]"
+                    : "border-[color:rgba(31,37,89,0.14)] bg-[rgba(31,37,89,0.04)]"
                 )}
                 aria-hidden="true"
               >
-                <span className={cn("h-2 w-2 rounded-full", isActive ? "bg-[#081110]" : "bg-[rgba(222,230,242,0.32)]")} />
+                <span className={cn("h-2 w-2 rounded-full", isActive ? "bg-[var(--rb-surface)]" : "bg-[rgba(31,37,89,0.32)]")} />
               </span>
               <div>
                 <span className="block text-[11px] uppercase tracking-[0.18em] text-[var(--rb-muted)]">{item.n}단계</span>

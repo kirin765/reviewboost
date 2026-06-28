@@ -127,9 +127,9 @@ export default function SidebarNav({
 
   return (
     <div className="flex h-full flex-col gap-6">
-      <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
+      <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(31,37,89,0.03)] p-4">
         <Link href="/" className="flex items-center gap-3" onClick={onNavigate}>
-          <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[var(--rb-accent)] text-[#071112]">
+          <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[var(--rb-accent)] text-[#ffffff]">
             <svg viewBox="0 0 20 20" className="h-5 w-5">
               <path d="M4 12.4 8.2 9.6l3.4 1.7 4.4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               <circle cx="4.1" cy="12.5" r="1.2" fill="currentColor" />
@@ -155,8 +155,8 @@ export default function SidebarNav({
               className={cn(
                 "flex items-center gap-3 rounded-[16px] border px-4 py-3.5 text-sm transition",
                 active
-                  ? "border-[color:rgba(107,210,193,0.3)] bg-[rgba(107,210,193,0.1)] text-[var(--rb-fg)]"
-                  : "border-transparent bg-transparent text-[var(--rb-muted-strong)] hover:border-[color:rgba(222,230,242,0.08)] hover:bg-[rgba(255,255,255,0.03)] hover:text-[var(--rb-fg)]"
+                  ? "border-[color:rgba(91,92,234,0.3)] bg-[rgba(91,92,234,0.1)] text-[var(--rb-fg)]"
+                  : "border-transparent bg-transparent text-[var(--rb-muted-strong)] hover:border-[color:rgba(31,37,89,0.08)] hover:bg-[rgba(31,37,89,0.03)] hover:text-[var(--rb-fg)]"
               )}
               aria-current={active ? "page" : undefined}
               onClick={onNavigate}
@@ -169,7 +169,7 @@ export default function SidebarNav({
         })}
       </nav>
 
-      <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
+      <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(31,37,89,0.03)] p-4">
         <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">바로가기</p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--rb-muted-strong)]">
           {SECONDARY_LINKS.map((item) => (
@@ -181,9 +181,9 @@ export default function SidebarNav({
       </div>
 
       <div className="mt-auto space-y-4">
-        <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.03)] p-4">
+        <div className="rounded-[22px] border border-[color:var(--rb-border)] bg-[rgba(31,37,89,0.03)] p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-sm font-semibold text-[var(--rb-fg)]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:rgba(31,37,89,0.08)] bg-[rgba(31,37,89,0.04)] text-sm font-semibold text-[var(--rb-fg)]">
               {initials}
             </div>
             <div>

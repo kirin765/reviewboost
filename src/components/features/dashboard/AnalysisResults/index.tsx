@@ -29,33 +29,33 @@ type ResultTone = "danger" | "warning" | "info" | "accent" | "neutral";
 
 const TONE_STYLES: Record<ResultTone, { panel: string; bar: string; badge: string; label: string }> = {
   danger: {
-    panel: "border-[color:rgba(255,138,138,0.18)] bg-[linear-gradient(180deg,rgba(42,20,24,0.78),rgba(25,16,19,0.72))]",
+    panel: "border-[color:rgba(255,138,138,0.18)] bg-[rgba(255,122,102,0.10)]",
     bar: "bg-[#ff8b8b]",
     badge: "border-[color:rgba(255,138,138,0.2)] bg-[rgba(255,138,138,0.1)] text-[#ffc0c0]",
     label: "text-[#ffb1b1]"
   },
   warning: {
-    panel: "border-[color:rgba(245,185,110,0.18)] bg-[linear-gradient(180deg,rgba(43,31,20,0.78),rgba(26,21,16,0.72))]",
+    panel: "border-[color:rgba(245,185,110,0.18)] bg-[rgba(255,191,71,0.14)]",
     bar: "bg-[var(--rb-warning)]",
     badge: "border-[color:rgba(245,185,110,0.2)] bg-[rgba(245,185,110,0.1)] text-[#ffd09b]",
     label: "text-[#f4c68d]"
   },
   info: {
-    panel: "border-[color:rgba(132,162,255,0.2)] bg-[linear-gradient(180deg,rgba(19,30,48,0.78),rgba(17,21,29,0.72))]",
+    panel: "border-[color:rgba(132,162,255,0.2)] bg-[rgba(91,92,234,0.10)]",
     bar: "bg-[#8ba6ff]",
     badge: "border-[color:rgba(132,162,255,0.2)] bg-[rgba(132,162,255,0.1)] text-[#becbff]",
     label: "text-[#b5c5ff]"
   },
   accent: {
-    panel: "border-[color:rgba(107,210,193,0.22)] bg-[linear-gradient(180deg,rgba(17,38,36,0.78),rgba(14,23,24,0.72))]",
+    panel: "border-[color:rgba(91,92,234,0.22)] bg-[rgba(34,181,115,0.12)]",
     bar: "bg-[var(--rb-accent)]",
-    badge: "border-[color:rgba(107,210,193,0.2)] bg-[rgba(107,210,193,0.1)] text-[#a8ece1]",
+    badge: "border-[color:rgba(91,92,234,0.2)] bg-[rgba(91,92,234,0.1)] text-[#a8ece1]",
     label: "text-[#9fe4d7]"
   },
   neutral: {
-    panel: "border-[color:rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(23,30,39,0.84),rgba(18,24,31,0.72))]",
-    bar: "bg-[rgba(255,255,255,0.18)]",
-    badge: "border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--rb-muted-strong)]",
+    panel: "border-[color:rgba(31,37,89,0.08)] bg-[var(--rb-surface)]",
+    bar: "bg-[rgba(31,37,89,0.12)]",
+    badge: "border-[color:rgba(31,37,89,0.08)] bg-[rgba(31,37,89,0.04)] text-[var(--rb-muted-strong)]",
     label: "text-[var(--rb-muted)]"
   }
 };
@@ -139,7 +139,7 @@ function TonedSection({
   return (
     <section
       data-tone={dataTone}
-      className={`rounded-[20px] border p-5 shadow-[0_16px_36px_rgba(0,0,0,0.18)] ${styles.panel} ${className}`}
+      className={`rounded-[20px] border p-5 shadow-[0_16px_36px_rgba(34,46,121,0.08)] ${styles.panel} ${className}`}
     >
       <div className={`h-1.5 w-14 rounded-full ${styles.bar}`} aria-hidden="true" />
       <p className={`mt-4 text-[11px] uppercase tracking-[0.22em] ${styles.label}`}>{eyebrow}</p>
@@ -307,7 +307,7 @@ export default function AnalysisResults({
             return (
               <div
                 key={metric.label}
-                className={`rounded-[18px] border p-4 shadow-[0_12px_24px_rgba(0,0,0,0.14)] ${tone.panel}`}
+                className={`rounded-[18px] border p-4 shadow-[0_12px_24px_rgba(34,46,121,0.08)] ${tone.panel}`}
               >
                 <div className={`h-1.5 w-12 rounded-full ${tone.bar}`} aria-hidden="true" />
                 <p className={`mt-4 text-xs ${tone.label}`}>{metric.label}</p>
@@ -331,14 +331,14 @@ export default function AnalysisResults({
                 className={`rounded-[18px] border px-4 py-4 text-left transition ${
                   selectedCategory === category.key
                     ? "border-[color:rgba(245,185,110,0.24)] bg-[rgba(245,185,110,0.08)]"
-                    : "border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)] hover:border-[color:rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.03)]"
+                    : "border-[color:var(--rb-border)] bg-[rgba(31,37,89,0.02)] hover:border-[color:rgba(31,37,89,0.10)] hover:bg-[rgba(31,37,89,0.03)]"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-medium text-[var(--rb-fg)]">{category.key}</span>
                   <span className="text-xs text-[var(--rb-muted)]">{category.percentage.toFixed(1)}%</span>
                 </div>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(31,37,89,0.06)]">
                   <div
                     className={`h-full rounded-full ${selectedCategory === category.key ? "bg-[var(--rb-warning)]" : "bg-[var(--rb-accent)]"}`}
                     style={{ width: `${Math.max(category.percentage, 3)}%` }}
@@ -399,7 +399,7 @@ export default function AnalysisResults({
                 {view.priorities.map((item) => {
                   const tone = TONE_STYLES[quadrantTone(item.quadrant)];
                   return (
-                    <div key={item.category} className="grid gap-3 border-b border-[color:rgba(255,255,255,0.06)] pb-4 last:border-b-0">
+                    <div key={item.category} className="grid gap-3 border-b border-[color:rgba(31,37,89,0.06)] pb-4 last:border-b-0">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <strong className="text-base font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">{item.category}</strong>
                         <span className={`inline-flex rounded-full border px-3 py-1 text-xs ${tone.badge}`}>{quadrantLabel(item.quadrant)}</span>
@@ -421,7 +421,7 @@ export default function AnalysisResults({
                 {view.actionItems.slice(0, gates.actionItemVisibleCount).map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-[16px] border border-[color:rgba(107,210,193,0.18)] bg-[rgba(107,210,193,0.06)] p-4"
+                    className="rounded-[16px] border border-[color:rgba(91,92,234,0.18)] bg-[rgba(91,92,234,0.06)] p-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <span className={`inline-flex rounded-full border px-3 py-1 text-xs ${TONE_STYLES.accent.badge}`}>
@@ -443,7 +443,7 @@ export default function AnalysisResults({
             </TonedSection>
           </div>
 
-          <div className="space-y-6 border-t border-[color:rgba(255,255,255,0.06)] pt-8 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0">
+          <div className="space-y-6 border-t border-[color:rgba(31,37,89,0.06)] pt-8 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0">
             <TonedSection tone="warning" eyebrow="부정 키워드" title="가장 많이 나온 불만" dataTone="keyword">
               <div className="space-y-3">
                 {view.keywords.slice(0, 8).map((keyword) => (
@@ -495,7 +495,7 @@ export default function AnalysisResults({
                   positiveKeywordItems.map((item) => (
                     <div
                       key={item.keyword}
-                      className="flex items-center justify-between gap-4 rounded-[14px] border border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm"
+                      className="flex items-center justify-between gap-4 rounded-[14px] border border-[color:rgba(31,37,89,0.08)] bg-[rgba(31,37,89,0.03)] px-4 py-3 text-sm"
                     >
                       <span className="text-[var(--rb-fg)]">{item.keyword}</span>
                       <span className="text-[var(--rb-muted)]">{item.count}건</span>
@@ -528,7 +528,7 @@ export default function AnalysisResults({
               <div className="space-y-3">
                 {group.items.length > 0 ? (
                   group.items.map((item, index) => (
-                    <p key={`${group.title}-${index}`} className="border-b border-[color:rgba(255,255,255,0.06)] pb-3 text-sm leading-7 text-[var(--rb-muted-strong)] last:border-b-0 last:pb-0">
+                    <p key={`${group.title}-${index}`} className="border-b border-[color:rgba(31,37,89,0.06)] pb-3 text-sm leading-7 text-[var(--rb-muted-strong)] last:border-b-0 last:pb-0">
                       {item}
                     </p>
                   ))

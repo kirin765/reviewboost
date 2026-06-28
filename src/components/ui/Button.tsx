@@ -13,13 +13,13 @@ export type ButtonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "t
 
 const variantClassName: Record<ButtonVariant, string> = {
   primary:
-    "border-[color:var(--rb-accent)] bg-[var(--rb-accent)] text-[#061111] shadow-[0_18px_30px_rgba(95,198,183,0.18)] hover:bg-[#74d5c8]",
+    "border-[color:var(--rb-accent)] bg-[var(--rb-accent)] text-[#ffffff] shadow-[0_18px_30px_rgba(91,92,234,0.18)] hover:bg-[#5b5cea]",
   secondary:
-    "border-[color:rgba(222,230,242,0.24)] bg-[rgba(255,255,255,0.07)] text-[var(--rb-fg)] hover:border-[color:rgba(107,210,193,0.3)] hover:bg-[rgba(255,255,255,0.12)]",
+    "border-[color:rgba(31,37,89,0.24)] bg-[rgba(31,37,89,0.06)] text-[var(--rb-fg)] hover:border-[color:rgba(91,92,234,0.3)] hover:bg-[rgba(31,37,89,0.10)]",
   danger:
     "border-[color:rgba(255,137,137,0.28)] bg-[rgba(132,27,27,0.22)] text-[#ffc5c5] hover:bg-[rgba(132,27,27,0.3)]",
   ghost:
-    "border-[color:rgba(222,230,242,0.12)] bg-[rgba(255,255,255,0.02)] text-[var(--rb-fg)] hover:border-[color:rgba(222,230,242,0.2)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--rb-fg)]"
+    "border-[color:rgba(31,37,89,0.12)] bg-[rgba(31,37,89,0.02)] text-[var(--rb-fg)] hover:border-[color:rgba(31,37,89,0.2)] hover:bg-[rgba(31,37,89,0.06)] hover:text-[var(--rb-fg)]"
 };
 
 const sizeClassName: Record<ButtonSize, string> = {

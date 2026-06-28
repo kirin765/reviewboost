@@ -26,10 +26,10 @@ export default function BlogPage() {
       />
       <ShellContainer className="space-y-10">
         <section className="space-y-8">
-          <div className="grid gap-6 border-b border-[color:rgba(222,230,242,0.08)] pb-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(280px,420px)]">
+          <div className="grid gap-6 border-b border-[color:rgba(31,37,89,0.08)] pb-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(280px,420px)]">
             <div>
               <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">Blog</p>
-              <h1 className="mt-4 max-w-3xl text-[clamp(2.6rem,5vw,4.8rem)] font-semibold leading-[0.96] tracking-[-0.07em] text-white">
+              <h1 className="mt-4 max-w-3xl text-[clamp(2.6rem,5vw,4.8rem)] font-semibold leading-[0.96] tracking-[-0.07em] text-[var(--rb-fg)]">
                 이커머스 셀러를 위한 리뷰 운영 가이드
               </h1>
             </div>
@@ -41,25 +41,25 @@ export default function BlogPage() {
           {featured ? (
             <Link
               href={`/blog/${featured.slug}`}
-              className="block rounded-[30px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(20,27,35,0.96),rgba(14,20,28,0.92))] px-5 py-7 shadow-[0_26px_60px_rgba(0,0,0,0.22)] transition hover:border-[color:rgba(107,210,193,0.22)] md:px-8 md:py-9"
+              className="block rounded-[30px] border border-[color:rgba(31,37,89,0.12)] bg-[var(--rb-surface)] px-5 py-7 shadow-[0_26px_60px_rgba(34,46,121,0.09)] transition hover:border-[color:rgba(91,92,234,0.22)] md:px-8 md:py-9"
             >
               <span className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-accent)]">{featured.tag}</span>
-              <h2 className="mt-4 max-w-4xl text-[clamp(2rem,4vw,3.6rem)] font-semibold tracking-[-0.06em] text-white">{featured.title}</h2>
+              <h2 className="mt-4 max-w-4xl text-[clamp(2rem,4vw,3.6rem)] font-semibold tracking-[-0.06em] text-[var(--rb-fg)]">{featured.title}</h2>
               <p className="mt-5 max-w-3xl text-base leading-8 text-[var(--rb-muted-strong)]">{featured.summary}</p>
             </Link>
           ) : null}
         </section>
 
-        <section className="border-t border-[color:rgba(222,230,242,0.08)]">
+        <section className="border-t border-[color:rgba(31,37,89,0.08)]">
           {rest.map((post) => (
             <Link
               href={`/blog/${post.slug}`}
-              className="grid gap-4 border-b border-[color:rgba(222,230,242,0.08)] py-6 transition hover:bg-[rgba(255,255,255,0.015)] md:grid-cols-[180px_minmax(0,1fr)_40px] md:items-start"
+              className="grid gap-4 border-b border-[color:rgba(31,37,89,0.08)] py-6 transition hover:bg-[rgba(31,37,89,0.02)] md:grid-cols-[180px_minmax(0,1fr)_40px] md:items-start"
               key={post.slug}
             >
               <span className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-accent)]">{post.tag}</span>
               <div>
-                <h2 className="text-2xl font-semibold tracking-[-0.04em] text-white">{post.title}</h2>
+                <h2 className="text-2xl font-semibold tracking-[-0.04em] text-[var(--rb-fg)]">{post.title}</h2>
                 <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">{post.summary}</p>
               </div>
               <span className="text-right text-2xl text-[var(--rb-muted)]" aria-hidden="true">
@@ -69,9 +69,9 @@ export default function BlogPage() {
           ))}
         </section>
 
-        <section className="rounded-[30px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(20,27,35,0.96),rgba(14,20,28,0.92))] px-5 py-7 md:px-8 md:py-8">
+        <section className="rounded-[30px] border border-[color:rgba(31,37,89,0.12)] bg-[var(--rb-surface)] px-5 py-7 md:px-8 md:py-8">
           <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">Start free</p>
-          <h2 className="mt-4 max-w-3xl text-[clamp(2rem,4vw,3.4rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-white">
+          <h2 className="mt-4 max-w-3xl text-[clamp(2rem,4vw,3.4rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--rb-fg)]">
             리뷰 분석, 지금 바로 시작해보세요.
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--rb-muted-strong)]">

@@ -103,7 +103,7 @@ export default function DashboardAnalysisPanel({
   const handleBackToUpload = onBackToUpload ?? onReset;
 
   const actionRail = (
-    <div className="mt-8 flex flex-col gap-3 border-t border-[color:rgba(222,230,242,0.08)] pt-6 md:flex-row md:items-center md:justify-between">
+    <div className="mt-8 flex flex-col gap-3 border-t border-[color:rgba(31,37,89,0.08)] pt-6 md:flex-row md:items-center md:justify-between">
       <div className="max-w-2xl text-sm leading-7 text-[var(--rb-muted)]">
         {step === 1 ? "파일을 선택한 뒤 다음 단계로 이동해 열 매핑을 확인합니다." : null}
         {step === 2 ? "열 매핑이 맞으면 바로 분석을 시작하고, 수정이 필요하면 다시 업로드로 돌아갑니다." : null}
@@ -150,9 +150,9 @@ export default function DashboardAnalysisPanel({
         <AnalysisResults result={result} caps={caps} busy={busy} onDownloadPdf={onDownloadPdf} />
       ) : (
         <Surface className="px-5 py-6 md:px-7 md:py-7">
-          <div className="border-b border-[color:rgba(222,230,242,0.08)] pb-6">
+          <div className="border-b border-[color:rgba(31,37,89,0.08)] pb-6">
             <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">{STEP_COPY[step].eyebrow}</p>
-            <h2 className="mt-3 text-[clamp(2rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-white">{STEP_COPY[step].title}</h2>
+            <h2 className="mt-3 text-[clamp(2rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">{STEP_COPY[step].title}</h2>
             <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--rb-muted-strong)]">
               {STEP_COPY[step].description} {sectionHint}
             </p>
@@ -164,7 +164,7 @@ export default function DashboardAnalysisPanel({
                 <div>
                   <FileUploader file={file} busy={busy} onFileSelect={onFileSelect} onReset={onReset} onSample={onSample} />
                 </div>
-                <div className="border-t border-[color:rgba(222,230,242,0.08)] pt-6 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0">
+                <div className="border-t border-[color:rgba(31,37,89,0.08)] pt-6 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0">
                   <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--rb-muted)]">업로드 안내</p>
                   <div className="mt-4 space-y-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
                     <p>필수: 리뷰 내용(텍스트)</p>

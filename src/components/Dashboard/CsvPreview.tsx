@@ -80,16 +80,16 @@ export default function CsvPreview({
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap gap-3">
-        <span className="rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(18,24,31,0.94)] px-3 py-1 text-xs text-[var(--rb-muted-strong)]">
+        <span className="rounded-full border border-[color:rgba(31,37,89,0.08)] bg-[var(--rb-surface)] px-3 py-1 text-xs text-[var(--rb-muted-strong)]">
           {preview.totalRows}행 / {preview.columns.length}열
         </span>
-        <span className="rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(18,24,31,0.94)] px-3 py-1 text-xs text-[var(--rb-muted-strong)]">
+        <span className="rounded-full border border-[color:rgba(31,37,89,0.08)] bg-[var(--rb-surface)] px-3 py-1 text-xs text-[var(--rb-muted-strong)]">
           {preview.headerMode === "header" ? "헤더 있음" : "헤더 없음"}
         </span>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="rounded-[18px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.98),rgba(15,20,27,0.98))] p-5 shadow-[0_20px_42px_rgba(0,0,0,0.22)]">
+        <div className="rounded-[18px] border border-[color:rgba(31,37,89,0.12)] bg-[var(--rb-surface)] p-5 shadow-[0_20px_42px_rgba(34,46,121,0.09)]">
           <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">열 매핑 패널</h2>
           {textColNeedsReview ? (
             <p className="mt-4 whitespace-pre-line rounded-[14px] border border-[color:rgba(255,137,137,0.2)] bg-[rgba(123,22,22,0.18)] px-4 py-4 text-sm leading-7 text-[#ffc5c5]">
@@ -134,7 +134,7 @@ export default function CsvPreview({
           </div>
         </div>
 
-        <div className="rounded-[18px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.98),rgba(15,20,27,0.98))] p-5 shadow-[0_20px_42px_rgba(0,0,0,0.22)]">
+        <div className="rounded-[18px] border border-[color:rgba(31,37,89,0.12)] bg-[var(--rb-surface)] p-5 shadow-[0_20px_42px_rgba(34,46,121,0.09)]">
           <div className="flex items-center justify-between gap-4">
             <span className="text-sm font-medium text-[var(--rb-muted-strong)]">미리보기 (처음 5줄)</span>
             {preview.columns.length > 6 ? (
@@ -150,16 +150,16 @@ export default function CsvPreview({
             ) : null}
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-[16px] border border-[color:rgba(255,255,255,0.08)] bg-[#121922]">
-            <div className="tableWrap bg-[#121922]">
-              <table className="min-w-[720px] bg-[#121922] text-left text-sm text-[#d5dde8]">
-                <thead className="bg-[#0f151d]">
+          <div className="mt-4 overflow-hidden rounded-[16px] border border-[color:rgba(31,37,89,0.08)] bg-[var(--rb-surface)]">
+            <div className="tableWrap bg-[var(--rb-surface)]">
+              <table className="min-w-[720px] bg-[var(--rb-surface)] text-left text-sm text-[#d5dde8]">
+                <thead className="bg-[var(--rb-surface)]">
                   <tr>
                     {previewCols.map((column) => (
-                      <th key={column} className="border-b border-[color:rgba(255,255,255,0.08)] px-4 py-3 font-semibold text-[#edf2ea]">
+                      <th key={column} className="border-b border-[color:rgba(31,37,89,0.08)] px-4 py-3 font-semibold text-[#edf2ea]">
                         <div className="flex items-center gap-2">
                           <span>{column}</span>
-                          {column === textCol ? <span className="rounded-full border border-[color:rgba(107,210,193,0.18)] bg-[rgba(107,210,193,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[var(--rb-accent)]">리뷰</span> : null}
+                          {column === textCol ? <span className="rounded-full border border-[color:rgba(91,92,234,0.18)] bg-[rgba(91,92,234,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[var(--rb-accent)]">리뷰</span> : null}
                           {column === ratingCol ? <span className="rounded-full border border-[color:rgba(245,185,110,0.2)] bg-[rgba(245,185,110,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[var(--rb-warning)]">별점</span> : null}
                           {column === dateCol ? <span className="rounded-full border border-[color:rgba(120,155,255,0.18)] bg-[rgba(120,155,255,0.12)] px-2 py-0.5 text-[10px] tracking-[0.16em] text-[#94afff]">작성일</span> : null}
                         </div>
@@ -167,14 +167,14 @@ export default function CsvPreview({
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-[#121922]">
+                <tbody className="bg-[var(--rb-surface)]">
                   {preview.sampleRows.slice(0, 5).map((row, rowIndex) => (
-                    <tr key={rowIndex} className="bg-[#121922] transition hover:bg-[rgba(255,255,255,0.03)]">
+                    <tr key={rowIndex} className="bg-[var(--rb-surface)] transition hover:bg-[rgba(31,37,89,0.03)]">
                       {previewCols.map((column) => (
-                        <td key={column} className="border-b border-[color:rgba(255,255,255,0.06)] bg-[#121922] px-4 py-3 align-top text-[#d0d8e4]">
+                        <td key={column} className="border-b border-[color:rgba(31,37,89,0.06)] bg-[var(--rb-surface)] px-4 py-3 align-top text-[var(--rb-muted)]">
                           <button
                             type="button"
-                            className="whitespace-pre-wrap break-words text-left text-sm leading-6 text-[#d0d8e4] transition hover:text-[var(--rb-fg)]"
+                            className="whitespace-pre-wrap break-words text-left text-sm leading-6 text-[var(--rb-muted)] transition hover:text-[var(--rb-fg)]"
                             title={String(row[column] ?? "")}
                             onClick={() => onCellClick(column, String(row[column] ?? ""))}
                           >
@@ -197,7 +197,7 @@ export default function CsvPreview({
       {cellModal ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center px-5">
           <button type="button" className="absolute inset-0 bg-[rgba(0,0,0,0.62)] backdrop-blur-sm" aria-label="모달 닫기" onClick={onCellModalClose} />
-          <div className="relative z-10 w-full max-w-2xl rounded-[18px] border border-[color:var(--rb-border)] bg-[rgba(11,15,16,0.96)] p-6 shadow-[0_28px_50px_rgba(0,0,0,0.38)]">
+          <div className="relative z-10 w-full max-w-2xl rounded-[18px] border border-[color:var(--rb-border)] bg-[var(--rb-surface)] p-6 shadow-[0_28px_50px_rgba(34,46,121,0.10)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">전체 보기</p>
@@ -212,7 +212,7 @@ export default function CsvPreview({
                 </button>
               </div>
             </div>
-            <div className="mt-5 max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-[14px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
+            <div className="mt-5 max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-[14px] border border-[color:rgba(31,37,89,0.06)] bg-[rgba(31,37,89,0.02)] p-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
               {cellModal.value || <span className="text-[var(--rb-muted)]">비어 있음</span>}
             </div>
           </div>

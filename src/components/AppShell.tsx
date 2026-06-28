@@ -131,11 +131,11 @@ function getChromeConfig(pathname: string): ChromeConfig {
 
 function MarketingHeader({ userEmail }: { userEmail: string | null }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[color:rgba(255,255,255,0.06)] bg-[rgba(7,11,12,0.84)] backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-[color:rgba(31,37,89,0.06)] bg-[rgba(255,255,255,0.82)] backdrop-blur-xl">
       <ShellContainer className="flex h-18 items-center justify-between gap-6">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[var(--rb-accent)] text-[#071112]">
+            <span className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[var(--rb-accent)] text-[#ffffff]">
               <svg viewBox="0 0 20 20" className="h-5 w-5">
                 <path d="M4 12.4 8.2 9.6l3.4 1.7 4.4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 <circle cx="4.1" cy="12.5" r="1.2" fill="currentColor" />
@@ -179,7 +179,7 @@ function MarketingHeader({ userEmail }: { userEmail: string | null }) {
 
 function MarketingFooter() {
   return (
-    <footer className="border-t border-[color:rgba(255,255,255,0.06)] py-12">
+    <footer className="border-t border-[color:rgba(31,37,89,0.06)] py-12">
       <ShellContainer className="grid gap-8 text-sm text-[var(--rb-muted-strong)] md:grid-cols-3">
         <div>
           <h2 className="text-base font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">ReviewBoost</h2>
@@ -243,7 +243,7 @@ export default function AppShell({ children, userEmail = null, plan = "free" }: 
     <div className="min-h-screen bg-[var(--rb-bg)] text-[var(--rb-fg)]">
       {!isMobile ? (
         <aside
-          className="fixed inset-y-0 left-0 z-40 w-[296px] border-r border-[color:rgba(222,230,242,0.08)] bg-[rgba(15,20,27,0.9)] px-5 py-6 backdrop-blur-xl"
+          className="fixed inset-y-0 left-0 z-40 w-[296px] border-r border-[color:rgba(31,37,89,0.08)] bg-[var(--rb-surface)] px-5 py-6 backdrop-blur-xl"
           aria-label="주요 메뉴"
         >
           <SidebarNav variant="app" plan={plan} userEmail={userEmail} firstLinkRef={drawerFirstLinkRef} onNavigate={() => setOpen(false)} />
@@ -268,7 +268,7 @@ export default function AppShell({ children, userEmail = null, plan = "free" }: 
               <aside
                 id="workspace-navigation"
                 aria-label="주요 메뉴"
-                className="fixed inset-y-0 left-0 z-40 w-[296px] border-r border-[color:rgba(222,230,242,0.08)] bg-[rgba(15,20,27,0.96)] px-5 py-6 backdrop-blur-xl xl:hidden"
+                className="fixed inset-y-0 left-0 z-40 w-[296px] border-r border-[color:rgba(31,37,89,0.08)] bg-[var(--rb-surface)] px-5 py-6 backdrop-blur-xl xl:hidden"
               >
                 <SidebarNav variant="app" plan={plan} userEmail={userEmail} firstLinkRef={drawerFirstLinkRef} onNavigate={() => setOpen(false)} />
               </aside>
@@ -280,7 +280,7 @@ export default function AppShell({ children, userEmail = null, plan = "free" }: 
       <div className="xl:pl-[296px]">
         <ShellContainer className="py-6 md:py-8">
           {config.showHeader ? (
-            <header className="mb-8 flex flex-col gap-4 border-b border-[color:rgba(222,230,242,0.08)] pb-5 md:flex-row md:items-end md:justify-between">
+            <header className="mb-8 flex flex-col gap-4 border-b border-[color:rgba(31,37,89,0.08)] pb-5 md:flex-row md:items-end md:justify-between">
               <div>
                 {config.label ? <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">{config.label}</p> : null}
                 <h1 className="mt-2 text-[clamp(2rem,4vw,3.4rem)] font-semibold leading-[0.98] tracking-[-0.06em] text-[var(--rb-fg)]">{config.title}</h1>

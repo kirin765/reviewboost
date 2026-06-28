@@ -54,24 +54,24 @@ export default function FeaturesPage() {
       />
 
       <ShellContainer className="space-y-8">
-        <section className="featureHubHero rounded-[30px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(20,27,35,0.96),rgba(14,20,28,0.92))] px-6 py-7 md:px-8 md:py-9">
+        <section className="featureHubHero rounded-[30px] border border-[color:rgba(31,37,89,0.12)] bg-[var(--rb-surface)] px-6 py-7 md:px-8 md:py-9">
           <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-accent)]">Features</p>
           <div className="featureHubHeroGrid mt-4">
             <div>
-              <h1 className="featureHubTitle max-w-4xl text-[clamp(2.15rem,4vw,4rem)] font-semibold leading-[0.98] tracking-[-0.06em] text-white">
+              <h1 className="featureHubTitle max-w-4xl text-[clamp(2.15rem,4vw,4rem)] font-semibold leading-[0.98] tracking-[-0.06em] text-[var(--rb-fg)]">
                 리뷰 운영을 실행으로 연결하는 핵심 기능
               </h1>
               <p className="featureHubLead mt-5 max-w-3xl text-[15px] leading-8 text-[var(--rb-muted-strong)]">
                 카드 수를 늘리기보다, 실제로 많이 쓰는 4가지 흐름만 남겼습니다. 리뷰를 읽고, 데이터를 모으고, 문제를 정리하고, FAQ까지 연결하는 핵심 경로만 바로 볼 수 있습니다.
               </p>
             </div>
-            <div className="featureHubSide rounded-[24px] border border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-5">
+            <div className="featureHubSide rounded-[24px] border border-[color:rgba(31,37,89,0.08)] bg-[rgba(31,37,89,0.03)] p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Core flow</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {["AI 분석", "CSV 확보", "부정리뷰 대응", "FAQ 생성"].map((item) => (
                   <span
                     key={item}
-                    className="rounded-full border border-[color:rgba(107,210,193,0.2)] bg-[rgba(107,210,193,0.08)] px-3 py-1 text-xs text-[var(--rb-accent)]"
+                    className="rounded-full border border-[color:rgba(91,92,234,0.2)] bg-[rgba(91,92,234,0.08)] px-3 py-1 text-xs text-[var(--rb-accent)]"
                   >
                     {item}
                   </span>
@@ -89,14 +89,14 @@ export default function FeaturesPage() {
             <Link
               key={card.href}
               href={card.href}
-              className="featureHubCard group rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(24,31,39,0.96),rgba(17,23,31,0.92))] p-6 transition hover:border-[color:rgba(107,210,193,0.24)] hover:bg-[linear-gradient(180deg,rgba(27,35,44,0.98),rgba(20,27,36,0.94))] md:p-7"
+              className="featureHubCard group rounded-[28px] border border-[color:rgba(31,37,89,0.12)] bg-[var(--rb-surface)] p-6 transition hover:border-[color:rgba(91,92,234,0.24)] hover:bg-[var(--rb-surface)] md:p-7"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <span className="inline-flex rounded-full border border-[color:rgba(107,210,193,0.18)] bg-[rgba(107,210,193,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[var(--rb-accent)]">
+                  <span className="inline-flex rounded-full border border-[color:rgba(91,92,234,0.18)] bg-[rgba(91,92,234,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[var(--rb-accent)]">
                     {card.tag}
                   </span>
-                  <h2 className="featureHubCardTitle mt-5 text-[clamp(1.6rem,2.3vw,2.1rem)] font-semibold tracking-[-0.05em] text-white">
+                  <h2 className="featureHubCardTitle mt-5 text-[clamp(1.6rem,2.3vw,2.1rem)] font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">
                     {card.title}
                   </h2>
                 </div>
@@ -107,17 +107,17 @@ export default function FeaturesPage() {
                 {card.description}
               </p>
 
-              <div className="featureHubCardFooter mt-6 border-t border-[color:rgba(255,255,255,0.08)] pt-5">
+              <div className="featureHubCardFooter mt-6 border-t border-[color:rgba(31,37,89,0.08)] pt-5">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--rb-muted)]">Focus</p>
-                <p className="mt-2 text-base font-medium tracking-[-0.03em] text-white">{card.accent} 중심 워크플로</p>
+                <p className="mt-2 text-base font-medium tracking-[-0.03em] text-[var(--rb-fg)]">{card.accent} 중심 워크플로</p>
               </div>
             </Link>
           ))}
         </section>
 
-        <section className="rounded-[30px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(20,27,35,0.96),rgba(14,20,28,0.92))] px-6 py-7 md:px-8 md:py-8">
+        <section className="rounded-[30px] border border-[color:rgba(31,37,89,0.12)] bg-[var(--rb-surface)] px-6 py-7 md:px-8 md:py-8">
           <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">Start free</p>
-          <h2 className="mt-4 max-w-3xl text-[clamp(2rem,4vw,3.4rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-white">
+          <h2 className="mt-4 max-w-3xl text-[clamp(2rem,4vw,3.4rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--rb-fg)]">
             기능 설명만 보지 말고 실제 데이터로 바로 확인해보세요.
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--rb-muted-strong)]">

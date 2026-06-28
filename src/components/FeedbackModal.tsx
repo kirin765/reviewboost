@@ -36,10 +36,10 @@ export default function FeedbackModal(props: {
     <div className="fixed inset-0 z-[90] flex items-center justify-center px-5" role="dialog" aria-modal="true" aria-label={title} aria-live="polite">
       <button type="button" className="absolute inset-0 bg-[rgba(0,0,0,0.68)] backdrop-blur-sm" aria-label="닫기" onClick={handleClose} />
       <div
-        className={`relative z-10 w-full max-w-xl rounded-[18px] border p-6 shadow-[0_28px_50px_rgba(0,0,0,0.38)] ${
+        className={`relative z-10 w-full max-w-xl rounded-[18px] border p-6 shadow-[0_28px_50px_rgba(34,46,121,0.10)] ${
           tone === "error"
-            ? "border-[color:rgba(255,137,137,0.28)] bg-[rgba(24,10,10,0.96)]"
-            : "border-[color:var(--rb-border)] bg-[rgba(11,15,16,0.96)]"
+            ? "border-[color:rgba(255,137,137,0.28)] bg-[rgba(255,122,102,0.12)]"
+            : "border-[color:var(--rb-border)] bg-[var(--rb-surface)]"
         }`}
       >
         <div className="flex items-start justify-between gap-4">
