@@ -127,7 +127,8 @@ function measureHeight(
   size: number,
   lineGap = LINE_GAP
 ): number {
-  return Math.ceil(doc.heightOfString(text, { width, align: "left", lineGap, size }));
+  doc.fontSize(size);
+  return Math.ceil(doc.heightOfString(text, { width, align: "left", lineGap }));
 }
 
 function collectPdf(doc: ReportPdfDocument): Promise<Buffer> {
@@ -398,9 +399,11 @@ function drawListSectionChunk(
   const effectiveY = ensureSpaceForChunk(ctx, startY);
 
   const maxHeight = pageBottom(ctx) - effectiveY - 34;
-  const estimate = estimateListRows(ctx, effective, startIndex, width, Math.max(24, maxHeight - 20), showEmpty);
+  const estimate = estimateListRows(ctx, effective, startIndex, width, Math.max(24, maxHeight - 40), showEmpty);
   const rows = effective.slice(startIndex, startIndex + estimate.count);
-  const panelHeight = Math.max(78, 40 + estimate.usedHeight);
+  const hasMore = startIndex + estimate.count < effective.length;
+  const footerH = hasMore ? 16 : 0;
+  const panelHeight = Math.max(78, 44 + estimate.usedHeight + footerH + 10);
 
   const panel = drawPanel(ctx, x, effectiveY, width, panelHeight, continuation ? `${title} (계속)` : title, true);
   let rowY = panel.contentY;
@@ -410,12 +413,11 @@ function drawListSectionChunk(
     rowY += used;
   }
 
-  const hasMore = startIndex + estimate.count < effective.length;
   if (hasMore) {
     ctx.doc
       .fillColor(THEME.muted)
       .fontSize(8)
-      .text("다음 페이지에서 이어짐", panel.contentX, panel.contentBottom - 8, {
+      .text("다음 페이지에서 이어짐", panel.contentX, rowY + 2, {
         width: panel.innerW,
         align: "right"
       });
@@ -507,25 +509,31 @@ function drawTwoColumnSections(
 }
 
 function drawMetricsSummary(ctx: RenderContext, stats: AnalysisStats) {
-  const panelH = 102;
-  ensureSpace(ctx, panelH);
-  const panel = drawPanel(ctx, ctx.x, ctx.y, ctx.width, panelH, "지표 요약");
-
-  const half = (panel.innerW - 10) / 2;
+  const innerW = ctx.width - 22;
   const recent30 = safePercent(stats.recentness?.last30Share || 0);
   const recent90 = safePercent(stats.recentness?.last90Share || 0);
-
-  drawBar(ctx, panel.contentX, panel.contentY + 18, half - 2, (stats.recentness?.last30Share || 0), `최근 30일 리뷰 비중 ${recent30}`);
-  drawBar(ctx, panel.contentX + half + 10, panel.contentY + 18, half - 2, (stats.recentness?.last90Share || 0), `최근 90일 리뷰 비중 ${recent90}`);
-
   const recentHint = stats.recentness?.hasDates
     ? `최근성 지표: 최근 30일 ${safePercent(stats.recentness.last30Share)} · 최근 90일 ${safePercent(stats.recentness.last90Share)}`
     : "작성일이 없어 최근성 지표는 약하게 반영됩니다.";
 
+  const barOffset = 18;
+  const barBlockH = 23;
+  const hintOffset = barOffset + barBlockH + 10;
+  const hintH = measureHeight(ctx.doc, recentHint, innerW, 9, 1.4);
+  const panelH = Math.max(102, 44 + hintOffset + hintH + 12);
+
+  ensureSpace(ctx, panelH);
+  const panel = drawPanel(ctx, ctx.x, ctx.y, ctx.width, panelH, "지표 요약");
+
+  const half = (panel.innerW - 10) / 2;
+
+  drawBar(ctx, panel.contentX, panel.contentY + barOffset, half - 2, (stats.recentness?.last30Share || 0), `최근 30일 리뷰 비중 ${recent30}`);
+  drawBar(ctx, panel.contentX + half + 10, panel.contentY + barOffset, half - 2, (stats.recentness?.last90Share || 0), `최근 90일 리뷰 비중 ${recent90}`);
+
   ctx.doc
     .fillColor(THEME.muted)
     .fontSize(9)
-    .text(recentHint, panel.contentX, panel.contentY + 66, {
+    .text(recentHint, panel.contentX, panel.contentY + hintOffset, {
       width: panel.innerW,
       lineGap: 1.4
     });
@@ -557,35 +565,49 @@ export async function renderReportPdfBuffer(input: RenderInput): Promise<Buffer>
     width: doc.page.width - MARGIN.left - MARGIN.right
   };
 
-  const header = drawPanel(ctx, ctx.x, ctx.y, ctx.width, 94, "ReviewBoost 분석 리포트");
+  const headerInnerW = ctx.width - 22;
+  const titleSize = 24;
+  const fileLine = `파일: ${fileName}`;
+  const dateLine = `생성일: ${createdAt}`;
+  const metaLine = `총 리뷰: ${safeNum(stats.total)}  ·  긍정: ${safeNum(stats.positive)}  ·  부정: ${safeNum(stats.negative)}  ·  중립: ${safeNum(stats.neutral)}`;
+
+  const titleH = measureHeight(doc, safeText(title), headerInnerW, titleSize, 1.5);
+  const fileH = measureHeight(doc, fileLine, headerInnerW, 10);
+  const dateH = measureHeight(doc, dateLine, headerInnerW, 10);
+  const metaH = measureHeight(doc, metaLine, headerInnerW, 9, 1.4);
+  const gapTitle = 8;
+  const gapLine = 4;
+  const gapMeta = 6;
+  const headerTopPad = 40;
+  const headerContentH = titleH + gapTitle + fileH + gapLine + dateH + gapMeta + metaH;
+  const headerPanelH = Math.max(94, headerTopPad + headerContentH + 12);
+
+  const header = drawPanel(ctx, ctx.x, ctx.y, ctx.width, headerPanelH, "ReviewBoost 분석 리포트");
+  let hy = header.contentY - 4;
   doc
     .fillColor(THEME.text)
-    .fontSize(24)
-    .text(safeText(title), header.contentX, header.contentY - 4, {
-      width: header.innerW,
-      lineGap: 1.5
-    });
+    .fontSize(titleSize)
+    .text(safeText(title), header.contentX, hy, { width: header.innerW, lineGap: 1.5 });
+  hy += titleH + gapTitle;
 
   doc
     .fillColor(THEME.muted)
     .fontSize(10)
-    .text(`파일: ${fileName}`, header.contentX, header.contentY + 34, { width: header.innerW });
+    .text(fileLine, header.contentX, hy, { width: header.innerW });
+  hy += fileH + gapLine;
 
   doc
     .fillColor(THEME.muted)
     .fontSize(10)
-    .text(`생성일: ${createdAt}`, header.contentX, header.contentY + 48, { width: header.innerW });
+    .text(dateLine, header.contentX, hy, { width: header.innerW });
+  hy += dateH + gapMeta;
 
-  const metaLine = `총 리뷰: ${safeNum(stats.total)}  ·  긍정: ${safeNum(stats.positive)}  ·  부정: ${safeNum(stats.negative)}  ·  중립: ${safeNum(stats.neutral)}`;
   doc
     .fillColor(THEME.accent)
     .fontSize(9)
-    .text(metaLine, header.contentX, header.contentY + 66, {
-      width: header.innerW,
-      lineGap: 1.4
-    });
+    .text(metaLine, header.contentX, hy, { width: header.innerW, lineGap: 1.4 });
 
-  ctx.y += 94 + SECTION_GAP;
+  ctx.y += headerPanelH + SECTION_GAP;
 
   drawKpiGrid(ctx, [
     { label: "리뷰 수", value: safeNum(stats.total), hint: "총 업로드된 리뷰" },
