@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends xvfb && rm -rf 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
+# patchright용 실제 Google Chrome 설치 (channel:'chrome' — Akamai 통과율 핵심)
+RUN npx patchright install chrome || npx playwright install chrome
+
 COPY src ./src
 COPY start.sh ./start.sh
 RUN chmod +x start.sh

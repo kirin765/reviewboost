@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "express": "^4.19.2",
+    "patchright": "^1.61.1",
     "playwright": "^1.44.0"
   }
 }
