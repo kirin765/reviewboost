@@ -103,7 +103,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const clientIp = getClientIp(req);
   if (rateLimited(clientIp)) {
-    return fail(new ApiError(429, "FREE_REPORT_RATE_LIMITED", "분석 요청이 너무 많습니다. 잠시 후 다시 시도해주세요."));
+    return fail(new ApiError(429, "RATE_LIMITED", "분석 요청이 너무 많습니다. 잠시 후 다시 시도해주세요."));
   }
 
   const contentLength = Number(req.headers.get("content-length") ?? "");

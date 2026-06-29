@@ -20,7 +20,8 @@ export type ApiErrorCode =
   | "CRAWLER_INVALID_PRODUCT_URL"
   | "CRAWLER_UPSTREAM_TIMEOUT"
   | "CRAWLER_UPSTREAM_ERROR"
-  | "CRAWLER_INVALID_RESPONSE";
+  | "CRAWLER_INVALID_RESPONSE"
+  | "RATE_LIMITED";
 
 export type ApiErrorStatusMap = Record<ApiErrorCode, number>;
 
@@ -46,7 +47,8 @@ export const apiErrorStatus: ApiErrorStatusMap = {
   CRAWLER_INVALID_PRODUCT_URL: 400,
   CRAWLER_UPSTREAM_TIMEOUT: 504,
   CRAWLER_UPSTREAM_ERROR: 502,
-  CRAWLER_INVALID_RESPONSE: 502
+  CRAWLER_INVALID_RESPONSE: 502,
+  RATE_LIMITED: 429
 } as const;
 
 export type ApiErrorBody = {
