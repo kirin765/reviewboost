@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>리뷰 수집기</title>
+  </head>
+  <body>
+    <header class="hd">
+      <span class="logo"></span>
+      <div>
+        <div class="title">ReviewBoost 리뷰 수집기</div>
+        <div class="sub" id="ctx">상품 페이지를 확인하는 중…</div>
+      </div>
+    </header>
+
+    <main class="bd">
+      <section id="collect-pane">
+        <label class="field">
+          <span class="label">최대 수집 개수</span>
+          <input id="max" type="number" min="10" max="2000" step="10" value="300" />
+        </label>
+        <button id="collect" class="btn primary" disabled>리뷰 수집</button>
+        <div id="progress" class="progress hidden">
+          <div class="bar"><div id="bar-fill" class="fill"></div></div>
+          <div id="progress-text" class="muted">수집 중…</div>
+          <button id="cancel" class="btn ghost small">취소</button>
+        </div>
+        <p id="hint" class="muted small"></p>
+      </section>
+
+      <section id="result-pane" class="hidden">
+        <div class="count"><strong id="count">0</strong>개 리뷰 수집됨</div>
+        <div class="actions">
+          <button id="dl-xlsx" class="btn primary">엑셀(.xlsx) 다운로드</button>
+          <button id="dl-csv" class="btn">CSV 다운로드</button>
+          <button id="analyze" class="btn accent">ReviewBoost로 분석</button>
+        </div>
+        <button id="reset" class="btn ghost small">다시 수집</button>
+      </section>
+
+      <section id="error-pane" class="hidden">
+        <div class="err" id="error-text"></div>
+        <button id="error-reset" class="btn ghost small">돌아가기</button>
+      </section>
+    </main>
+
+    <footer class="ft">
+      <span class="muted small">활성 탭의 단일 상품만, 클릭할 때만 수집합니다.</span>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

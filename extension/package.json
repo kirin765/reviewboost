@@ -1,0 +1,21 @@
+{
+  "name": "reviewboost-extension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "쿠팡·스마트스토어 상품 리뷰를 엑셀로 내보내고 ReviewBoost 무료 분석으로 연결하는 크롬 익스텐션",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "esbuild": "^0.21.5",
+    "typescript": "^5.6.3",
+    "vitest": "^3.0.5"
+  }
+}
