@@ -345,6 +345,10 @@ const blogRecordMetaBySlug: Record<string, BlogRecordMeta> = {
   "increase-coupang-sales-with-reviews": {
     updatedAt: "2026-03-31",
     primaryKeyword: "쿠팡 매출 올리는 법"
+  },
+  "improve-detail-page-with-review-data": {
+    updatedAt: "2026-06-30",
+    primaryKeyword: "상세페이지 개선 리뷰 데이터"
   }
 };
 
