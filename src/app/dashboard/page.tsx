@@ -3,6 +3,7 @@ import Link from "next/link";
 import { buttonStyles } from "@/components/ui/Button";
 import { auth } from "@clerk/nextjs/server";
 import { listAnalysesForUser } from "@/lib/db/queries";
+import { maybeAlertNewSignup } from "@/lib/notify/signup-alert";
 import { isDatabaseConfigured } from "@/lib/capabilities";
 import { mapDashboardHomeView, type DashboardHomeAnalysisRow } from "@/lib/dashboard-home-view";
 
@@ -314,6 +315,9 @@ export default async function DashboardHomePage() {
       </main>
     );
   }
+
+  // Fire a one-time Telegram alert for brand-new signups landing here.
+  await maybeAlertNewSignup();
 
   let rows: DashboardHomeAnalysisRow[];
   try {
