@@ -24,11 +24,15 @@ export function generatePageMetadata(
     keywords?: string[];
     openGraphType?: "website" | "article";
     publishedTime?: string;
+    image?: string;
   } = {}
 ): Metadata {
   const title = record.title;
   const canonicalUrl = buildCanonicalUrl(getBaseUrl(), record.canonicalPath);
   const keywords = uniqueKeywords([...SEO_KEYWORDS, record.primaryKeyword, ...(options.keywords ?? [])]);
+  const ogImage = options.image
+    ? { url: options.image, width: 1200, height: 630, alt: title }
+    : DEFAULT_OG_IMAGE;
   const robots: Metadata["robots"] = record.indexable
     ? {
         index: true,
@@ -64,13 +68,13 @@ export function generatePageMetadata(
       description: record.description,
       ...(options.publishedTime ? { publishedTime: options.publishedTime } : {}),
       modifiedTime: record.updatedAt,
-      images: [DEFAULT_OG_IMAGE]
+      images: [ogImage]
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: record.description,
-      images: [DEFAULT_OG_IMAGE]
+      images: [ogImage]
     }
   };
 }

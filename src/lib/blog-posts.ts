@@ -12,6 +12,7 @@ export interface BlogPost {
   summary: string;
   tag: string;
   content: ContentBlock[];
+  image?: string;
 }
 
 export const blogPosts: BlogPost[] = [
@@ -489,6 +490,7 @@ export const blogPosts: BlogPost[] = [
   {
     slug: "review-negative-keyword-extraction",
     title: "리뷰 부정 키워드 추출: 고객 불만을 데이터로 뽑는 법",
+    image: "/blog-images/png/review-negative-keyword-extraction.png",
     summary:
       "리뷰 부정 키워드 추출이란 부정 리뷰에서 반복되는 단어를 뽑아 무엇이 가장 자주 문제되는지를 수치로 드러내는 작업입니다. 한국어 리뷰에서 조사·어미를 걸러내고 빈도 상위 키워드와 2어절 묶음을 집계해 개선 우선순위를 잡는 실전 방법을 정리했습니다.",
     tag: "부정 키워드",
