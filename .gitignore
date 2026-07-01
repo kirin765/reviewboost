@@ -27,3 +27,4 @@ node_modules/
 .superpowers/
 playwright-report/
 .claude/settings.local.json
+.env*
