@@ -6,5 +6,8 @@
     "app/api/analyze/route.ts": {
       "maxDuration": 300
     }
-  }
+  },
+  "crons": [
+    { "path": "/api/cron/day7-email", "schedule": "0 0 * * *" }
+  ]
 }
