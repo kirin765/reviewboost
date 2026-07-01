@@ -349,6 +349,10 @@ const blogRecordMetaBySlug: Record<string, BlogRecordMeta> = {
   "improve-detail-page-with-review-data": {
     updatedAt: "2026-06-30",
     primaryKeyword: "상세페이지 개선 리뷰 데이터"
+  },
+  "review-negative-keyword-extraction": {
+    updatedAt: "2026-07-01",
+    primaryKeyword: "리뷰 부정 키워드 추출"
   }
 };
 
