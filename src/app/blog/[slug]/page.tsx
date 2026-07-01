@@ -31,7 +31,11 @@ export async function generateMetadata(props: BlogDetailPageProps): Promise<Meta
     return generatePageMetadata(getSeoPageRecordByPath("/blog")!);
   }
 
-  return generatePageMetadata(record, { openGraphType: "article", publishedTime: record.updatedAt });
+  return generatePageMetadata(record, {
+    openGraphType: "article",
+    publishedTime: record.updatedAt,
+    image: post.image
+  });
 }
 
 function getContentBlockKey(block: ContentBlock, index: number) {
@@ -100,6 +104,16 @@ export default async function BlogDetailPage(props: BlogDetailPageProps) {
           <h1 className="mt-4 text-[clamp(2.2rem,4vw,4rem)] font-semibold tracking-[-0.06em] text-[var(--rb-fg)]">{post.title}</h1>
           <p className="mt-5 text-base leading-8 text-[var(--rb-muted-strong)]">{post.summary}</p>
         </section>
+
+        {post.image ? (
+          <img
+            src={post.image}
+            alt={post.title}
+            width={1200}
+            height={630}
+            className="w-full rounded-[24px] border border-[color:rgba(222,230,242,0.12)]"
+          />
+        ) : null}
 
         <article className="articleBody px-2 py-2 md:px-4">
           {post.content.map((block, index) => renderContentBlock(block, getContentBlockKey(block, index)))}
