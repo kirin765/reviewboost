@@ -40,17 +40,19 @@ describe("AppShell", () => {
       writable: true,
       value: 1440
     });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
     mockPathname = "/pricing";
     document.body.className = "";
   });
 
   it("renders the marketing header and footer on public pages", () => {
     renderWithI18n(
-      <AppShell userEmail="tester@example.com" plan="basic">
+      <AppShell>
         <div>내용</div>
       </AppShell>
     );
@@ -65,7 +67,7 @@ describe("AppShell", () => {
     mockPathname = "/dashboard";
 
     renderWithI18n(
-      <AppShell userEmail="tester@example.com" plan="basic">
+      <AppShell>
         <div>대시보드 내용</div>
       </AppShell>
     );
@@ -84,7 +86,7 @@ describe("AppShell", () => {
     window.innerWidth = 900;
 
     renderWithI18n(
-      <AppShell userEmail="tester@example.com" plan="basic">
+      <AppShell>
         <div>대시보드 내용</div>
       </AppShell>
     );
@@ -98,11 +100,30 @@ describe("AppShell", () => {
     expect(screen.getAllByRole("complementary", { name: "주요 메뉴" }).length).toBe(1);
   });
 
+  it("switches the header to the dashboard link once the session fetch resolves", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ authenticated: true, plan: "basic", userEmail: "tester@example.com" })
+      })
+    );
+
+    renderWithI18n(
+      <AppShell>
+        <div>내용</div>
+      </AppShell>
+    );
+
+    expect(await screen.findByRole("link", { name: "대시보드" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "로그인" })).toBeNull();
+  });
+
   it("removes the marketing chrome on auth routes", () => {
     mockPathname = "/login";
 
     renderWithI18n(
-      <AppShell userEmail={null} plan="free">
+      <AppShell>
         <div>로그인 화면</div>
       </AppShell>
     );

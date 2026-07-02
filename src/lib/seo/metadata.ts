@@ -57,7 +57,7 @@ export function generatePageMetadata(
     title,
     description: record.description,
     keywords,
-    alternates: { canonical: record.canonicalPath },
+    alternates: { canonical: canonicalUrl },
     robots,
     openGraph: {
       type: options.openGraphType ?? "website",
