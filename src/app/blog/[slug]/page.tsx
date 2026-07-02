@@ -93,7 +93,7 @@ export default async function BlogDetailPage(props: BlogDetailPageProps) {
 
   return (
     <main className="pageMain pb-8 pt-8 md:pt-12">
-      {record ? <StructuredData data={createArticleStructuredData(record)} /> : null}
+      {record ? <StructuredData data={createArticleStructuredData(record, { image: post.image })} /> : null}
       <ShellContainer className="max-w-[980px] space-y-6">
         <nav className="text-sm text-[var(--rb-muted-strong)]">
           <Link href="/blog">← 블로그</Link>
@@ -103,6 +103,9 @@ export default async function BlogDetailPage(props: BlogDetailPageProps) {
           <span className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-accent)]">{post.tag}</span>
           <h1 className="mt-4 text-[clamp(2.2rem,4vw,4rem)] font-semibold tracking-[-0.06em] text-[var(--rb-fg)]">{post.title}</h1>
           <p className="mt-5 text-base leading-8 text-[var(--rb-muted-strong)]">{post.summary}</p>
+          {record ? (
+            <p className="mt-4 text-xs text-[var(--rb-muted)]">최종 업데이트: {record.updatedAt} · ReviewBoost 팀</p>
+          ) : null}
         </section>
 
         {post.image ? (

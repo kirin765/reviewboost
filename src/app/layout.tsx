@@ -1,4 +1,5 @@
 import "./globals.css";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Script from "next/script";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -10,7 +11,6 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import AppShell from "@/components/AppShell";
 import StructuredData from "@/components/seo/StructuredData";
 import { I18nProvider } from "@/lib/i18n";
-import { getNavigationSessionState } from "@/lib/navigation_session";
 import { paddleBrowserEnv, paddleBrowserToken } from "@/lib/paddle";
 import { getBaseUrl } from "@/lib/seo/metadata";
 import { createGlobalStructuredData } from "@/lib/seo/structured-data";
@@ -33,13 +33,11 @@ export const metadata: Metadata = {
   }
 };
 
-export const dynamic = "force-dynamic";
 const paddleToken = paddleBrowserToken();
 const paddleEnvForClient = paddleBrowserEnv();
 const isVercelDeployment = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await getNavigationSessionState();
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   const body = (
@@ -63,13 +61,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ErrorBoundary>
           {isVercelDeployment ? <Analytics /> : null}
           {isVercelDeployment ? <SpeedInsights /> : null}
-          <GoogleAnalytics />
-          <AnalyticsQueryEvents />
-          <AssistantAttributionEvents />
+          <Suspense fallback={null}>
+            <GoogleAnalytics />
+            <AnalyticsQueryEvents />
+            <AssistantAttributionEvents />
+          </Suspense>
           <I18nProvider>
-            <AppShell plan={session.plan} userEmail={session.userEmail}>
-              {children}
-            </AppShell>
+            <AppShell>{children}</AppShell>
           </I18nProvider>
         </ErrorBoundary>
       </body>

@@ -19,7 +19,7 @@ There is no test suite. CI (`.github/workflows/ci.yml`) runs: `npm ci` → `lint
 
 ## Tech Stack
 
-- **Next.js 14** with App Router, React 18, TypeScript 5 (strict mode)
+- **Next.js 15** with App Router, React 18, TypeScript 5 (strict mode)
 - **Supabase** for auth, database, and RLS policies (optional — app degrades gracefully without it)
 - **OpenAI API** (gpt-4o-mini) for LLM classification and suggestions (optional — falls back to heuristic/template)
 - **Paddle** for subscription billing (optional)
@@ -69,7 +69,7 @@ Every external dependency is optional. The app works without OpenAI (template su
 
 ### Subscription & Plan Tiers
 
-Resolution order: env-based email overrides → Paddle subscription status in Supabase → default Free. Plans: Free (100 analyses/month), Basic (500), Pro (1500). Monthly limits enforced in `/api/analyze`.
+Resolution order: env-based email overrides → Paddle subscription status in Supabase → default Free. Plans: Free (5 analyses/month), Basic (200), Pro (1000) — source of truth in `src/lib/plan_gates.ts`. Monthly limits enforced in `/api/analyze`.
 
 ### Database
 

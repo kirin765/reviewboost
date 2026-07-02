@@ -6,7 +6,6 @@ import { getErrorMessage } from "@/types/common";
 
 type Props = {
   plan: "basic" | "pro";
-  userId?: string;
 };
 
 type CheckoutResponse = {
@@ -14,7 +13,7 @@ type CheckoutResponse = {
   error?: string;
 };
 
-export default function PricingActions({ plan, userId }: Props) {
+export default function PricingActions({ plan }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,10 +27,6 @@ export default function PricingActions({ plan, userId }: Props) {
     setBusy(true);
     setError(null);
     try {
-      if (!userId) {
-        throw new Error("로그인이 필요합니다.");
-      }
-
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: {
@@ -45,6 +40,11 @@ export default function PricingActions({ plan, userId }: Props) {
         payload = await response.json() as CheckoutResponse;
       } catch {
         payload = null;
+      }
+
+      if (response.status === 401) {
+        // Clerk middleware returns a plain-text 401 before the route's JSON runs
+        throw new Error("로그인이 필요합니다. 로그인 후 다시 시도해 주세요.");
       }
 
       if (!response.ok) {

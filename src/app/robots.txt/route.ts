@@ -9,9 +9,6 @@ export function GET() {
     `Disallow: /api/`,
     `Disallow: /dashboard/`,
     `Disallow: /auth/`,
-    `Disallow: /login`,
-    `Disallow: /signup`,
-    `Disallow: /reset-password`,
     `Sitemap: ${baseUrl}/sitemap.xml`
   ].join("\n");
 
