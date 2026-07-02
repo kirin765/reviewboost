@@ -54,7 +54,7 @@ describe("PricingActions", () => {
       })
     );
 
-    render(<PricingActions plan="basic" userId="usr_123" />);
+    render(<PricingActions plan="basic" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Basic 시작하기" }));
 
@@ -83,7 +83,7 @@ describe("PricingActions", () => {
       })
     );
 
-    render(<PricingActions plan="pro" userId="usr_123" />);
+    render(<PricingActions plan="pro" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Pro 시작하기" }));
 
@@ -103,7 +103,7 @@ describe("PricingActions", () => {
       })
     );
 
-    render(<PricingActions plan="basic" userId="usr_123" />);
+    render(<PricingActions plan="basic" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Basic 시작하기" }));
 
@@ -123,7 +123,7 @@ describe("PricingActions", () => {
       })
     );
 
-    render(<PricingActions plan="pro" userId="usr_123" />);
+    render(<PricingActions plan="pro" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Pro 시작하기" }));
 
@@ -135,16 +135,4 @@ describe("PricingActions", () => {
     expect(paddleOpenMock).not.toHaveBeenCalled();
   });
 
-  it("shows auth error before calling the server when user is not signed in", async () => {
-    render(<PricingActions plan="pro" />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Pro 시작하기" }));
-
-    await waitFor(() => {
-      expect(screen.getByRole("alert").textContent ?? "").toContain("로그인이 필요합니다.");
-    });
-
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(assignMock).not.toHaveBeenCalled();
-  });
 });

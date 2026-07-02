@@ -40,17 +40,19 @@ describe("AppShell", () => {
       writable: true,
       value: 1440
     });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
     mockPathname = "/pricing";
     document.body.className = "";
   });
 
   it("renders the marketing header and footer on public pages", () => {
     renderWithI18n(
-      <AppShell userEmail="tester@example.com" plan="basic">
+      <AppShell>
         <div>내용</div>
       </AppShell>
     );
@@ -65,7 +67,7 @@ describe("AppShell", () => {
     mockPathname = "/dashboard";
 
     renderWithI18n(
-      <AppShell userEmail="tester@example.com" plan="basic">
+      <AppShell>
         <div>대시보드 내용</div>
       </AppShell>
     );
@@ -84,7 +86,7 @@ describe("AppShell", () => {
     window.innerWidth = 900;
 
     renderWithI18n(
-      <AppShell userEmail="tester@example.com" plan="basic">
+      <AppShell>
         <div>대시보드 내용</div>
       </AppShell>
     );
@@ -102,7 +104,7 @@ describe("AppShell", () => {
     mockPathname = "/login";
 
     renderWithI18n(
-      <AppShell userEmail={null} plan="free">
+      <AppShell>
         <div>로그인 화면</div>
       </AppShell>
     );

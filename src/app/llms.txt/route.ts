@@ -1,4 +1,6 @@
 import { getBaseUrl } from "@/lib/seo/metadata";
+import { getGatesForPlan } from "@/lib/plan_gates";
+import { blogPosts } from "@/lib/blog-posts";
 
 export function GET() {
   const baseUrl = getBaseUrl();
@@ -22,6 +24,14 @@ export function GET() {
     `- Smart Store CSV guide: ${baseUrl}/help/smartstore-review-csv-export`,
     `- Review CSV tool: ${baseUrl}/coupang-csv`,
     `- Blog: ${baseUrl}/blog`,
+    ``,
+    `## Blog guides`,
+    ...blogPosts.map((post) => `- ${post.title}: ${baseUrl}/blog/${post.slug}`),
+    ``,
+    `## Plans`,
+    `- Starter (free): ${getGatesForPlan("free").monthlyAnalysisLimit} review analyses per month`,
+    `- Basic (KRW 19,000/month): ${getGatesForPlan("basic").monthlyAnalysisLimit} review analyses per month`,
+    `- Pro (KRW 45,000/month): ${getGatesForPlan("pro").monthlyAnalysisLimit} review analyses per month`,
     ``,
     `## Product facts`,
     `- Upload review CSV files and confirm columns before analysis`,

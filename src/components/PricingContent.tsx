@@ -1,25 +1,48 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import PricingActions from "@/components/PricingActions";
 import { SectionHeader, ShellContainer, Surface } from "@/components/ui/Primitives";
 import { getSiteContent } from "@/lib/site-content";
+import { getGatesForPlan } from "@/lib/plan_gates";
 import { useTranslation } from "@/lib/i18n";
 
-interface PricingContentProps {
-  userId: string | null;
-  billing: string | undefined;
+function BillingNotice() {
+  const billing = useSearchParams().get("billing");
+
+  if (billing === "success") {
+    return <p className="mt-5 text-sm text-[var(--rb-accent)]">결제가 완료되었습니다. 구독 상태 반영까지 최대 1분 정도 소요될 수 있습니다.</p>;
+  }
+  if (billing === "cancel") {
+    return <p className="mt-5 text-sm text-[var(--rb-warning)]">결제가 취소되었습니다. 다시 시도하실 수 있습니다.</p>;
+  }
+  return null;
 }
 
-export default function PricingContent({ userId, billing }: PricingContentProps) {
+export default function PricingContent() {
   const { locale } = useTranslation();
   const content = getSiteContent(locale).pricing;
+
+  const planSummary = content.plans
+    .map((plan) => {
+      const planName = plan.name === "free" ? "Starter" : plan.name === "basic" ? "Basic" : "Pro";
+      const tier = plan.name === "basic" || plan.name === "pro" ? plan.name : "free";
+      const limit = getGatesForPlan(tier).monthlyAnalysisLimit.toLocaleString("ko-KR");
+      return locale === "en"
+        ? `${planName} ${plan.price} (${limit} analyses/month)`
+        : `${planName} ${plan.price} (월 ${limit}회 분석)`;
+    })
+    .join(", ");
 
   return (
     <main className="pageMain pricingPage pb-8">
       <ShellContainer className="pt-8 md:pt-12">
         <Surface className="px-6 py-7 md:px-8 md:py-9">
           <SectionHeader eyebrow={content.eyebrow} title={content.title} description={content.lead} />
+          <p className="mt-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
+            {locale === "en" ? `ReviewBoost offers 3 plans: ${planSummary}.` : `ReviewBoost 요금제는 ${planSummary} 3가지입니다.`}
+          </p>
           <div className="mt-6 flex flex-wrap gap-3">
             {content.pills.map((pill) => (
               <span
@@ -30,8 +53,9 @@ export default function PricingContent({ userId, billing }: PricingContentProps)
               </span>
             ))}
           </div>
-          {billing === "success" ? <p className="mt-5 text-sm text-[var(--rb-accent)]">결제가 완료되었습니다. 구독 상태 반영까지 최대 1분 정도 소요될 수 있습니다.</p> : null}
-          {billing === "cancel" ? <p className="mt-5 text-sm text-[var(--rb-warning)]">결제가 취소되었습니다. 다시 시도하실 수 있습니다.</p> : null}
+          <Suspense fallback={null}>
+            <BillingNotice />
+          </Suspense>
         </Surface>
       </ShellContainer>
 
@@ -70,9 +94,9 @@ export default function PricingContent({ userId, billing }: PricingContentProps)
                 </div>
                 <div className="mt-7">
                   {plan.name === "basic" ? (
-                    <PricingActions plan="basic" userId={userId ?? undefined} />
+                    <PricingActions plan="basic" />
                   ) : plan.name === "pro" ? (
-                    <PricingActions plan="pro" userId={userId ?? undefined} />
+                    <PricingActions plan="pro" />
                   ) : (
                     <a className="btn btnPrimary w-full justify-center" href="/dashboard">
                       {plan.cta}

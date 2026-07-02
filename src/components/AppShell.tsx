@@ -11,8 +11,6 @@ import type { PlanTier } from "@/types/user";
 
 type AppShellProps = {
   children: React.ReactNode;
-  userEmail?: string | null;
-  plan?: PlanTier;
 };
 
 type ChromeConfig = {
@@ -201,12 +199,36 @@ function MarketingFooter() {
   );
 }
 
-export default function AppShell({ children, userEmail = null, plan = "free" }: AppShellProps) {
+export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const config = useMemo(() => getChromeConfig(pathname), [pathname]);
   const [isMobile, setIsMobile] = useState(false);
   const [open, setOpen] = useState(false);
+  const [plan, setPlan] = useState<PlanTier>("free");
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const drawerFirstLinkRef = useRef<HTMLAnchorElement | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/navigation-session", { cache: "no-store", credentials: "same-origin" })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        return (await res.json()) as { plan?: PlanTier; userEmail?: string | null } | null;
+      })
+      .then((session) => {
+        if (!active || !session) return;
+        setPlan(session.plan === "basic" || session.plan === "pro" ? session.plan : "free");
+        setUserEmail(typeof session.userEmail === "string" ? session.userEmail : null);
+      })
+      .catch(() => {
+        // Public shell falls back to guest mode when auth lookup is unavailable.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const updateDeviceMode = () => {

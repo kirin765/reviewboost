@@ -6,7 +6,6 @@ import { getErrorMessage } from "@/types/common";
 
 type Props = {
   plan: "basic" | "pro";
-  userId?: string;
 };
 
 type CheckoutResponse = {
@@ -14,7 +13,7 @@ type CheckoutResponse = {
   error?: string;
 };
 
-export default function PricingActions({ plan, userId }: Props) {
+export default function PricingActions({ plan }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,10 +27,6 @@ export default function PricingActions({ plan, userId }: Props) {
     setBusy(true);
     setError(null);
     try {
-      if (!userId) {
-        throw new Error("로그인이 필요합니다.");
-      }
-
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: {
