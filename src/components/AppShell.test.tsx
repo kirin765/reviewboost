@@ -100,6 +100,25 @@ describe("AppShell", () => {
     expect(screen.getAllByRole("complementary", { name: "주요 메뉴" }).length).toBe(1);
   });
 
+  it("switches the header to the dashboard link once the session fetch resolves", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ authenticated: true, plan: "basic", userEmail: "tester@example.com" })
+      })
+    );
+
+    renderWithI18n(
+      <AppShell>
+        <div>내용</div>
+      </AppShell>
+    );
+
+    expect(await screen.findByRole("link", { name: "대시보드" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "로그인" })).toBeNull();
+  });
+
   it("removes the marketing chrome on auth routes", () => {
     mockPathname = "/login";
 

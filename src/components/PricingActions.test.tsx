@@ -95,6 +95,26 @@ describe("PricingActions", () => {
     expect(paddleOpenMock).not.toHaveBeenCalled();
   });
 
+  it("shows login-required error when middleware returns a plain-text 401", async () => {
+    fetchMock.mockResolvedValue(
+      new Response("Unauthorized", {
+        status: 401,
+        headers: { "content-type": "text/plain" }
+      })
+    );
+
+    render(<PricingActions plan="basic" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Basic 시작하기" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent ?? "").toContain("로그인이 필요합니다.");
+    });
+
+    expect(assignMock).not.toHaveBeenCalled();
+    expect(paddleOpenMock).not.toHaveBeenCalled();
+  });
+
   it("shows configuration error returned by the checkout api", async () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ error: "결제 설정이 아직 완료되지 않았습니다." }), {

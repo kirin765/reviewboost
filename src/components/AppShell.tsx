@@ -228,7 +228,7 @@ export default function AppShell({ children }: AppShellProps) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     const updateDeviceMode = () => {

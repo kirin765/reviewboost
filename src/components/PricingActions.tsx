@@ -42,6 +42,11 @@ export default function PricingActions({ plan }: Props) {
         payload = null;
       }
 
+      if (response.status === 401) {
+        // Clerk middleware returns a plain-text 401 before the route's JSON runs
+        throw new Error("로그인이 필요합니다. 로그인 후 다시 시도해 주세요.");
+      }
+
       if (!response.ok) {
         throw new Error(String(payload?.error || "결제 세션 생성 중 오류가 발생했습니다."));
       }
