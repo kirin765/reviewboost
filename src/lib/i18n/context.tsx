@@ -7,6 +7,12 @@ import en from "./en";
 
 const dictionaries: Record<Locale, Dictionary> = { ko, en };
 
+// The language switcher is hidden for now: EN only translates the marketing home + shared
+// content, while app chrome/dashboard are still Korean-only, so a half-translated UI is worse
+// than none. While disabled we force Korean and ignore any stored `en` cookie so users who
+// toggled earlier aren't stranded. Re-enable by flipping this to true.
+export const LOCALE_SWITCHER_ENABLED = false;
+
 const COOKIE_NAME = "rb_locale";
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year
 
@@ -40,7 +46,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setLocaleState(getStoredLocale());
+    setLocaleState(LOCALE_SWITCHER_ENABLED ? getStoredLocale() : "ko");
     setMounted(true);
   }, []);
 
