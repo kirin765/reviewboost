@@ -116,7 +116,6 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
           result={unifiedResult}
           caps={caps}
           busy={false}
-          onDownloadPdf={() => {}}
           downloadHref={`/api/report/${row.id}`}
           headerDescription={`${created} · 우선순위 ${priorityScore.toFixed(1)} · ${planDisplay} 플랜`}
           secondaryHref="/dashboard"

@@ -13,7 +13,7 @@ interface AnalysisResultsProps {
   result: DashboardAnalysisResult;
   caps: Capabilities | null;
   busy: boolean;
-  onDownloadPdf: () => void;
+  onDownloadPdf?: () => void;
   downloadHref?: string;
   headerDescription?: string;
   secondaryHref?: string;
