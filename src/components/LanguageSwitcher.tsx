@@ -1,11 +1,13 @@
 "use client";
 
 import React from "react";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, LOCALE_SWITCHER_ENABLED } from "@/lib/i18n";
 import { buttonStyles } from "@/components/ui/Button";
 
 export default function LanguageSwitcher({ className }: { className?: string }) {
   const { locale, setLocale } = useI18n();
+
+  if (!LOCALE_SWITCHER_ENABLED) return null;
 
   return (
     <button
