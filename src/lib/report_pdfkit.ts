@@ -127,7 +127,16 @@ function measureHeight(
   size: number,
   lineGap = LINE_GAP
 ): number {
-  return Math.ceil(doc.heightOfString(text, { width, align: "left", lineGap, size }));
+  // PDFKit's heightOfString ignores the `size` option and measures with the current
+  // font size, so it must be set explicitly or rows get sized at a stale size and overlap.
+  doc.fontSize(size);
+  return Math.ceil(doc.heightOfString(text, { width, align: "left", lineGap }));
+}
+
+function measureWidth(doc: ReportPdfDocument, text: string, size: number): number {
+  // widthOfString ignores the `size` option too — set the size before measuring.
+  doc.fontSize(size);
+  return doc.widthOfString(text);
 }
 
 function collectPdf(doc: ReportPdfDocument): Promise<Buffer> {
@@ -208,7 +217,7 @@ function drawPanel(
 
 function drawTag(ctx: RenderContext, x: number, y: number, label: string): number {
   const doc = ctx.doc;
-  const w = Math.min(78, Math.max(30, doc.widthOfString(label, { size: 8 }) + 12));
+  const w = Math.min(78, Math.max(30, measureWidth(doc, label, 8) + 12));
   const h = 16;
 
   doc
@@ -306,7 +315,7 @@ function docLine(ctx: RenderContext, x: number, y: number, panelHeight: number, 
 
 function drawListRow(ctx: RenderContext, x: number, y: number, width: number, item: ListItem): number {
   const text = `• ${safeText(item.label)}`;
-  const badgeW = item.badge ? Math.min(72, Math.max(24, ctx.doc.widthOfString(item.badge, { size: 8 }) + 12)) : 0;
+  const badgeW = item.badge ? Math.min(72, Math.max(24, measureWidth(ctx.doc, item.badge, 8) + 12)) : 0;
   const rowW = width - 22;
   const textW = Math.max(24, rowW - 22 - badgeW);
   const rowH = Math.max(24, measureHeight(ctx.doc, text, textW, 10, 1.7) + 8);
@@ -372,7 +381,7 @@ function estimateListRows(
 }
 
 function drawListRowHeight(doc: ReportPdfDocument, width: number, item: ListItem): number {
-  const badgeW = item.badge ? Math.min(72, Math.max(24, doc.widthOfString(item.badge, { size: 8 }) + 12)) : 0;
+  const badgeW = item.badge ? Math.min(72, Math.max(24, measureWidth(doc, item.badge, 8) + 12)) : 0;
   const textW = Math.max(24, width - 22 - 22 - badgeW);
   const textH = measureHeight(doc, `• ${safeText(item.label)}`, textW, 10, 1.7);
   return Math.max(24, textH + 8);
@@ -400,7 +409,7 @@ function drawListSectionChunk(
   const maxHeight = pageBottom(ctx) - effectiveY - 34;
   const estimate = estimateListRows(ctx, effective, startIndex, width, Math.max(24, maxHeight - 20), showEmpty);
   const rows = effective.slice(startIndex, startIndex + estimate.count);
-  const panelHeight = Math.max(78, 40 + estimate.usedHeight);
+  const panelHeight = Math.max(78, 48 + estimate.usedHeight);
 
   const panel = drawPanel(ctx, x, effectiveY, width, panelHeight, continuation ? `${title} (계속)` : title, true);
   let rowY = panel.contentY;
