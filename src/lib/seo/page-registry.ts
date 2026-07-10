@@ -318,6 +318,19 @@ const publicRecords: SeoPageRecord[] = [
     schema: ["webPage"],
     indexable: true,
     breadcrumbs: breadcrumbs({ label: "서비스 이용약관", path: "/terms" })
+  },
+  {
+    section: "legal",
+    slug: "extension-privacy",
+    title: "ReviewBoost 리뷰 수집기 확장 프로그램 개인정보처리방침",
+    description:
+      "ReviewBoost 리뷰 수집기 크롬 확장 프로그램의 개인정보처리방침입니다. 수집 항목, 처리 목적, 데이터 전송 범위를 확인할 수 있습니다.",
+    primaryKeyword: "리뷰 수집기 확장 프로그램 개인정보처리방침",
+    canonicalPath: "/extension-privacy",
+    updatedAt: "2026-07-10",
+    schema: ["webPage"],
+    indexable: true,
+    breadcrumbs: breadcrumbs({ label: "확장 프로그램 개인정보처리방침", path: "/extension-privacy" })
   }
 ];
 
