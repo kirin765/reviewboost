@@ -120,6 +120,18 @@ function hasKnownHeader(headers: string[]): boolean {
   return false;
 }
 
+// Match a column whose normalized name contains a keyword token (e.g. "review_date" ⊃ "date"),
+// so prefixed headers aren't missed and fall through to a wrong positional guess.
+function findColumnByKeyword(columns: string[], keys: string[]): string | undefined {
+  const normCols = columns.map((c) => ({ col: c, norm: normalizeKey(c) }));
+  for (const key of keys) {
+    const nk = normalizeKey(key);
+    const hit = normCols.find(({ norm }) => norm.includes(nk));
+    if (hit) return hit.col;
+  }
+  return undefined;
+}
+
 function inferMappingFromColumns(columns: string[], headerMode: CsvHeaderMode): CsvMapping {
   const headerMap = new Map<string, string>();
   for (const h of columns) headerMap.set(normalizeKey(h), h);
@@ -135,13 +147,16 @@ function inferMappingFromColumns(columns: string[], headerMode: CsvHeaderMode): 
 
   const ratingCol =
     RATING_KEYS.map((k) => headerMap.get(normalizeKey(k))).find(Boolean) ??
+    findColumnByKeyword(columns, RATING_KEYS) ??
     // fallback: second column if exists
     (columns.length >= 2 ? columns[1] : null);
 
   const dateCol =
     DATE_KEYS.map((k) => headerMap.get(normalizeKey(k))).find(Boolean) ??
-    // fallback: third column if exists
-    (columns.length >= 3 ? columns[2] : null);
+    findColumnByKeyword(columns, DATE_KEYS) ??
+    // positional guess only makes sense for headerless CSVs; in header mode a wrong
+    // guess silently maps a non-date column and breaks recency analysis.
+    (headerMode === "headerless" && columns.length >= 3 ? columns[2] : null);
 
   return { headerMode, textCol, textColSource, ratingCol, dateCol };
 }
