@@ -8,7 +8,14 @@ vi.mock("@/lib/billing", () => ({
   resolvePlanTierByBilling: mocks.resolvePlanTierByBilling
 }));
 
-import { resolvePlanTierForUser } from "@/lib/plan";
+import {
+  canUseAdvancedAi,
+  monthStartIso,
+  monthlyLimitForPlan,
+  planLabel,
+  resolvePlanTier,
+  resolvePlanTierForUser
+} from "@/lib/plan";
 
 describe("resolvePlanTierForUser", () => {
   afterEach(() => {
@@ -46,5 +53,45 @@ describe("resolvePlanTierForUser", () => {
       userId: "user-456",
       fallbackPlan: "free"
     });
+  });
+});
+
+describe("resolvePlanTier (email overrides)", () => {
+  afterEach(() => {
+    delete process.env.PLAN_PRO_EMAILS;
+    delete process.env.PLAN_BASIC_EMAILS;
+  });
+
+  it("matches pro and basic override lists case-insensitively", () => {
+    process.env.PLAN_PRO_EMAILS = "Pro@Reviewboost.test";
+    process.env.PLAN_BASIC_EMAILS = "basic@reviewboost.test";
+    expect(resolvePlanTier("pro@reviewboost.test")).toBe("pro");
+    expect(resolvePlanTier("basic@reviewboost.test")).toBe("basic");
+    expect(resolvePlanTier("someone@else.test")).toBe("free");
+    expect(resolvePlanTier(null)).toBe("free");
+  });
+});
+
+describe("plan gate helpers", () => {
+  it("returns the monthly limit for each tier", () => {
+    expect(monthlyLimitForPlan("free")).toBe(5);
+    expect(monthlyLimitForPlan("basic")).toBe(200);
+    expect(monthlyLimitForPlan("pro")).toBe(1000);
+  });
+
+  it("allows advanced AI only for paid tiers", () => {
+    expect(canUseAdvancedAi("free")).toBe(false);
+    expect(canUseAdvancedAi("basic")).toBe(true);
+    expect(canUseAdvancedAi("pro")).toBe(true);
+  });
+
+  it("labels each plan tier", () => {
+    expect(planLabel("free")).toBe("Free");
+    expect(planLabel("basic")).toBe("Basic");
+    expect(planLabel("pro")).toBe("Pro");
+  });
+
+  it("returns the UTC month start as ISO", () => {
+    expect(monthStartIso(new Date("2026-07-11T09:30:00.000Z"))).toBe("2026-07-01T00:00:00.000Z");
   });
 });

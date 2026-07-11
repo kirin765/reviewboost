@@ -209,15 +209,26 @@ export async function classifyReviewsWithOpenAI(args: {
       return;
     }
 
+    let batchApplied = 0;
     for (let j = 0; j < batch.length; j++) {
       const id = offset + j;
-      const item = map.get(id);
+      // Prefer the global id we asked for; tolerate models that renumber ids
+      // per-batch (0-based) by falling back to the within-batch index.
+      const item = map.get(id) ?? map.get(j);
       if (item) {
         output[id] = item;
         appliedCount++;
+        batchApplied++;
       } else {
         output[id] = fallbackForIndex(id);
       }
+    }
+
+    // A batch where nothing matched is a real failure, not a silent heuristic
+    // fallback — surface it so callers don't report degraded output as AI-classified.
+    if (batchApplied === 0) {
+      console.error(`[LLM:classify][OPENAI_BATCH_UNMATCHED] batchOffset=${offset}, size=${batch.length}`);
+      failedBatchCount++;
     }
   };
 

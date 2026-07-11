@@ -43,19 +43,19 @@ describe("SidebarNav", () => {
     renderWithI18n(<SidebarNav variant="app" plan="free" userEmail={null} />);
 
     expect(screen.getByText("게스트")).toBeTruthy();
-    expect(screen.getByText("로그인하고 리포트 저장하기")).toBeTruthy();
+    expect(screen.getByText("Free")).toBeTruthy();
     expect(screen.getByRole("link", { name: "로그인" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "홈" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "AI분석" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "리뷰 다운" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "업그레이드" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "요금제" })).toBeTruthy();
   });
 
   it("renders authenticated profile footer with the primary workspace links", () => {
     renderWithI18n(<SidebarNav variant="app" plan="basic" userEmail="tester@example.com" />);
 
     expect(screen.getByText("Tester")).toBeTruthy();
-    expect(screen.getByText("Basic 플랜")).toBeTruthy();
+    expect(screen.getByText("Basic")).toBeTruthy();
     expect(screen.getByRole("button", { name: "로그아웃" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "홈" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "AI분석" })).toBeTruthy();
@@ -66,8 +66,8 @@ describe("SidebarNav", () => {
     renderWithI18n(<SidebarNav variant="dashboard" plan="pro" userEmail="owner@example.com" />);
 
     expect(screen.getByRole("link", { name: "AI분석" }).getAttribute("aria-current")).toBe("page");
-    expect(screen.getByRole("link", { name: "플랜 보기" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "요금제" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "사용법" })).toBeTruthy();
   });
 
   it("treats saved report detail routes as home-active", () => {

@@ -1,12 +1,18 @@
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+
+const mockNav = vi.hoisted(() => ({ billing: undefined as string | undefined }));
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(mockNav.billing ? { billing: mockNav.billing } : {})
+}));
+
 import PricingPage from "./page";
 
 async function renderPricingPage(searchParams?: { billing?: string; payment_success?: string }) {
-  const element = await PricingPage({
-    searchParams: Promise.resolve(searchParams ?? {})
-  });
+  mockNav.billing = searchParams?.billing;
+  const element = await PricingPage();
   return renderToStaticMarkup(element);
 }
 

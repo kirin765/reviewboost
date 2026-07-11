@@ -14,8 +14,9 @@ const mocks = vi.hoisted(() => ({
   getGatesForPlan: vi.fn(),
   authFn: vi.fn(),
   currentUser: vi.fn(),
-  checkMonthlyQuota: vi.fn(),
-  executePersistAndRespond: vi.fn(),
+  reserveMonthlyQuotaSlot: vi.fn(),
+  finalizePersistAndRespond: vi.fn(),
+  releaseAnalysisSlot: vi.fn(),
   logApiError: vi.fn()
 }));
 
@@ -52,14 +53,18 @@ vi.mock("@clerk/nextjs/server", () => ({
 }));
 
 vi.mock("./_helpers/quota", () => ({
-  checkMonthlyQuota: mocks.checkMonthlyQuota
+  reserveMonthlyQuotaSlot: mocks.reserveMonthlyQuotaSlot
+}));
+
+vi.mock("@/lib/db/queries", () => ({
+  releaseAnalysisSlot: mocks.releaseAnalysisSlot
 }));
 
 vi.mock("./_helpers/persistence", async () => {
   const actual = await vi.importActual<typeof import("./_helpers/persistence")>("./_helpers/persistence");
   return {
     ...actual,
-    executePersistAndRespond: mocks.executePersistAndRespond
+    finalizePersistAndRespond: mocks.finalizePersistAndRespond
   };
 });
 
@@ -127,8 +132,9 @@ function setupCommonMocks() {
   mocks.devForcedAnalysisMode.mockReturnValue("auto" as never);
   mocks.devAllowAdvancedAiBypass.mockReturnValue(false);
   mocks.getGatesForPlan.mockReturnValue({ allowLLM: true, maxReviewsPerAnalysis: 1000 } as never);
-  mocks.checkMonthlyQuota.mockResolvedValue(undefined);
-  mocks.executePersistAndRespond.mockResolvedValue(null);
+  mocks.reserveMonthlyQuotaSlot.mockResolvedValue({ analysisId: "analysis-1" });
+  mocks.finalizePersistAndRespond.mockResolvedValue(null);
+  mocks.releaseAnalysisSlot.mockResolvedValue(undefined);
 }
 
 describe("POST /api/analyze", () => {
@@ -147,14 +153,15 @@ describe("POST /api/analyze", () => {
     const payload = await res.json();
     expect(payload.meta.storageAttempted).toBe(false);
     expect(payload.meta.stored).toBe(false);
-    expect(mocks.executePersistAndRespond).not.toHaveBeenCalled();
+    expect(mocks.reserveMonthlyQuotaSlot).not.toHaveBeenCalled();
+    expect(mocks.finalizePersistAndRespond).not.toHaveBeenCalled();
   });
 
   it("인증 사용자는 Drizzle 저장 경로로 결과를 반환한다", async () => {
     mocks.getCapabilitiesBase.mockReturnValue({ databaseConfigured: true, authConfigured: true, openaiConfigured: true });
     mocks.authFn.mockResolvedValue({ userId: "user-1" });
     mocks.currentUser.mockResolvedValue({ emailAddresses: [{ emailAddress: "test@example.com" }] });
-    mocks.executePersistAndRespond.mockImplementation(async (input: any) => {
+    mocks.finalizePersistAndRespond.mockImplementation(async (input: any) => {
       input.storageStatus.success = true;
       input.storageStatus.analysisId = "analysis-1";
       input.storageStatus.error = null;
@@ -167,14 +174,15 @@ describe("POST /api/analyze", () => {
     const payload = await res.json();
     expect(payload.meta.stored).toBe(true);
     expect(payload.meta.analysisId).toBe("analysis-1");
-    expect(mocks.executePersistAndRespond).toHaveBeenCalledTimes(1);
+    expect(mocks.reserveMonthlyQuotaSlot).toHaveBeenCalledTimes(1);
+    expect(mocks.finalizePersistAndRespond).toHaveBeenCalledTimes(1);
   });
 
   it("저장 실패가 발생해도 200 분석 결과는 반환한다", async () => {
     mocks.getCapabilitiesBase.mockReturnValue({ databaseConfigured: true, authConfigured: true, openaiConfigured: true });
     mocks.authFn.mockResolvedValue({ userId: "user-1" });
     mocks.currentUser.mockResolvedValue({ emailAddresses: [{ emailAddress: "test@example.com" }] });
-    mocks.executePersistAndRespond.mockRejectedValue(new Error("insert failed"));
+    mocks.finalizePersistAndRespond.mockRejectedValue(new Error("insert failed"));
 
     const res = await POST(makeRequest());
 

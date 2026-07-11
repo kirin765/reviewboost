@@ -12,8 +12,9 @@ import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 import { getErrorMessage } from "@/types/common";
 import { logger } from "@/lib/logger";
 import { getClientIp } from "@/lib/request-utils";
-import { checkMonthlyQuota } from "./_helpers/quota";
-import { toStorageError, buildStorageMeta, executePersistAndRespond } from "./_helpers/persistence";
+import { reserveMonthlyQuotaSlot } from "./_helpers/quota";
+import { toStorageError, buildStorageMeta, finalizePersistAndRespond } from "./_helpers/persistence";
+import { releaseAnalysisSlot } from "@/lib/db/queries";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -122,11 +123,17 @@ export async function POST(req: Request) {
     forcedMode
   });
 
-  if (monthlyLimit !== null) {
+  // Reserve a slot BEFORE running the (paid) pipeline so concurrent requests
+  // can't all pass a stale count. Only authenticated users are metered/persisted.
+  let reservedAnalysisId: string | null = null;
+  if (userId) {
     try {
-      await checkMonthlyQuota({ userId, clientIp, plan, monthlyLimit });
+      ({ analysisId: reservedAnalysisId } = await reserveMonthlyQuotaSlot({ userId, clientIp, filename, plan, monthlyLimit }));
     } catch (e) {
       if (e instanceof ApiError) return apiErrorResponse(e);
+      return apiErrorResponse(
+        new ApiError(503, "QUOTA_CHECK_UNAVAILABLE", "요청을 처리할 수 없습니다. 잠시 후 다시 시도해주세요.")
+      );
     }
   }
 
@@ -146,6 +153,10 @@ export async function POST(req: Request) {
       timeBudgetMs: ANALYZE_REQUEST_BUDGET_MS
     }));
   } catch (e: unknown) {
+    // Pipeline failed: release the reserved slot so it doesn't count against quota.
+    if (reservedAnalysisId && userId) {
+      await releaseAnalysisSlot(reservedAnalysisId, userId).catch(() => {});
+    }
     const message = getErrorMessage(e);
     await logApiError({
       route: "/api/analyze",
@@ -175,17 +186,21 @@ export async function POST(req: Request) {
     warning: null
   };
 
-  // Optional persistence (Neon via Drizzle) — only for authenticated users.
+  // Optional persistence (Neon via Drizzle) — finalize the reserved row.
   try {
     if (!userId) {
       storageStatus.attempted = false;
       storageStatus.error = "로그인 후 히스토리에 저장됩니다.";
+    } else if (!reservedAnalysisId) {
+      // No reservation (database not configured) — nothing to finalize.
+      storageStatus.attempted = false;
+      storageStatus.error = "저장 기능을 사용할 수 없는 상태입니다.";
     } else {
       storageStatus.attempted = true;
-      storageStatus.step = "analyses_insert";
-      const response = await executePersistAndRespond({
+      storageStatus.step = "analyses_finalize";
+      const response = await finalizePersistAndRespond({
         userId,
-        clientIp,
+        analysisId: reservedAnalysisId,
         filename,
         payload,
         classified,

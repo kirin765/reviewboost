@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import CsvPreview from "./CsvPreview";
@@ -51,19 +51,18 @@ describe("CsvPreview", () => {
 
     render(<Wrapper />);
 
+    expect(screen.queryByRole("button", { name: "셀 모달 닫기" })).toBeNull();
+
     const contentCell = screen.getAllByRole("button", { name: "좋아요" })[0];
     fireEvent.click(contentCell);
 
-    const dialog = screen.getByRole("dialog", { name: "셀 전체보기" });
-    expect(dialog).toBeTruthy();
-    expect(dialog.textContent).toContain("좋아요");
+    const closeButton = screen.getByRole("button", { name: "셀 모달 닫기" });
+    expect(closeButton).toBeTruthy();
+    expect(screen.getByRole("button", { name: "셀 내용 전체 복사" })).toBeTruthy();
+    // the cell value is echoed inside the modal (in addition to the table cell)
+    expect(screen.getAllByText("좋아요").length).toBeGreaterThan(1);
 
-    const closeButton = within(dialog)
-      .getAllByRole("button")
-      .find((btn) => btn.textContent?.trim() === "닫기");
-    expect(closeButton).toBeDefined();
-    if (!closeButton) return;
     fireEvent.click(closeButton);
-    expect(screen.queryByRole("dialog", { name: "셀 전체보기" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "셀 모달 닫기" })).toBeNull();
   });
 });

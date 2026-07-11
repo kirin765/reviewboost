@@ -1,6 +1,6 @@
 import { runAnalysisPipeline } from "@/lib/analysis_pipeline";
 import { createStoredAnalysisPayload } from "@/lib/saved-analysis";
-import { insertAnalysisForUser, insertReviewsForAnalysis } from "@/lib/db/queries";
+import { finalizeAnalysisForUser, insertReviewsForAnalysis } from "@/lib/db/queries";
 
 type AnalysisPayload = Awaited<ReturnType<typeof runAnalysisPipeline>>["payload"];
 
@@ -33,9 +33,9 @@ export function buildStorageMeta(base: AnalysisPayload["meta"], storage: Storage
 
 export type { StorageStatus };
 
-export interface PersistAndRespondInput {
+export interface FinalizeAndRespondInput {
   userId: string;
-  clientIp: string | null;
+  analysisId: string;
   filename: string | null;
   payload: AnalysisPayload;
   classified: import("@/lib/types").ClassifiedReview[];
@@ -44,23 +44,22 @@ export interface PersistAndRespondInput {
 }
 
 /**
- * Persists an analysis via Drizzle (Neon).
+ * Finalizes a previously reserved analysis row via Drizzle (Neon) with the real
+ * results, then stores the classified reviews.
  * Mutates `storageStatus` in place.
- * Returns a `Response` on success, or `null` if no analysisId was returned.
- * Throws on insert errors so the caller's catch block can handle them.
+ * Returns a `Response` on success, or `null` if the reserved row was missing.
+ * Throws on write errors so the caller's catch block can handle them.
  */
-export async function executePersistAndRespond({
+export async function finalizePersistAndRespond({
   userId,
-  clientIp,
+  analysisId,
   filename,
   payload,
   classified,
   storageStatus,
   clientLabel
-}: PersistAndRespondInput): Promise<Response | null> {
-  const analysisId = await insertAnalysisForUser({
-    userId,
-    clientIp,
+}: FinalizeAndRespondInput): Promise<Response | null> {
+  const finalized = await finalizeAnalysisForUser(analysisId, userId, {
     inputFilename: filename,
     stats: payload.stats,
     suggestions: payload.suggestions,
@@ -68,8 +67,8 @@ export async function executePersistAndRespond({
     priorityScore: payload.stats.priorityScore
   });
 
-  if (!analysisId) {
-    storageStatus.error = `analyses_insert_${clientLabel}_no_id`;
+  if (!finalized) {
+    storageStatus.error = `analyses_finalize_${clientLabel}_missing`;
     return null;
   }
 

@@ -4,6 +4,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useState } from "react";
+import { I18nProvider } from "@/lib/i18n";
 import DashboardTabs from "./DashboardTabs";
 
 describe("DashboardTabs", () => {
@@ -14,7 +15,9 @@ describe("DashboardTabs", () => {
     };
 
     render(
-      <StatefulTabs />
+      <I18nProvider>
+        <StatefulTabs />
+      </I18nProvider>
     );
 
     const analysisTab = document.getElementById("analysis-tab") as HTMLButtonElement;
@@ -34,7 +37,11 @@ describe("DashboardTabs", () => {
       return <DashboardTabs activeTab={tab} onChange={setTab} />;
     };
 
-    render(<StatefulTabs />);
+    render(
+      <I18nProvider>
+        <StatefulTabs />
+      </I18nProvider>
+    );
 
     const analysisTab = screen.getAllByRole("tab", { name: "분석하기" })[0];
     const resultsTab = screen.getAllByRole("tab", { name: "결과 보기" })[0];
