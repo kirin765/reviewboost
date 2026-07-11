@@ -1,0 +1,13 @@
+#!/bin/sh
+# Local CI gate (this repo does not use GitHub Actions). Runs the fast
+# correctness checks before every push. E2E (npm run test:e2e:smoke) is heavier
+# and run manually. Bypass a single push with `git push --no-verify`.
+set -e
+
+echo "[pre-push] typecheck…"
+npm run typecheck
+
+echo "[pre-push] vitest…"
+npx vitest run
+
+echo "[pre-push] ok"

@@ -1,22 +1,37 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
 
-test.describe("ReviewBoost E2E Tests", () => {
+const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL;
+
+// Signs in the dedicated Clerk test user via a backend-issued ticket (no password
+// needed). Requires E2E_CLERK_USER_EMAIL + Clerk keys in the environment.
+async function signInTestUser(page: Page) {
+  await setupClerkTestingToken({ page });
+  await page.goto("/");
+  // Wait for Clerk to finish loading before signing in — the first navigation
+  // after a cold dev compile can otherwise race window.Clerk.
+  await clerk.loaded({ page });
+  await clerk.signIn({ page, emailAddress: E2E_EMAIL! });
+}
+
+test.describe("ReviewBoost E2E — public pages", () => {
   test("homepage loads successfully", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/AI 리뷰 분석 툴/);
   });
 
-  test("login page loads", async ({ page }) => {
-    // Auth pages now render the Clerk <SignIn/> widget, which only mounts when
-    // Clerk is configured. In the local (no-Clerk) run the widget can't mount,
-    // so we assert the route resolves and renders its SEO title.
+  test("login page renders the Clerk sign-in widget", async ({ page }) => {
+    await setupClerkTestingToken({ page });
     await page.goto("/login");
     await expect(page).toHaveTitle(/로그인/);
+    await expect(page.locator(".cl-rootBox").first()).toBeVisible();
   });
 
-  test("signup page loads", async ({ page }) => {
+  test("signup page renders the Clerk sign-up widget", async ({ page }) => {
+    await setupClerkTestingToken({ page });
     await page.goto("/signup");
     await expect(page).toHaveTitle(/회원가입/);
+    await expect(page.locator(".cl-rootBox").first()).toBeVisible();
   });
 
   test("pricing page loads", async ({ page }) => {
@@ -45,9 +60,24 @@ test.describe("ReviewBoost E2E Tests", () => {
         !e.includes("cdn.paddle.com") &&
         !e.includes("paddle.css") &&
         !e.includes("profitwell") &&
-        !e.includes("googletagmanager")
+        !e.includes("googletagmanager") &&
+        !e.includes("clerk.")
     );
     expect(criticalErrors).toHaveLength(0);
+  });
+});
+
+test.describe("ReviewBoost E2E — authenticated dashboard", () => {
+  test.skip(!E2E_EMAIL, "E2E_CLERK_USER_EMAIL not set — skipping authenticated flows");
+
+  test.beforeEach(async ({ page }) => {
+    await signInTestUser(page);
+  });
+
+  test("authenticated user reaches the protected dashboard (no redirect)", async ({ page }) => {
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole("heading", { name: "홈", level: 1 })).toBeVisible();
   });
 
   test("dashboard shell navigation is operable (desktop)", async ({ page }) => {
