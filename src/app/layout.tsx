@@ -74,5 +74,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 
-  return clerkKey ? <ClerkProvider localization={koKR}>{body}</ClerkProvider> : body;
+  return clerkKey ? (
+    <ClerkProvider
+      localization={koKR}
+      appearance={{
+        variables: {
+          colorPrimary: "#5b5cea",
+          colorText: "#1f2540",
+          colorBackground: "#ffffff",
+          borderRadius: "12px"
+        }
+      }}
+    >
+      {body}
+    </ClerkProvider>
+  ) : (
+    body
+  );
 }

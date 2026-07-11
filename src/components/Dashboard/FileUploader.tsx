@@ -43,7 +43,7 @@ export default function FileUploader({
       <label
         htmlFor="dashboardCsvInput"
         className={`mt-5 flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed px-6 text-center transition ${
-          dragActive ? "border-[color:rgba(95,198,183,0.36)] bg-[rgba(95,198,183,0.08)]" : "border-[color:var(--rb-border)] bg-[rgba(255,255,255,0.02)]"
+          dragActive ? "border-[color:rgba(91,92,234,0.36)] bg-[rgba(91,92,234,0.08)]" : "border-[color:var(--rb-border)] bg-white"
         }`}
         onDrop={onDropFile}
         onDragOver={onDragOver}
@@ -85,7 +85,7 @@ export default function FileUploader({
         </Button>
       </div>
 
-      <div className="mt-5 rounded-[14px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-4 text-sm text-[var(--rb-muted-strong)]" role="status" aria-live="polite">
+      <div className="mt-5 rounded-[14px] border border-[color:#e6e8f2] bg-white px-4 py-4 text-sm text-[var(--rb-muted-strong)]" role="status" aria-live="polite">
         {file ? (
           <span>
             {t("upload.selected")} <code className="font-mono text-[var(--rb-fg)]">{file.name}</code> ({Math.round(file.size / 1024)} KB)

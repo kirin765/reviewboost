@@ -187,16 +187,44 @@ export default function PrivacyPage() {
           </section>
 
           <section className="legalSection">
-            <h3>15. Contact</h3>
+            <h3>15. Privacy Officer (개인정보 보호책임자)</h3>
             <p>
-              Company Name: Onnuri stationery
+              We designate the following person responsible for the protection of personal information and for handling
+              related inquiries and complaints:
+            </p>
+            <p>
+              Name (성명): Kim Ki-wan (김기완)
+              <br />
+              Position (직책): Privacy Officer (개인정보 보호책임자)
               <br />
               Email:{" "}
               <a className="link" href="mailto:kwan765@naver.com">
                 kwan765@naver.com
               </a>
               <br />
-              Address: 56, Soha-ro, Gwangmyeong-si, Gyeonggi-do, Republic of Korea
+              Phone (전화): 010-8555-8219
+            </p>
+          </section>
+
+          <section className="legalSection">
+            <h3>16. Business &amp; Contact Information (사업자 정보)</h3>
+            <p>
+              Business Name (상호): Onnuri stationery (온누리문방구)
+              <br />
+              Representative (대표자): Kim Ki-wan (김기완)
+              <br />
+              Business Registration Number (사업자등록번호): 892-02-03657
+              <br />
+              Mail-Order Sales Registration (통신판매업신고): 제2025-경기광명-0525호
+              <br />
+              Address (주소): 56, Soha-ro, Gwangmyeong-si, Gyeonggi-do, Republic of Korea (경기도 광명시 소하로56 302동 902호)
+              <br />
+              Phone (전화): 010-8555-8219
+              <br />
+              Email:{" "}
+              <a className="link" href="mailto:kwan765@naver.com">
+                kwan765@naver.com
+              </a>
             </p>
           </section>
         </article>

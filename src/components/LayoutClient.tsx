@@ -48,7 +48,7 @@ function Footer() {
       <div className="footerSection">
         <h4>{t("footer.support")}</h4>
         <ul>
-          <li><a href="mailto:support@reviewboost.co.kr">support@reviewboost.co.kr</a></li>
+          <li><a href="mailto:kwan765@naver.com">kwan765@naver.com</a></li>
         </ul>
       </div>
     </footer>

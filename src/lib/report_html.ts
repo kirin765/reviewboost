@@ -145,13 +145,13 @@ export function renderReportHtml(args: {
   <title>${esc(title)}</title>
   <style>
     :root {
-      --ink: #0f172a;
-      --muted: #64748b;
-      --line: #e2e8f0;
-      --soft: #f1f5f9;
+      --ink: #1f2540;
+      --muted: #6b7090;
+      --line: #e6e8f2;
+      --soft: #eef0f8;
       --panel: #ffffff;
-      --accent: #2563eb;
-      --accent-strong: #1d4ed8;
+      --accent: #5b5cea;
+      --accent-strong: #4a4bd6;
       --warn: #d97706;
       --ok: #059669;
     }
@@ -194,8 +194,8 @@ export function renderReportHtml(args: {
     }
 
     .hero {
-      background: linear-gradient(180deg, #f8fbff, #ffffff);
-      border: 1px solid #dbeafe;
+      background: linear-gradient(180deg, #f7f8fc, #ffffff);
+      border: 1px solid #d6d8f6;
       margin-bottom: 12px;
     }
 
@@ -241,9 +241,9 @@ export function renderReportHtml(args: {
       align-items: center;
       border-radius: 999px;
       padding: 6px 10px;
-      background: #edf2ff;
-      color: #1d4ed8;
-      border: 1px solid #bfdbfe;
+      background: #eeeffc;
+      color: #4a4bd6;
+      border: 1px solid #c7c9f5;
       font-size: 11px;
       font-weight: 600;
     }
@@ -330,7 +330,7 @@ export function renderReportHtml(args: {
       grid-template-columns: 1fr auto;
       align-items: center;
       gap: 10px;
-      background: #f8fafc;
+      background: #f7f8fc;
       border: 1px solid var(--line);
       border-radius: 10px;
       padding: 7px 10px;
@@ -338,7 +338,7 @@ export function renderReportHtml(args: {
     }
 
     .listText {
-      color: #0f172a;
+      color: #1f2540;
       font-size: 12px;
       line-height: 1.4;
       word-break: keep-all;
@@ -347,17 +347,17 @@ export function renderReportHtml(args: {
 
     .listBadge {
       font-size: 10px;
-      color: #1d4ed8;
-      background: #e0e7ff;
+      color: #4a4bd6;
+      background: #e6e7fb;
       border-radius: 999px;
       padding: 3px 8px;
       white-space: nowrap;
       font-weight: 700;
-      border: 1px solid #dbeafe;
+      border: 1px solid #d6d8f6;
     }
 
     .plainList li {
-      background: #f8fafc;
+      background: #f7f8fc;
       border: 1px solid var(--line);
       border-radius: 10px;
       margin-bottom: 7px;
@@ -376,7 +376,7 @@ export function renderReportHtml(args: {
 
     .notes {
       margin-top: 10px;
-      background: #f8fafc;
+      background: #f7f8fc;
       border: 1px dashed #cbd5e1;
       border-radius: 8px;
       padding: 9px 11px;
@@ -409,7 +409,7 @@ export function renderReportHtml(args: {
       width: 100%;
       height: 8px;
       border-radius: 999px;
-      background: #e2e8f0;
+      background: #e6e8f2;
       overflow: hidden;
       position: relative;
     }
@@ -421,7 +421,7 @@ export function renderReportHtml(args: {
     }
 
     .divider {
-      border-top: 1px solid #e2e8f0;
+      border-top: 1px solid #e6e8f2;
       margin: 10px 0 10px;
     }
 

@@ -42,12 +42,12 @@ const MARGIN = {
 };
 
 const THEME = {
-  text: "#0f172a",
-  muted: "#64748b",
-  accent: "#2563eb",
-  accentStrong: "#1d4ed8",
-  line: "#e2e8f0",
-  soft: "#f8fafc",
+  text: "#1f2540",
+  muted: "#6b7090",
+  accent: "#5b5cea",
+  accentStrong: "#4a4bd6",
+  line: "#e6e8f2",
+  soft: "#f7f8fc",
   surface: "#ffffff",
   warn: "#d97706",
   ok: "#059669"

@@ -18,7 +18,7 @@ export default function PageLoading({ title, description, hint }: PageLoadingPro
           {hint ? <p className="mt-2 text-sm leading-7 text-[var(--rb-muted)]">{hint}</p> : null}
         </div>
 
-        <section className="rounded-[24px] border border-[color:var(--rb-border)] bg-[linear-gradient(180deg,rgba(18,24,31,0.96),rgba(13,19,26,0.92))] p-6 shadow-[0_24px_50px_rgba(0,0,0,0.22)]">
+        <section className="rounded-[24px] border border-[color:var(--rb-border)] bg-white p-6 shadow-[0_10px_30px_rgba(31,37,64,0.08)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="relative flex h-3 w-3">
@@ -30,29 +30,29 @@ export default function PageLoading({ title, description, hint }: PageLoadingPro
                 <p className="text-xs text-[var(--rb-muted)]">준비가 끝나면 바로 이어서 볼 수 있습니다.</p>
               </div>
             </div>
-            <span className="rounded-full border border-[color:rgba(107,210,193,0.18)] bg-[rgba(107,210,193,0.08)] px-3 py-1 text-[11px] text-[var(--rb-accent)]">
+            <span className="rounded-full border border-[color:rgba(91,92,234,0.18)] bg-[rgba(91,92,234,0.08)] px-3 py-1 text-[11px] text-[var(--rb-accent)]">
               잠시만 기다려주세요
             </span>
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-[18px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4">
+            <div className="rounded-[18px] border border-[color:#e6e8f2] bg-white p-4">
               <div className="h-3 w-20 animate-pulse rounded-full bg-[rgba(255,255,255,0.12)]" />
-              <div className="mt-4 h-9 w-28 animate-pulse rounded-full bg-[rgba(255,255,255,0.08)]" />
-              <div className="mt-3 h-3 w-24 animate-pulse rounded-full bg-[rgba(255,255,255,0.08)]" />
+              <div className="mt-4 h-9 w-28 animate-pulse rounded-full bg-[#eef0f8]" />
+              <div className="mt-3 h-3 w-24 animate-pulse rounded-full bg-[#eef0f8]" />
             </div>
-            <div className="rounded-[18px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4 md:col-span-2">
+            <div className="rounded-[18px] border border-[color:#e6e8f2] bg-white p-4 md:col-span-2">
               <div className="h-3 w-28 animate-pulse rounded-full bg-[rgba(255,255,255,0.12)]" />
-              <div className="mt-4 h-28 animate-pulse rounded-[16px] bg-[rgba(255,255,255,0.06)]" />
+              <div className="mt-4 h-28 animate-pulse rounded-[16px] bg-white" />
             </div>
           </div>
 
-          <div className="mt-4 rounded-[18px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4">
+          <div className="mt-4 rounded-[18px] border border-[color:#e6e8f2] bg-white p-4">
             <div className="h-3 w-24 animate-pulse rounded-full bg-[rgba(255,255,255,0.12)]" />
             <div className="mt-4 space-y-3">
-              <div className="h-12 animate-pulse rounded-[14px] bg-[rgba(255,255,255,0.06)]" />
-              <div className="h-12 animate-pulse rounded-[14px] bg-[rgba(255,255,255,0.06)]" />
-              <div className="h-12 animate-pulse rounded-[14px] bg-[rgba(255,255,255,0.06)]" />
+              <div className="h-12 animate-pulse rounded-[14px] bg-white" />
+              <div className="h-12 animate-pulse rounded-[14px] bg-white" />
+              <div className="h-12 animate-pulse rounded-[14px] bg-white" />
             </div>
           </div>
         </section>

@@ -47,7 +47,7 @@ export default function PricingContent() {
             {content.pills.map((pill) => (
               <span
                 key={pill}
-                className="rounded-full border border-[color:rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-1 text-xs text-[var(--rb-muted-strong)]"
+                className="rounded-full border border-[color:#e6e8f2] bg-white px-3 py-1 text-xs text-[var(--rb-muted-strong)]"
               >
                 {pill}
               </span>
@@ -66,7 +66,7 @@ export default function PricingContent() {
             return (
               <Surface
                 key={plan.name}
-                className={`flex h-full flex-col p-6 md:p-7 ${plan.recommended ? "border-[color:rgba(95,198,183,0.28)] shadow-[0_28px_54px_rgba(10,28,27,0.38)]" : ""}`}
+                className={`flex h-full flex-col p-6 md:p-7 ${plan.recommended ? "border-[color:rgba(91,92,234,0.28)] shadow-[0_28px_54px_rgba(10,28,27,0.38)]" : ""}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -74,7 +74,7 @@ export default function PricingContent() {
                     <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">{planName}</h2>
                   </div>
                   {plan.recommended ? (
-                    <span className="rounded-full border border-[color:rgba(95,198,183,0.18)] bg-[rgba(95,198,183,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[var(--rb-accent)]">
+                    <span className="rounded-full border border-[color:rgba(91,92,234,0.18)] bg-[rgba(91,92,234,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[var(--rb-accent)]">
                       추천
                     </span>
                   ) : null}
@@ -86,7 +86,7 @@ export default function PricingContent() {
                 </div>
                 <div className="mt-6 flex-1 space-y-3">
                   {plan.features.map((feature) => (
-                    <div key={feature.label} className="flex items-center justify-between gap-4 border-b border-[color:rgba(255,255,255,0.06)] pb-3 text-sm last:border-b-0">
+                    <div key={feature.label} className="flex items-center justify-between gap-4 border-b border-[color:#e6e8f2] pb-3 text-sm last:border-b-0">
                       <span className="text-[var(--rb-muted-strong)]">{feature.label}</span>
                       <span className="text-[var(--rb-fg)]">{feature.value}</span>
                     </div>
