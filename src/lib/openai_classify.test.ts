@@ -20,6 +20,7 @@ vi.mock("openai", () => ({
 describe("classifyReviewsWithOpenAI", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.OPENAI_API_KEY;
     process.env.OPENAI_CLASSIFY_BATCH_SIZE = "60";
     process.env.OPENAI_CLASSIFY_TIMEOUT_MS = "12000";
     process.env.OPENAI_CLASSIFY_MAX_CONCURRENCY = "2";
@@ -73,9 +74,11 @@ describe("classifyReviewsWithOpenAI", () => {
     });
   });
 
-  it("returns parsed 분류 결과 when response is valid", async () => {
+  it("applies per-batch 0-based ids so renumbered batches are not silently dropped", async () => {
     process.env.OPENAI_API_KEY = "test-key";
     process.env.OPENAI_CLASSIFY_BATCH_SIZE = "1";
+    // Model echoes id:0 for every batch (per-batch renumbering). The second batch
+    // (global offset 1) must still be applied via the within-batch index.
     openAiCreate.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({ items: [{ id: 0, sentiment: "positive", category: "품질" }] }) } }]
     } as never);
@@ -87,11 +90,11 @@ describe("classifyReviewsWithOpenAI", () => {
     expect(openAiCreate).toHaveBeenCalledTimes(2);
     expect(result).toMatchObject({
       requestedCount: 2,
-      appliedCount: 1,
+      appliedCount: 2,
       failedBatchCount: 0,
       classifications: [
         { sentiment: "positive", category: "품질" },
-        { sentiment: "neutral", category: "기타" }
+        { sentiment: "positive", category: "품질" }
       ]
     });
   });

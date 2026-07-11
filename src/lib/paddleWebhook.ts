@@ -42,9 +42,31 @@ export function parsePaddleSignature(sigHeader: string | null): PaddleSignature 
   return { ts, h1 };
 }
 
-export function verifyPaddleSignature(rawBody: string, sigHeader: string | null, secret: string): boolean {
+const DEFAULT_WEBHOOK_TOLERANCE_SECONDS = 300;
+
+export function paddleWebhookToleranceSeconds(): number {
+  const raw = Number(process.env.PADDLE_WEBHOOK_TOLERANCE_SECONDS);
+  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_WEBHOOK_TOLERANCE_SECONDS;
+}
+
+export function verifyPaddleSignature(
+  rawBody: string,
+  sigHeader: string | null,
+  secret: string,
+  opts: { toleranceSeconds?: number; nowMs?: number } = {}
+): boolean {
   const parsed = parsePaddleSignature(sigHeader);
   if (!parsed) return false;
+
+  // Replay protection: reject signatures whose timestamp is outside the tolerance
+  // window. Pass toleranceSeconds = Infinity to skip (used only in pure-HMAC tests).
+  const tolerance = opts.toleranceSeconds ?? paddleWebhookToleranceSeconds();
+  if (Number.isFinite(tolerance)) {
+    const tsSeconds = Number(parsed.ts);
+    if (!Number.isFinite(tsSeconds)) return false;
+    const nowMs = opts.nowMs ?? Date.now();
+    if (Math.abs(nowMs - tsSeconds * 1000) > tolerance * 1000) return false;
+  }
 
   const signedPayload = `${parsed.ts}:${rawBody}`;
   const digest = createHmac("sha256", secret).update(signedPayload, "utf8").digest("hex");

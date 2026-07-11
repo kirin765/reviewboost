@@ -26,20 +26,32 @@ describe("parsePaddleSignature", () => {
 });
 
 describe("verifyPaddleSignature", () => {
-  it("returns true when signature matches", () => {
-    const secret = "whsec_test";
-    const body = "{\"hello\":\"world\"}";
-    const ts = "1700000000";
-    const h1 = createHmac("sha256", secret).update(`${ts}:${body}`, "utf8").digest("hex");
-    expect(verifyPaddleSignature(body, `ts=${ts};h1=${h1}`, secret)).toBe(true);
+  const secret = "whsec_test";
+  const body = "{\"hello\":\"world\"}";
+  const nowMs = 1_700_000_000_000;
+  const ts = String(nowMs / 1000);
+  const h1 = createHmac("sha256", secret).update(`${ts}:${body}`, "utf8").digest("hex");
+
+  it("returns true when signature matches and timestamp is fresh", () => {
+    expect(verifyPaddleSignature(body, `ts=${ts};h1=${h1}`, secret, { nowMs })).toBe(true);
+  });
+
+  it("returns false when the timestamp is outside the tolerance window (replay)", () => {
+    const stale = nowMs + 301_000; // 301s later, default tolerance is 300s
+    expect(verifyPaddleSignature(body, `ts=${ts};h1=${h1}`, secret, { nowMs: stale })).toBe(false);
+  });
+
+  it("still verifies a stale timestamp when tolerance is disabled", () => {
+    const stale = nowMs + 10 * 60_000;
+    expect(verifyPaddleSignature(body, `ts=${ts};h1=${h1}`, secret, { nowMs: stale, toleranceSeconds: Infinity })).toBe(true);
   });
 
   it("returns false when signature mismatches", () => {
-    expect(verifyPaddleSignature("{\"a\":1}", "ts=1;h1=deadbeef", "secret")).toBe(false);
+    expect(verifyPaddleSignature("{\"a\":1}", "ts=1;h1=deadbeef", "secret", { toleranceSeconds: Infinity })).toBe(false);
   });
 
   it("returns false when digest lengths mismatch", () => {
-    expect(verifyPaddleSignature("{\"a\":1}", "ts=1;h1=x", "secret")).toBe(false);
+    expect(verifyPaddleSignature("{\"a\":1}", "ts=1;h1=x", "secret", { toleranceSeconds: Infinity })).toBe(false);
   });
 });
 

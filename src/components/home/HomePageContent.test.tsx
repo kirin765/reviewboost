@@ -25,8 +25,11 @@ describe("HomePageContent", () => {
       "result",
       "pricing",
       "faq",
+      "extension",
+      "explore",
       "cta"
     ]);
+    expect(screen.getByRole("link", { name: "Chrome에 설치하기" }).getAttribute("href")).toContain("chromewebstore.google.com");
     expect(screen.queryByText("home.heroTitle")).toBeNull();
     expect(screen.queryByText("home.heroLead")).toBeNull();
   });

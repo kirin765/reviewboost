@@ -9,6 +9,9 @@ import Reveal from "@/components/ui/Reveal";
 import { getSiteContent } from "@/lib/site-content";
 import { useTranslation } from "@/lib/i18n";
 
+const EXTENSION_STORE_URL =
+  "https://chromewebstore.google.com/detail/kdmjkpfbccikgbaemcbifemeichmehlm";
+
 function useCanObserveInView() {
   const reducedMotion = useReducedMotion();
   const [mounted, setMounted] = React.useState(false);
@@ -648,6 +651,60 @@ export default function HomePageContent() {
                   <p className="text-sm leading-7 text-[var(--rb-muted-strong)]">{item.answer}</p>
                 </div>
               ))}
+            </div>
+          </section>
+        </Reveal>
+
+        <Reveal>
+          <section data-home-section="extension" className="space-y-8">
+            <EditorialIntro
+              eyebrow="Chrome Extension"
+              title="쿠팡·스마트스토어 리뷰, 클릭 한 번으로 수집"
+              description="리뷰 수집기 크롬 확장 프로그램으로 상품 페이지의 리뷰를 CSV로 내보내거나 ReviewBoost로 바로 보내 분석하세요. 복사·붙여넣기 없이 바로 시작합니다."
+            />
+            <div className="rounded-[30px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(24,31,39,0.96),rgba(16,22,30,0.92))] p-5 md:p-7">
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,360px)] lg:items-center">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {[
+                    {
+                      title: "쿠팡·스마트스토어 지원",
+                      body: "쿠팡, 스마트스토어, 브랜드스토어 상품 페이지의 공개 리뷰를 그대로 수집합니다."
+                    },
+                    {
+                      title: "CSV·엑셀 내보내기",
+                      body: "수집한 리뷰를 브라우저에 저장한 뒤 CSV·엑셀로 바로 내보낼 수 있습니다."
+                    },
+                    {
+                      title: "원클릭 분석 전송",
+                      body: "파일 업로드 없이 ReviewBoost 웹앱으로 리뷰 데이터를 곧바로 보냅니다."
+                    }
+                  ].map((item) => (
+                    <div
+                      key={item.title}
+                      className="rounded-[22px] border border-[color:rgba(222,230,242,0.08)] bg-[rgba(255,255,255,0.03)] p-5"
+                    >
+                      <h3 className="text-lg font-semibold tracking-[-0.03em] text-white">{item.title}</h3>
+                      <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">{item.body}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-3 border-t border-[color:rgba(222,230,242,0.08)] pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+                  <a
+                    href={EXTENSION_STORE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={buttonStyles({ variant: "primary", size: "lg" })}
+                  >
+                    Chrome에 설치하기
+                  </a>
+                  <Link href="/coupang-csv" className={buttonStyles({ variant: "secondary", size: "lg" })}>
+                    URL로 CSV 받기
+                  </Link>
+                  <Link href="/extension-privacy" className="text-center text-xs text-[var(--rb-muted)] underline-offset-4 hover:underline">
+                    확장 프로그램 개인정보처리방침
+                  </Link>
+                </div>
+              </div>
             </div>
           </section>
         </Reveal>

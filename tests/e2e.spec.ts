@@ -3,22 +3,25 @@ import { test, expect } from "@playwright/test";
 test.describe("ReviewBoost E2E Tests", () => {
   test("homepage loads successfully", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/ReviewBoost/i);
+    await expect(page).toHaveTitle(/AI 리뷰 분석 툴/);
   });
 
   test("login page loads", async ({ page }) => {
+    // Auth pages now render the Clerk <SignIn/> widget, which only mounts when
+    // Clerk is configured. In the local (no-Clerk) run the widget can't mount,
+    // so we assert the route resolves and renders its SEO title.
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "ReviewBoost 로그인", exact: true })).toBeVisible();
+    await expect(page).toHaveTitle(/로그인/);
   });
 
   test("signup page loads", async ({ page }) => {
     await page.goto("/signup");
-    await expect(page.getByRole("heading", { name: "무료로 시작하세요", exact: true })).toBeVisible();
+    await expect(page).toHaveTitle(/회원가입/);
   });
 
   test("pricing page loads", async ({ page }) => {
     await page.goto("/pricing");
-    await expect(page.getByRole("heading", { name: "리뷰 운영 성숙도에 맞춰 기능을 확장하세요.", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "운영 빈도와 저장 필요도에 맞는 플랜", exact: true })).toBeVisible();
   });
 
   test("homepage has no critical console errors", async ({ page }) => {
@@ -37,30 +40,32 @@ test.describe("ReviewBoost E2E Tests", () => {
         !e.includes("favicon") &&
         !e.includes("manifest") &&
         !e.includes("webpack-hmr") &&
-        !e.includes("ERR_INVALID_HTTP_RESPONSE")
+        !e.includes("ERR_INVALID_HTTP_RESPONSE") &&
+        // Third-party analytics/billing scripts are CSP-blocked in local dev.
+        !e.includes("cdn.paddle.com") &&
+        !e.includes("paddle.css") &&
+        !e.includes("profitwell") &&
+        !e.includes("googletagmanager")
     );
     expect(criticalErrors).toHaveLength(0);
   });
 
-  test("dashboard shell tabs are operable (desktop)", async ({ page }) => {
+  test("dashboard shell navigation is operable (desktop)", async ({ page }) => {
     await page.goto("/dashboard");
-    await expect(page.getByRole("heading", { name: "리뷰 CSV 분석" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "홈", level: 1 })).toBeVisible();
 
-    const resultsTab = page.getByRole("tab", { name: "결과 보기" });
-    await resultsTab.click();
-    await expect(resultsTab).toHaveAttribute("aria-selected", "true");
-    const goToAnalysisBtn = page.getByRole("button", { name: "분석하기로 이동" });
-    if (await goToAnalysisBtn.count() > 0) {
-      await goToAnalysisBtn.click();
-      await expect(page.getByRole("tab", { name: "분석하기" })).toHaveAttribute("aria-selected", "true");
-    } else {
-      await page.getByRole("tab", { name: "분석하기" }).click();
-    }
+    // Navigate to the AI 분석 workspace via the sidebar.
+    await page.getByRole("link", { name: "AI분석" }).first().click();
+    await expect(page).toHaveURL(/\/dashboard\/analyze$/);
+    await expect(page.getByRole("heading", { name: "AI분석", level: 1 })).toBeVisible();
 
-    await page.getByRole("tab", { name: "분석하기" }).click();
-    await expect(page.getByRole("tab", { name: "분석하기" })).toHaveAttribute("aria-selected", "true");
+    // Navigate back to the dashboard home via the sidebar.
+    await page.getByRole("link", { name: "홈" }).first().click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole("heading", { name: "홈", level: 1 })).toBeVisible();
 
-    const homeBackLink = page.getByRole("link", { name: "메인 서비스로 이동" });
+    // Brand link in the sidebar returns to the main marketing site.
+    const homeBackLink = page.getByRole("link", { name: /리뷰 분석 작업면/ });
     await expect(homeBackLink).toBeVisible();
     await homeBackLink.click();
     await expect(page).toHaveURL("/");
@@ -70,25 +75,29 @@ test.describe("ReviewBoost E2E Tests", () => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.goto("/dashboard");
 
-    const openToggle = page.getByRole("button", { name: "사이드바 펼치기" });
+    const openToggle = page.getByRole("button", { name: "메뉴 열기" });
     await expect(openToggle).toBeVisible();
     await openToggle.click();
 
-    const closeToggle = page.getByRole("button", { name: "사이드바 닫기" });
+    const closeToggle = page.getByRole("button", { name: "메뉴 닫기" });
     await expect(closeToggle).toBeVisible();
 
-    const backdrop = page.getByTestId("dashboardBackdrop");
+    const drawer = page.locator("#workspace-navigation");
+    await expect(drawer).toBeVisible();
+
+    const backdrop = page.locator("div.fixed.inset-0.z-30");
     await expect(backdrop).toBeVisible();
 
-    await page.keyboard.press("Escape");
+    // Clicking the backdrop (away from the drawer) closes the drawer.
+    await backdrop.click({ position: { x: 350, y: 500 } });
     await expect(openToggle).toBeVisible();
-    await expect(backdrop).toBeHidden();
+    await expect(drawer).toBeHidden();
   });
 
   test("dashboard mapping panel stays within card bounds on desktop", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/dashboard");
-    await expect(page.getByRole("heading", { name: "리뷰 CSV 분석" })).toBeVisible();
+    await page.goto("/dashboard/analyze");
+    await expect(page.getByRole("heading", { name: "CSV 업로드", exact: true })).toBeVisible();
 
     await page.setInputFiles("#dashboardCsvInput", {
       name: "sample-long-headers.csv",
@@ -103,7 +112,7 @@ test.describe("ReviewBoost E2E Tests", () => {
       ].join("\n"))
     });
 
-    await page.getByRole("button", { name: "다음: 미리보기" }).click();
+    await page.getByRole("button", { name: "다음: 열 확인" }).click();
 
     const mappingPanelCard = page.getByRole("heading", { name: "열 매핑 패널" }).locator("..");
     await expect(mappingPanelCard).toBeVisible();
