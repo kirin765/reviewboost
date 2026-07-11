@@ -40,7 +40,7 @@ GitHub Actions is **disabled** on this repo, so `.github/workflows/ci.yml` does 
 - **OpenAI API** (gpt-4o-mini) for LLM classification and suggestions (optional — falls back to heuristic/template)
 - **Paddle** for subscription billing (optional)
 - **Puppeteer** for HTML-to-PDF, **PDFKit** as fallback
-- A companion **Chrome extension** ("ReviewBoost 리뷰 수집기") exports Coupang/SmartStore reviews; the app also has a server-side Coupang CSV crawler (`/coupang-csv`, `src/lib/coupang_crawler.ts`)
+- A companion **Chrome extension** ("ReviewBoost 리뷰 수집기") exports Coupang/SmartStore reviews, linked from the top nav and homepage
 - Path alias: `@/*` maps to `src/*`
 
 ## Architecture
@@ -60,7 +60,7 @@ GitHub Actions is **disabled** on this repo, so `.github/workflows/ci.yml` does 
 ### Key Directories
 
 - `src/app/(auth)/` — login, signup via Clerk catch-all routes (`login/[[...rest]]`, `signup/[[...rest]]`)
-- `src/app/api/` — all API route handlers (analyze, preview, report, billing, capabilities, coupang-csv, health)
+- `src/app/api/` — all API route handlers (analyze, preview, report, billing, capabilities, health)
 - `src/app/dashboard/` — main analysis UI, history, analysis detail (auth-protected via `middleware.ts`)
 - `src/lib/` — core business logic, all pure-function utilities
 - `src/lib/db/` — Drizzle setup: `schema.ts` (tables), `queries.ts` (all user-scoped queries), `index.ts` (neon-http client)
@@ -100,7 +100,6 @@ See `.env.example` for full list. Key groups:
 - **Clerk (auth)**: `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CLERK_SIGN_IN_URL`/`SIGN_UP_URL`/`AFTER_*`
 - **Database**: `DATABASE_URL` (Neon Postgres connection string)
 - **Paddle**: `APP_BASE_URL`, `PADDLE_ENV`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `PADDLE_WEBHOOK_TOLERANCE_SECONDS` (replay window, default 300), price IDs, `NEXT_PUBLIC_PADDLE_TOKEN*`
-- **Coupang crawler**: `COUPANG_CRAWLER_BASE_URL` + auth/limit/timeout config (backs `/coupang-csv`)
 - **Plan overrides**: `PLAN_PRO_EMAILS`, `PLAN_BASIC_EMAILS` (comma-separated)
 - **Dev flags** (never set in production): `DEV_ALLOW_ADVANCED_AI=1`, `DEV_FORCE_ANALYSIS_MODE=auto|heuristic|llm`
 

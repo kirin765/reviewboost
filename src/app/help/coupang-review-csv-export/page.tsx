@@ -53,12 +53,6 @@ export default function HelpCoupangReviewCsvExportPage() {
         ]}
         relatedLinks={[
           {
-            href: "/coupang-csv",
-            title: "리뷰 CSV 도구",
-            description: "상품 URL 기반 리뷰 CSV 확보 흐름을 바로 실행할 수 있습니다.",
-            tag: "도구"
-          },
-          {
             href: "/features/review-csv-export",
             title: "리뷰 CSV 추출 기능",
             description: "이 가이드가 어떤 기능 흐름에 연결되는지 설명합니다.",

@@ -13,7 +13,7 @@ export type SidebarVariant = "app" | "dashboard";
 
 type SidebarNavItem = {
   href: string;
-  icon: "home" | "analyze" | "csv";
+  icon: "home" | "analyze";
   label: string;
   matches: (pathname: string) => boolean;
 };
@@ -39,12 +39,6 @@ const PRIMARY_ITEMS: SidebarNavItem[] = [
     icon: "analyze",
     label: "AI분석",
     matches: (pathname) => pathname.startsWith("/dashboard/analyze")
-  },
-  {
-    href: "/coupang-csv",
-    icon: "csv",
-    label: "리뷰 다운",
-    matches: (pathname) => pathname.startsWith("/coupang-csv")
   }
 ];
 
@@ -98,14 +92,6 @@ function renderIcon(icon: SidebarNavItem["icon"]) {
         <svg viewBox="0 0 20 20" aria-hidden="true">
           <path d="M4.75 15.25h10.5a1.5 1.5 0 0 0 1.5-1.5v-7.5a1.5 1.5 0 0 0-1.5-1.5H4.75a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M6.8 12.3v-2.2M10 12.3V7.8M13.2 12.3V9.3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        </svg>
-      );
-    case "csv":
-      return (
-        <svg viewBox="0 0 20 20" aria-hidden="true">
-          <path d="M6 3.75h5.6l2.65 2.65v9.85a1.05 1.05 0 0 1-1.05 1.05H6a1.05 1.05 0 0 1-1.05-1.05V4.8A1.05 1.05 0 0 1 6 3.75Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M11.6 3.75v2.7a.9.9 0 0 0 .9.9h2.7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M7.1 10.1h5.8M7.1 12.7h5.8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
         </svg>
       );
     default:

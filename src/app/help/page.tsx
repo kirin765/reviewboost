@@ -7,6 +7,7 @@ import { generatePageMetadata } from "@/lib/seo/metadata";
 import { getRequiredSeoPageRecord } from "@/lib/seo/page-registry";
 import { createCollectionPageStructuredData } from "@/lib/seo/structured-data";
 import { getSiteContent } from "@/lib/site-content";
+import { EXTENSION_STORE_URL } from "@/lib/extension";
 
 const helpRecord = getRequiredSeoPageRecord("/help");
 
@@ -188,8 +189,8 @@ export default function HelpPage() {
                           <a className={buttonStyles({ variant: "primary" })} href="/dashboard/analyze">
                             지금 분석하기
                           </a>
-                          <a className={buttonStyles({ variant: "ghost" })} href="/coupang-csv">
-                            URL로 CSV 받기
+                          <a className={buttonStyles({ variant: "ghost" })} href={EXTENSION_STORE_URL} target="_blank" rel="noreferrer">
+                            Chrome 확장프로그램 설치
                           </a>
                         </div>
                       ) : null}

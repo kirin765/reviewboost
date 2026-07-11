@@ -7,6 +7,7 @@ import SidebarNav from "@/components/navigation/SidebarNav";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { buttonStyles } from "@/components/ui/Button";
 import { ShellContainer } from "@/components/ui/Primitives";
+import { EXTENSION_STORE_URL } from "@/lib/extension";
 import type { PlanTier } from "@/types/user";
 
 type AppShellProps = {
@@ -93,19 +94,6 @@ function getChromeConfig(pathname: string): ChromeConfig {
     };
   }
 
-  if (pathname.startsWith("/coupang-csv")) {
-    return {
-      label: "리뷰 다운",
-      title: "리뷰 다운",
-      description: "상품 URL에서 리뷰 CSV를 내려받고 같은 흐름으로 분석까지 이어갈 수 있습니다.",
-      actionHref: "/dashboard/analyze",
-      actionLabel: "AI분석",
-      showHeader: true,
-      showFooter: false,
-      isWorkspace: true
-    };
-  }
-
   if (pathname.startsWith("/features")) {
     return {
       label: "기능",
@@ -149,7 +137,7 @@ function MarketingHeader({ userEmail }: { userEmail: string | null }) {
           <nav className="hidden items-center gap-6 text-sm text-[var(--rb-muted-strong)] lg:flex">
             <Link href="/features" className="hover:text-[var(--rb-fg)]">기능</Link>
             <Link href="/pricing" className="hover:text-[var(--rb-fg)]">요금제</Link>
-            <Link href="/coupang-csv" className="hover:text-[var(--rb-fg)]">리뷰 CSV</Link>
+            <a href={EXTENSION_STORE_URL} target="_blank" rel="noreferrer" className="hover:text-[var(--rb-fg)]">Chrome 확장프로그램</a>
             <Link href="/help" className="hover:text-[var(--rb-fg)]">사용법</Link>
             <Link href="/blog" className="hover:text-[var(--rb-fg)]">블로그</Link>
           </nav>

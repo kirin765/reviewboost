@@ -19,7 +19,6 @@
   - 상세페이지 수정 문구(초안)
   - 고객 불만 대응 문구(초안)
   - FAQ 추천
-- 쿠팡/스마트스토어 상품 URL 기반 리뷰 CSV 다운로드 (`/coupang-csv`, 외부 crawler 연동)
 - 요약 리포트 PDF 다운로드
   - 기본: Puppeteer(HTML 렌더링)
   - Puppeteer 실패 시 PDFKit 텍스트 기반 폴백 자동 전환 (운영/권장 설정에서 활성화)
@@ -89,17 +88,6 @@ Vercel 배포:
   - `PADDLE_WEBHOOK_SECRET`
   - `PADDLE_BASIC_PRICE_ID`, `PADDLE_PRO_PRICE_ID`
   - 웹훅 엔드포인트: `/api/billing/webhook`
-- 쿠팡 crawler 연동(선택):
-  - 요청 형식: `POST { url, limit }`
-  - `COUPANG_CRAWLER_BASE_URL` (필수)
-  - `COUPANG_CRAWLER_DOWNLOAD_PATH` (기본 `/api/coupang/reviews/csv`)
-  - `COUPANG_CRAWLER_TIMEOUT_MS` (기본 `30000`)
-  - `COUPANG_CRAWLER_LIMIT` (기본 `100`)
-  - `COUPANG_CRAWLER_AUTH_HEADER_NAME`, `COUPANG_CRAWLER_AUTH_HEADER_VALUE`
-  - `COUPANG_CRAWLER_AUTH_TOKEN` (`X-ReviewBoost-Token` 헤더로 항상 전송)
-  - `COUPANG_CRAWLER_PRODUCT_URL_FIELD` (기본 `url`)
-  - `COUPANG_CRAWLER_EXTRA_BODY_JSON` (추가 파라미터 JSON)
-  - 운영 주소는 코드에 하드코딩하지 말고 배포 환경변수/시크릿으로만 주입하세요.
 
 ## 월결제 연동
 
