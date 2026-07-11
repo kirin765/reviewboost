@@ -51,7 +51,7 @@ describe("POST /api/billing/checkout", () => {
     mocks.auth.mockResolvedValue({ userId: null });
     mocks.currentUser.mockResolvedValue(null);
 
-    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", { method: "POST" }));
+    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", { method: "POST", headers: { origin: "https://reviewboost.app" } }));
 
     expect(res.status).toBe(401);
     await expect(res.json()).resolves.toMatchObject({ error: "로그인이 필요합니다.", code: "checkout_error" });
@@ -61,7 +61,7 @@ describe("POST /api/billing/checkout", () => {
   it("returns 503 when paddle configuration is incomplete", async () => {
     mocks.isPaddleConfigured.mockReturnValue(false);
 
-    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", { method: "POST" }));
+    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", { method: "POST", headers: { origin: "https://reviewboost.app" } }));
 
     expect(res.status).toBe(503);
     const body = await res.json();
@@ -86,7 +86,7 @@ describe("POST /api/billing/checkout", () => {
     const req = new Request("https://reviewboost.app/api/billing/checkout", {
       method: "POST",
       body: JSON.stringify({ plan: "pro" }),
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
     });
 
     const res = await POST(req);
@@ -110,7 +110,7 @@ describe("POST /api/billing/checkout", () => {
     const req = new Request("https://reviewboost.app/api/billing/checkout", {
       method: "POST",
       body: JSON.stringify({ plan: "pro" }),
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
     });
 
     const res = await POST(req);
@@ -142,7 +142,7 @@ describe("POST /api/billing/checkout", () => {
     const req = new Request("https://reviewboost.app/api/billing/checkout", {
       method: "POST",
       body: JSON.stringify({}),
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
     });
 
     const res = await POST(req);

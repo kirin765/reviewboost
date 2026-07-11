@@ -22,7 +22,8 @@ import { POST } from "./route";
 
 function signedRequest(body: unknown, secret = "whsec_test") {
   const payload = typeof body === "string" ? body : JSON.stringify(body);
-  const ts = "1700000000";
+  // Current timestamp so it passes the webhook replay-tolerance window.
+  const ts = String(Math.floor(Date.now() / 1000));
   const h1 = createHmac("sha256", secret).update(`${ts}:${payload}`, "utf8").digest("hex");
 
   return new Request("https://reviewboost.app/api/billing/webhook", {

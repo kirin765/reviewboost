@@ -17,7 +17,9 @@ export function isSameOriginRequest(req: Request): boolean {
     }
   }
 
-  return true;
+  // Neither Origin nor Referer present: fail closed. Browser POST fetches always
+  // send Origin, so a request missing both is not a same-origin app request.
+  return false;
 }
 
 export function csrfErrorResponse() {

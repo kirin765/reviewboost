@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { getDb } from "./index";
 import { analyses, reviews, profiles, subscriptions } from "./schema";
 
@@ -25,7 +25,8 @@ export async function listAnalysesForUser(userId: string, limit = 50) {
       priorityScore: analyses.priorityScore
     })
     .from(analyses)
-    .where(eq(analyses.userId, uid))
+    // Exclude reserved-but-unfinalized placeholder rows (result_payload IS NULL).
+    .where(and(eq(analyses.userId, uid), isNotNull(analyses.resultPayload)))
     .orderBy(desc(analyses.createdAt))
     .limit(limit);
 }
@@ -99,31 +100,93 @@ export async function countAnalysesForUserSince(userId: string, sinceIso: string
   return rows[0]?.n ?? 0;
 }
 
-export async function insertAnalysisForUser(record: {
+export type ReserveSlotResult =
+  | { ok: true; id: string }
+  | { ok: false; reason: "over_limit" | "storage_off" };
+
+/**
+ * Atomically reserves an analysis slot before the (expensive) pipeline runs.
+ * When a monthly limit applies, the row is inserted only if the user is still
+ * under the limit — a single conditional statement, so concurrent bursts can no
+ * longer all pass a stale count and run paid LLM work. The placeholder row is
+ * finalized via finalizeAnalysisForUser or released via releaseAnalysisSlot.
+ */
+export async function reserveAnalysisSlot(record: {
   userId: string;
   clientIp: string | null;
   inputFilename: string | null;
-  stats: unknown;
-  suggestions: unknown;
-  resultPayload?: unknown;
-  priorityScore: number;
-}) {
+  sinceIso: string;
+  monthlyLimit: number | null;
+}): Promise<ReserveSlotResult> {
   const uid = requireUserId(record.userId);
   const db = getDb();
-  if (!db) return null;
+  if (!db) return { ok: false, reason: "storage_off" };
+
+  if (record.monthlyLimit === null) {
+    const rows = await db
+      .insert(analyses)
+      .values({
+        userId: uid,
+        clientIp: record.clientIp,
+        inputFilename: record.inputFilename,
+        stats: {} as any,
+        suggestions: {} as any,
+        resultPayload: null as any,
+        priorityScore: "0"
+      })
+      .returning({ id: analyses.id });
+    const id = rows[0]?.id;
+    return id ? { ok: true, id } : { ok: false, reason: "storage_off" };
+  }
+
+  const since = new Date(record.sinceIso);
+  const res: any = await db.execute(sql`
+    insert into ${analyses} (user_id, client_ip, input_filename, stats, suggestions, result_payload, priority_score)
+    select ${uid}, ${record.clientIp}, ${record.inputFilename}, '{}'::jsonb, '{}'::jsonb, null, '0'
+    where (
+      select count(*) from ${analyses}
+      where user_id = ${uid} and created_at >= ${since}
+    ) < ${record.monthlyLimit}
+    returning id
+  `);
+  const rows = Array.isArray(res) ? res : (res?.rows ?? []);
+  const id = rows[0]?.id;
+  return id ? { ok: true, id } : { ok: false, reason: "over_limit" };
+}
+
+export async function finalizeAnalysisForUser(
+  analysisId: string,
+  userId: string,
+  record: {
+    inputFilename: string | null;
+    stats: unknown;
+    suggestions: unknown;
+    resultPayload?: unknown;
+    priorityScore: number;
+  }
+): Promise<boolean> {
+  const uid = requireUserId(userId);
+  const db = getDb();
+  if (!db) return false;
   const rows = await db
-    .insert(analyses)
-    .values({
-      userId: uid,
-      clientIp: record.clientIp,
+    .update(analyses)
+    .set({
       inputFilename: record.inputFilename,
       stats: record.stats as any,
       suggestions: record.suggestions as any,
       resultPayload: (record.resultPayload ?? null) as any,
       priorityScore: String(record.priorityScore)
     })
+    .where(and(eq(analyses.id, analysisId), eq(analyses.userId, uid)))
     .returning({ id: analyses.id });
-  return rows[0]?.id ?? null;
+  return Boolean(rows[0]?.id);
+}
+
+export async function releaseAnalysisSlot(analysisId: string, userId: string): Promise<void> {
+  const uid = requireUserId(userId);
+  const db = getDb();
+  if (!db) return;
+  await db.delete(analyses).where(and(eq(analyses.id, analysisId), eq(analyses.userId, uid)));
 }
 
 export async function insertReviewsForAnalysis(
