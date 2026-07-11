@@ -60,7 +60,7 @@ describe("AppShell", () => {
     expect(screen.getAllByRole("link", { name: "요금제" }).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByRole("link", { name: "Chrome 확장프로그램" })).toBeTruthy();
     expect(screen.getAllByRole("navigation").length).toBe(1);
-    expect(screen.getByText("support@reviewboost.co.kr")).toBeTruthy();
+    expect(screen.getByText("문의: kwan765@naver.com")).toBeTruthy();
   });
 
   it("uses the workspace rail and hides the footer on dashboard pages", () => {
@@ -76,7 +76,7 @@ describe("AppShell", () => {
     expect(within(sidebar).getByRole("link", { name: "홈" }).getAttribute("aria-current")).toBe("page");
     expect(within(sidebar).getByRole("link", { name: "AI분석" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "홈" })).toBeTruthy();
-    expect(screen.queryByText("support@reviewboost.co.kr")).toBeNull();
+    expect(screen.queryByText("문의: kwan765@naver.com")).toBeNull();
     expect(screen.getAllByRole("navigation").length).toBe(1);
   });
 
@@ -128,7 +128,7 @@ describe("AppShell", () => {
     );
 
     expect(screen.queryByRole("link", { name: "요금제" })).toBeNull();
-    expect(screen.queryByText("support@reviewboost.co.kr")).toBeNull();
+    expect(screen.queryByText("문의: kwan765@naver.com")).toBeNull();
     expect(screen.getByText("로그인 화면")).toBeTruthy();
   });
 });

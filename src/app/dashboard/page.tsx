@@ -42,19 +42,19 @@ function OverviewMetricBand({
   description: string;
 }) {
   return (
-    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.98),rgba(13,18,25,0.94))] p-6 md:p-7">
-      <div className="flex flex-col gap-4 border-b border-[color:rgba(255,255,255,0.06)] pb-5 md:flex-row md:items-end md:justify-between">
+    <section className="rounded-[28px] border border-[color:#e6e8f2] bg-white p-6 md:p-7">
+      <div className="flex flex-col gap-4 border-b border-[color:#e6e8f2] pb-5 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">작업 개요</p>
-          <h2 className="mt-3 text-[clamp(1.8rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-white">{title}</h2>
+          <h2 className="mt-3 text-[clamp(1.8rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">{title}</h2>
         </div>
         <p className="max-w-xl text-sm leading-7 text-[var(--rb-muted-strong)]">{description}</p>
       </div>
       <div className="mt-6 grid gap-4 md:grid-cols-4">
         {metrics.map((item) => (
-          <div key={item.label} className="rounded-[18px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+          <div key={item.label} className="rounded-[18px] border border-[color:#e6e8f2] bg-white p-4">
             <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--rb-muted)]">{item.label}</p>
-            <strong className="mt-3 block text-[clamp(1.9rem,3vw,2.8rem)] font-semibold tracking-[-0.05em] text-white">{item.value}</strong>
+            <strong className="mt-3 block text-[clamp(1.9rem,3vw,2.8rem)] font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">{item.value}</strong>
             {item.detail ? <p className="mt-2 text-sm text-[var(--rb-muted-strong)]">{item.detail}</p> : null}
           </div>
         ))}
@@ -78,32 +78,32 @@ function TrendSurface({
   const areaPath = linePath ? `${linePath} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z` : "";
 
   return (
-    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.98),rgba(13,18,25,0.94))] p-6 md:p-7">
+    <section className="rounded-[28px] border border-[color:#e6e8f2] bg-white p-6 md:p-7">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">최근 추이</p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-white">{title}</h2>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--rb-fg)]">{title}</h2>
         </div>
         <p className="max-w-xs text-sm leading-7 text-[var(--rb-muted-strong)]">{description}</p>
       </div>
 
       {points.length > 0 ? (
         <>
-          <div className="mt-6 overflow-hidden rounded-[22px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+          <div className="mt-6 overflow-hidden rounded-[22px] border border-[color:#e6e8f2] bg-white p-4">
             <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="h-[220px] w-full" role="img" aria-label="최근 분석 부정 비율 추세">
               <defs>
                 <linearGradient id="dashboardTrendArea" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="rgba(95,198,183,0.22)" />
-                  <stop offset="100%" stopColor="rgba(95,198,183,0.01)" />
+                  <stop offset="0%" stopColor="rgba(91,92,234,0.22)" />
+                  <stop offset="100%" stopColor="rgba(91,92,234,0.01)" />
                 </linearGradient>
               </defs>
               {Array.from({ length: 5 }).map((_, index) => {
                 const y = (chartHeight / 4) * index;
-                return <line key={index} x1="0" y1={y} x2={chartWidth} y2={y} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 5" />;
+                return <line key={index} x1="0" y1={y} x2={chartWidth} y2={y} stroke="rgba(31,37,64,0.08)" strokeDasharray="3 5" />;
               })}
               {Array.from({ length: points.length }).map((_, index) => {
                 const x = points.length === 1 ? chartWidth / 2 : (index / (points.length - 1)) * chartWidth;
-                return <line key={index} x1={x} y1="0" x2={x} y2={chartHeight} stroke="rgba(255,255,255,0.03)" />;
+                return <line key={index} x1={x} y1="0" x2={x} y2={chartHeight} stroke="rgba(31,37,64,0.06)" />;
               })}
               {areaPath ? <path d={areaPath} fill="url(#dashboardTrendArea)" /> : null}
               {linePath ? <path d={linePath} fill="none" stroke="var(--rb-accent)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /> : null}
@@ -111,16 +111,16 @@ function TrendSurface({
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {points.slice(-3).map((point) => (
-              <div key={point.id} className="rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
+              <div key={point.id} className="rounded-[16px] border border-[color:#e6e8f2] bg-white px-4 py-3">
                 <p className="text-xs text-[var(--rb-muted)]">{point.label}</p>
-                <strong className="mt-2 block text-lg font-semibold tracking-[-0.03em] text-white">{Math.round(point.negativeRate * 100)}%</strong>
+                <strong className="mt-2 block text-lg font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">{Math.round(point.negativeRate * 100)}%</strong>
                 <p className="mt-1 text-xs text-[var(--rb-muted-strong)]">{point.total}건 분석</p>
               </div>
             ))}
           </div>
         </>
       ) : (
-        <div className="mt-6 rounded-[22px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-6 text-sm leading-7 text-[var(--rb-muted-strong)]">
+        <div className="mt-6 rounded-[22px] border border-[color:#e6e8f2] bg-white p-6 text-sm leading-7 text-[var(--rb-muted-strong)]">
           아직 누적된 분석이 없어 추세선이 비어 있습니다. 첫 분석을 저장하면 최근 부정 비율의 흐름이 이 영역에 표시됩니다.
         </div>
       )}
@@ -142,43 +142,43 @@ function CompositionSurface({
   const recentShare = recent30DayWeight === null ? 0 : recent30DayWeight;
 
   return (
-    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(18,24,31,0.98),rgba(13,18,25,0.94))] p-6 md:p-7">
+    <section className="rounded-[28px] border border-[color:#e6e8f2] bg-white p-6 md:p-7">
       <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">리뷰 구성</p>
-      <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-white">리뷰 구성 비율</h2>
+      <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--rb-fg)]">리뷰 구성 비율</h2>
       <div className="mt-6 flex flex-col items-center gap-6 lg:flex-row lg:items-start">
         <div
-          className="h-[220px] w-[220px] rounded-full border border-[color:rgba(255,255,255,0.06)]"
+          className="h-[220px] w-[220px] rounded-full border border-[color:#e6e8f2]"
           style={{
-            background: `conic-gradient(var(--rb-accent) 0deg ${negativeAngle}deg, rgba(255,255,255,0.08) ${negativeAngle}deg 360deg)`
+            background: `conic-gradient(var(--rb-accent) 0deg ${negativeAngle}deg, #eef0f8 deg 360deg)`
           }}
           aria-hidden="true"
         >
           <div className="m-[26px] flex h-[168px] w-[168px] items-center justify-center rounded-full bg-[var(--rb-bg)]">
             <div className="text-center">
-              <strong className="block text-[2rem] font-semibold tracking-[-0.05em] text-white">{Math.round((negativeReviews / total) * 100)}%</strong>
+              <strong className="block text-[2rem] font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">{Math.round((negativeReviews / total) * 100)}%</strong>
               <span className="text-sm text-[var(--rb-muted)]">부정 리뷰</span>
             </div>
           </div>
         </div>
         <div className="flex-1 space-y-4">
-          <div className="rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+          <div className="rounded-[16px] border border-[color:#e6e8f2] bg-white p-4">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm text-[var(--rb-muted-strong)]">부정 리뷰</span>
-              <strong className="text-lg font-semibold text-white">{negativeReviews}건</strong>
+              <strong className="text-lg font-semibold text-[var(--rb-fg)]">{negativeReviews}건</strong>
             </div>
           </div>
-          <div className="rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+          <div className="rounded-[16px] border border-[color:#e6e8f2] bg-white p-4">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm text-[var(--rb-muted-strong)]">긍정·중립 리뷰</span>
-              <strong className="text-lg font-semibold text-white">{nonNegativeReviews}건</strong>
+              <strong className="text-lg font-semibold text-[var(--rb-fg)]">{nonNegativeReviews}건</strong>
             </div>
           </div>
-          <div className="rounded-[16px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+          <div className="rounded-[16px] border border-[color:#e6e8f2] bg-white p-4">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm text-[var(--rb-muted-strong)]">최근 30일 비중</span>
-              <strong className="text-lg font-semibold text-white">{recent30DayWeight === null ? "-" : `${Math.round(recentShare * 100)}%`}</strong>
+              <strong className="text-lg font-semibold text-[var(--rb-fg)]">{recent30DayWeight === null ? "-" : `${Math.round(recentShare * 100)}%`}</strong>
             </div>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
               <div className="h-full rounded-full bg-[var(--rb-accent)]" style={{ width: `${Math.max(recentShare * 100, recentShare > 0 ? 4 : 0)}%` }} />
             </div>
           </div>
@@ -190,8 +190,8 @@ function CompositionSurface({
 
 function EmptyHomeState({ title, description }: { title: string; description: string }) {
   return (
-    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(19,26,34,0.94),rgba(14,20,28,0.92))] px-5 py-7 md:px-7">
-      <h2 className="text-2xl font-semibold tracking-[-0.04em] text-white">{title}</h2>
+    <section className="rounded-[28px] border border-[color:#e6e8f2] bg-white px-5 py-7 md:px-7">
+      <h2 className="text-2xl font-semibold tracking-[-0.04em] text-[var(--rb-fg)]">{title}</h2>
       <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--rb-muted-strong)]">{description}</p>
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href="/dashboard/analyze" className={buttonStyles({ variant: "primary" })}>
@@ -219,11 +219,11 @@ function HomeListSection({
   }>;
 }) {
   return (
-    <section className="rounded-[28px] border border-[color:rgba(222,230,242,0.12)] bg-[linear-gradient(180deg,rgba(19,26,34,0.94),rgba(14,20,28,0.92))] px-5 py-6 md:px-7">
-      <div className="flex flex-col gap-4 border-b border-[color:rgba(222,230,242,0.08)] pb-5 md:flex-row md:items-end md:justify-between">
+    <section className="rounded-[28px] border border-[color:#e6e8f2] bg-white px-5 py-6 md:px-7">
+      <div className="flex flex-col gap-4 border-b border-[color:#e6e8f2] pb-5 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">이전 분석 결과</p>
-          <h2 className="mt-3 text-[clamp(1.8rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-white">이전 분석 결과</h2>
+          <h2 className="mt-3 text-[clamp(1.8rem,3vw,3rem)] font-semibold tracking-[-0.05em] text-[var(--rb-fg)]">이전 분석 결과</h2>
         </div>
         <Link href="/dashboard/analyze" className={buttonStyles({ variant: "secondary" })}>
           새 분석
@@ -235,8 +235,8 @@ function HomeListSection({
           저장된 분석이 없습니다. 먼저 AI분석 화면에서 CSV를 업로드해 첫 결과를 만들어 주세요.
         </p>
       ) : (
-        <div className="mt-4 overflow-hidden rounded-[18px] border border-[color:rgba(255,255,255,0.06)]">
-          <div className="hidden grid-cols-[minmax(0,1.1fr)_120px_120px_120px_100px] gap-3 border-b border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-xs uppercase tracking-[0.18em] text-[var(--rb-muted)] md:grid">
+        <div className="mt-4 overflow-hidden rounded-[18px] border border-[color:#e6e8f2]">
+          <div className="hidden grid-cols-[minmax(0,1.1fr)_120px_120px_120px_100px] gap-3 border-b border-[color:#e6e8f2] bg-white px-4 py-3 text-xs uppercase tracking-[0.18em] text-[var(--rb-muted)] md:grid">
             <span>파일</span>
             <span>총 리뷰</span>
             <span>부정비율</span>
@@ -247,10 +247,10 @@ function HomeListSection({
             <Link
               key={report.id}
               href={report.href}
-              className="grid gap-3 border-b border-[color:rgba(255,255,255,0.06)] px-4 py-5 transition last:border-b-0 hover:bg-[rgba(255,255,255,0.015)] md:grid-cols-[minmax(0,1.1fr)_120px_120px_120px_100px] md:items-center"
+              className="grid gap-3 border-b border-[color:#e6e8f2] px-4 py-5 transition last:border-b-0 hover:bg-white md:grid-cols-[minmax(0,1.1fr)_120px_120px_120px_100px] md:items-center"
             >
               <div>
-                <strong className="block text-base font-semibold tracking-[-0.03em] text-white">{report.title}</strong>
+                <strong className="block text-base font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">{report.title}</strong>
                 <span className="mt-1 block text-xs text-[var(--rb-muted)] md:hidden">{report.createdLabel}</span>
               </div>
               <span className="text-sm text-[var(--rb-muted-strong)]">{report.totalReviewsLabel}</span>

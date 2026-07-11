@@ -20,7 +20,7 @@ export default function TerminalProgress({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-[color:var(--rb-border-strong)] bg-[rgba(6,10,11,0.92)] p-5 shadow-[0_24px_50px_rgba(0,0,0,0.32)]",
+        "rounded-2xl border border-[color:var(--rb-border-strong)] bg-[rgba(6,10,11,0.92)] p-5 shadow-[0_10px_30px_rgba(31,37,64,0.08)]",
         className
       )}
       role="status"
@@ -31,12 +31,12 @@ export default function TerminalProgress({
           <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">분석 진행 상황</p>
           <h3 className="mt-2 text-lg font-semibold text-[var(--rb-fg)]">분석을 차례대로 진행하고 있어요</h3>
         </div>
-        <span className="rounded-full border border-[color:rgba(95,198,183,0.24)] bg-[rgba(95,198,183,0.08)] px-3 py-1 text-[11px] font-medium text-[var(--rb-accent)]">
+        <span className="rounded-full border border-[color:rgba(91,92,234,0.24)] bg-[rgba(91,92,234,0.08)] px-3 py-1 text-[11px] font-medium text-[var(--rb-accent)]">
           리뷰 수에 따라 최대 5분 정도 걸릴 수 있어요.
         </span>
       </div>
 
-      <div className="rounded-[14px] border border-[color:rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4 font-mono text-sm">
+      <div className="rounded-[14px] border border-[color:#e6e8f2] bg-white p-4 font-mono text-sm">
         {visibleStages.map((item) => (
           <div key={item} className="flex items-start gap-3 py-1 text-[var(--rb-fg)]">
             <span className="mt-[3px] h-2 w-2 rounded-full bg-[var(--rb-accent)]" />
@@ -50,7 +50,7 @@ export default function TerminalProgress({
           <span>{ANALYSIS_STAGE_META[currentStage].label}</span>
           <span>{progress}%</span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+        <div className="h-2 overflow-hidden rounded-full bg-white">
           {reducedMotion ? (
             <div className="h-full rounded-full bg-[var(--rb-accent)]" style={{ width: `${progress}%` }} />
           ) : (
