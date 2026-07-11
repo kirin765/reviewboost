@@ -1,8 +1,16 @@
+import { loadEnvConfig } from '@next/env';
 import { defineConfig, devices } from '@playwright/test';
+
+// Load .env.local (Clerk keys + E2E test-user creds) into the test process.
+// .env.local pins NODE_ENV=production; force development so the spawned `next dev`
+// webServer serves a dev Edge bundle (a production bundle disallows eval in
+// middleware → "Code generation from strings disallowed").
+loadEnvConfig(process.cwd());
+process.env.NODE_ENV = "development";
 
 export default defineConfig({
   testDir: './tests',
-  testMatch: ['**/e2e.spec.ts'],
+  testMatch: ['**/e2e.spec.ts', '**/global.setup.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -13,16 +21,17 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
+    { name: 'setup', testMatch: /global\.setup\.ts/ },
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
     },
   ],
   webServer: {
-    // Run without Clerk so auth middleware is inactive and /dashboard renders in
-    // its degraded (no-auth) mode — the mode these UI-shell E2E tests target.
-    // (Authenticated flows are out of scope until test-auth infra exists.)
-    command: 'CLERK_SECRET_KEY= NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= npm run dev',
+    // Run with Clerk enabled (real auth for the authenticated dashboard tests) and
+    // force heuristic analysis so the analyze flow needs no OpenAI calls.
+    command: 'DEV_FORCE_ANALYSIS_MODE=heuristic npm run dev',
     url: 'http://127.0.0.1:3001',
     reuseExistingServer: !process.env.CI,
   },

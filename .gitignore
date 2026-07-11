@@ -28,3 +28,7 @@ node_modules/
 playwright-report/
 .claude/settings.local.json
 .env*
+
+# E2E / test artifacts
+test-results/
+.playwright-mcp/

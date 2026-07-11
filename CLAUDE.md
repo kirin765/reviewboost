@@ -16,12 +16,21 @@ npm run lint         # ESLint (next/core-web-vitals)
 ```
 
 ```bash
-npm run typecheck    # next typegen + tsc --noEmit
-npm test             # source-text guards + full Vitest suite (vitest run)
-npx vitest run       # Vitest unit/component tests directly
+npm run typecheck      # next typegen + tsc --noEmit
+npm test               # source-text guards + full Vitest suite (vitest run)
+npx vitest run         # Vitest unit/component tests directly
+npm run test:e2e:smoke # Playwright E2E (starts its own dev server on 3001)
 ```
 
-Tests use **Vitest** (unit + jsdom component/route tests under `src/**/*.test.ts(x)` and `tests/**`). `npm test` runs the two legacy source-text guard scripts and then `vitest run`, so CI's `quality` job (`lint` → `typecheck` → `test`) executes the whole suite. CI also runs `build`, the tsx user-story matrix (`ci:user-story-matrix`), contract checks (`ci:contracts`), and a security scan (`ci:security`); Playwright E2E runs separately.
+Tests use **Vitest** (unit + jsdom component/route tests under `src/**/*.test.ts(x)` and `tests/**`) and **Playwright** (`tests/e2e.spec.ts`). `npm test` runs the two legacy source-text guard scripts and then `vitest run`.
+
+### CI / gating (no GitHub Actions)
+
+GitHub Actions is **disabled** on this repo, so `.github/workflows/ci.yml` does not run — the **Vercel** build (`next build` on every push/PR) and **local** checks are the gates. Before pushing, run `npm run typecheck && npx vitest run` (and `npm run test:e2e:smoke` for UI changes). An opt-in local pre-push hook is provided at `.githooks/pre-push` (runs typecheck + vitest); enable it per-clone with `git config core.hooksPath .githooks`.
+
+### E2E (Playwright)
+
+`playwright.config.ts` loads `.env.local`, forces `NODE_ENV=development` (the file pins `production`, which would make the dev Edge middleware disallow `eval`), and starts `DEV_FORCE_ANALYSIS_MODE=heuristic npm run dev`. Authenticated dashboard tests sign in as a dedicated Clerk **test user** via `@clerk/testing` (backend ticket sign-in — no password needed at runtime). One-time setup: create the test user with `node scripts/e2e/create-clerk-test-user.mjs` (needs a `sk_test_` `CLERK_SECRET_KEY`; writes `E2E_CLERK_USER_EMAIL`/`E2E_CLERK_USER_PASSWORD` to gitignored `.env.local`). Authenticated tests `test.skip` when `E2E_CLERK_USER_EMAIL` is absent. `tests/global.setup.ts` fetches the Clerk testing token and warms route compilation.
 
 ## Tech Stack
 
