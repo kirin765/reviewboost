@@ -58,7 +58,7 @@ describe("AppShell", () => {
     );
 
     expect(screen.getAllByRole("link", { name: "요금제" }).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByRole("link", { name: "리뷰 CSV" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Chrome 확장프로그램" })).toBeTruthy();
     expect(screen.getAllByRole("navigation").length).toBe(1);
     expect(screen.getByText("support@reviewboost.co.kr")).toBeTruthy();
   });
@@ -75,7 +75,6 @@ describe("AppShell", () => {
     const sidebar = screen.getByRole("complementary", { name: "주요 메뉴" });
     expect(within(sidebar).getByRole("link", { name: "홈" }).getAttribute("aria-current")).toBe("page");
     expect(within(sidebar).getByRole("link", { name: "AI분석" })).toBeTruthy();
-    expect(within(sidebar).getByRole("link", { name: "리뷰 다운" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "홈" })).toBeTruthy();
     expect(screen.queryByText("support@reviewboost.co.kr")).toBeNull();
     expect(screen.getAllByRole("navigation").length).toBe(1);

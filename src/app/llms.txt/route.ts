@@ -22,7 +22,6 @@ export function GET() {
     `- CSV checklist: ${baseUrl}/help/csv-checklist`,
     `- Coupang CSV guide: ${baseUrl}/help/coupang-review-csv-export`,
     `- Smart Store CSV guide: ${baseUrl}/help/smartstore-review-csv-export`,
-    `- Review CSV tool: ${baseUrl}/coupang-csv`,
     `- Blog: ${baseUrl}/blog`,
     ``,
     `## Blog guides`,

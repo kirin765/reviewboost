@@ -8,9 +8,7 @@ import { ShellContainer } from "@/components/ui/Primitives";
 import Reveal from "@/components/ui/Reveal";
 import { getSiteContent } from "@/lib/site-content";
 import { useTranslation } from "@/lib/i18n";
-
-const EXTENSION_STORE_URL =
-  "https://chromewebstore.google.com/detail/kdmjkpfbccikgbaemcbifemeichmehlm";
+import { EXTENSION_STORE_URL } from "@/lib/extension";
 
 function useCanObserveInView() {
   const reducedMotion = useReducedMotion();
@@ -453,9 +451,14 @@ export default function HomePageContent() {
               <Link href="/dashboard/analyze" className={buttonStyles({ variant: "primary", size: "lg" })}>
                 {content.home.hero.primaryCta}
               </Link>
-              <Link href="/coupang-csv" className={buttonStyles({ variant: "secondary", size: "lg" })}>
+              <a
+                href={EXTENSION_STORE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={buttonStyles({ variant: "secondary", size: "lg" })}
+              >
                 {content.home.hero.secondaryCta}
-              </Link>
+              </a>
               <Link href="/signup" className={buttonStyles({ variant: "ghost", size: "lg" })}>
                 {content.home.hero.tertiaryCta}
               </Link>
@@ -697,9 +700,6 @@ export default function HomePageContent() {
                   >
                     Chrome에 설치하기
                   </a>
-                  <Link href="/coupang-csv" className={buttonStyles({ variant: "secondary", size: "lg" })}>
-                    URL로 CSV 받기
-                  </Link>
                   <Link href="/extension-privacy" className="text-center text-xs text-[var(--rb-muted)] underline-offset-4 hover:underline">
                     확장 프로그램 개인정보처리방침
                   </Link>
@@ -762,9 +762,14 @@ export default function HomePageContent() {
                   <Link href="/signup" className={buttonStyles({ variant: "primary", size: "lg" })}>
                     {content.home.cta.primary}
                   </Link>
-                  <Link href="/coupang-csv" className={buttonStyles({ variant: "secondary", size: "lg", className: "bg-white text-[#111827] hover:bg-[#f4f7fb]" })}>
+                  <a
+                    href={EXTENSION_STORE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={buttonStyles({ variant: "secondary", size: "lg", className: "bg-white text-[#111827] hover:bg-[#f4f7fb]" })}
+                  >
                     {content.home.cta.secondary}
-                  </Link>
+                  </a>
                 </div>
               </div>
             </div>

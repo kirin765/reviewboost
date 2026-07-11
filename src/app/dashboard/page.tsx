@@ -6,6 +6,7 @@ import { listAnalysesForUser } from "@/lib/db/queries";
 import { maybeAlertNewSignup } from "@/lib/notify/signup-alert";
 import { isDatabaseConfigured } from "@/lib/capabilities";
 import { mapDashboardHomeView, type DashboardHomeAnalysisRow } from "@/lib/dashboard-home-view";
+import { EXTENSION_STORE_URL } from "@/lib/extension";
 
 export const dynamic = "force-dynamic";
 
@@ -196,9 +197,9 @@ function EmptyHomeState({ title, description }: { title: string; description: st
         <Link href="/dashboard/analyze" className={buttonStyles({ variant: "primary" })}>
           AI분석 시작
         </Link>
-        <Link href="/coupang-csv" className={buttonStyles({ variant: "ghost" })}>
-          URL로 CSV 받기
-        </Link>
+        <a href={EXTENSION_STORE_URL} target="_blank" rel="noreferrer" className={buttonStyles({ variant: "ghost" })}>
+          Chrome 확장프로그램 설치
+        </a>
       </div>
     </section>
   );

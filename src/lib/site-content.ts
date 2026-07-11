@@ -126,7 +126,7 @@ const ko: SiteContent = {
       title: "리뷰에서 상품의 문제를 찾아 매출을 개선하세요",
       lead: "AI가 리뷰를 감정과 카테고리로 분석해 가장 먼저 해결할 문제를 보여줍니다.",
       primaryCta: "리뷰 분석",
-      secondaryCta: "URL을 통한 CSV 다운로드",
+      secondaryCta: "Chrome 확장프로그램 설치",
       tertiaryCta: "무료 회원가입",
       previewLabel: "분석 미리보기",
       previewLead: "부정 비율, 카테고리 분포, 긴급 리뷰, 개선 시뮬레이션을 한 화면에서 확인합니다."
@@ -268,9 +268,9 @@ const ko: SiteContent = {
     cta: {
       eyebrow: "무료로 시작",
       title: "리뷰를 읽는 시간을 줄이고, 먼저 고쳐야 할 문제부터 바로 확인하세요.",
-      lead: "무료 가입으로 첫 분석을 시작하거나, 상품 URL에서 리뷰 CSV를 받아 같은 흐름으로 이어갈 수 있습니다.",
+      lead: "무료 가입으로 첫 분석을 시작하거나, Chrome 확장프로그램으로 리뷰를 수집해 같은 흐름으로 이어갈 수 있습니다.",
       primary: "무료로 시작하기",
-      secondary: "URL로 CSV 받기"
+      secondary: "Chrome 확장프로그램 설치"
     }
   },
   pricing: {
@@ -337,7 +337,7 @@ const en: SiteContent = {
       title: "Find product problems in reviews and improve revenue",
       lead: "AI analyzes sentiment and issue categories to show what should be fixed first.",
       primaryCta: "Analyze Reviews",
-      secondaryCta: "Download CSV by URL",
+      secondaryCta: "Install Chrome Extension",
       tertiaryCta: "Start Free",
       previewLabel: "Analytical preview",
       previewLead: "Read negative rate, category spread, urgent reviews, and rating simulations in one calm workspace."
@@ -479,9 +479,9 @@ const en: SiteContent = {
     cta: {
       eyebrow: "Start free",
       title: "Spend less time reading reviews and see the most urgent issue first.",
-      lead: "Start with a free signup or pull a review CSV from a product URL and continue in the same analytical flow.",
+      lead: "Start with a free signup or install the Chrome extension to collect reviews and continue in the same analytical flow.",
       primary: "Start Free",
-      secondary: "Download CSV by URL"
+      secondary: "Install Chrome Extension"
     }
   },
   pricing: {

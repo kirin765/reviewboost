@@ -283,19 +283,6 @@ const publicRecords: SeoPageRecord[] = [
     breadcrumbs: breadcrumbs({ label: "블로그", path: "/blog" })
   },
   {
-    section: "tools",
-    slug: "coupang-csv",
-    title: "쿠팡·스마트스토어 리뷰 CSV 도구",
-    description:
-      "상품 URL을 입력해 리뷰 CSV를 확보하고 바로 분석까지 이어지는 ReviewBoost 리뷰 CSV 다운로드 도구를 사용해보세요.",
-    primaryKeyword: "쿠팡 리뷰 CSV 추출",
-    canonicalPath: "/coupang-csv",
-    updatedAt: "2026-03-31",
-    schema: ["webPage"],
-    indexable: true,
-    breadcrumbs: breadcrumbs({ label: "리뷰 CSV", path: "/coupang-csv" })
-  },
-  {
     section: "legal",
     slug: "privacy",
     title: "개인정보처리방침",

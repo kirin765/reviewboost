@@ -28,7 +28,7 @@ export default function ReviewCsvExportFeaturePage() {
           {
             title: "쿠팡·스마트스토어 흐름을 함께 지원",
             bullets: [
-              "쿠팡 상품 URL 기반 리뷰 CSV 확보",
+              "Chrome 확장 프로그램으로 쿠팡·스마트스토어 리뷰 자동 수집",
               "스마트스토어 리뷰 다운로드 가이드 제공",
               "업로드 후 컬럼 자동 추정과 수동 매핑 지원"
             ]
@@ -47,12 +47,6 @@ export default function ReviewCsvExportFeaturePage() {
             title: "쿠팡 리뷰 CSV 추출 가이드",
             description: "실제 추출 단계와 업로드 흐름을 단계별로 확인하세요.",
             tag: "가이드"
-          },
-          {
-            href: "/coupang-csv",
-            title: "리뷰 CSV 도구",
-            description: "상품 URL로 리뷰 CSV를 확보하는 실제 도구 화면으로 이동합니다.",
-            tag: "도구"
           }
         ]}
       />

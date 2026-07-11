@@ -47,7 +47,6 @@ describe("SidebarNav", () => {
     expect(screen.getByRole("link", { name: "로그인" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "홈" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "AI분석" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "리뷰 다운" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "요금제" })).toBeTruthy();
   });
 
@@ -75,12 +74,5 @@ describe("SidebarNav", () => {
     renderWithI18n(<SidebarNav variant="dashboard" plan="basic" userEmail="owner@example.com" />);
 
     expect(screen.getByRole("link", { name: "홈" }).getAttribute("aria-current")).toBe("page");
-  });
-
-  it("marks coupang csv route active", () => {
-    mockPathname = "/coupang-csv";
-    renderWithI18n(<SidebarNav variant="dashboard" plan="basic" userEmail="owner@example.com" />);
-
-    expect(screen.getByRole("link", { name: "리뷰 다운" }).getAttribute("aria-current")).toBe("page");
   });
 });
