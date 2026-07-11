@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { getDb } from "./index";
 import { analyses, reviews, profiles, subscriptions } from "./schema";
 
@@ -25,8 +25,10 @@ export async function listAnalysesForUser(userId: string, limit = 50) {
       priorityScore: analyses.priorityScore
     })
     .from(analyses)
-    // Exclude reserved-but-unfinalized placeholder rows (result_payload IS NULL).
-    .where(and(eq(analyses.userId, uid), isNotNull(analyses.resultPayload)))
+    // Exclude reserved-but-unfinalized placeholder rows (stats is an empty object
+    // until finalize writes the real stats). Using stats — not result_payload —
+    // avoids hiding legacy rows that predate the result_payload column.
+    .where(and(eq(analyses.userId, uid), sql`${analyses.stats} <> '{}'::jsonb`))
     .orderBy(desc(analyses.createdAt))
     .limit(limit);
 }

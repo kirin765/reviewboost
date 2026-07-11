@@ -45,7 +45,7 @@ Tests use **Vitest** (unit + jsdom component/route tests under `src/**/*.test.ts
    - Optionally runs **LLM classification** (batched OpenAI calls with configurable timeout/batch size; samples max 180 reviews from large datasets, prioritizing negative→neutral→positive then recency)
    - Generates **suggestions** via LLM or template fallback (detail page copy, CS response templates, FAQs)
    - Computes stats: sentiment distribution, avg rating, negative keyword TOP 10, category counts, priority score (0-100), recency analysis
-   - **Quota + storage**: for authenticated users, `/api/analyze` atomically **reserves** an `analyses` row *before* the pipeline (a single conditional insert enforcing the monthly limit, so concurrent bursts can't bypass it or run paid LLM work), then **finalizes** that row with results. On failure the slot is released. Reservation fails closed on DB errors. Reserved-but-unfinalized rows (`result_payload IS NULL`) are hidden from history.
+   - **Quota + storage**: for authenticated users, `/api/analyze` atomically **reserves** an `analyses` row *before* the pipeline (a single conditional insert enforcing the monthly limit, so concurrent bursts can't bypass it or run paid LLM work), then **finalizes** that row with results. On failure the slot is released. Reservation fails closed on DB errors. Reserved-but-unfinalized rows (placeholder `stats = '{}'`) are hidden from history.
 4. **PDF Export** (`POST /api/report`, `GET /api/report/[id]`): renders HTML template via Puppeteer, falls back to PDFKit. Korean font (Noto Sans KR) needed for PDFKit fallback.
 
 ### Key Directories
