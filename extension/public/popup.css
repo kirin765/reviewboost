@@ -91,6 +91,32 @@ input[type="number"] {
   white-space: pre-line;
 }
 
+.usage {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+}
+.usage strong { color: var(--fg); }
+
+.paywall { margin-bottom: 12px; }
+.paywall-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.paywall p { font-size: 12px; line-height: 1.6; margin: 0 0 4px; }
+
 .ft { padding: 10px 16px; border-top: 1px solid var(--border); background: var(--surface); }
+.ftRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.linkBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
 
 .hidden { display: none !important; }

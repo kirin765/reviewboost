@@ -5,8 +5,10 @@ import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
 type Body = {
-  plan?: "basic" | "pro";
+  plan?: "basic" | "pro" | "extension";
 };
+
+type CheckoutPlan = "basic" | "pro" | "extension";
 
 type CheckoutErrorCode =
   | "paddle_not_configured"
@@ -25,7 +27,7 @@ type CheckoutErrorResponse = {
     env: string;
     paddleEnv: "sandbox" | "live" | "unknown";
     baseUrl: string;
-    plan: "basic" | "pro";
+    plan: CheckoutPlan;
     priceId: string;
     note?: string;
   };
@@ -79,14 +81,14 @@ function isPrivateOrLocalHost(hostname: string): boolean {
   );
 }
 
-function buildCheckoutUrl(baseUrl: string, plan: "basic" | "pro", type: "success" | "cancel") {
+function buildCheckoutUrl(baseUrl: string, plan: CheckoutPlan, type: "success" | "cancel") {
   const safePlan = type === "success" ? "success" : "cancel";
-  const suffix = plan === "pro" ? "pro" : "basic";
   const parsedBase = new URL(baseUrl);
   const rootPath = parsedBase.pathname === "/" ? "" : parsedBase.pathname.replace(/\/$/, "");
-  const url = new URL(`${rootPath}/pricing`, parsedBase.origin);
+  const page = plan === "extension" ? "/extension-connect" : "/pricing";
+  const url = new URL(`${rootPath}${page}`, parsedBase.origin);
   url.searchParams.set("billing", safePlan);
-  url.searchParams.set("plan", suffix);
+  url.searchParams.set("plan", plan);
   return url.toString();
 }
 
@@ -143,7 +145,7 @@ export async function POST(req: Request) {
     env: process.env.NODE_ENV ?? "development",
     paddleEnv: "unknown" as "sandbox" | "live",
     baseUrl: "unknown",
-    plan: "basic" as "basic" | "pro",
+    plan: "basic" as CheckoutPlan,
     priceId: ""
   };
 
@@ -199,7 +201,7 @@ export async function POST(req: Request) {
       // empty/non-json body defaults to basic
     }
 
-    const plan = body.plan === "pro" ? "pro" : "basic";
+    const plan: CheckoutPlan = body.plan === "pro" ? "pro" : body.plan === "extension" ? "extension" : "basic";
     debug.plan = plan;
 
     let priceId: string;

@@ -84,8 +84,9 @@ export function isPaddleConfigured() {
   return Boolean(trimEnv("PADDLE_API_KEY") && trimEnv("PADDLE_BASIC_PRICE_ID") && trimEnv("PADDLE_PRO_PRICE_ID"));
 }
 
-export function paddlePriceIdForPlan(plan: "basic" | "pro") {
-  const name = plan === "pro" ? "PADDLE_PRO_PRICE_ID" : "PADDLE_BASIC_PRICE_ID";
+export function paddlePriceIdForPlan(plan: "basic" | "pro" | "extension") {
+  const name =
+    plan === "pro" ? "PADDLE_PRO_PRICE_ID" : plan === "extension" ? "PADDLE_EXTENSION_PRICE_ID" : "PADDLE_BASIC_PRICE_ID";
   const priceId = requireEnv(name, `${name} is not set for plan '${plan}'`);
   if (!priceId.startsWith("pri_")) {
     throw new Error(`${name} must be a Paddle price id (usually starts with 'pri_')`);
@@ -93,14 +94,16 @@ export function paddlePriceIdForPlan(plan: "basic" | "pro") {
   return priceId;
 }
 
-export function paddlePlanForPriceId(priceId: string | null | undefined): "free" | "basic" | "pro" {
+export function paddlePlanForPriceId(priceId: string | null | undefined): "free" | "basic" | "pro" | "extension" {
   const normalizedPriceId = String(priceId ?? "").trim();
   if (!normalizedPriceId) return "free";
 
   const basic = trimEnv("PADDLE_BASIC_PRICE_ID");
   const pro = trimEnv("PADDLE_PRO_PRICE_ID");
+  const extension = trimEnv("PADDLE_EXTENSION_PRICE_ID");
   if (pro && normalizedPriceId === pro) return "pro";
   if (basic && normalizedPriceId === basic) return "basic";
+  if (extension && normalizedPriceId === extension) return "extension";
   return "free";
 }
 

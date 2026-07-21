@@ -14,6 +14,19 @@ export const RB_REPORT_PAGE = `${RB_ORIGIN}/extension-report`;
 /** chrome.storage.local 에 분석 payload를 임시 보관하는 키 */
 export const REPORT_STORAGE_KEY = "rb_report";
 
+/** 익스텐션 일일 쿼터 API */
+export const RB_USAGE_ENDPOINT = `${RB_ORIGIN}/api/extension/usage`;
+
+/** 계정 연결(토큰 발급 + 구독) 페이지 */
+export const RB_CONNECT_PAGE = `${RB_ORIGIN}/extension-connect`;
+
+/** chrome.storage.local 키: 계정 연결 토큰 / 로컬 일일 카운트 */
+export const AUTH_STORAGE_KEY = "rb_auth";
+export const USAGE_STORAGE_KEY = "rb_usage";
+
+/** 비로그인(및 무료 계정) 일일 수집 한도 — 서버 EXTENSION_FREE_DAILY_LIMIT 와 동일 */
+export const FREE_DAILY_LIMIT = 50;
+
 /** 수집 정중함/안전 한도 */
 export const COLLECT_DEFAULT_MAX = 300;
 export const COLLECT_HARD_MAX = 2000;

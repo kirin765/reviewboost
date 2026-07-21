@@ -21,7 +21,9 @@ export type ApiErrorCode =
   | "CRAWLER_UPSTREAM_TIMEOUT"
   | "CRAWLER_UPSTREAM_ERROR"
   | "CRAWLER_INVALID_RESPONSE"
-  | "RATE_LIMITED";
+  | "RATE_LIMITED"
+  | "EXTENSION_AUTH_REQUIRED"
+  | "EXTENSION_DAILY_LIMIT_EXCEEDED";
 
 export type ApiErrorStatusMap = Record<ApiErrorCode, number>;
 
@@ -48,7 +50,9 @@ export const apiErrorStatus: ApiErrorStatusMap = {
   CRAWLER_UPSTREAM_TIMEOUT: 504,
   CRAWLER_UPSTREAM_ERROR: 502,
   CRAWLER_INVALID_RESPONSE: 502,
-  RATE_LIMITED: 429
+  RATE_LIMITED: 429,
+  EXTENSION_AUTH_REQUIRED: 401,
+  EXTENSION_DAILY_LIMIT_EXCEEDED: 429
 } as const;
 
 export type ApiErrorBody = {

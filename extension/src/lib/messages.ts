@@ -20,6 +20,8 @@ export type StreamMessage =
   | { type: "DONE"; reviews: RawReview[] }
   | { type: "ERROR"; code: CollectErrorCode; message: string };
 
-/** ReviewBoost 리포트 페이지 → background (externally_connectable) */
-export type ExternalRequest = { type: "PULL_REPORT" };
-export type ExternalResponse = { ok: true; payload: unknown } | { ok: false };
+/** ReviewBoost 페이지 → background (externally_connectable) */
+export type ExternalRequest =
+  | { type: "PULL_REPORT" }
+  | { type: "AUTH_TOKEN"; token: string; expiresAt: number };
+export type ExternalResponse = { ok: true; payload?: unknown } | { ok: false };

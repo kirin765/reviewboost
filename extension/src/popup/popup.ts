@@ -2,6 +2,7 @@ import {
   COLLECT_DEFAULT_MAX,
   COLLECT_HARD_MAX,
   RB_ANALYZE_ENDPOINT,
+  RB_CONNECT_PAGE,
   RB_REPORT_PAGE,
   REPORT_STORAGE_KEY
 } from "../lib/config";
@@ -9,6 +10,7 @@ import { reviewsToCsv } from "../lib/csv";
 import type { ContentRequest, PongResponse, StreamMessage } from "../lib/messages";
 import { toReviewRows } from "../lib/normalize";
 import type { Platform, RawReview } from "../lib/types";
+import { clampToRemaining, isConnected, loadUsage, recordCollected, type UsageState } from "../lib/usage";
 import { reviewsToXlsx } from "../lib/xlsx";
 
 const el = (id: string): HTMLElement => {
@@ -20,6 +22,11 @@ const el = (id: string): HTMLElement => {
 const collectPane = el("collect-pane");
 const resultPane = el("result-pane");
 const errorPane = el("error-pane");
+const paywallPane = el("paywall-pane");
+const usageEl = el("usage");
+const paywallText = el("paywall-text");
+const paywallUpgrade = el("paywall-upgrade") as HTMLButtonElement;
+const accountBtn = el("account") as HTMLButtonElement;
 const ctxLabel = el("ctx");
 const maxInput = el("max") as HTMLInputElement;
 const collectBtn = el("collect") as HTMLButtonElement;
@@ -34,10 +41,42 @@ let tabId: number | null = null;
 let tabUrl = "";
 let platform: Platform | null = null;
 let collected: RawReview[] = [];
+let usage: UsageState | null = null;
 
 function show(pane: HTMLElement): void {
-  for (const p of [collectPane, resultPane, errorPane]) p.classList.add("hidden");
+  for (const p of [collectPane, resultPane, errorPane, paywallPane]) p.classList.add("hidden");
   pane.classList.remove("hidden");
+}
+
+function connectUrl(): string {
+  return `${RB_CONNECT_PAGE}?ext=${chrome.runtime.id}`;
+}
+
+function showPaywall(): void {
+  if (!usage) return;
+  paywallText.textContent =
+    usage.tier === "paid"
+      ? `오늘 수집 한도(${usage.limit.toLocaleString()}개)를 모두 사용했어요. 한도는 매일 자정(KST)에 초기화됩니다.`
+      : `무료로는 하루 ${usage.limit.toLocaleString()}개까지 수집할 수 있어요. 익스텐션 플랜을 구독하면 하루 2,000개까지 수집됩니다.`;
+  paywallUpgrade.classList.toggle("hidden", usage.tier === "paid");
+  show(paywallPane);
+}
+
+function renderUsage(): void {
+  if (!usage) return;
+  const tierLabel = usage.tier === "paid" ? " · 유료 플랜" : usage.authenticated ? " · 무료 계정" : "";
+  usageEl.innerHTML = "";
+  usageEl.append(`오늘 수집 `, Object.assign(document.createElement("strong"), {
+    textContent: `${usage.used.toLocaleString()} / ${usage.limit.toLocaleString()}개`
+  }), tierLabel);
+  usageEl.classList.remove("hidden");
+  if (usage.remaining <= 0 && !collectPane.classList.contains("hidden")) showPaywall();
+}
+
+async function refreshUsage(): Promise<void> {
+  usage = await loadUsage();
+  accountBtn.textContent = (await isConnected()) ? "내 계정" : "계정 연결";
+  renderUsage();
 }
 
 function sendToTab<T = unknown>(msg: ContentRequest): Promise<T> {
@@ -76,6 +115,14 @@ async function init(): Promise<void> {
   hint.textContent = "버튼을 누르면 이 상품의 리뷰를 모읍니다.";
 }
 
+async function initUsage(): Promise<void> {
+  try {
+    await refreshUsage();
+  } catch {
+    // 사용량 표시는 부가 기능 — 실패해도 수집 UI는 유지
+  }
+}
+
 chrome.runtime.onMessage.addListener((msg: StreamMessage) => {
   if (msg.type === "PROGRESS") {
     progressText.textContent = `${msg.collected.toLocaleString()}개 수집 중…`;
@@ -89,6 +136,7 @@ chrome.runtime.onMessage.addListener((msg: StreamMessage) => {
     collected = msg.reviews;
     countEl.textContent = collected.length.toLocaleString();
     show(resultPane);
+    void recordCollected(collected.length).then(() => refreshUsage());
   } else if (msg.type === "ERROR") {
     errorText.textContent = msg.message;
     show(errorPane);
@@ -97,7 +145,12 @@ chrome.runtime.onMessage.addListener((msg: StreamMessage) => {
 
 function startCollect(): void {
   const raw = Number(maxInput.value);
-  const maxItems = Math.max(10, Math.min(COLLECT_HARD_MAX, Number.isFinite(raw) ? raw : COLLECT_DEFAULT_MAX));
+  const requested = Math.max(10, Math.min(COLLECT_HARD_MAX, Number.isFinite(raw) ? raw : COLLECT_DEFAULT_MAX));
+  const maxItems = clampToRemaining(requested, usage?.remaining ?? COLLECT_HARD_MAX);
+  if (maxItems <= 0) {
+    showPaywall();
+    return;
+  }
   collectBtn.disabled = true;
   progress.classList.remove("hidden");
   barFill.style.width = "5%";
@@ -158,6 +211,10 @@ async function analyze(): Promise<void> {
 }
 
 function resetToCollect(): void {
+  if (usage && usage.remaining <= 0) {
+    showPaywall();
+    return;
+  }
   progress.classList.add("hidden");
   barFill.style.width = "0%";
   collectBtn.disabled = platform == null;
@@ -182,5 +239,8 @@ el("dl-csv").addEventListener("click", () =>
 el("analyze").addEventListener("click", () => void analyze());
 el("reset").addEventListener("click", resetToCollect);
 el("error-reset").addEventListener("click", resetToCollect);
+accountBtn.addEventListener("click", () => void chrome.tabs.create({ url: connectUrl() }));
+paywallUpgrade.addEventListener("click", () => void chrome.tabs.create({ url: connectUrl() }));
 
 void init();
+void initUsage();
