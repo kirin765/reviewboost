@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "ReviewBoost 리뷰 수집기 — 쿠팡·스마트스토어 리뷰 엑셀 내보내기",
+  "version": "1.1.0",
+  "description": "지금 보고 있는 쿠팡·스마트스토어 상품의 리뷰를 엑셀/CSV로 내려받고, ReviewBoost 무료 분석으로 바로 연결합니다.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "리뷰 수집기",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": [
+    "*://*.coupang.com/*",
+    "*://smartstore.naver.com/*",
+    "*://brand.naver.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.coupang.com/*products/*",
+        "*://smartstore.naver.com/*/products/*",
+        "*://brand.naver.com/*/products/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "*://reviewboost.co.kr/*",
+      "*://*.reviewboost.co.kr/*",
+      "http://localhost/*"
+    ]
+  }
+}

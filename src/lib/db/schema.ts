@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, numeric, jsonb, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, numeric, jsonb, timestamp, boolean, index, primaryKey } from "drizzle-orm/pg-core";
 
 export const analyses = pgTable(
   "analyses",
@@ -43,6 +43,20 @@ export const profiles = pgTable("profiles", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
+
+// 크롬 익스텐션 일일 수집 쿼터. day 는 KST 기준 YYYY-MM-DD.
+export const extensionUsage = pgTable(
+  "extension_usage",
+  {
+    userId: text("user_id").notNull(),
+    day: text("day").notNull(),
+    count: integer("count").notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.day] })
+  })
+);
 
 export const subscriptions = pgTable(
   "subscriptions",

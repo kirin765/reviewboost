@@ -159,6 +159,24 @@ export async function resolvePlanTierByBilling(args: {
   return args.fallbackPlan;
 }
 
+/** 익스텐션 전용 구독(plan_tier = "extension")이 활성 상태인지. 조회 실패는 free 취급. */
+export async function hasActiveExtensionSubscription(userId: string | null | undefined): Promise<boolean> {
+  if (!userId) return false;
+  const db = getDb();
+  if (!db) return false;
+
+  try {
+    const rows = await db
+      .select({ status: subscriptions.status, planTier: subscriptions.planTier })
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, userId))
+      .limit(50);
+    return rows.some((r) => String(r.planTier) === "extension" && isBillingActiveStatus(r.status));
+  } catch {
+    return false;
+  }
+}
+
 export async function upsertProfileCustomer(userId: string, paddleCustomerId: string) {
   const db = getDb();
   if (!db) return;
@@ -205,7 +223,7 @@ export async function upsertSubscription(args: {
   paddleCustomerId: string;
   paddlePriceId?: string | null;
   status: string;
-  planTier: PlanTier;
+  planTier: PlanTier | "extension";
   currentPeriodStart?: string | number | null;
   currentPeriodEnd?: string | number | null;
   cancelAtPeriodEnd?: boolean | null;
