@@ -666,6 +666,17 @@ export default function HomePageContent() {
               description="리뷰 수집기 크롬 확장 프로그램으로 상품 페이지의 리뷰를 CSV로 내보내거나 ReviewBoost로 바로 보내 분석하세요. 복사·붙여넣기 없이 바로 시작합니다."
             />
             <div className="rounded-[30px] border border-[color:#e6e8f2] bg-white p-5 md:p-7">
+              <video
+                className="mb-8 aspect-video w-full rounded-[22px] border border-[color:#e6e8f2] bg-[color:#f7f8fc] object-cover"
+                src="/extension-promo.mp4"
+                poster="/extension-promo-poster.jpg"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-label="ReviewBoost 리뷰 수집기 크롬 확장 프로그램 소개 영상"
+              />
               <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,360px)] lg:items-center">
                 <div className="grid gap-4 sm:grid-cols-3">
                   {[
