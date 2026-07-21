@@ -30,6 +30,12 @@ describe("HomePageContent", () => {
       "cta"
     ]);
     expect(screen.getByRole("link", { name: "Chrome에 설치하기" }).getAttribute("href")).toContain("chromewebstore.google.com");
+
+    const promo = document.querySelector<HTMLVideoElement>('[data-home-section="extension"] video');
+    expect(promo?.getAttribute("src")).toBe("/extension-promo.mp4");
+    expect(promo?.hasAttribute("controls")).toBe(true);
+    // React sets `muted` as a DOM property, never an attribute — assert the property.
+    expect(promo?.muted).toBe(true);
     expect(screen.queryByText("home.heroTitle")).toBeNull();
     expect(screen.queryByText("home.heroLead")).toBeNull();
   });

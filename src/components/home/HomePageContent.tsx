@@ -670,10 +670,11 @@ export default function HomePageContent() {
                 className="mb-8 aspect-video w-full rounded-[22px] border border-[color:#e6e8f2] bg-[color:#f7f8fc] object-cover"
                 src="/extension-promo.mp4"
                 poster="/extension-promo-poster.jpg"
-                autoPlay
+                autoPlay={!reducedMotion}
                 muted
                 loop
                 playsInline
+                controls
                 preload="metadata"
                 aria-label="ReviewBoost 리뷰 수집기 크롬 확장 프로그램 소개 영상"
               />
