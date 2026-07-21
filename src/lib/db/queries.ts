@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { getDb } from "./index";
-import { analyses, reviews, profiles, subscriptions } from "./schema";
+import { analyses, reviews, profiles, subscriptions, extensionUsage } from "./schema";
 
 function requireUserId(userId: string) {
   if (!userId || !userId.trim()) throw new Error("userId is required for scoped query");
@@ -215,4 +215,48 @@ export async function insertReviewsForAnalysis(
   );
 }
 
-export { analyses, reviews, profiles, subscriptions, getDb, and, eq };
+export type ConsumeExtensionQuotaResult =
+  | { ok: true; used: number }
+  | { ok: false; reason: "storage_off" | "over_limit" };
+
+/**
+ * 익스텐션 일일 쿼터를 원자적으로 소비한다. reserveAnalysisSlot 과 같은 이유로
+ * (neon-http 는 인터랙티브 트랜잭션 불가) 단일 조건부 upsert 로 표현한다.
+ */
+export async function consumeExtensionQuota(args: {
+  userId: string;
+  day: string;
+  count: number;
+  dailyLimit: number;
+}): Promise<ConsumeExtensionQuotaResult> {
+  const uid = requireUserId(args.userId);
+  const db = getDb();
+  if (!db) return { ok: false, reason: "storage_off" };
+
+  const res: any = await db.execute(sql`
+    insert into ${extensionUsage} (user_id, day, count, updated_at)
+    select ${uid}, ${args.day}, ${args.count}, now()
+    where ${args.count} <= ${args.dailyLimit}
+    on conflict (user_id, day) do update
+      set count = ${extensionUsage}.count + ${args.count}, updated_at = now()
+      where ${extensionUsage}.count + ${args.count} <= ${args.dailyLimit}
+    returning count
+  `);
+  const rows = Array.isArray(res) ? res : (res?.rows ?? []);
+  const used = Number(rows[0]?.count);
+  return Number.isFinite(used) ? { ok: true, used } : { ok: false, reason: "over_limit" };
+}
+
+export async function getExtensionUsageCount(userId: string, day: string): Promise<number | null> {
+  const uid = requireUserId(userId);
+  const db = getDb();
+  if (!db) return null;
+  const rows = await db
+    .select({ count: extensionUsage.count })
+    .from(extensionUsage)
+    .where(and(eq(extensionUsage.userId, uid), eq(extensionUsage.day, day)))
+    .limit(1);
+  return rows[0]?.count ?? 0;
+}
+
+export { analyses, reviews, profiles, subscriptions, extensionUsage, getDb, and, eq };
