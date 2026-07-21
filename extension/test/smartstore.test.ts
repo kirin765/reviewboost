@@ -68,6 +68,18 @@ describe("buildQueryPagesRequest", () => {
       reviewSearchSortType: "REVIEW_RANKING"
     });
   });
+
+  it("uses /n/v1 for brand.naver.com and /i/v1 for smartstore", () => {
+    expect(buildQueryPagesRequest("1", "2", 1, 20, "https://brand.naver.com").url).toBe(
+      "https://brand.naver.com/n/v1/contents/reviews/query-pages"
+    );
+    expect(buildQueryPagesRequest("1", "2", 1, 20, "https://m.brand.naver.com").url).toBe(
+      "https://m.brand.naver.com/n/v1/contents/reviews/query-pages"
+    );
+    expect(buildQueryPagesRequest("1", "2", 1, 20, "https://smartstore.naver.com").url).toBe(
+      "https://smartstore.naver.com/i/v1/contents/reviews/query-pages"
+    );
+  });
 });
 
 describe("parseSmartstorePage", () => {

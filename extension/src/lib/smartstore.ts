@@ -63,7 +63,10 @@ export function buildQueryPagesRequest(
     pageSize,
     reviewSearchSortType: "REVIEW_RANKING"
   });
-  return { url: `${origin}/i/v1/contents/reviews/query-pages`, method: "POST", body };
+  // 브랜드스토어는 /n/v1, 일반 스마트스토어는 /i/v1. 잘못된 경로는 404가 아니라
+  // 200 + HTML 을 반환하므로 (v1.0.1 dist 핫픽스에서 확인) 경로 분기가 필수다.
+  const apiBase = /brand\.naver\.com/i.test(origin) ? "/n/v1" : "/i/v1";
+  return { url: `${origin}${apiBase}/contents/reviews/query-pages`, method: "POST", body };
 }
 
 /** 리뷰 API 응답에서 리뷰 배열/총 개수/총 페이지 추출. */
