@@ -32,3 +32,7 @@ playwright-report/
 # E2E / test artifacts
 test-results/
 .playwright-mcp/
+
+# hyperframes video source projects (renders are copied into public/)
+/videos/
+/brag-output*/
