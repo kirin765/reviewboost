@@ -58,6 +58,16 @@ describe("GET /api/extension/usage", () => {
     expect(body).toMatchObject({ authenticated: false, tier: "anonymous", limit: 50 });
   });
 
+  it("falls back to the Clerk session when no bearer token is present", async () => {
+    mocks.auth.mockResolvedValue({ userId: "user_web" });
+    mocks.resolveExtensionTier.mockResolvedValue("free");
+    mocks.getExtensionUsageCount.mockResolvedValue(5);
+
+    const res = await GET(usageRequest());
+    const body = await res.json();
+    expect(body).toMatchObject({ authenticated: true, tier: "free", limit: 50, used: 5, remaining: 45 });
+  });
+
   it("returns server-side usage for a valid token", async () => {
     mocks.verifyExtensionToken.mockReturnValue({ userId: "user_1" });
     mocks.resolveExtensionTier.mockResolvedValue("paid");
