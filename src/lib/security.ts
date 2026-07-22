@@ -29,7 +29,7 @@ export function applySecurityHeaders(headers: Headers) {
   const paddleScript = "https://cdn.paddle.com https://sandbox-cdn.paddle.com";
   const paddleFrame = "https://buy.paddle.com https://sandbox-buy.paddle.com";
   const jsdelivr = "https://cdn.jsdelivr.net";
-  headers.set("Content-Security-Policy", `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ${clerkSources} ${paddleScript}; style-src 'self' 'unsafe-inline' ${jsdelivr}; img-src 'self' data: blob: https:; font-src 'self' data: ${jsdelivr}; connect-src 'self' https:; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com ${paddleFrame}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
+  headers.set("Content-Security-Policy", `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ${clerkSources} ${paddleScript}; style-src 'self' 'unsafe-inline' ${jsdelivr} ${paddleScript}; img-src 'self' data: blob: https:; font-src 'self' data: ${jsdelivr}; connect-src 'self' https:; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com ${paddleFrame}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
 
   if (process.env.NODE_ENV === "production") {
     headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
