@@ -104,6 +104,16 @@ type HomeContent = {
   };
 };
 
+type ExtensionPlanCard = {
+  label: string;
+  title: string;
+  price: string;
+  per: string;
+  meta: string;
+  note: string;
+  cta: string;
+};
+
 type PricingContent = {
   eyebrow: string;
   title: string;
@@ -112,6 +122,7 @@ type PricingContent = {
   noteTitle: string;
   noteLead: string;
   plans: PlanCard[];
+  extension: ExtensionPlanCard;
 };
 
 type SiteContent = {
@@ -245,7 +256,7 @@ const ko: SiteContent = {
     pricing: {
       eyebrow: "요금제",
       title: "무료로 정확도를 먼저 확인하고, 저장과 반복 분석이 필요할 때 확장하세요.",
-      lead: "무료 플랜으로 첫 결과를 검증한 뒤, 운영 빈도와 저장 필요에 맞게 Basic 또는 Pro로 확장할 수 있습니다."
+      lead: "무료 플랜으로 첫 결과를 검증한 뒤, 운영 빈도와 저장 필요에 맞게 Basic 또는 Pro로 확장할 수 있습니다. Basic·Pro에는 Chrome 익스텐션 유료 수집(하루 2,000개)이 덤으로 포함됩니다."
     },
     faq: {
       eyebrow: "자주 묻는 질문",
@@ -277,9 +288,9 @@ const ko: SiteContent = {
     eyebrow: "요금제",
     title: "운영 빈도와 저장 필요도에 맞는 플랜",
     lead: "무료로 정확도를 확인하고, 저장·공유·대량 분석이 필요할 때 Basic과 Pro로 확장할 수 있습니다.",
-    pills: ["안전한 카드 결제", "저장/공유 기능 연계", "오픈베타 할인 중"],
+    pills: ["안전한 카드 결제", "저장/공유 기능 연계", "오픈베타 할인 중", "연간 결제 2개월 무료 · 준비 중"],
     noteTitle: "대량 리뷰는 플랜별 처리량에 맞춰 안정적으로 분석됩니다.",
-    noteLead: "처리량을 초과하는 경우 일부 리뷰가 샘플링될 수 있으며, 분석 결과의 우선순위 판단에는 최근성과 영향도가 계속 반영됩니다.",
+    noteLead: "처리량을 초과하는 경우 일부 리뷰가 샘플링될 수 있으며, 분석 결과의 우선순위 판단에는 최근성과 영향도가 계속 반영됩니다. 구독 없이 쓰는 건당 리포트(₩9,900)와 부정 리뷰 주간 알림도 준비 중입니다.",
     plans: [
       {
         name: "free",
@@ -289,10 +300,11 @@ const ko: SiteContent = {
         cta: "무료로 시작",
         features: [
           { label: "월 분석 횟수", value: "5회" },
-          { label: "리뷰 수", value: "최대 50개" },
+          { label: "리뷰 수", value: "최대 50개 · 첫 1회 500개 (준비 중)" },
           { label: "PDF 리포트", value: "워터마크 포함" },
           { label: "저장 히스토리", value: "최근 3개" },
-          { label: "긴급 리뷰", value: "TOP 3" }
+          { label: "긴급 리뷰", value: "TOP 3" },
+          { label: "Chrome 익스텐션", value: "하루 50개 수집" }
         ]
       },
       {
@@ -308,7 +320,9 @@ const ko: SiteContent = {
           { label: "리뷰 수", value: "최대 500개" },
           { label: "PDF 리포트", value: "워터마크 제거" },
           { label: "저장 히스토리", value: "최대 500개" },
-          { label: "우선순위 매트릭스", value: "상세 요약 포함" }
+          { label: "우선순위 매트릭스", value: "상세 요약 포함" },
+          { label: "Chrome 익스텐션", value: "덤으로 포함 · 하루 2,000개" },
+          { label: "부정 리뷰 주간 알림", value: "출시 예정" }
         ]
       },
       {
@@ -323,10 +337,21 @@ const ko: SiteContent = {
           { label: "리뷰 수", value: "최대 2,000개" },
           { label: "시뮬레이션", value: "포함" },
           { label: "긍정 키워드", value: "포함" },
-          { label: "팀 공유", value: "최대 5명" }
+          { label: "팀 공유", value: "최대 5명" },
+          { label: "Chrome 익스텐션", value: "덤으로 포함 · 하루 2,000개" },
+          { label: "부정 리뷰 주간 알림", value: "출시 예정" }
         ]
       }
-    ]
+    ],
+    extension: {
+      label: "Chrome 익스텐션",
+      title: "익스텐션 플랜",
+      price: "₩4,900",
+      per: "/ 월",
+      meta: "쿠팡·스마트스토어 리뷰 수집 하루 2,000개 (무료는 하루 50개)",
+      note: "Basic·Pro 구독 중이라면 별도 결제 없이 익스텐션 유료 수집(하루 2,000개)이 덤으로 포함됩니다. 익스텐션만 쓰고 계신다면 월 ₩14,100 차이로 Basic의 월 200회 AI 분석까지 이용할 수 있습니다.",
+      cta: "익스텐션 플랜 시작"
+    }
   }
 };
 
@@ -456,7 +481,7 @@ const en: SiteContent = {
     pricing: {
       eyebrow: "Pricing",
       title: "Start free, then expand when saved history and repeat analysis matter.",
-      lead: "Validate the output quality on the free plan first, then move to Basic or Pro as review operations become more frequent."
+      lead: "Validate the output quality on the free plan first, then move to Basic or Pro as review operations become more frequent. Basic and Pro include the paid Chrome extension quota (2,000 collects/day) at no extra cost."
     },
     faq: {
       eyebrow: "FAQ",
@@ -488,9 +513,9 @@ const en: SiteContent = {
     eyebrow: "Pricing",
     title: "Plans aligned to analysis frequency and storage needs",
     lead: "Validate accuracy for free, then expand into saved reports, sharing, and higher analysis volume with Basic and Pro.",
-    pills: ["Secure card billing", "Storage and sharing included", "Open beta discount"],
+    pills: ["Secure card billing", "Storage and sharing included", "Open beta discount", "Annual billing · 2 months free (coming soon)"],
     noteTitle: "Large review sets are analyzed within plan-specific capacity limits.",
-    noteLead: "When volume exceeds the plan limit, some reviews may be sampled, while recency and impact still shape prioritization.",
+    noteLead: "When volume exceeds the plan limit, some reviews may be sampled, while recency and impact still shape prioritization. One-off reports (₩9,900, no subscription) and weekly negative-review alerts are also on the way.",
     plans: [
       {
         name: "free",
@@ -500,10 +525,11 @@ const en: SiteContent = {
         cta: "Start Free",
         features: [
           { label: "Monthly analyses", value: "5" },
-          { label: "Reviews per run", value: "Up to 50" },
+          { label: "Reviews per run", value: "Up to 50 · first run 500 (coming soon)" },
           { label: "PDF report", value: "With watermark" },
           { label: "Saved history", value: "Recent 3" },
-          { label: "Urgent reviews", value: "Top 3" }
+          { label: "Urgent reviews", value: "Top 3" },
+          { label: "Chrome extension", value: "50 collects/day" }
         ]
       },
       {
@@ -519,7 +545,9 @@ const en: SiteContent = {
           { label: "Reviews per run", value: "Up to 500" },
           { label: "PDF report", value: "No watermark" },
           { label: "Saved history", value: "Up to 500" },
-          { label: "Priority matrix", value: "Detailed summary" }
+          { label: "Priority matrix", value: "Detailed summary" },
+          { label: "Chrome extension", value: "Included · 2,000/day" },
+          { label: "Weekly negative-review alerts", value: "Coming soon" }
         ]
       },
       {
@@ -534,10 +562,21 @@ const en: SiteContent = {
           { label: "Reviews per run", value: "Up to 2,000" },
           { label: "Simulation", value: "Included" },
           { label: "Positive keywords", value: "Included" },
-          { label: "Team sharing", value: "Up to 5 seats" }
+          { label: "Team sharing", value: "Up to 5 seats" },
+          { label: "Chrome extension", value: "Included · 2,000/day" },
+          { label: "Weekly negative-review alerts", value: "Coming soon" }
         ]
       }
-    ]
+    ],
+    extension: {
+      label: "Chrome Extension",
+      title: "Extension Plan",
+      price: "₩4,900",
+      per: "/ month",
+      meta: "Collect up to 2,000 Coupang/SmartStore reviews per day (free: 50/day)",
+      note: "Basic and Pro subscribers get the paid extension quota (2,000/day) included at no extra cost. If you only use the extension, Basic is just ₩14,100 more and adds 200 AI analyses per month.",
+      cta: "Start Extension Plan"
+    }
   }
 };
 
