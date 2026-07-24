@@ -159,8 +159,8 @@ export async function resolvePlanTierByBilling(args: {
   return args.fallbackPlan;
 }
 
-/** 익스텐션 전용 구독(plan_tier = "extension")이 활성 상태인지. 조회 실패는 free 취급. */
-export async function hasActiveExtensionSubscription(userId: string | null | undefined): Promise<boolean> {
+/** 익스텐션 유료 쿼터 접근 여부 — 익스텐션 전용 구독 또는 Basic/Pro 구독(덤 제공)이 활성이면 true. 조회 실패는 free 취급. */
+export async function hasExtensionPaidAccess(userId: string | null | undefined): Promise<boolean> {
   if (!userId) return false;
   const db = getDb();
   if (!db) return false;
@@ -171,7 +171,10 @@ export async function hasActiveExtensionSubscription(userId: string | null | und
       .from(subscriptions)
       .where(eq(subscriptions.userId, userId))
       .limit(50);
-    return rows.some((r) => String(r.planTier) === "extension" && isBillingActiveStatus(r.status));
+    return rows.some((r) => {
+      const tier = String(r.planTier);
+      return (tier === "extension" || tier === "basic" || tier === "pro") && isBillingActiveStatus(r.status);
+    });
   } catch {
     return false;
   }

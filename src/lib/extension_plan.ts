@@ -1,4 +1,4 @@
-import { hasActiveExtensionSubscription } from "@/lib/billing";
+import { hasExtensionPaidAccess } from "@/lib/billing";
 
 export type ExtensionTier = "free" | "paid";
 
@@ -10,7 +10,7 @@ export function extensionDailyLimit(tier: ExtensionTier): number {
 }
 
 export async function resolveExtensionTier(userId: string): Promise<ExtensionTier> {
-  return (await hasActiveExtensionSubscription(userId)) ? "paid" : "free";
+  return (await hasExtensionPaidAccess(userId)) ? "paid" : "free";
 }
 
 /** 일일 쿼터의 하루 경계는 KST 자정. */

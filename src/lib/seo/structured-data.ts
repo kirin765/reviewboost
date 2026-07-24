@@ -23,7 +23,7 @@ function pricingOffers() {
     { name: "Pro", price: "45000", label: "월 45,000원", tier: "pro" as const }
   ];
 
-  return plans.map((plan) => ({
+  const offers = plans.map((plan) => ({
     "@type": "Offer",
     name: plan.name,
     description: `${plan.label} — 월 ${getGatesForPlan(plan.tier).monthlyAnalysisLimit.toLocaleString("ko-KR")}회 리뷰 분석`,
@@ -32,6 +32,18 @@ function pricingOffers() {
     availability: "https://schema.org/InStock",
     url: absoluteUrl("/pricing")
   }));
+
+  offers.push({
+    "@type": "Offer",
+    name: "Extension",
+    description: "월 4,900원 — Chrome 익스텐션 리뷰 수집 하루 2,000개 (Basic·Pro 구독 시 포함)",
+    price: "4900",
+    priceCurrency: "KRW",
+    availability: "https://schema.org/InStock",
+    url: absoluteUrl("/pricing")
+  });
+
+  return offers;
 }
 
 function breadcrumbList(items: SeoBreadcrumb[]) {

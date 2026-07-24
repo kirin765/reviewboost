@@ -109,6 +109,26 @@ export default function PricingContent() {
         </div>
       </ShellContainer>
 
+      <ShellContainer className="mt-4">
+        <Surface className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between md:p-7">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">{content.extension.label}</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--rb-fg)]">{content.extension.title}</h2>
+            <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">{content.extension.meta}</p>
+            <p className="mt-2 text-sm leading-7 text-[var(--rb-accent)]">{content.extension.note}</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-start gap-4 md:items-end">
+            <strong className="block text-[2.2rem] font-semibold leading-none tracking-[-0.06em] text-[var(--rb-fg)]">
+              {content.extension.price}
+              <span className="ml-1 text-base font-normal tracking-normal text-[var(--rb-muted)]">{content.extension.per}</span>
+            </strong>
+            <a className="btn btnPrimary justify-center" href="/extension-connect">
+              {content.extension.cta}
+            </a>
+          </div>
+        </Surface>
+      </ShellContainer>
+
       <ShellContainer className="mt-8">
         <Surface className="px-6 py-6 md:px-8">
           <SectionHeader eyebrow="안내" title={content.noteTitle} description={content.noteLead} />
