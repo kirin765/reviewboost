@@ -16,8 +16,8 @@
     </header>
 
     <main class="bd">
+      <div id="usage" class="usage hidden"></div>
       <section id="collect-pane">
-        <div id="usage" class="usage hidden"></div>
         <label class="field">
           <span class="label">최대 수집 개수</span>
           <input id="max" type="number" min="10" max="2000" step="10" value="300" />
@@ -33,6 +33,10 @@
 
       <section id="result-pane" class="hidden">
         <div class="count"><strong id="count">0</strong>개 리뷰 수집됨</div>
+        <div id="result-upsell" class="upsell hidden">
+          <p id="result-upsell-text"></p>
+          <button id="result-upgrade" class="btn primary">업그레이드 — 하루 2,000건</button>
+        </div>
         <div class="actions">
           <button id="dl-xlsx" class="btn primary">엑셀(.xlsx) 다운로드</button>
           <button id="dl-csv" class="btn">CSV 다운로드</button>
