@@ -58,6 +58,15 @@ export const extensionUsage = pgTable(
   })
 );
 
+// 결제벽 퍼널 카운터 (한도 도달 → 결제 시작 → 결제 완료). best-effort 기록.
+export const funnelEvents = pgTable("funnel_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  userId: text("user_id"),
+  meta: jsonb("meta"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
 export const subscriptions = pgTable(
   "subscriptions",
   {

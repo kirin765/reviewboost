@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   resolveExtensionTier: vi.fn(),
   consumeExtensionQuota: vi.fn(),
   getExtensionUsageCount: vi.fn(),
+  recordFunnelEvent: vi.fn(),
   logApiError: vi.fn()
 }));
 
@@ -18,7 +19,8 @@ vi.mock("@/lib/extension_plan", async (importOriginal) => {
 });
 vi.mock("@/lib/db/queries", () => ({
   consumeExtensionQuota: mocks.consumeExtensionQuota,
-  getExtensionUsageCount: mocks.getExtensionUsageCount
+  getExtensionUsageCount: mocks.getExtensionUsageCount,
+  recordFunnelEvent: mocks.recordFunnelEvent
 }));
 vi.mock("@/lib/api_log", () => ({ logApiError: mocks.logApiError }));
 
@@ -111,6 +113,21 @@ describe("POST /api/extension/usage", () => {
     expect(res.status).toBe(429);
     const body = (await res.json()) as { error: { code: string } };
     expect(body.error.code).toBe("EXTENSION_DAILY_LIMIT_EXCEEDED");
+    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith(
+      "extension_limit_hit",
+      "user_1",
+      expect.objectContaining({ tier: "free", count: 40 })
+    );
+  });
+
+  it("does not record a funnel event on a successful consume", async () => {
+    mocks.verifyExtensionToken.mockReturnValue({ userId: "user_1" });
+    mocks.resolveExtensionTier.mockResolvedValue("free");
+    mocks.consumeExtensionQuota.mockResolvedValue({ ok: true, used: 30 });
+
+    const res = await POST(usageRequest({ method: "POST", token: "tok", body: { count: 30 } }));
+    expect(res.status).toBe(200);
+    expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid count", async () => {

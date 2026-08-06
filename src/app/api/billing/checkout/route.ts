@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { appBaseUrl, isPaddleConfigured, paddleEnv, paddlePriceIdForPlan, paddleRequest } from "@/lib/paddle";
 import { findPaddleCustomerIdByUserId } from "@/lib/billing";
+import { recordFunnelEvent } from "@/lib/db/queries";
 import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
@@ -13,6 +14,7 @@ type CheckoutPlan = "basic" | "pro" | "extension";
 type CheckoutErrorCode =
   | "paddle_not_configured"
   | "missing_price_id"
+  | "extension_price_not_configured"
   | "invalid_base_url"
   | "private_or_local_base_url"
   | "invalid_checkout_urls"
@@ -204,10 +206,24 @@ export async function POST(req: Request) {
     const plan: CheckoutPlan = body.plan === "pro" ? "pro" : body.plan === "extension" ? "extension" : "basic";
     debug.plan = plan;
 
+    // 퍼널 ②: 결제 페이지 도달 (best-effort, throw 하지 않음)
+    if (plan === "extension") {
+      await recordFunnelEvent("extension_checkout_started", user.id);
+    }
+
     let priceId: string;
     try {
       priceId = paddlePriceIdForPlan(plan);
     } catch {
+      if (plan === "extension") {
+        const payload = {
+          error: "익스텐션 플랜 결제가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.",
+          code: "extension_price_not_configured" as CheckoutErrorCode,
+          debug
+        };
+        await logCheckoutError(503, payload);
+        return errorResponse(payload, 503);
+      }
       const payload = {
         error: "요금제 가격 ID가 설정되지 않았습니다.",
         code: "missing_price_id" as CheckoutErrorCode,
