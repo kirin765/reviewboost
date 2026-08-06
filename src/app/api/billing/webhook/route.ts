@@ -1,4 +1,5 @@
 ﻿import { findUserIdByPaddleCustomerId, upsertProfileCustomer, upsertSubscription } from "@/lib/billing";
+import { recordFunnelEvent } from "@/lib/db/queries";
 import { paddlePlanForPriceId } from "@/lib/paddle";
 import {
   extractCustomerId,
@@ -153,6 +154,16 @@ async function handleEntitlementEvent(eventType: string, eventId: string | null,
     currentPeriodEnd: normalized.currentPeriodEnd,
     cancelAtPeriodEnd: normalized.cancelAtPeriodEnd
   });
+
+  // 퍼널 ③: 결제 완료. 결제 착지 이벤트(transaction/order.completed)에서만 세어
+  // subscription.* 이벤트와의 중복 집계를 피한다.
+  if (planTier === "extension") {
+    await recordFunnelEvent("extension_payment_completed", mappedUserId, {
+      event_type: eventType,
+      event_id: eventId,
+      paddle_subscription_id: normalized.id
+    });
+  }
 }
 
 async function handleCustomerMappingEvent(eventType: string, eventId: string | null, data: unknown) {

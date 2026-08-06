@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { getDb } from "./index";
-import { analyses, reviews, profiles, subscriptions, extensionUsage } from "./schema";
+import { analyses, reviews, profiles, subscriptions, extensionUsage, funnelEvents } from "./schema";
 
 function requireUserId(userId: string) {
   if (!userId || !userId.trim()) throw new Error("userId is required for scoped query");
@@ -259,4 +259,24 @@ export async function getExtensionUsageCount(userId: string, day: string): Promi
   return rows[0]?.count ?? 0;
 }
 
-export { analyses, reviews, profiles, subscriptions, extensionUsage, getDb, and, eq };
+export type FunnelEventName = "extension_limit_hit" | "extension_checkout_started" | "extension_payment_completed";
+
+/**
+ * 결제벽 퍼널 카운터 기록. best-effort — DB 미구성(storage_off)이나 오류 시
+ * 조용히 무시하고, 호출 경로(요청 처리)로 절대 throw 하지 않는다.
+ */
+export async function recordFunnelEvent(
+  name: FunnelEventName,
+  userId?: string | null,
+  meta?: Record<string, unknown> | null
+): Promise<void> {
+  try {
+    const db = getDb();
+    if (!db) return;
+    await db.insert(funnelEvents).values({ name, userId: userId ?? null, meta: meta ?? null });
+  } catch {
+    // 계측 실패가 본 요청을 막으면 안 된다.
+  }
+}
+
+export { analyses, reviews, profiles, subscriptions, extensionUsage, funnelEvents, getDb, and, eq };
