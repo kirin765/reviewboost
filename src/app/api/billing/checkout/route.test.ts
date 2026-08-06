@@ -8,7 +8,8 @@ const mocks = vi.hoisted(() => ({
   paddleEnv: vi.fn(),
   appBaseUrl: vi.fn(),
   paddleRequest: vi.fn(),
-  findPaddleCustomerIdByUserId: vi.fn()
+  findPaddleCustomerIdByUserId: vi.fn(),
+  recordFunnelEvent: vi.fn()
 }));
 
 vi.mock("@clerk/nextjs/server", () => ({
@@ -26,6 +27,10 @@ vi.mock("@/lib/paddle", () => ({
 
 vi.mock("@/lib/billing", () => ({
   findPaddleCustomerIdByUserId: mocks.findPaddleCustomerIdByUserId
+}));
+
+vi.mock("@/lib/db/queries", () => ({
+  recordFunnelEvent: mocks.recordFunnelEvent
 }));
 
 import { POST } from "./route";
@@ -134,6 +139,95 @@ describe("POST /api/billing/checkout", () => {
         customer_id: "ctm_123"
       }
     });
+  });
+
+  it("returns 503 extension_price_not_configured when the extension price id is missing", async () => {
+    mocks.paddlePriceIdForPlan.mockImplementation(() => {
+      throw new Error("PADDLE_EXTENSION_PRICE_ID is not set for plan 'extension'");
+    });
+
+    const req = new Request("https://reviewboost.app/api/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan: "extension" }),
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body).toMatchObject({ code: "extension_price_not_configured" });
+  });
+
+  it("records the extension_checkout_started funnel event for the extension plan only", async () => {
+    const extReq = new Request("https://reviewboost.app/api/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan: "extension" }),
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+    });
+
+    const extRes = await POST(extReq);
+    expect(extRes.status).toBe(200);
+    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith("extension_checkout_started", "user-1");
+
+    mocks.recordFunnelEvent.mockClear();
+    const basicReq = new Request("https://reviewboost.app/api/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan: "basic" }),
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+    });
+
+    const basicRes = await POST(basicReq);
+    expect(basicRes.status).toBe(200);
+    expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
+  });
+
+  it("records extension_checkout_started only after a checkout URL was created", async () => {
+    const order: string[] = [];
+    mocks.paddleRequest.mockImplementation(async () => {
+      order.push("paddleRequest");
+      return { checkout: { url: "https://checkout.paddle.com/c/test" } };
+    });
+    mocks.recordFunnelEvent.mockImplementation(async () => {
+      order.push("recordFunnelEvent");
+    });
+
+    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan: "extension" }),
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+    }));
+
+    expect(res.status).toBe(200);
+    expect(order).toEqual(["paddleRequest", "recordFunnelEvent"]);
+  });
+
+  it("does not record extension_checkout_started when the price id is missing (503)", async () => {
+    mocks.paddlePriceIdForPlan.mockImplementation(() => {
+      throw new Error("PADDLE_EXTENSION_PRICE_ID is not set for plan 'extension'");
+    });
+
+    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan: "extension" }),
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+    }));
+
+    expect(res.status).toBe(503);
+    expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
+  });
+
+  it("does not record extension_checkout_started when checkout creation fails", async () => {
+    mocks.paddleRequest.mockRejectedValue(new Error("paddle down"));
+
+    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan: "extension" }),
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+    }));
+
+    expect(res.status).toBe(500);
+    expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
   });
 
   it("creates checkout without customer fields when customer id is absent", async () => {

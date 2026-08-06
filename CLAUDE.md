@@ -91,7 +91,7 @@ Resolution order: env-based email overrides → Paddle subscription status (Neon
 
 ### Database
 
-Neon Postgres via Drizzle (`src/lib/db/schema.ts`): `analyses`, `reviews`, `profiles`, `subscriptions`. There is no Postgres RLS — access is scoped in the app layer: every query in `src/lib/db/queries.ts` goes through `requireUserId` and filters by `user_id`. The neon-http driver has no interactive transactions, so cross-statement atomicity (e.g. quota) is expressed as single conditional statements.
+Neon Postgres via Drizzle (`src/lib/db/schema.ts`): `analyses`, `reviews`, `profiles`, `subscriptions`. There is no Postgres RLS — access is scoped in the app layer: every query in `src/lib/db/queries.ts` goes through `requireUserId` and filters by `user_id`. Exception: `funnel_events` is an append-only counter table exempt from user scoping (nullable `user_id`, best-effort inserts, no reads in product paths). The neon-http driver has no interactive transactions, so cross-statement atomicity (e.g. quota) is expressed as single conditional statements.
 
 ## Environment Variables
 

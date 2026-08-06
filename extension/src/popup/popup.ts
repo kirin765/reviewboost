@@ -10,7 +10,7 @@ import { reviewsToCsv } from "../lib/csv";
 import type { ContentRequest, PongResponse, StreamMessage } from "../lib/messages";
 import { toReviewRows } from "../lib/normalize";
 import type { Platform, RawReview } from "../lib/types";
-import { clampToRemaining, isConnected, loadUsage, recordCollected, type UsageState } from "../lib/usage";
+import { clampToRemaining, isConnected, loadUsage, recordCollected, reportLimitHit, type UsageState } from "../lib/usage";
 import { reviewsToXlsx } from "../lib/xlsx";
 
 const el = (id: string): HTMLElement => {
@@ -26,6 +26,10 @@ const paywallPane = el("paywall-pane");
 const usageEl = el("usage");
 const paywallText = el("paywall-text");
 const paywallUpgrade = el("paywall-upgrade") as HTMLButtonElement;
+const previewEl = el("preview");
+const resultUpsell = el("result-upsell");
+const resultUpsellText = el("result-upsell-text");
+const resultUpgrade = el("result-upgrade") as HTMLButtonElement;
 const accountBtn = el("account") as HTMLButtonElement;
 const ctxLabel = el("ctx");
 const maxInput = el("max") as HTMLInputElement;
@@ -42,24 +46,43 @@ let tabUrl = "";
 let platform: Platform | null = null;
 let collected: RawReview[] = [];
 let usage: UsageState | null = null;
+let lastRequested = 0;
+let lastMaxItems = 0;
 
 function show(pane: HTMLElement): void {
   for (const p of [collectPane, resultPane, errorPane, paywallPane]) p.classList.add("hidden");
   pane.classList.remove("hidden");
 }
 
-function connectUrl(): string {
-  return `${RB_CONNECT_PAGE}?ext=${chrome.runtime.id}`;
+function connectUrl(checkout = false): string {
+  const base = `${RB_CONNECT_PAGE}?ext=${chrome.runtime.id}`;
+  return checkout ? `${base}&checkout=1` : base;
 }
+
+/** 한도/가격 공통 카피 — 팝업 문구는 이 한 곳에서만 관리한다. */
+const PAID_PLAN_COPY = "하루 2,000개 — 월 ₩4,900";
 
 function showPaywall(): void {
   if (!usage) return;
-  paywallText.textContent =
-    usage.tier === "paid"
-      ? `오늘 수집 한도(${usage.limit.toLocaleString()}개)를 모두 사용했어요. 한도는 매일 자정(KST)에 초기화됩니다.`
-      : `무료로는 하루 ${usage.limit.toLocaleString()}개까지 수집할 수 있어요. 익스텐션 플랜을 구독하면 하루 2,000개까지 수집됩니다.`;
+  if (usage.tier === "paid") {
+    paywallText.textContent = `오늘 수집 한도(${usage.limit.toLocaleString()}개)를 모두 사용했어요. 한도는 매일 자정(KST)에 초기화됩니다.`;
+  } else {
+    paywallText.textContent = `무료로는 하루 ${usage.limit.toLocaleString()}개까지 수집할 수 있어요. 익스텐션 플랜은 ${PAID_PLAN_COPY}.`;
+    void reportLimitHit();
+  }
   paywallUpgrade.classList.toggle("hidden", usage.tier === "paid");
   show(paywallPane);
+}
+
+/** 한도에 걸려 잘렸거나 잔여가 0이 된 수집 직후, 결과 화면 안에 업셀 배너를 띄운다. */
+function maybeShowResultUpsell(): void {
+  if (!usage || usage.tier === "paid") return;
+  const clamped = lastMaxItems < lastRequested || usage.remaining <= 0;
+  if (!clamped) return;
+  resultUpsellText.textContent =
+    `오늘 무료 한도 ${usage.limit.toLocaleString()}개를 모두 썼습니다 · 익스텐션 플랜은 ${PAID_PLAN_COPY}`;
+  resultUpsell.classList.remove("hidden");
+  void reportLimitHit();
 }
 
 function renderUsage(): void {
@@ -68,9 +91,28 @@ function renderUsage(): void {
   usageEl.innerHTML = "";
   usageEl.append(`오늘 수집 `, Object.assign(document.createElement("strong"), {
     textContent: `${usage.used.toLocaleString()} / ${usage.limit.toLocaleString()}개`
-  }), tierLabel);
+  }), ` · 잔여 ${usage.remaining.toLocaleString()}개`, tierLabel);
   usageEl.classList.remove("hidden");
   if (usage.remaining <= 0 && !collectPane.classList.contains("hidden")) showPaywall();
+}
+
+/** 결과 화면 미리보기 — 스펙 "건수 + 샘플 몇 줄": 첫 2개 리뷰(별점 + 내용 ~60자). */
+function renderPreview(): void {
+  previewEl.innerHTML = "";
+  const sample = collected.slice(0, 2);
+  previewEl.classList.toggle("hidden", sample.length === 0);
+  for (const review of sample) {
+    const li = document.createElement("li");
+    if (review.rating != null) {
+      li.append(Object.assign(document.createElement("span"), {
+        className: "stars",
+        textContent: `★${review.rating} `
+      }));
+    }
+    const text = review.text.trim();
+    li.append(text.length > 60 ? `${text.slice(0, 60)}…` : text);
+    previewEl.appendChild(li);
+  }
 }
 
 async function refreshUsage(): Promise<void> {
@@ -135,8 +177,12 @@ chrome.runtime.onMessage.addListener((msg: StreamMessage) => {
   } else if (msg.type === "DONE") {
     collected = msg.reviews;
     countEl.textContent = collected.length.toLocaleString();
+    renderPreview();
+    resultUpsell.classList.add("hidden");
     show(resultPane);
-    void recordCollected(collected.length).then(() => refreshUsage());
+    void recordCollected(collected.length)
+      .then(() => refreshUsage())
+      .then(() => maybeShowResultUpsell());
   } else if (msg.type === "ERROR") {
     errorText.textContent = msg.message;
     show(errorPane);
@@ -147,6 +193,8 @@ function startCollect(): void {
   const raw = Number(maxInput.value);
   const requested = Math.max(10, Math.min(COLLECT_HARD_MAX, Number.isFinite(raw) ? raw : COLLECT_DEFAULT_MAX));
   const maxItems = clampToRemaining(requested, usage?.remaining ?? COLLECT_HARD_MAX);
+  lastRequested = requested;
+  lastMaxItems = maxItems;
   if (maxItems <= 0) {
     showPaywall();
     return;
@@ -240,7 +288,8 @@ el("analyze").addEventListener("click", () => void analyze());
 el("reset").addEventListener("click", resetToCollect);
 el("error-reset").addEventListener("click", resetToCollect);
 accountBtn.addEventListener("click", () => void chrome.tabs.create({ url: connectUrl() }));
-paywallUpgrade.addEventListener("click", () => void chrome.tabs.create({ url: connectUrl() }));
+paywallUpgrade.addEventListener("click", () => void chrome.tabs.create({ url: connectUrl(true) }));
+resultUpgrade.addEventListener("click", () => void chrome.tabs.create({ url: connectUrl(true) }));
 
 void init();
 void initUsage();
