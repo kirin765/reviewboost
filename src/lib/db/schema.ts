@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, numeric, jsonb, timestamp, boolean, index, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, numeric, jsonb, timestamp, boolean, index, primaryKey, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const analyses = pgTable(
   "analyses",
@@ -55,6 +55,23 @@ export const extensionUsage = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.userId, t.day] })
+  })
+);
+
+// 결제벽 퍼널 카운터 (한도 도달 → 결제 시작 → 결제 완료). best-effort 기록.
+// dedupe_key: 재시도 중복 방지용(예: Paddle transaction id). NULL 은 중복 검사 없음.
+export const funnelEvents = pgTable(
+  "funnel_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    userId: text("user_id"),
+    meta: jsonb("meta"),
+    dedupeKey: text("dedupe_key"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    dedupeIdx: uniqueIndex("funnel_events_dedupe_key_idx").on(t.dedupeKey)
   })
 );
 

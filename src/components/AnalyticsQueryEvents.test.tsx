@@ -45,4 +45,32 @@ describe("AnalyticsQueryEvents payment_success handling", () => {
     expect(nextUrl.includes("payment_success")).toBe(false);
     expect(nextUrl.includes("transaction_id")).toBe(false);
   });
+
+  it("tracks payment on Paddle billing=success return and strips billing", async () => {
+    mocks.useSearchParams.mockReturnValue(new URLSearchParams("billing=success&plan=extension&ext=abc"));
+    const replaceSpy = vi.spyOn(window.history, "replaceState");
+
+    render(<AnalyticsQueryEvents />);
+
+    await waitFor(() => {
+      expect(mocks.gtagEvent).toHaveBeenCalledWith("payment", {
+        value: 0,
+        currency: "KRW",
+        transaction_id: undefined
+      });
+    });
+
+    const nextUrl = String(replaceSpy.mock.calls.at(-1)?.[2] ?? "");
+    expect(nextUrl.includes("billing=success")).toBe(false);
+    expect(nextUrl.includes("plan=extension")).toBe(true);
+  });
+
+  it("does not track payment on billing=cancel", async () => {
+    mocks.useSearchParams.mockReturnValue(new URLSearchParams("billing=cancel&plan=extension"));
+
+    render(<AnalyticsQueryEvents />);
+
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mocks.gtagEvent).not.toHaveBeenCalled();
+  });
 });

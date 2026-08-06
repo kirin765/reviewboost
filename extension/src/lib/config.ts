@@ -17,6 +17,9 @@ export const REPORT_STORAGE_KEY = "rb_report";
 /** 익스텐션 일일 쿼터 API */
 export const RB_USAGE_ENDPOINT = `${RB_ORIGIN}/api/extension/usage`;
 
+/** 퍼널 계측 이벤트 API (한도 도달 노출) */
+export const RB_EVENT_ENDPOINT = `${RB_ORIGIN}/api/extension/event`;
+
 /** 계정 연결(토큰 발급 + 구독) 페이지 */
 export const RB_CONNECT_PAGE = `${RB_ORIGIN}/extension-connect`;
 

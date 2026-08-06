@@ -1,4 +1,4 @@
-import { AUTH_STORAGE_KEY, FREE_DAILY_LIMIT, RB_USAGE_ENDPOINT, USAGE_STORAGE_KEY } from "./config";
+import { AUTH_STORAGE_KEY, FREE_DAILY_LIMIT, RB_EVENT_ENDPOINT, RB_USAGE_ENDPOINT, USAGE_STORAGE_KEY } from "./config";
 
 export type AuthState = { token: string; expiresAt: number };
 
@@ -117,5 +117,24 @@ export async function recordCollected(count: number): Promise<void> {
     });
   } catch {
     // 보고 실패는 치명적이지 않다 — 다음 loadUsage 때 서버 수치로 수렴.
+  }
+}
+
+/**
+ * 퍼널 ①: 한도 도달 UI 노출 보고. best-effort — 실패해도 UI 를 막지 않는다.
+ */
+export async function reportLimitHit(): Promise<void> {
+  try {
+    const auth = await getAuth();
+    await fetch(RB_EVENT_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(auth ? { authorization: `Bearer ${auth.token}` } : {})
+      },
+      body: JSON.stringify({ name: "limit_hit" })
+    });
+  } catch {
+    // 계측 실패는 무시.
   }
 }

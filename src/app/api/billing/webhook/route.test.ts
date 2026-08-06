@@ -5,7 +5,8 @@ const mocks = vi.hoisted(() => ({
   upsertProfileCustomer: vi.fn(),
   findUserIdByPaddleCustomerId: vi.fn(),
   upsertSubscription: vi.fn(),
-  paddlePlanForPriceId: vi.fn()
+  paddlePlanForPriceId: vi.fn(),
+  recordFunnelEvent: vi.fn()
 }));
 
 vi.mock("@/lib/billing", () => ({
@@ -16,6 +17,10 @@ vi.mock("@/lib/billing", () => ({
 
 vi.mock("@/lib/paddle", () => ({
   paddlePlanForPriceId: mocks.paddlePlanForPriceId
+}));
+
+vi.mock("@/lib/db/queries", () => ({
+  recordFunnelEvent: mocks.recordFunnelEvent
 }));
 
 import { POST } from "./route";
@@ -102,6 +107,59 @@ describe("POST /api/billing/webhook", () => {
       currentPeriodEnd: null,
       cancelAtPeriodEnd: false
     });
+  });
+
+  it("records extension_payment_completed with the transaction id as dedupe key", async () => {
+    mocks.paddlePlanForPriceId.mockReturnValue("extension");
+
+    const req = signedRequest({
+      event_type: "transaction.completed",
+      event_id: "evt_ext_1",
+      data: {
+        id: "txn_ext_1",
+        custom_data: { user_id: "user-ext" },
+        customer_id: "ctm_ext",
+        subscription_id: "sub_ext",
+        status: "completed",
+        items: [{ price: { id: "pri_ext" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith(
+      "extension_payment_completed",
+      "user-ext",
+      expect.objectContaining({ event_id: "evt_ext_1" }),
+      "txn_ext_1"
+    );
+  });
+
+  it("falls back to the event id as dedupe key when the transaction id is missing", async () => {
+    mocks.paddlePlanForPriceId.mockReturnValue("extension");
+
+    const req = signedRequest({
+      event_type: "transaction.completed",
+      event_id: "evt_ext_2",
+      data: {
+        custom_data: { user_id: "user-ext" },
+        customer_id: "ctm_ext",
+        subscription_id: "sub_ext",
+        status: "completed",
+        items: [{ price: { id: "pri_ext" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith(
+      "extension_payment_completed",
+      "user-ext",
+      expect.anything(),
+      "evt_ext_2"
+    );
   });
 
   it("maps transaction.completed with nested subscription.billing_period to upsert payload", async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getErrorMessage } from "@/types/common";
@@ -27,6 +27,7 @@ export default function ExtensionConnectClient() {
   const params = useSearchParams();
   const extId = params.get("ext");
   const billing = params.get("billing");
+  const checkoutParam = params.get("checkout");
 
   const [status, setStatus] = useState<UsageStatus | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -87,7 +88,7 @@ export default function ExtensionConnectClient() {
     }
   }, [status, extId, connect, connectExtension]);
 
-  async function startCheckout() {
+  const startCheckout = useCallback(async () => {
     setCheckoutBusy(true);
     setCheckoutError(null);
     try {
@@ -107,9 +108,21 @@ export default function ExtensionConnectClient() {
     } finally {
       setCheckoutBusy(false);
     }
-  }
+  }, []);
 
-  const loginNext = `/extension-connect${extId ? `?ext=${encodeURIComponent(extId)}` : ""}`;
+  // 익스텐션 업그레이드 딥링크(?checkout=1): 로그인된 무료 사용자면 결제를 바로 시작한다.
+  // ref 로 1회만 실행하고, 결제 후 복귀(billing=success)에는 다시 시작하지 않는다.
+  const autoCheckoutFired = useRef(false);
+  useEffect(() => {
+    if (checkoutParam !== "1" || billing === "success") return;
+    if (!status?.authenticated || status.tier === "paid") return;
+    if (autoCheckoutFired.current) return;
+    autoCheckoutFired.current = true;
+    void startCheckout();
+  }, [checkoutParam, billing, status, startCheckout]);
+
+  const loginQuery = params.toString();
+  const loginNext = `/extension-connect${loginQuery ? `?${loginQuery}` : ""}`;
 
   return (
     <main className="pageMain" style={{ padding: "48px 16px 64px" }}>

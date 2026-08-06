@@ -9,7 +9,7 @@ import {
   type ExtensionTier
 } from "@/lib/extension_plan";
 import { verifyExtensionToken } from "@/lib/extension_token";
-import { consumeExtensionQuota, getExtensionUsageCount } from "@/lib/db/queries";
+import { consumeExtensionQuota, getExtensionUsageCount, recordFunnelEvent } from "@/lib/db/queries";
 import { getErrorMessage } from "@/types/common";
 
 export const runtime = "nodejs";
@@ -137,6 +137,7 @@ export async function POST(req: Request): Promise<Response> {
     const result = await consumeExtensionQuota({ userId: verified.userId, day, count, dailyLimit: limit });
 
     if (!result.ok && result.reason === "over_limit") {
+      await recordFunnelEvent("extension_limit_hit", verified.userId, { source: "server", tier, day, count });
       return fail(
         new ApiError(429, "EXTENSION_DAILY_LIMIT_EXCEEDED", `오늘 수집 한도(${limit.toLocaleString()}개)를 초과했습니다.`, {
           help:
