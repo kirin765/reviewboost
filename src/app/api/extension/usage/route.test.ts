@@ -116,7 +116,7 @@ describe("POST /api/extension/usage", () => {
     expect(mocks.recordFunnelEvent).toHaveBeenCalledWith(
       "extension_limit_hit",
       "user_1",
-      expect.objectContaining({ tier: "free", count: 40 })
+      expect.objectContaining({ source: "server", tier: "free", count: 40 })
     );
   });
 

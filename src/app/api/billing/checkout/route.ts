@@ -206,11 +206,6 @@ export async function POST(req: Request) {
     const plan: CheckoutPlan = body.plan === "pro" ? "pro" : body.plan === "extension" ? "extension" : "basic";
     debug.plan = plan;
 
-    // 퍼널 ②: 결제 페이지 도달 (best-effort, throw 하지 않음)
-    if (plan === "extension") {
-      await recordFunnelEvent("extension_checkout_started", user.id);
-    }
-
     let priceId: string;
     try {
       priceId = paddlePriceIdForPlan(plan);
@@ -305,6 +300,11 @@ export async function POST(req: Request) {
       };
       await logCheckoutError(500, payload);
       return Response.json({ error: payload.error, code: payload.code }, { status: 500 });
+    }
+
+    // 퍼널 ②: 결제 세션 생성 성공 후에만 기록 — 503/설정 오류가 지표를 부풀리지 않게.
+    if (plan === "extension") {
+      await recordFunnelEvent("extension_checkout_started", user.id);
     }
 
     return Response.json({ url });

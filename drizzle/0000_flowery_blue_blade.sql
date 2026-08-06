@@ -8,5 +8,8 @@ CREATE TABLE IF NOT EXISTS "funnel_events" (
 	"name" text NOT NULL,
 	"user_id" text,
 	"meta" jsonb,
+	"dedupe_key" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "funnel_events_dedupe_key_idx" ON "funnel_events" USING btree ("dedupe_key");
