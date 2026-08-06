@@ -156,13 +156,20 @@ async function handleEntitlementEvent(eventType: string, eventId: string | null,
   });
 
   // 퍼널 ③: 결제 완료. 결제 착지 이벤트(transaction/order.completed)에서만 세어
-  // subscription.* 이벤트와의 중복 집계를 피한다.
+  // subscription.* 이벤트와의 중복 집계를 피한다. dedupe_key(transaction id,
+  // 없으면 event_id)로 Paddle 웹훅 재시도의 이중 기록을 막는다.
   if (planTier === "extension") {
-    await recordFunnelEvent("extension_payment_completed", mappedUserId, {
-      event_type: eventType,
-      event_id: eventId,
-      paddle_subscription_id: normalized.id
-    });
+    const transactionId = asTrimmedString(asRecord(data)?.id);
+    await recordFunnelEvent(
+      "extension_payment_completed",
+      mappedUserId,
+      {
+        event_type: eventType,
+        event_id: eventId,
+        paddle_subscription_id: normalized.id
+      },
+      transactionId ?? eventId
+    );
   }
 }
 

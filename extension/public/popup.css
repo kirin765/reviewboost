@@ -102,6 +102,20 @@ input[type="number"] {
 }
 .usage strong { color: var(--fg); }
 
+.preview {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+}
+.preview .stars { color: var(--accent-2); font-weight: 600; }
+
 .upsell {
   background: rgba(91, 92, 234, 0.08);
   border: 1px solid rgba(91, 92, 234, 0.28);

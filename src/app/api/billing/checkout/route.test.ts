@@ -182,6 +182,54 @@ describe("POST /api/billing/checkout", () => {
     expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
   });
 
+  it("records extension_checkout_started only after a checkout URL was created", async () => {
+    const order: string[] = [];
+    mocks.paddleRequest.mockImplementation(async () => {
+      order.push("paddleRequest");
+      return { checkout: { url: "https://checkout.paddle.com/c/test" } };
+    });
+    mocks.recordFunnelEvent.mockImplementation(async () => {
+      order.push("recordFunnelEvent");
+    });
+
+    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan: "extension" }),
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+    }));
+
+    expect(res.status).toBe(200);
+    expect(order).toEqual(["paddleRequest", "recordFunnelEvent"]);
+  });
+
+  it("does not record extension_checkout_started when the price id is missing (503)", async () => {
+    mocks.paddlePriceIdForPlan.mockImplementation(() => {
+      throw new Error("PADDLE_EXTENSION_PRICE_ID is not set for plan 'extension'");
+    });
+
+    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan: "extension" }),
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+    }));
+
+    expect(res.status).toBe(503);
+    expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
+  });
+
+  it("does not record extension_checkout_started when checkout creation fails", async () => {
+    mocks.paddleRequest.mockRejectedValue(new Error("paddle down"));
+
+    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan: "extension" }),
+      headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+    }));
+
+    expect(res.status).toBe(500);
+    expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
+  });
+
   it("creates checkout without customer fields when customer id is absent", async () => {
     mocks.findPaddleCustomerIdByUserId.mockResolvedValue(null);
 
