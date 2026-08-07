@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { previewReviewCsv } from "./csv";
+import { parseReviewCsvWithMapping, previewReviewCsv } from "./csv";
 
 describe("csv preview", () => {
   it("parses headered CSV and infers text/rating/date columns", () => {
@@ -39,5 +39,19 @@ describe("csv preview", () => {
     expect(result.totalRows).toBe(0);
     expect(result.warnings).toContain("CSV에 데이터가 없습니다.");
     expect(result.columns).toEqual([]);
+  });
+});
+
+describe("rating parsing", () => {
+  it("parses Korean rating formats like 5점 and ★5", () => {
+    const csv = ["review,rating", "만족스러운 상품입니다,5점", "별로였습니다,★1", "그저 그래요,3.5점"].join("\n");
+    const rows = parseReviewCsvWithMapping(csv);
+    expect(rows.map((r) => r.rating)).toEqual([5, 1, 3.5]);
+  });
+
+  it("still rejects non-numeric ratings", () => {
+    const csv = ["review,rating", "만족스러운 상품입니다,좋음"].join("\n");
+    const rows = parseReviewCsvWithMapping(csv);
+    expect(rows[0]?.rating).toBeNull();
   });
 });

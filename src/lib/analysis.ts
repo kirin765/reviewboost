@@ -35,7 +35,7 @@ const NEGATIVE_HINTS = [
 
 const CATEGORY_KEYWORDS: Array<{ category: Category; keywords: string[] }> = [
   { category: "배송", keywords: ["배송", "택배", "도착", "지연", "늦", "포장", "파손", "깨짐", "분실"] },
-  { category: "품질", keywords: ["품질", "퀄", "불량", "하자", "고장", "내구", "재질", "마감", "새", "냄새"] },
+  { category: "품질", keywords: ["품질", "퀄", "불량", "하자", "고장", "내구", "재질", "마감", "냄새"] },
   { category: "가격", keywords: ["가격", "비싸", "가성비", "할인", "쿠폰", "비용", "부담"] },
   { category: "사용성", keywords: ["사용", "설치", "조립", "설명서", "어렵", "불편", "사이즈", "크기", "무게", "기능"] },
   { category: "CS", keywords: ["문의", "응대", "답변", "cs", "고객", "센터", "처리", "환불", "교환", "반품", "as"] }
