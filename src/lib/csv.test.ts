@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { parseReviewCsvWithMapping, previewReviewCsv } from "./csv";
+import { looksUnusableAsReviewText, parseReviewCsvWithMapping, previewReviewCsv } from "./csv";
+
+describe("looksUnusableAsReviewText", () => {
+  it("flags 상품번호/주문번호 style columns", () => {
+    expect(looksUnusableAsReviewText(["12883224965", "12017768125", "11816428374"])).toBe(true);
+    expect(looksUnusableAsReviewText(["2026.06.19. 17:08:26", "2025.09.22. 13:25:42"])).toBe(true);
+    expect(looksUnusableAsReviewText(["정상", "정상", "N"])).toBe(true);
+    expect(looksUnusableAsReviewText(["", "  "])).toBe(true);
+  });
+
+  it("accepts real review sentences", () => {
+    expect(
+      looksUnusableAsReviewText(["공간이 넓어서 냥이가 자꾸 빠져나옵니다", "여전히 잘 소장중 입니다 감사합니다!"])
+    ).toBe(false);
+  });
+});
 
 describe("csv preview", () => {
   it("parses headered CSV and infers text/rating/date columns", () => {
@@ -39,6 +54,32 @@ describe("csv preview", () => {
     expect(result.totalRows).toBe(0);
     expect(result.warnings).toContain("CSV에 데이터가 없습니다.");
     expect(result.columns).toEqual([]);
+  });
+
+  // 2026-07-28 첫 유료 고객이 이 형식을 올렸고, 상품번호 열이 리뷰 본문으로 분석됐다.
+  it("maps 스마트스토어 리뷰 다운로드 headers instead of falling back to column 1", () => {
+    const header = [
+      "상품번호", "상품명", "리뷰구분", "구매자평점", "포토/영상", "리뷰상세내용", "리뷰도움수",
+      "등록자", "리뷰등록일", "최종수정일", "리뷰글번호", "관련리뷰글번호", "관련리뷰상세내용",
+      "전시상태", "답글여부", "답글등록일시", "베스트리뷰", "베스트리뷰선정일시", "이벤트번호",
+      "혜택지급", "혜택지급일시", "유저정보 등록 항목", "상품주문번호", "풀필먼트사", "리뷰이동일"
+    ].join(",");
+    const row = [
+      "12883224965", "고양이 발톱깎기 앞치마", "한달사용", "4", "", "공간이 넓어서 냥이가 자꾸 빠져나옵니다", "",
+      "kweo***", "2026.06.19. 17:08:26", "", "5002323915", "4978174773", "야옹이가 쏙들어가서 작업하기 좋아요",
+      "정상", "N", "", "N", "", "", "", "", "", "2026050182911941", "", ""
+    ].join(",");
+
+    const result = previewReviewCsv([header, row].join("\n"), "review_20260808.csv");
+
+    expect(result.headerMode).toBe("header");
+    expect(result.inferred.textCol).toBe("리뷰상세내용");
+    expect(result.inferred.ratingCol).toBe("구매자평점");
+    expect(result.inferred.dateCol).toBe("리뷰등록일");
+
+    const rows = parseReviewCsvWithMapping([header, row].join("\n"), result.inferred);
+    expect(rows[0]?.text).toBe("공간이 넓어서 냥이가 자꾸 빠져나옵니다");
+    expect(rows[0]?.rating).toBe(4);
   });
 });
 

@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import CopyButton from "@/components/CopyButton";
 import { buttonStyles } from "@/components/ui/Button";
+import { looksUnusableAsReviewText } from "@/lib/csv";
 import type { CsvPreview as CsvPreviewType } from "@/lib/csv";
 
 interface CsvPreviewProps {
@@ -71,6 +72,10 @@ export default function CsvPreview({
 }: CsvPreviewProps) {
   const previewCols = useMemo(() => (showAllPreviewCols ? preview.columns : preview.columns.slice(0, 6)), [preview.columns, showAllPreviewCols]);
   const textColNeedsReview = preview.inferred.textColSource === "fallback";
+  const textColLooksUnusable = useMemo(
+    () => (textCol ? looksUnusableAsReviewText(preview.sampleRows.map((row) => row[textCol] ?? "")) : false),
+    [preview.sampleRows, textCol]
+  );
   const reviewTextHint = useMemo(() => {
     if (textCol === "") return "";
     const candidates = preview.columns.filter((column) => isLikelyReviewTextColumn(column) && column !== textCol);
@@ -96,6 +101,15 @@ export default function CsvPreview({
               리뷰 내용 열이 자동으로 추정되었는데 정확하지 않을 수 있어요. 지금 선택된 열: <strong>{textCol}</strong>
               {reviewTextHint ? `\n리뷰 텍스트 후보 열: ${reviewTextHint}` : ""}
               <br />원하는 열로 바꿔주세요.
+            </p>
+          ) : null}
+          {textColLooksUnusable ? (
+            <p className="mt-4 whitespace-pre-line rounded-[14px] border border-[color:rgba(224,85,59,0.55)] bg-[rgba(224,85,59,0.14)] px-4 py-4 text-sm leading-7 text-[#b3411f]">
+              <strong>이대로 분석하면 결과가 나오지 않습니다.</strong>
+              {"\n"}지금 리뷰 내용 열로 고른 <strong>{textCol}</strong>에는 리뷰 문장이 아니라 숫자나 짧은 코드가 들어 있습니다.
+              상품번호·주문번호 열을 고른 경우가 대부분입니다. 이 상태로 돌리면 감정 분석과 키워드가 전부 비어서 나옵니다.
+              {"\n"}아래에서 실제 리뷰 문장이 들어 있는 열로 바꿔주세요.
+              {reviewTextHint ? `\n후보: ${reviewTextHint}` : ""}
             </p>
           ) : null}
           <div className="mt-5 grid gap-4">

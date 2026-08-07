@@ -14,12 +14,13 @@ const TEXT_KEYS = [
   "review_content",
   "후기내용",
   "리뷰내용",
+  "리뷰상세내용",
   "리뷰본문",
   "텍스트",
   "내용"
 ];
-const RATING_KEYS = ["rating", "score", "star", "별점", "평점", "점수", "별", "stars"];
-const DATE_KEYS = ["date", "created", "created_at", "time", "작성일", "등록일", "날짜", "일자"];
+const RATING_KEYS = ["rating", "score", "star", "별점", "구매자평점", "평점", "점수", "별", "stars"];
+const DATE_KEYS = ["date", "created", "created_at", "time", "작성일", "리뷰등록일", "등록일", "날짜", "일자"];
 
 export type CsvHeaderMode = "header" | "headerless";
 
@@ -69,6 +70,17 @@ function isLikelyReviewTextColumn(name: string) {
   );
 }
 
+// 열 이름이 아니라 실제 값으로 판단한다. 자동 인식이 "성공"해도 엉뚱한 열이 잡히면
+// 결과가 통째로 무의미해지는데, 그 경우 이름 기반 경고로는 못 잡는다.
+// 상품번호·주문번호처럼 숫자만 들어간 열이 대표적이다(2026-07-28 실제 발생).
+export function looksUnusableAsReviewText(values: string[]): boolean {
+  const filled = values.map((v) => String(v ?? "").trim()).filter(Boolean);
+  if (filled.length === 0) return true;
+  if (filled.every((v) => /^[\d\s.,\-/:]+$/.test(v))) return true;
+  const avgLength = filled.reduce((acc, v) => acc + v.length, 0) / filled.length;
+  return avgLength < 10 && filled.every((v) => !/\s/.test(v));
+}
+
 function isLikelyIdColumn(name: string) {
   const normalized = normalizeKey(name);
   if (!normalized) return false;
@@ -114,15 +126,12 @@ function headersLookLikeData(headers: string[]): boolean {
   });
 }
 
+// 완전 일치만 보면 스마트스토어의 `리뷰상세내용`·`구매자평점` 같은 접두·접미형 헤더를 통째로 놓치고,
+// 헤더 줄이 데이터로 처리돼 1열(상품번호)이 리뷰 본문이 된다. 아래 findColumnByKeyword와 같은 기준으로 맞춘다.
+// 한 글자 키("별")는 데이터 줄의 "별로다" 같은 값에 걸려 반대 방향 오탐을 내므로 제외한다.
 function hasKnownHeader(headers: string[]): boolean {
-  const keys = new Set(headers.map(normalizeKey));
-  const textSet = new Set(TEXT_KEYS.map(normalizeKey));
-  const ratingSet = new Set(RATING_KEYS.map(normalizeKey));
-  const dateSet = new Set(DATE_KEYS.map(normalizeKey));
-  for (const k of keys) {
-    if (textSet.has(k) || ratingSet.has(k) || dateSet.has(k)) return true;
-  }
-  return false;
+  const keys = [...TEXT_KEYS, ...RATING_KEYS, ...DATE_KEYS].filter((k) => normalizeKey(k).length >= 2);
+  return findColumnByKeyword(headers, keys) !== undefined;
 }
 
 // Match a column whose normalized name contains a keyword token (e.g. "review_date" ⊃ "date"),
