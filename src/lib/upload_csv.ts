@@ -1,4 +1,5 @@
 import { ApiError } from "@/lib/api_error";
+import { xlsxToCsv } from "@/lib/xlsx-import";
 import {
   CSV_EMPTY_HELP,
   CSV_ENCODING_HELP,
@@ -67,14 +68,27 @@ export async function readUploadedCsvText(req: Request, maxBytes: number): Promi
   const filename = typeof file.name === "string" ? file.name : null;
   const mime = typeof file.type === "string" ? file.type : null;
   const ext = fileExt(filename);
-  if (ext && ext !== "csv") {
-    throw new ApiError(400, "CSV_NOT_CSV", "CSV 파일(.csv)만 업로드할 수 있어요.", {
+  if (ext && ext !== "csv" && ext !== "xlsx") {
+    throw new ApiError(400, "CSV_NOT_CSV", "CSV(.csv) 또는 엑셀(.xlsx) 파일만 업로드할 수 있어요.", {
       help: CSV_NOT_CSV_HELP,
       details: filename ?? undefined
     });
   }
 
-  const csvText = await file.text();
+  // 스마트스토어 리뷰 다운로드가 xlsx라, 고객이 직접 변환하지 않아도 되게 여기서 받는다.
+  let csvText: string;
+  if (ext === "xlsx") {
+    try {
+      csvText = xlsxToCsv(new Uint8Array(await file.arrayBuffer()));
+    } catch {
+      throw new ApiError(400, "XLSX_UNREADABLE", "엑셀 파일을 읽지 못했어요. csv로 저장한 뒤 올려주세요.", {
+        help: CSV_NOT_CSV_HELP,
+        details: filename ?? undefined
+      });
+    }
+  } else {
+    csvText = await file.text();
+  }
   if (csvText.trim().length === 0) {
     throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 CSV를 올려주세요.", { help: CSV_EMPTY_HELP });
   }

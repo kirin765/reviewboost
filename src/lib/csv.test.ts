@@ -90,6 +90,30 @@ describe("rating parsing", () => {
     expect(rows.map((r) => r.rating)).toEqual([5, 1, 3.5]);
   });
 
+  // 스마트스토어는 날짜 뒤에 점을 하나 더 붙인다. 놓치면 최근성 분석이 통째로 빈다.
+  it("parses 스마트스토어 date format with a trailing dot", () => {
+    const csv = [
+      "리뷰상세내용,구매자평점,리뷰등록일",
+      "공간이 넓어서 냥이가 자꾸 빠져나옵니다,4,2026.06.19. 17:08:26",
+      "여전히 잘 소장중 입니다 감사합니다!,5,2025.09.22. 13:25:42"
+    ].join("\n");
+    const rows = parseReviewCsvWithMapping(csv);
+
+    expect(rows.map((r) => r.reviewedAt?.slice(0, 10))).toEqual(["2026-06-19", "2025-09-22"]);
+  });
+
+  it("keeps parsing the date formats that already worked", () => {
+    const csv = [
+      "review,rating,review_date",
+      "좋아요,5,2026-01-02",
+      "괜찮아요,4,2026/01/03",
+      "무난해요,3,2026-01-04T05:06:07Z"
+    ].join("\n");
+    const rows = parseReviewCsvWithMapping(csv);
+
+    expect(rows.map((r) => r.reviewedAt?.slice(0, 10))).toEqual(["2026-01-02", "2026-01-03", "2026-01-04"]);
+  });
+
   it("still rejects non-numeric ratings", () => {
     const csv = ["review,rating", "만족스러운 상품입니다,좋음"].join("\n");
     const rows = parseReviewCsvWithMapping(csv);

@@ -108,7 +108,13 @@ function toIsoDateOrNull(v: unknown): string | null {
   const s = String(v).trim();
   if (!s) return null;
   // Common formats: YYYY-MM-DD, YYYY.MM.DD, YYYY/MM/DD, ISO
-  const normalized = s.replace(/\./g, "-").replace(/\//g, "-");
+  // 스마트스토어는 `2026.06.19. 17:08:26`처럼 날짜 뒤에 점을 하나 더 붙인다.
+  // 그 점을 안 걷어내면 Invalid Date가 되어 최근성 분석이 통째로 비어버린다.
+  const normalized = s
+    .replace(/^(\d{4})[.\-/]\s*(\d{1,2})[.\-/]\s*(\d{1,2})\.?/, "$1-$2-$3")
+    .replace(/\./g, "-")
+    .replace(/\//g, "-")
+    .replace(/^(\d{4}-\d{1,2}-\d{1,2})\s+(\d)/, "$1T$2");
   const d = new Date(normalized);
   if (!Number.isFinite(d.getTime())) return null;
   return d.toISOString();

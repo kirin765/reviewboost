@@ -66,7 +66,7 @@ export default function FileUploader({
         ref={fileInputRef}
         className="input"
         type="file"
-        accept=".csv,text/csv"
+        accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         aria-label={t("upload.csvFileUpload")}
         onChange={(e) => {
           const f = e.target.files?.[0] ?? null;

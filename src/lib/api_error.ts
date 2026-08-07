@@ -3,6 +3,7 @@ export type ApiErrorCode =
   | "UPLOAD_MISSING_FILE"
   | "UPLOAD_UNREADABLE_FILE"
   | "CSV_NOT_CSV"
+  | "XLSX_UNREADABLE"
   | "CSV_EMPTY"
   | "CSV_TOO_LARGE"
   | "CSV_ENCODING"
@@ -34,6 +35,7 @@ export const apiErrorStatus: ApiErrorStatusMap = {
   UPLOAD_MISSING_FILE: 400,
   UPLOAD_UNREADABLE_FILE: 400,
   CSV_NOT_CSV: 400,
+  XLSX_UNREADABLE: 400,
   CSV_EMPTY: 400,
   CSV_TOO_LARGE: 413,
   CSV_ENCODING: 400,
