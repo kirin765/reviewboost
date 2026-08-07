@@ -75,6 +75,22 @@ export const funnelEvents = pgTable(
   })
 );
 
+// 1:1 고객 문의. 비로그인 접수 허용 — user_id 는 nullable.
+export const supportInquiries = pgTable(
+  "support_inquiries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id"),
+    email: text("email").notNull(),
+    category: text("category").notNull(),
+    message: text("message").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    createdIdx: index("support_inquiries_created_at_idx").on(t.createdAt)
+  })
+);
+
 export const subscriptions = pgTable(
   "subscriptions",
   {

@@ -64,6 +64,7 @@ const ko: Dictionary = {
   "footer.terms": "서비스 이용약관",
   "footer.privacy": "개인정보 처리방침",
   "footer.support": "고객 지원",
+  "footer.contact": "1:1 문의",
 
   // ── Home page ──
   "home.errorTitle": "인증 실패",
