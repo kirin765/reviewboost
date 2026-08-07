@@ -4,17 +4,17 @@ import { unzipSync, strFromU8 } from "fflate";
 // 그 단계에서 이탈하거나 헤더가 깨진 파일이 올라온다(2026-07-28 첫 유료 고객 사례).
 // 읽기 전용이라 SheetJS 같은 큰 의존성 대신 zip 해제 + 시트 XML 파싱으로 끝낸다.
 
+const NAMED_ENTITIES: Record<string, string> = { lt: "<", gt: ">", quot: '"', apos: "'", amp: "&" };
+
+// 한글은 &#xc0c1; 형태의 16진 참조로 나온다. 이걸 놓치면 본문이 통째로 깨지고,
+// 참조 끝의 세미콜론 때문에 구분자 추정까지 틀어진다.
+// 한 번에 훑어야 `&amp;#x41;`이 A로 이중 디코드되지 않는다.
 function decodeEntities(s: string): string {
-  return s
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    // 한글은 &#xc0c1; 형태의 16진 참조로 나온다. 이걸 놓치면 본문이 통째로 깨지고,
-    // 참조 끝의 세미콜론 때문에 구분자 추정까지 틀어진다.
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCodePoint(parseInt(code, 16)))
-    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
-    .replace(/&amp;/g, "&");
+  return s.replace(/&(#x[0-9a-fA-F]+|#\d+|lt|gt|quot|apos|amp);/g, (match, body: string) => {
+    if (body.startsWith("#x")) return String.fromCodePoint(parseInt(body.slice(2), 16));
+    if (body.startsWith("#")) return String.fromCodePoint(Number(body.slice(1)));
+    return NAMED_ENTITIES[body] ?? match;
+  });
 }
 
 function stripTags(s: string): string {
@@ -39,7 +39,11 @@ function csvEscape(value: string): string {
 /** xlsx 첫 시트를 CSV 텍스트로 변환한다. 값은 전부 문자열로 뽑는다. */
 export function xlsxToCsv(data: Uint8Array): string {
   const files = unzipSync(data);
-  const sheetName = Object.keys(files).find((name) => /^xl\/worksheets\/sheet\d+\.xml$/.test(name));
+  // zip 수록 순서는 워크북 탭 순서와 무관하다. sheet 번호로 정렬해 첫 시트를 고른다.
+  // workbook.xml의 r:id까지 따라가야 완전하지만, 리뷰 내보내기는 시트가 하나뿐이다.
+  const sheetName = Object.keys(files)
+    .filter((name) => /^xl\/worksheets\/sheet\d+\.xml$/.test(name))
+    .sort((a, b) => Number(a.match(/\d+/)![0]) - Number(b.match(/\d+/)![0]))[0];
   if (!sheetName) throw new Error("XLSX_NO_SHEET");
 
   const shared = files["xl/sharedStrings.xml"] ? parseSharedStrings(strFromU8(files["xl/sharedStrings.xml"])) : [];
@@ -48,7 +52,8 @@ export function xlsxToCsv(data: Uint8Array): string {
   const rows: string[][] = [];
   for (const rowMatch of sheet.matchAll(/<row[^>]*>([\s\S]*?)<\/row>/g)) {
     const cells: string[] = [];
-    for (const cellMatch of rowMatch[1].matchAll(/<c\s+([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+    // 속성이 아예 없는 `<c>`도 있다. `<c\s+`로 잡으면 그런 셀이 통째로 사라진다.
+    for (const cellMatch of rowMatch[1].matchAll(/<c((?:\s[^>]*)?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
       const attrs = cellMatch[1] ?? "";
       const body = cellMatch[2] ?? "";
       const refMatch = attrs.match(/r="([A-Z]+\d+)"/);

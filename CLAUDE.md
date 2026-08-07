@@ -47,7 +47,7 @@ GitHub Actions is **disabled** on this repo, so `.github/workflows/ci.yml` does 
 
 ### Analysis Pipeline (core data flow)
 
-1. **Upload & Preview** (`POST /api/preview`): validates CSV (mime, encoding, size ≤6MB), infers delimiter, returns sample rows for column mapping
+1. **Upload & Preview** (`POST /api/preview`): accepts `.csv` and `.xlsx` (Smartstore exports xlsx only), validates mime/encoding/size ≤6MB — for xlsx the limit is re-checked after expansion — infers delimiter, returns sample rows for column mapping
 2. **Column Mapping** (client-side): user maps columns to review text, rating, date
 3. **Analysis** (`POST /api/analyze`): the central endpoint
    - Always runs **heuristic classification** first (rating-based sentiment, keyword-based category into 6 buckets: 배송/품질/가격/사용성/CS/기타)
@@ -73,7 +73,8 @@ GitHub Actions is **disabled** on this repo, so `.github/workflows/ci.yml` does 
 | `src/lib/analysis.ts` | Heuristic sentiment/category classification, stats computation, priority scoring |
 | `src/lib/openai_classify.ts` | Batched LLM classification with timeout and sampling |
 | `src/lib/openai_suggestions.ts` | LLM suggestion generation with template fallback |
-| `src/lib/csv.ts` | CSV parsing, delimiter inference, header detection, column mapping |
+| `src/lib/csv.ts` | CSV parsing, delimiter inference, header detection, column mapping, unusable-text-column detection |
+| `src/lib/xlsx-import.ts` | xlsx → CSV conversion for uploads (fflate unzip + sheet XML parse, read-only) |
 | `src/lib/keywords.ts` | Korean negative keyword extraction (stopwords, particles, bigrams) |
 | `src/lib/plan.ts` | Plan tier resolution (free/basic/pro) and monthly limit enforcement |
 | `src/lib/billing.ts` | Paddle subscription tracking via Neon/Drizzle (`subscriptions` table) |

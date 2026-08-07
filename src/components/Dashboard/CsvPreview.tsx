@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import CopyButton from "@/components/CopyButton";
 import { buttonStyles } from "@/components/ui/Button";
-import { looksUnusableAsReviewText } from "@/lib/csv";
+import { reviewTextColumnLooksUnusable } from "@/lib/csv";
 import type { CsvPreview as CsvPreviewType } from "@/lib/csv";
 
 interface CsvPreviewProps {
@@ -72,10 +72,7 @@ export default function CsvPreview({
 }: CsvPreviewProps) {
   const previewCols = useMemo(() => (showAllPreviewCols ? preview.columns : preview.columns.slice(0, 6)), [preview.columns, showAllPreviewCols]);
   const textColNeedsReview = preview.inferred.textColSource === "fallback";
-  const textColLooksUnusable = useMemo(
-    () => (textCol ? looksUnusableAsReviewText(preview.sampleRows.map((row) => row[textCol] ?? "")) : false),
-    [preview.sampleRows, textCol]
-  );
+  const textColLooksUnusable = useMemo(() => reviewTextColumnLooksUnusable(preview, textCol), [preview, textCol]);
   const reviewTextHint = useMemo(() => {
     if (textCol === "") return "";
     const candidates = preview.columns.filter((column) => isLikelyReviewTextColumn(column) && column !== textCol);

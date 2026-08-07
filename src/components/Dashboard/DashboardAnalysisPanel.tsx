@@ -4,7 +4,7 @@ import React from "react";
 import type { Capabilities } from "@/lib/capabilities";
 import type { AnalysisStage } from "@/lib/analysis-stage";
 import type { DashboardAnalysisResult } from "@/lib/api/analysis";
-import { looksUnusableAsReviewText } from "@/lib/csv";
+import { reviewTextColumnLooksUnusable } from "@/lib/csv";
 import type { CsvPreview } from "@/lib/csv";
 import { buttonStyles } from "@/components/ui/Button";
 import { StatePanel, Surface } from "@/components/ui/Primitives";
@@ -105,9 +105,7 @@ export default function DashboardAnalysisPanel({
 
   // 상품번호 같은 열이 리뷰 본문으로 집계되면 결과가 통째로 무의미해진다(2026-07-28 실제 발생).
   // 이름 기반 추정 실패와, 이름은 그럴듯한데 값이 리뷰 문장이 아닌 경우를 둘 다 막는다.
-  const textColLooksUnusable = preview
-    ? looksUnusableAsReviewText(preview.sampleRows.map((row) => row[textCol] ?? ""))
-    : false;
+  const textColLooksUnusable = preview ? reviewTextColumnLooksUnusable(preview, textCol) : false;
   const textColUnverified = preview?.inferred.textColSource === "fallback" || textColLooksUnusable;
   const [textColConfirmed, setTextColConfirmed] = React.useState(false);
   React.useEffect(() => {

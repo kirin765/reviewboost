@@ -4,6 +4,7 @@ import {
   CSV_EMPTY_HELP,
   CSV_ENCODING_HELP,
   CSV_NOT_CSV_HELP,
+  XLSX_UNREADABLE_HELP,
   CSV_TOO_LARGE_HELP,
   UPLOAD_BAD_CONTENT_TYPE_HELP,
   UPLOAD_MISSING_FILE_HELP,
@@ -57,7 +58,7 @@ export async function readUploadedCsvText(req: Request, maxBytes: number): Promi
   
   const size = typeof file.size === "number" ? file.size : null;
   if (typeof size === "number" && size <= 0) {
-    throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 CSV를 올려주세요.", { help: CSV_EMPTY_HELP });
+    throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 파일을 올려주세요.", { help: CSV_EMPTY_HELP });
   }
   if (typeof size === "number" && size > maxBytes) {
     throw new ApiError(413, "CSV_TOO_LARGE", "파일이 너무 커서 업로드할 수 없어요.", {
@@ -80,9 +81,16 @@ export async function readUploadedCsvText(req: Request, maxBytes: number): Promi
   if (ext === "xlsx") {
     try {
       csvText = xlsxToCsv(new Uint8Array(await file.arrayBuffer()));
-    } catch {
-      throw new ApiError(400, "XLSX_UNREADABLE", "엑셀 파일을 읽지 못했어요. csv로 저장한 뒤 올려주세요.", {
-        help: CSV_NOT_CSV_HELP,
+      // 위 size 검사는 압축된 크기만 본다. 작은 xlsx가 거대한 시트로 펼쳐질 수 있어 다시 잰다.
+      if (Buffer.byteLength(csvText, "utf8") > maxBytes) {
+        throw new ApiError(413, "CSV_TOO_LARGE", "파일이 너무 커서 업로드할 수 없어요.", {
+          help: CSV_TOO_LARGE_HELP
+        });
+      }
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(400, "XLSX_UNREADABLE", "엑셀 파일을 읽지 못했어요.", {
+        help: XLSX_UNREADABLE_HELP,
         details: filename ?? undefined
       });
     }
@@ -90,7 +98,7 @@ export async function readUploadedCsvText(req: Request, maxBytes: number): Promi
     csvText = await file.text();
   }
   if (csvText.trim().length === 0) {
-    throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 CSV를 올려주세요.", { help: CSV_EMPTY_HELP });
+    throw new ApiError(400, "CSV_EMPTY", "빈 파일이에요. 내용이 있는 파일을 올려주세요.", { help: CSV_EMPTY_HELP });
   }
   if (looksLikeBadEncoding(csvText)) {
     throw new ApiError(400, "CSV_ENCODING", "문자가 깨진 CSV로 보여요(인코딩 문제).", {

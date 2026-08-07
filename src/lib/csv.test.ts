@@ -5,14 +5,15 @@ describe("looksUnusableAsReviewText", () => {
   it("flags 상품번호/주문번호 style columns", () => {
     expect(looksUnusableAsReviewText(["12883224965", "12017768125", "11816428374"])).toBe(true);
     expect(looksUnusableAsReviewText(["2026.06.19. 17:08:26", "2025.09.22. 13:25:42"])).toBe(true);
-    expect(looksUnusableAsReviewText(["정상", "정상", "N"])).toBe(true);
     expect(looksUnusableAsReviewText(["", "  "])).toBe(true);
   });
 
-  it("accepts real review sentences", () => {
+  it("accepts real review sentences, including very short Korean ones", () => {
     expect(
       looksUnusableAsReviewText(["공간이 넓어서 냥이가 자꾸 빠져나옵니다", "여전히 잘 소장중 입니다 감사합니다!"])
     ).toBe(false);
+    // 짧다는 이유로 막으면 멀쩡한 리뷰 파일이 통째로 차단된다
+    expect(looksUnusableAsReviewText(["좋아요", "만족", "배송빠름"])).toBe(false);
   });
 });
 
@@ -112,6 +113,21 @@ describe("rating parsing", () => {
     const rows = parseReviewCsvWithMapping(csv);
 
     expect(rows.map((r) => r.reviewedAt?.slice(0, 10))).toEqual(["2026-01-02", "2026-01-03", "2026-01-04"]);
+  });
+
+  // xlsx는 날짜 셀을 일련번호로 저장한다. 문자열 파싱만 하면 최근성 분석이 통째로 빈다.
+  it("parses Excel date serial numbers from xlsx uploads", () => {
+    const csv = ["review,rating,review_date", "좋아요,5,46192", "괜찮아요,4,45000"].join("\n");
+    const rows = parseReviewCsvWithMapping(csv);
+
+    expect(rows.map((r) => r.reviewedAt?.slice(0, 10))).toEqual(["2026-06-19", "2023-03-15"]);
+  });
+
+  it("does not mistake a plain number column for a date", () => {
+    const csv = ["review,rating,review_date", "좋아요,5,3", "괜찮아요,4,999999"].join("\n");
+    const rows = parseReviewCsvWithMapping(csv);
+
+    expect(rows.map((r) => r.reviewedAt)).toEqual([null, null]);
   });
 
   it("still rejects non-numeric ratings", () => {

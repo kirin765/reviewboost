@@ -73,12 +73,18 @@ function isLikelyReviewTextColumn(name: string) {
 // 열 이름이 아니라 실제 값으로 판단한다. 자동 인식이 "성공"해도 엉뚱한 열이 잡히면
 // 결과가 통째로 무의미해지는데, 그 경우 이름 기반 경고로는 못 잡는다.
 // 상품번호·주문번호처럼 숫자만 들어간 열이 대표적이다(2026-07-28 실제 발생).
+/** 미리보기에서 지금 고른 리뷰 본문 열이 쓸 수 없는 상태인지. 경고와 분석 차단이 같은 답을 쓰게 한다. */
+export function reviewTextColumnLooksUnusable(preview: CsvPreview, textCol: string): boolean {
+  if (!textCol) return true;
+  return looksUnusableAsReviewText(preview.sampleRows.map((row) => row[textCol] ?? ""));
+}
+
 export function looksUnusableAsReviewText(values: string[]): boolean {
   const filled = values.map((v) => String(v ?? "").trim()).filter(Boolean);
   if (filled.length === 0) return true;
-  if (filled.every((v) => /^[\d\s.,\-/:]+$/.test(v))) return true;
-  const avgLength = filled.reduce((acc, v) => acc + v.length, 0) / filled.length;
-  return avgLength < 10 && filled.every((v) => !/\s/.test(v));
+  // 글자가 한 자도 없는 열만 잡는다 — 상품번호·주문번호·날짜가 여기 걸린다.
+  // 길이로 거르면 "좋아요"처럼 짧은 한국어 리뷰가 통째로 막힌다.
+  return filled.every((v) => !/\p{L}/u.test(v));
 }
 
 function isLikelyIdColumn(name: string) {
@@ -107,6 +113,13 @@ function toIsoDateOrNull(v: unknown): string | null {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
   if (!s) return null;
+  // 엑셀은 날짜 셀을 1899-12-30 기준 일련번호로 저장한다. xlsx 업로드에서 그대로 흘러들어오면
+  // 문자열 파싱이 전부 실패해 최근성 분석이 빈다. 1970~2100 범위만 날짜로 본다.
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const serial = Number(s);
+    if (serial < 25569 || serial > 73415) return null;
+    return new Date(Math.round((serial - 25569) * 86400 * 1000)).toISOString();
+  }
   // Common formats: YYYY-MM-DD, YYYY.MM.DD, YYYY/MM/DD, ISO
   // 스마트스토어는 `2026.06.19. 17:08:26`처럼 날짜 뒤에 점을 하나 더 붙인다.
   // 그 점을 안 걷어내면 Invalid Date가 되어 최근성 분석이 통째로 비어버린다.
