@@ -23,6 +23,20 @@ describe("topKeywords", () => {
     expect(result).toEqual([]);
   });
 
+  it("does not map 새것/새벽 to 냄새 or 문제없었 to 구성품누락", () => {
+    const result = topKeywords(["새것 같아요", "새벽에 도착", "문제 없었어요"], 10);
+    const keywords = result.map((r) => r.keyword);
+    expect(keywords).not.toContain("냄새");
+    expect(keywords).not.toContain("구성품누락");
+  });
+
+  it("still maps real smell/missing-part complaints", () => {
+    const result = topKeywords(["냄새나요 심해요", "부품 누락 됐어요"], 10);
+    const keywords = result.map((r) => r.keyword);
+    expect(keywords).toContain("냄새");
+    expect(keywords).toContain("구성품누락");
+  });
+
   it("respects the topN limit", () => {
     const result = topKeywords(["가나 다라 마바 사아 자차"], 2);
     expect(result.length).toBeLessThanOrEqual(2);

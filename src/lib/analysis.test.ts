@@ -33,6 +33,15 @@ describe("classifyHeuristic", () => {
     expect(out[0]?.category).toBe("배송");
     expect(out[1]?.category).toBe("CS");
   });
+
+  it("does not categorise 새 상품/새벽 mentions as 품질", () => {
+    const out = classifyHeuristic([
+      { text: "새 상품이라 좋아요", rating: 5 },
+      { text: "냄새가 심하게 나요", rating: 2 }
+    ]);
+    expect(out[0]?.category).toBe("기타");
+    expect(out[1]?.category).toBe("품질");
+  });
 });
 
 describe("computeAnalysisFromClassified", () => {

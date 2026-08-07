@@ -79,8 +79,13 @@ function toNumberOrNull(v: unknown): number | null {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
   if (!s) return null;
-  const n = Number(s);
-  if (!Number.isFinite(n)) return null;
+  let n = Number(s);
+  if (!Number.isFinite(n)) {
+    // 쿠팡/스마트스토어 내보내기의 "5점", "★5" 같은 표기에서 숫자만 추출
+    const m = s.match(/-?\d+(?:\.\d+)?/);
+    if (!m) return null;
+    n = Number(m[0]);
+  }
   if (n >= 0 && n <= 5) return n;
   if (n > 5 && n <= 10) return Math.round((n / 2) * 10) / 10;
   return null;
