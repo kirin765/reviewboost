@@ -64,6 +64,7 @@ const en: Dictionary = {
   "footer.terms": "Terms of Service",
   "footer.privacy": "Privacy Policy",
   "footer.support": "Support",
+  "footer.contact": "Contact us",
 
   // ── Home page ──
   "home.errorTitle": "Authentication Failed",

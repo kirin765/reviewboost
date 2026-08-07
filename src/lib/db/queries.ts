@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { getDb } from "./index";
-import { analyses, reviews, profiles, subscriptions, extensionUsage, funnelEvents } from "./schema";
+import { analyses, reviews, profiles, subscriptions, extensionUsage, funnelEvents, supportInquiries } from "./schema";
 
 function requireUserId(userId: string) {
   if (!userId || !userId.trim()) throw new Error("userId is required for scoped query");
@@ -284,4 +284,21 @@ export async function recordFunnelEvent(
   }
 }
 
-export { analyses, reviews, profiles, subscriptions, extensionUsage, funnelEvents, getDb, and, eq };
+/** 1:1 문의 저장. DB 미구성/오류 시 false — 호출부가 텔레그램 알림 성공 여부와 함께 판단한다. */
+export async function createSupportInquiry(input: {
+  userId: string | null;
+  email: string;
+  category: string;
+  message: string;
+}): Promise<boolean> {
+  try {
+    const db = getDb();
+    if (!db) return false;
+    await db.insert(supportInquiries).values(input);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export { analyses, reviews, profiles, subscriptions, extensionUsage, funnelEvents, supportInquiries, getDb, and, eq };
