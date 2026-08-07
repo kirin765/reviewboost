@@ -181,6 +181,7 @@ function MarketingFooter() {
           <div className="space-y-3">
             <Link href="/terms" className="block hover:text-[var(--rb-fg)]">서비스 이용약관</Link>
             <Link href="/privacy" className="block hover:text-[var(--rb-fg)]">개인정보 처리방침</Link>
+            <Link href="/support" className="block hover:text-[var(--rb-fg)]">1:1 문의</Link>
             <a href="mailto:kwan765@naver.com" className="block hover:text-[var(--rb-fg)]">문의: kwan765@naver.com</a>
           </div>
         </div>
