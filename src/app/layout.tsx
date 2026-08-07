@@ -51,7 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <>
             <Script src="https://cdn.paddle.com/paddle/v2/paddle.js" strategy="beforeInteractive" />
             <Script id="paddle-init" strategy="afterInteractive">
-              {`if (window.Paddle) { ${paddleEnvForClient === "sandbox" ? 'Paddle.Environment.set("sandbox");' : ""} Paddle.Initialize({ token: ${JSON.stringify(paddleToken)} }); }`}
+              {`if (window.Paddle) { ${paddleEnvForClient === "sandbox" ? 'Paddle.Environment.set("sandbox");' : ""} Paddle.Initialize({ token: ${JSON.stringify(paddleToken)}, checkout: { settings: { locale: "ko" } } }); }`}
             </Script>
           </>
         ) : null}
