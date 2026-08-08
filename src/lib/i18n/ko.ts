@@ -184,6 +184,8 @@ const ko: Dictionary = {
   "upload.restart": "새로 시작",
   "upload.selected": "선택됨:",
   "upload.noFileSelected": "아직 파일이 선택되지 않았습니다.",
+  "upload.noFileExtensionHint": "리뷰 파일이 없다면 Chrome 확장프로그램으로 쿠팡·스마트스토어 리뷰를 바로 내려받을 수 있어요.",
+  "upload.extensionLink": "확장프로그램 설치하기",
   "upload.processing": "처리 중",
   "upload.csvFileUploadArea": "CSV 파일 업로드 영역",
   "upload.csvFileUpload": "CSV 파일 업로드",

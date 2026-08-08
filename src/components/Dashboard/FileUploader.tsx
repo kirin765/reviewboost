@@ -3,6 +3,7 @@
 import React, { useRef, useState } from "react";
 import type { DragEvent } from "react";
 import Button from "@/components/ui/Button";
+import { EXTENSION_STORE_URL } from "@/lib/extension";
 import { useTranslation } from "@/lib/i18n";
 
 interface FileUploaderProps {
@@ -91,7 +92,17 @@ export default function FileUploader({
             {t("upload.selected")} <code className="font-mono text-[var(--rb-fg)]">{file.name}</code> ({Math.round(file.size / 1024)} KB)
           </span>
         ) : (
-          <span>{t("upload.noFileSelected")}</span>
+          <span>
+            {t("upload.noFileSelected")} {t("upload.noFileExtensionHint")}{" "}
+            <a
+              href={EXTENSION_STORE_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-[var(--rb-fg)] underline underline-offset-4"
+            >
+              {t("upload.extensionLink")}
+            </a>
+          </span>
         )}
       </div>
     </div>

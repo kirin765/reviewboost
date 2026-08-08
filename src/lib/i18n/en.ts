@@ -184,6 +184,8 @@ const en: Dictionary = {
   "upload.restart": "Start Over",
   "upload.selected": "Selected:",
   "upload.noFileSelected": "No file selected yet.",
+  "upload.noFileExtensionHint": "No review file yet? Export Coupang/SmartStore reviews instantly with our Chrome extension.",
+  "upload.extensionLink": "Install the extension",
   "upload.processing": "Processing",
   "upload.csvFileUploadArea": "CSV file upload area",
   "upload.csvFileUpload": "Upload CSV file",
