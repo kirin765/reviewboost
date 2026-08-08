@@ -14,12 +14,13 @@ const TEXT_KEYS = [
   "review_content",
   "후기내용",
   "리뷰내용",
+  "리뷰상세내용",
   "리뷰본문",
   "텍스트",
   "내용"
 ];
-const RATING_KEYS = ["rating", "score", "star", "별점", "평점", "점수", "별", "stars"];
-const DATE_KEYS = ["date", "created", "created_at", "time", "작성일", "등록일", "날짜", "일자"];
+const RATING_KEYS = ["rating", "score", "star", "별점", "구매자평점", "평점", "점수", "별", "stars"];
+const DATE_KEYS = ["date", "created", "created_at", "time", "작성일", "리뷰등록일", "등록일", "날짜", "일자"];
 
 export type CsvHeaderMode = "header" | "headerless";
 
@@ -69,6 +70,23 @@ function isLikelyReviewTextColumn(name: string) {
   );
 }
 
+// 열 이름이 아니라 실제 값으로 판단한다. 자동 인식이 "성공"해도 엉뚱한 열이 잡히면
+// 결과가 통째로 무의미해지는데, 그 경우 이름 기반 경고로는 못 잡는다.
+// 상품번호·주문번호처럼 숫자만 들어간 열이 대표적이다(2026-07-28 실제 발생).
+/** 미리보기에서 지금 고른 리뷰 본문 열이 쓸 수 없는 상태인지. 경고와 분석 차단이 같은 답을 쓰게 한다. */
+export function reviewTextColumnLooksUnusable(preview: CsvPreview, textCol: string): boolean {
+  if (!textCol) return true;
+  return looksUnusableAsReviewText(preview.sampleRows.map((row) => row[textCol] ?? ""));
+}
+
+export function looksUnusableAsReviewText(values: string[]): boolean {
+  const filled = values.map((v) => String(v ?? "").trim()).filter(Boolean);
+  if (filled.length === 0) return true;
+  // 글자가 한 자도 없는 열만 잡는다 — 상품번호·주문번호·날짜가 여기 걸린다.
+  // 길이로 거르면 "좋아요"처럼 짧은 한국어 리뷰가 통째로 막힌다.
+  return filled.every((v) => !/\p{L}/u.test(v));
+}
+
 function isLikelyIdColumn(name: string) {
   const normalized = normalizeKey(name);
   if (!normalized) return false;
@@ -95,8 +113,21 @@ function toIsoDateOrNull(v: unknown): string | null {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
   if (!s) return null;
+  // 엑셀은 날짜 셀을 1899-12-30 기준 일련번호로 저장한다. xlsx 업로드에서 그대로 흘러들어오면
+  // 문자열 파싱이 전부 실패해 최근성 분석이 빈다. 1970~2100 범위만 날짜로 본다.
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const serial = Number(s);
+    if (serial < 25569 || serial > 73415) return null;
+    return new Date(Math.round((serial - 25569) * 86400 * 1000)).toISOString();
+  }
   // Common formats: YYYY-MM-DD, YYYY.MM.DD, YYYY/MM/DD, ISO
-  const normalized = s.replace(/\./g, "-").replace(/\//g, "-");
+  // 스마트스토어는 `2026.06.19. 17:08:26`처럼 날짜 뒤에 점을 하나 더 붙인다.
+  // 그 점을 안 걷어내면 Invalid Date가 되어 최근성 분석이 통째로 비어버린다.
+  const normalized = s
+    .replace(/^(\d{4})[.\-/]\s*(\d{1,2})[.\-/]\s*(\d{1,2})\.?/, "$1-$2-$3")
+    .replace(/\./g, "-")
+    .replace(/\//g, "-")
+    .replace(/^(\d{4}-\d{1,2}-\d{1,2})\s+(\d)/, "$1T$2");
   const d = new Date(normalized);
   if (!Number.isFinite(d.getTime())) return null;
   return d.toISOString();
@@ -114,15 +145,12 @@ function headersLookLikeData(headers: string[]): boolean {
   });
 }
 
+// 완전 일치만 보면 스마트스토어의 `리뷰상세내용`·`구매자평점` 같은 접두·접미형 헤더를 통째로 놓치고,
+// 헤더 줄이 데이터로 처리돼 1열(상품번호)이 리뷰 본문이 된다. 아래 findColumnByKeyword와 같은 기준으로 맞춘다.
+// 한 글자 키("별")는 데이터 줄의 "별로다" 같은 값에 걸려 반대 방향 오탐을 내므로 제외한다.
 function hasKnownHeader(headers: string[]): boolean {
-  const keys = new Set(headers.map(normalizeKey));
-  const textSet = new Set(TEXT_KEYS.map(normalizeKey));
-  const ratingSet = new Set(RATING_KEYS.map(normalizeKey));
-  const dateSet = new Set(DATE_KEYS.map(normalizeKey));
-  for (const k of keys) {
-    if (textSet.has(k) || ratingSet.has(k) || dateSet.has(k)) return true;
-  }
-  return false;
+  const keys = [...TEXT_KEYS, ...RATING_KEYS, ...DATE_KEYS].filter((k) => normalizeKey(k).length >= 2);
+  return findColumnByKeyword(headers, keys) !== undefined;
 }
 
 // Match a column whose normalized name contains a keyword token (e.g. "review_date" ⊃ "date"),

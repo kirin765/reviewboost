@@ -4,6 +4,7 @@ import React from "react";
 import type { Capabilities } from "@/lib/capabilities";
 import type { AnalysisStage } from "@/lib/analysis-stage";
 import type { DashboardAnalysisResult } from "@/lib/api/analysis";
+import { reviewTextColumnLooksUnusable } from "@/lib/csv";
 import type { CsvPreview } from "@/lib/csv";
 import { buttonStyles } from "@/components/ui/Button";
 import { StatePanel, Surface } from "@/components/ui/Primitives";
@@ -102,11 +103,48 @@ export default function DashboardAnalysisPanel({
       : `현재 플랜: ${planDisplayLabel(caps)} · 결과는 저장 또는 PDF 공유로 이어집니다.`;
   const handleBackToUpload = onBackToUpload ?? onReset;
 
+  // 상품번호 같은 열이 리뷰 본문으로 집계되면 결과가 통째로 무의미해진다(2026-07-28 실제 발생).
+  // 이름 기반 추정 실패와, 이름은 그럴듯한데 값이 리뷰 문장이 아닌 경우를 둘 다 막는다.
+  const textColLooksUnusable = preview ? reviewTextColumnLooksUnusable(preview, textCol) : false;
+  const textColUnverified = preview?.inferred.textColSource === "fallback" || textColLooksUnusable;
+  const [textColConfirmed, setTextColConfirmed] = React.useState(false);
+  React.useEffect(() => {
+    setTextColConfirmed(false);
+  }, [preview, textCol]);
+  const blockAnalyze = textColUnverified && !textColConfirmed;
+
   const actionRail = (
     <div className="mt-8 flex flex-col gap-3 border-t border-[color:#e6e8f2] pt-6 md:flex-row md:items-center md:justify-between">
       <div className="max-w-2xl text-sm leading-7 text-[var(--rb-muted)]">
         {step === 1 ? "파일을 선택한 뒤 다음 단계로 이동해 열 매핑을 확인합니다." : null}
-        {step === 2 ? "열 매핑이 맞으면 바로 분석을 시작하고, 수정이 필요하면 다시 업로드로 돌아갑니다." : null}
+        {step === 2 && !textColUnverified ? "열 매핑이 맞으면 바로 분석을 시작하고, 수정이 필요하면 다시 업로드로 돌아갑니다." : null}
+        {step === 2 && textColUnverified ? (
+          <div className="rounded-lg border border-[color:#e6b800] bg-[color:#fffbea] p-4">
+            <p className="font-semibold text-[color:#7a5c00]">
+              {textColLooksUnusable
+                ? "이대로 분석하면 결과가 나오지 않습니다."
+                : "리뷰 본문 열을 자동으로 찾지 못했습니다."}
+            </p>
+            <p className="mt-1">
+              지금 <strong>{textCol}</strong> 열을 리뷰 본문으로 쓰려고 합니다.
+              {textColLooksUnusable
+                ? " 그런데 이 열에는 리뷰 문장이 아니라 숫자나 짧은 코드가 들어 있습니다. 이 상태로 돌리면 감정 분석과 키워드가 전부 비어서 나옵니다."
+                : " 이 열이 상품번호나 주문번호라면 분석 결과가 전부 무의미해집니다."}{" "}
+              위에서 올바른 열을 고른 뒤 아래를 확인해 주세요.
+            </p>
+            <label className="mt-3 flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={textColConfirmed}
+                onChange={(e) => setTextColConfirmed(e.target.checked)}
+                disabled={busy}
+              />
+              <span>
+                <strong>{textCol}</strong> 열이 리뷰 본문이 맞습니다.
+              </span>
+            </label>
+          </div>
+        ) : null}
         {step === 3 ? "분석이 진행되는 동안 결과 화면으로 자동 전환됩니다. 최대 5분 정도 소요될 수 있습니다." : null}
       </div>
       <div className="flex flex-wrap gap-3">
@@ -120,7 +158,12 @@ export default function DashboardAnalysisPanel({
             <button type="button" className={buttonStyles({ variant: "secondary" })} onClick={handleBackToUpload} disabled={busy}>
               다시 업로드
             </button>
-            <button type="button" className={buttonStyles({ variant: "primary" })} onClick={onAnalyze} disabled={busy}>
+            <button
+              type="button"
+              className={buttonStyles({ variant: "primary" })}
+              onClick={onAnalyze}
+              disabled={busy || blockAnalyze}
+            >
               분석 시작
             </button>
           </>

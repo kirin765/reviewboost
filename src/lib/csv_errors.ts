@@ -21,8 +21,14 @@ export const CSV_TOO_LARGE_HELP: string[] = [
 ];
 
 export const CSV_NOT_CSV_HELP: string[] = [
-  "엑셀에서: 파일 > 다른 이름으로 저장 > 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'로 저장해서 업로드해주세요.",
+  "스마트스토어에서 받은 엑셀(.xlsx)은 변환 없이 그대로 올리시면 됩니다.",
+  "그 밖의 형식이라면 엑셀에서: 파일 > 다른 이름으로 저장 > 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'.",
   "구글 스프레드시트에서: 파일 > 다운로드 > '쉼표로 구분된 값(.csv)'"
+];
+
+export const XLSX_UNREADABLE_HELP: string[] = [
+  "엑셀에서 파일을 열어 다시 저장한 뒤 올려주세요.",
+  "그래도 안 되면 'CSV(쉼표로 구분)' 또는 'CSV UTF-8'로 저장해서 올려주세요."
 ];
 
 export const CSV_ENCODING_HELP: string[] = [
