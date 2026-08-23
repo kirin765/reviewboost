@@ -36,3 +36,4 @@ test-results/
 # hyperframes video source projects (renders are copied into public/)
 /videos/
 /brag-output*/
+.claude/
