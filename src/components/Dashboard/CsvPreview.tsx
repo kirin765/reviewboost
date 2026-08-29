@@ -88,11 +88,23 @@ export default function CsvPreview({
         <span className="rounded-full border border-[color:#e6e8f2] bg-white px-3 py-1 text-xs text-[var(--rb-muted-strong)]">
           {preview.headerMode === "header" ? "헤더 있음" : "헤더 없음"}
         </span>
+        {preview.smartstore ? (
+          <span className="rounded-full border border-[color:rgba(46,160,90,0.35)] bg-[rgba(46,160,90,0.08)] px-3 py-1 text-xs font-medium text-[#1d8a4b]">
+            스마트스토어 공식 리뷰 엑셀 폼 감지
+          </span>
+        ) : null}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
         <div className="rounded-[18px] border border-[color:#e6e8f2] bg-white p-5 shadow-[0_10px_30px_rgba(31,37,64,0.08)]">
           <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">열 매핑 패널</h2>
+          {preview.smartstore ? (
+            <p className="mt-4 whitespace-pre-line rounded-[14px] border border-[color:rgba(46,160,90,0.3)] bg-[rgba(46,160,90,0.07)] px-4 py-4 text-sm leading-7 text-[#1a6e3c]">
+              <strong>스마트스토어 공식 리뷰 엑셀 폼</strong>으로 인식했습니다. 리뷰상세내용·구매자평점·리뷰등록일이 자동 매핑되었고,
+              {"\n"}검수와 리서치에 쓰는 등록자·포토/영상·리뷰도움수·답글여부·베스트리뷰·상품명 열도 함께 읽습니다.
+              {"\n"}아래에서 필요한 경우에만 바꿔주세요.
+            </p>
+          ) : null}
           {textColNeedsReview ? (
             <p className="mt-4 whitespace-pre-line rounded-[14px] border border-[color:rgba(224,85,59,0.3)] bg-[rgba(224,85,59,0.08)] px-4 py-4 text-sm leading-7 text-[#b3411f]">
               리뷰 내용 열이 자동으로 추정되었는데 정확하지 않을 수 있어요. 지금 선택된 열: <strong>{textCol}</strong>

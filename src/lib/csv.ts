@@ -1,5 +1,6 @@
 import { parse } from "csv-parse/sync";
 import type { ReviewRow } from "@/lib/types";
+import { mapSmartstoreColumns, toYnOrNull, type SmartstoreColumnMap } from "@/lib/smartstore_form";
 
 const TEXT_KEYS = [
   "text",
@@ -30,6 +31,8 @@ export type CsvMapping = {
   textColSource?: "explicit" | "fallback";
   ratingCol?: string | null;
   dateCol?: string | null;
+  /** 스마트스토어 공식 리뷰 엑셀 폼 감지 시 공식 열 매핑(검수·리서치 여분 필드). */
+  smartstore?: SmartstoreColumnMap | null;
 };
 
 export type CsvPreview = {
@@ -40,6 +43,10 @@ export type CsvPreview = {
   sampleRows: Array<Record<string, string>>;
   totalRows: number;
   warnings: string[];
+  /** 스마트스토어 공식 리뷰 엑셀 폼 여부. */
+  source?: "smartstore" | "generic";
+  /** 스마트스토어 폼 공식 열 매핑(감지 시에만). */
+  smartstore?: SmartstoreColumnMap | null;
 };
 
 export function inferDelimiter(csvText: string): "," | ";" | "\t" {
@@ -107,6 +114,17 @@ function toNumberOrNull(v: unknown): number | null {
   if (n >= 0 && n <= 5) return n;
   if (n > 5 && n <= 10) return Math.round((n / 2) * 10) / 10;
   return null;
+}
+
+// 리뷰도움수는 5점 척도가 아니라 그냥 숫자다(10 넘을 수 있음). 별점 파서(toNumberOrNull)를
+// 쓰면 12 같은 값이 null로 떨어져 도움수 집계가 통째로 비어버린다.
+function toCountOrNull(v: unknown): number | null {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim().replace(/,/g, "");
+  const m = s.match(/\d+/);
+  if (!m) return null;
+  const n = Number(m[0]);
+  return Number.isFinite(n) ? n : null;
 }
 
 function toIsoDateOrNull(v: unknown): string | null {
@@ -224,10 +242,12 @@ export function previewReviewCsv(csvText: string, filename: string | null = null
       filename,
       headerMode: "header",
       columns: [],
-      inferred: { headerMode: "header", textCol: "text", ratingCol: null, dateCol: null },
+      inferred: { headerMode: "header", textCol: "text", ratingCol: null, dateCol: null, smartstore: null },
       sampleRows: [],
       totalRows: 0,
-      warnings: ["CSV에 데이터가 없습니다."]
+      warnings: ["CSV에 데이터가 없습니다."],
+      source: "generic",
+      smartstore: null
     };
   }
 
@@ -235,7 +255,18 @@ export function previewReviewCsv(csvText: string, filename: string | null = null
   const treatAsHeaderless = !hasKnownHeader(headerColumns) && headersLookLikeData(headerColumns);
 
   if (!treatAsHeaderless) {
-    const inferred = inferMappingFromColumns(headerColumns, "header");
+    // 스마트스토어 공식 리뷰 엑셀 폼이면 공식 열을 우선 매핑한다.
+    // 부분 내보내기(일부 열 누락)도 공식 열이 있으면 자동 매핑이 가장 정확하다.
+    const smartstore = mapSmartstoreColumns(headerColumns);
+    const inferred = smartstore
+      ? {
+          ...inferMappingFromColumns(headerColumns, "header"),
+          textCol: smartstore.text,
+          ratingCol: smartstore.rating,
+          dateCol: smartstore.date,
+          smartstore
+        }
+      : inferMappingFromColumns(headerColumns, "header");
     const sampleRows = headerRecords.slice(0, 5).map((r) => {
       const out: Record<string, string> = {};
       for (const c of headerColumns) {
@@ -268,7 +299,9 @@ export function previewReviewCsv(csvText: string, filename: string | null = null
       inferred,
       sampleRows,
       totalRows: headerRecords.length,
-      warnings
+      warnings,
+      source: smartstore ? "smartstore" : "generic",
+      smartstore
     };
   }
 
@@ -297,7 +330,17 @@ export function previewReviewCsv(csvText: string, filename: string | null = null
     return out;
   });
 
-  return { filename, headerMode: "headerless", columns, inferred, sampleRows, totalRows: rows.length, warnings };
+  return {
+    filename,
+    headerMode: "headerless",
+    columns,
+    inferred,
+    sampleRows,
+    totalRows: rows.length,
+    warnings,
+    source: "generic",
+    smartstore: null
+  };
 }
 
 export function parseReviewCsvWithMapping(csvText: string, mapping?: Partial<CsvMapping> | null): ReviewRow[] {
@@ -322,12 +365,35 @@ export function parseReviewCsvWithMapping(csvText: string, mapping?: Partial<Csv
       delimiter: inferDelimiter(csvText)
     }) as Record<string, unknown>[];
 
+    // 스마트스토어 공식 폼이면 검수·리서치용 여분 필드를 함께 추출한다.
+    const smartstore = m.smartstore ?? null;
+    const cellOf = (row: Record<string, unknown>, col: string | null | undefined) =>
+      col ? String(row[col] ?? "").trim() : "";
+
     return records
       .map((r) => {
         const text = String(r[m.textCol] ?? "").trim();
         const rating = ratingCol ? toNumberOrNull(r[ratingCol]) : null;
         const reviewedAt = dateCol ? toIsoDateOrNull(r[dateCol]) : null;
-        return { text, rating, reviewedAt };
+
+        if (!smartstore) return { text, rating, reviewedAt };
+
+        const photoRaw = cellOf(r, smartstore.photo);
+        const helpfulRaw = cellOf(r, smartstore.helpful);
+        const row: ReviewRow = {
+          text,
+          rating,
+          reviewedAt,
+          productNo: cellOf(r, smartstore.productNo) || null,
+          productName: cellOf(r, smartstore.productName) || null,
+          author: cellOf(r, smartstore.author) || null,
+          helpfulCount: helpfulRaw ? toCountOrNull(helpfulRaw) : null,
+          // 포토/영상 열이 비어 있지 않고 "N/아니오/없음"이 아니면 사진 리뷰로 본다.
+          hasPhoto: Boolean(photoRaw) && toYnOrNull(photoRaw) !== "N",
+          replyYn: toYnOrNull(cellOf(r, smartstore.reply)),
+          bestReviewYn: toYnOrNull(cellOf(r, smartstore.best))
+        };
+        return row;
       })
       .filter((r) => r.text.length > 0);
   }

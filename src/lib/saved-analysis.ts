@@ -267,7 +267,8 @@ export function createStoredAnalysisPayload(result: DashboardAnalysisResult): St
     priorityMatrix,
     ratingSimulation,
     positiveKeywords,
-    actionItems
+    actionItems,
+    smartstore
   } = result;
 
   return {
@@ -278,7 +279,8 @@ export function createStoredAnalysisPayload(result: DashboardAnalysisResult): St
     priorityMatrix,
     ratingSimulation,
     positiveKeywords,
-    actionItems
+    actionItems,
+    smartstore
   };
 }
 

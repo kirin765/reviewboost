@@ -147,4 +147,63 @@ describe("runAnalysisPipeline", () => {
     expect(result.payload.stats.total).toBe(2);
     expect(openAi.generateSuggestions).toHaveBeenCalled();
   });
+
+  it("스마트스토어 공식 폼 업로드 시 검수·리서치(smartstore)를 채운다", async () => {
+    openAi.generateSuggestions.mockResolvedValue({
+      detailPageCopy: ["d1"],
+      csResponseTemplates: ["c1"],
+      faqRecommendations: ["f1"],
+      notes: ["n1"]
+    });
+
+    const header = [
+      "상품번호", "상품명", "리뷰구분", "구매자평점", "포토/영상", "리뷰상세내용", "리뷰도움수",
+      "등록자", "리뷰등록일", "최종수정일", "리뷰글번호", "관련리뷰글번호", "관련리뷰상세내용",
+      "전시상태", "답글여부", "답글등록일시", "베스트리뷰", "베스트리뷰선정일시", "이벤트번호",
+      "혜택지급", "혜택지급일시", "유저정보 등록 항목", "상품주문번호", "풀필먼트사", "리뷰이동일"
+    ].join(",");
+    const rows = [
+      ["12883224965", "강아지 배변패드", "", "1", "", "배송이 너무 늦었어요", "5", "kweo***", "2026.06.19. 17:08:26", "", "", "", "", "정상", "N", "", "N", "", "", "", "", "", "", "", ""].join(","),
+      ["12883224965", "강아지 배변패드", "", "5", "https://phinf.pstatic.net/a.jpg", "사진이 잘 나옵니다", "12", "abc***", "2026.06.20. 09:12:00", "", "", "", "", "정상", "Y", "", "Y", "", "", "", "", "", "", "", ""].join(",")
+    ].join("\n");
+
+    const result = await runAnalysisPipeline({
+      csvText: [header, rows].join("\n"),
+      headerMode: "header",
+      // 프로덕션 흐름처럼 UI가 선택한 공식 열을 넘긴다(스마트스토어 폼 자동 매핑 결과).
+      textCol: "리뷰상세내용",
+      ratingCol: "구매자평점",
+      dateCol: "리뷰등록일",
+      plan: "free",
+      useLLM: false
+    });
+
+    expect(result.payload.smartstore).not.toBeNull();
+    expect(result.payload.smartstore!.unrepliedNegativeCount).toBe(1);
+    expect(result.payload.smartstore!.unrepliedNegative[0]!.review.text).toBe("배송이 너무 늦었어요");
+    expect(result.payload.smartstore!.photoReviewCount).toBe(1);
+    expect(result.payload.smartstore!.totalHelpful).toBe(17);
+    expect(result.payload.smartstore!.productStats[0]!.avgRating).toBe(3);
+  });
+
+  it("일반 업로드는 smartstore 인사이트 없이 null을 유지한다", async () => {
+    openAi.generateSuggestions.mockResolvedValue({
+      detailPageCopy: ["d1"],
+      csResponseTemplates: ["c1"],
+      faqRecommendations: ["f1"],
+      notes: ["n1"]
+    });
+
+    const result = await runAnalysisPipeline({
+      csvText: baseCsv,
+      headerMode: "header",
+      textCol: null,
+      ratingCol: null,
+      dateCol: null,
+      plan: "free",
+      useLLM: false
+    });
+
+    expect(result.payload.smartstore).toBeNull();
+  });
 });

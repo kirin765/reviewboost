@@ -66,14 +66,16 @@ describe("csv preview", () => {
       "혜택지급", "혜택지급일시", "유저정보 등록 항목", "상품주문번호", "풀필먼트사", "리뷰이동일"
     ].join(",");
     const row = [
-      "12883224965", "고양이 발톱깎기 앞치마", "한달사용", "4", "", "공간이 넓어서 냥이가 자꾸 빠져나옵니다", "",
+      "12883224965", "고양이 발톱깎기 앞치마", "한달사용", "4", "https://phinf.pstatic.net/img1.jpg", "공간이 넓어서 냥이가 자꾸 빠져나옵니다", "12",
       "kweo***", "2026.06.19. 17:08:26", "", "5002323915", "4978174773", "야옹이가 쏙들어가서 작업하기 좋아요",
-      "정상", "N", "", "N", "", "", "", "", "", "2026050182911941", "", ""
+      "정상", "N", "", "Y", "", "", "", "", "", "2026050182911941", "", ""
     ].join(",");
 
     const result = previewReviewCsv([header, row].join("\n"), "review_20260808.csv");
 
     expect(result.headerMode).toBe("header");
+    expect(result.source).toBe("smartstore");
+    expect(result.smartstore).not.toBeNull();
     expect(result.inferred.textCol).toBe("리뷰상세내용");
     expect(result.inferred.ratingCol).toBe("구매자평점");
     expect(result.inferred.dateCol).toBe("리뷰등록일");
@@ -81,6 +83,15 @@ describe("csv preview", () => {
     const rows = parseReviewCsvWithMapping([header, row].join("\n"), result.inferred);
     expect(rows[0]?.text).toBe("공간이 넓어서 냥이가 자꾸 빠져나옵니다");
     expect(rows[0]?.rating).toBe(4);
+
+    // 검수·리서치용 여분 필드: 공식 폼에서 함께 추출된다.
+    expect(rows[0]?.productNo).toBe("12883224965");
+    expect(rows[0]?.productName).toBe("고양이 발톱깎기 앞치마");
+    expect(rows[0]?.author).toBe("kweo***");
+    expect(rows[0]?.helpfulCount).toBe(12);
+    expect(rows[0]?.hasPhoto).toBe(true);
+    expect(rows[0]?.replyYn).toBe("N");
+    expect(rows[0]?.bestReviewYn).toBe("Y");
   });
 });
 

@@ -8,6 +8,7 @@ import type { DashboardAnalysisResult } from "@/lib/api/analysis";
 import { useGates } from "@/contexts/PlanContext";
 import { buttonStyles } from "@/components/ui/Button";
 import { SectionHeader, Surface } from "@/components/ui/Primitives";
+import SmartstoreInsightsSection from "./smartstore-insights";
 
 interface AnalysisResultsProps {
   result: DashboardAnalysisResult;
@@ -299,6 +300,8 @@ export default function AnalysisResults({
           <p className="mt-3 text-sm text-[var(--rb-muted)]">작성일 열이 없으면 최근 이슈는 계산되지 않거나 약하게 반영됩니다.</p>
         ) : null}
       </Surface>
+
+      {result.smartstore ? <SmartstoreInsightsSection insights={result.smartstore} /> : null}
 
       <Surface className="px-6 py-6 md:px-7">
         <div className="grid gap-4 md:grid-cols-4">

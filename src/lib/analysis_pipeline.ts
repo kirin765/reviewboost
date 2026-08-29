@@ -25,7 +25,8 @@ import {
   generateActionItems,
   extractPositiveKeywords
 } from "@/lib/v2/features";
-import type { ClassifiedReview, Suggestions, AnalysisStats } from "@/lib/types";
+import type { ClassifiedReview, Suggestions, AnalysisStats, SmartstoreInsights } from "@/lib/types";
+import { computeSmartstoreInsights } from "@/lib/smartstore_insights";
 import { logger } from "./logger";
 import { normalizeTimeBudget, normalizeHeaderMode, normalizeMaxCount } from "./normalizers";
 
@@ -80,6 +81,8 @@ export interface AnalysisPipelineOutput {
     ratingSimulation?: import("@/lib/types").RatingSimulation;
     positiveKeywords?: import("@/lib/types").PositiveKeyword[];
     actionItems?: import("@/lib/types").ActionItem[];
+    /** 스마트스토어 공식 폼 업로드 시에만 채워진다. */
+    smartstore?: SmartstoreInsights | null;
   };
   classified: ClassifiedReview[];
 }
@@ -282,6 +285,9 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
 
   const actionItems = generateActionItems(classified, suggestions);
 
+  // 스마트스토어 공식 폼 전용 검수·리서치(여분 필드가 없으면 null).
+  const smartstore = computeSmartstoreInsights(classified);
+
   const payload = {
     stats,
     suggestions,
@@ -297,7 +303,8 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
     priorityMatrix,
     ratingSimulation,
     positiveKeywords,
-    actionItems
+    actionItems,
+    smartstore
   };
 
   return { payload, classified };

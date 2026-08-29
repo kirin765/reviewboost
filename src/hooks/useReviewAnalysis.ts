@@ -108,7 +108,8 @@ export function useReviewAnalysis({ onNotice }: UseReviewAnalysisProps = {}) {
         file_size: nextFile.size,
         rows: nextPreview.totalRows,
         columns: nextPreview.columns.length,
-        header_mode: nextPreview.headerMode
+        header_mode: nextPreview.headerMode,
+        source: nextPreview.source ?? "generic"
       });
     },
     [setNoticeState]
