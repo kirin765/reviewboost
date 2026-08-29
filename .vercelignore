@@ -1,3 +1,11 @@
+# 민감/스크래치 파일 — 배포 업로드 제외
+.shoot-naver-login.mjs
+_up1.mjs
+google-tasks-memo.mjs
+PAYWALL-PLAN-2026-08-07.md
+kin-bot/
+
+# 기존 유지 (원본 .vercelignore)
 .playwright-mcp
 _qt_assets
 src/app/rss.xml

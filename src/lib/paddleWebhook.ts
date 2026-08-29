@@ -89,6 +89,19 @@ export function extractCustomerId(data: unknown): string | null {
   );
 }
 
+/** 게스트 결제 구독을 이메일로 연결하기 위한 고객 이메일 (소문자). */
+export function extractCustomerEmail(data: unknown): string | null {
+  const record = asRecord(data);
+  if (!record) return null;
+
+  const customer = asRecord(record.customer);
+  const email =
+    asTrimmedString(customer?.email_address) ??
+    asTrimmedString(record.customer_email) ??
+    asTrimmedString(record.email);
+  return email ? email.toLowerCase() : null;
+}
+
 export function extractUserId(data: unknown): string | null {
   const record = asRecord(data);
   if (!record) return null;

@@ -37,3 +37,16 @@ test-results/
 /videos/
 /brag-output*/
 .claude/
+
+# 민감 스크래치 스크립트 (커밋 금지)
+.shoot-naver-login.mjs
+_up1.mjs
+google-tasks-memo.mjs
+
+# 개인/스크래치 자료 (로컬 보관)
+_qt_assets/
+kin-bot/
+PAYWALL-PLAN-2026-08-07.md
+
+# TypeScript 빌드 산출물 (원복 추적 해제)
+*.tsbuildinfo

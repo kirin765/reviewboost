@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   upsertProfileCustomer: vi.fn(),
   findUserIdByPaddleCustomerId: vi.fn(),
   upsertSubscription: vi.fn(),
+  findUserIdByEmail: vi.fn(),
+  upsertPendingSubscription: vi.fn(),
   paddlePlanForPriceId: vi.fn(),
   recordFunnelEvent: vi.fn()
 }));
@@ -12,7 +14,12 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/billing", () => ({
   upsertProfileCustomer: mocks.upsertProfileCustomer,
   findUserIdByPaddleCustomerId: mocks.findUserIdByPaddleCustomerId,
-  upsertSubscription: mocks.upsertSubscription
+  upsertSubscription: mocks.upsertSubscription,
+  upsertPendingSubscription: mocks.upsertPendingSubscription
+}));
+
+vi.mock("@/lib/clerk_bridge", () => ({
+  findUserIdByEmail: mocks.findUserIdByEmail
 }));
 
 vi.mock("@/lib/paddle", () => ({
@@ -382,5 +389,95 @@ describe("POST /api/billing/webhook", () => {
       currentPeriodEnd: "2026-03-01T00:00:00Z",
       cancelAtPeriodEnd: true
     });
+  });
+
+  it("links a guest transaction to an existing user by email when user_id is absent", async () => {
+    mocks.findUserIdByPaddleCustomerId.mockResolvedValue(null);
+    mocks.findUserIdByEmail.mockResolvedValue("user-by-email");
+    mocks.paddlePlanForPriceId.mockReturnValue("extension");
+
+    const req = signedRequest({
+      event_type: "transaction.completed",
+      event_id: "evt_guest_1",
+      data: {
+        id: "txn_guest_1",
+        custom_data: { plan_tier: "extension" },
+        customer: { id: "ctm_guest", email_address: "Guest@Example.com" },
+        subscription_id: "sub_guest",
+        status: "completed",
+        items: [{ price: { id: "pri_ext" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.findUserIdByEmail).toHaveBeenCalledWith("guest@example.com");
+    expect(mocks.upsertProfileCustomer).toHaveBeenCalledWith("user-by-email", "ctm_guest");
+    expect(mocks.upsertSubscription).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user-by-email", paddleSubscriptionId: "sub_guest" })
+    );
+    expect(mocks.upsertPendingSubscription).not.toHaveBeenCalled();
+  });
+
+  it("stores a pending subscription when the guest email has no account yet", async () => {
+    mocks.findUserIdByPaddleCustomerId.mockResolvedValue(null);
+    mocks.findUserIdByEmail.mockResolvedValue(null);
+    mocks.paddlePlanForPriceId.mockReturnValue("extension");
+
+    const req = signedRequest({
+      event_type: "subscription.created",
+      event_id: "evt_pending_1",
+      data: {
+        id: "sub_pending",
+        custom_data: { plan_tier: "extension" },
+        customer: { id: "ctm_pending", email_address: "new@example.com" },
+        status: "active",
+        items: [{ price: { id: "pri_ext" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.upsertPendingSubscription).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "new@example.com",
+        paddleSubscriptionId: "sub_pending",
+        paddleCustomerId: "ctm_pending",
+        planTier: "extension",
+        status: "active"
+      })
+    );
+    expect(mocks.upsertSubscription).not.toHaveBeenCalled();
+    expect(mocks.upsertProfileCustomer).not.toHaveBeenCalled();
+    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith(
+      "extension_payment_completed",
+      null,
+      expect.objectContaining({ email: "new@example.com", pending: true }),
+      "sub_pending"
+    );
+  });
+
+  it("logs user_mapping_missing when neither user_id nor customer email exists", async () => {
+    mocks.findUserIdByPaddleCustomerId.mockResolvedValue(null);
+
+    const req = signedRequest({
+      event_type: "subscription.updated",
+      data: {
+        custom_data: {},
+        customer_id: "ctm_orphan",
+        subscription_id: "sub_orphan",
+        status: "active",
+        items: [{ price: { id: "pri_basic" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.upsertSubscription).not.toHaveBeenCalled();
+    expect(mocks.upsertPendingSubscription).not.toHaveBeenCalled();
+    expect(mocks.upsertProfileCustomer).not.toHaveBeenCalled();
   });
 });

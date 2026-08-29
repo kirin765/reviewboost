@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 import { isExtensionTokenConfigured, issueExtensionToken } from "@/lib/extension_token";
+import { recordFunnelEvent } from "@/lib/db/queries";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,8 @@ export async function POST(req: Request): Promise<Response> {
   if (!issued) {
     return Response.json({ error: "토큰 발급에 실패했습니다." }, { status: 500 });
   }
+
+  await recordFunnelEvent("extension_token_issued", userId, { source: "extension_connect" });
 
   return Response.json(
     { token: issued.token, expiresAt: issued.expiresAt },

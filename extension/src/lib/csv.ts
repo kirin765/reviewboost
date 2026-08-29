@@ -1,7 +1,13 @@
+import {
+  reviewToOfficialRow,
+  SMARTSTORE_REVIEW_HEADERS,
+  type ReviewExportContext
+} from "./excel-form";
 import type { RawReview } from "./types";
 
-// ReviewBoost csv.ts 가 자동 인식하는 한글 헤더 → 업로드 시 매핑 UI 없이 바로 분석됨.
-const CSV_HEADERS = ["리뷰내용", "별점", "작성일"];
+// 스마트스토어 판매자센터 공식 리뷰 내보내기와 같은 25열 폼을 그대로 쓴다.
+// ReviewBoost csv.ts 는 리뷰상세내용/구매자평점/리뷰등록일 헤더를 자동 인식하므로
+// 업로드 시 매핑 UI 없이 바로 분석된다 (나머지 열은 분석에 안 쓰이지만 원본을 보존).
 
 /** CSV 수식 인젝션 방지 + 따옴표/개행 이스케이프(crawler-server/src/csv.js 포팅). */
 function escapeCell(value: unknown): string {
@@ -13,15 +19,9 @@ function escapeCell(value: unknown): string {
   return str;
 }
 
-function dateOnly(iso: string | null | undefined): string {
-  return iso ? iso.slice(0, 10) : "";
-}
-
-/** 사용자 다운로드용 CSV(UTF-8 BOM). 본문/별점/작성일 3열. */
-export function reviewsToCsv(reviews: RawReview[]): string {
-  const header = CSV_HEADERS.join(",");
-  const rows = reviews.map((r) =>
-    [r.text, r.rating ?? "", dateOnly(r.reviewedAt)].map(escapeCell).join(",")
-  );
+/** 사용자 다운로드용 CSV(UTF-8 BOM, 스마트스토어 공식 리뷰 25열 폼). */
+export function reviewsToCsv(reviews: RawReview[], ctx?: ReviewExportContext): string {
+  const header = SMARTSTORE_REVIEW_HEADERS.join(",");
+  const rows = reviews.map((r) => reviewToOfficialRow(r, ctx).map(escapeCell).join(","));
   return "﻿" + [header, ...rows].join("\r\n");
 }

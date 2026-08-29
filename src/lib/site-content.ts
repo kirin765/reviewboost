@@ -256,7 +256,7 @@ const ko: SiteContent = {
     pricing: {
       eyebrow: "요금제",
       title: "무료로 정확도를 먼저 확인하고, 저장과 반복 분석이 필요할 때 확장하세요.",
-      lead: "무료 플랜으로 첫 결과를 검증한 뒤, 운영 빈도와 저장 필요에 맞게 Basic 또는 Pro로 확장할 수 있습니다. Basic·Pro에는 Chrome 익스텐션 유료 수집(하루 2,000개)이 덤으로 포함됩니다."
+      lead: "무료 플랜으로 첫 결과를 검증한 뒤, 운영 빈도와 저장 필요에 맞게 Basic 또는 Pro로 확장할 수 있습니다. Basic·Pro에는 Chrome 익스텐션 유료 수집(무제한)이 덤으로 포함됩니다."
     },
     faq: {
       eyebrow: "자주 묻는 질문",
@@ -321,7 +321,7 @@ const ko: SiteContent = {
           { label: "PDF 리포트", value: "워터마크 제거" },
           { label: "저장 히스토리", value: "최대 500개" },
           { label: "우선순위 매트릭스", value: "상세 요약 포함" },
-          { label: "Chrome 익스텐션", value: "덤으로 포함 · 하루 2,000개" },
+          { label: "Chrome 익스텐션", value: "덤으로 포함 · 무제한" },
           { label: "부정 리뷰 주간 알림", value: "출시 예정" }
         ]
       },
@@ -338,7 +338,7 @@ const ko: SiteContent = {
           { label: "시뮬레이션", value: "포함" },
           { label: "긍정 키워드", value: "포함" },
           { label: "팀 공유", value: "최대 5명" },
-          { label: "Chrome 익스텐션", value: "덤으로 포함 · 하루 2,000개" },
+          { label: "Chrome 익스텐션", value: "덤으로 포함 · 무제한" },
           { label: "부정 리뷰 주간 알림", value: "출시 예정" }
         ]
       }
@@ -348,8 +348,8 @@ const ko: SiteContent = {
       title: "익스텐션 플랜",
       price: "₩4,900",
       per: "/ 월",
-      meta: "쿠팡·스마트스토어 리뷰 수집 하루 2,000개 (무료는 하루 50개)",
-      note: "Basic·Pro 구독 중이라면 별도 결제 없이 익스텐션 유료 수집(하루 2,000개)이 덤으로 포함됩니다. 익스텐션만 쓰고 계신다면 월 ₩14,100 차이로 Basic의 월 200회 AI 분석까지 이용할 수 있습니다.",
+      meta: "쿠팡·스마트스토어 리뷰 수집 무제한 (무료는 하루 50개)",
+      note: "Basic·Pro 구독 중이라면 별도 결제 없이 익스텐션 유료 수집(무제한)이 덤으로 포함됩니다. 익스텐션만 쓰고 계신다면 월 ₩14,100 차이로 Basic의 월 200회 AI 분석까지 이용할 수 있습니다.",
       cta: "익스텐션 플랜 시작"
     }
   }
@@ -481,7 +481,7 @@ const en: SiteContent = {
     pricing: {
       eyebrow: "Pricing",
       title: "Start free, then expand when saved history and repeat analysis matter.",
-      lead: "Validate the output quality on the free plan first, then move to Basic or Pro as review operations become more frequent. Basic and Pro include the paid Chrome extension quota (2,000 collects/day) at no extra cost."
+      lead: "Validate the output quality on the free plan first, then move to Basic or Pro as review operations become more frequent. Basic and Pro include the paid Chrome extension quota (unlimited) at no extra cost."
     },
     faq: {
       eyebrow: "FAQ",
@@ -546,7 +546,7 @@ const en: SiteContent = {
           { label: "PDF report", value: "No watermark" },
           { label: "Saved history", value: "Up to 500" },
           { label: "Priority matrix", value: "Detailed summary" },
-          { label: "Chrome extension", value: "Included · 2,000/day" },
+          { label: "Chrome extension", value: "Included · Unlimited" },
           { label: "Weekly negative-review alerts", value: "Coming soon" }
         ]
       },
@@ -563,7 +563,7 @@ const en: SiteContent = {
           { label: "Simulation", value: "Included" },
           { label: "Positive keywords", value: "Included" },
           { label: "Team sharing", value: "Up to 5 seats" },
-          { label: "Chrome extension", value: "Included · 2,000/day" },
+          { label: "Chrome extension", value: "Included · Unlimited" },
           { label: "Weekly negative-review alerts", value: "Coming soon" }
         ]
       }
@@ -573,8 +573,8 @@ const en: SiteContent = {
       title: "Extension Plan",
       price: "₩4,900",
       per: "/ month",
-      meta: "Collect up to 2,000 Coupang/SmartStore reviews per day (free: 50/day)",
-      note: "Basic and Pro subscribers get the paid extension quota (2,000/day) included at no extra cost. If you only use the extension, Basic is just ₩14,100 more and adds 200 AI analyses per month.",
+      meta: "Collect unlimited Coupang/SmartStore reviews (free: 50/day)",
+      note: "Basic and Pro subscribers get the paid extension quota (unlimited) included at no extra cost. If you only use the extension, Basic is just ₩14,100 more and adds 200 AI analyses per month.",
       cta: "Start Extension Plan"
     }
   }

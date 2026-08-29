@@ -12,6 +12,8 @@ export type RawReview = ReviewRow & {
   title?: string;
   author?: string;
   helpfulCount?: number;
+  /** 리뷰에 첨부된 이미지 URL (쿠팡 attachedImages / 스마트스토어 attachImages). */
+  imageUrls?: string[];
 };
 
 export type CollectErrorCode =

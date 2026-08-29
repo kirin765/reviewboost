@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getErrorMessage } from "@/types/common";
+import PaddleCheckoutOverlay from "./PaddleCheckoutOverlay";
 
 type ChromeRuntime = {
   runtime?: {
@@ -16,7 +17,8 @@ type UsageStatus = {
   authenticated: boolean;
   tier: "free" | "paid" | "anonymous";
   day: string;
-  limit: number;
+  /** null = 무제한(유료 플랜). */
+  limit: number | null;
   used: number | null;
   remaining: number | null;
 };
@@ -50,6 +52,21 @@ export default function ExtensionConnectClient() {
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
+
+  // 로그인 직후: 게스트(비로그인)로 결제한 구독을 같은 이메일로 연결한다.
+  const claimFired = useRef(false);
+  useEffect(() => {
+    if (!status?.authenticated || claimFired.current) return;
+    claimFired.current = true;
+    void fetch("/api/billing/claim", { method: "POST" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && typeof data.claimed === "number" && data.claimed > 0) {
+          void loadStatus();
+        }
+      })
+      .catch(() => {});
+  }, [status, loadStatus]);
 
   const connectExtension = useCallback(async () => {
     if (!extId) return;
@@ -88,16 +105,16 @@ export default function ExtensionConnectClient() {
     }
   }, [status, extId, connect, connectExtension]);
 
-  const startCheckout = useCallback(async () => {
+  // 결제: 오버레이(현재 페이지 위 결제창) 우선. 별도 페이지 이동 결제는 링크로만 제공.
+  const startCheckoutRedirect = useCallback(async () => {
     setCheckoutBusy(true);
     setCheckoutError(null);
     try {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: "extension" })
+        body: JSON.stringify({ plan: "extension", mode: "redirect" })
       });
-      if (res.status === 401) throw new Error("로그인이 필요합니다.");
       const payload = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
       if (!res.ok) throw new Error(String(payload?.error || "결제 세션 생성 중 오류가 발생했습니다."));
       const url = String(payload?.url ?? "").trim();
@@ -110,19 +127,10 @@ export default function ExtensionConnectClient() {
     }
   }, []);
 
-  // 익스텐션 업그레이드 딥링크(?checkout=1): 로그인된 무료 사용자면 결제를 바로 시작한다.
-  // ref 로 1회만 실행하고, 결제 후 복귀(billing=success)에는 다시 시작하지 않는다.
-  const autoCheckoutFired = useRef(false);
-  useEffect(() => {
-    if (checkoutParam !== "1" || billing === "success") return;
-    if (!status?.authenticated || status.tier === "paid") return;
-    if (autoCheckoutFired.current) return;
-    autoCheckoutFired.current = true;
-    void startCheckout();
-  }, [checkoutParam, billing, status, startCheckout]);
-
   const loginQuery = params.toString();
   const loginNext = `/extension-connect${loginQuery ? `?${loginQuery}` : ""}`;
+  const showAutoCheckout =
+    checkoutParam === "1" && billing !== "success" && (!status?.authenticated || status.tier === "free");
 
   return (
     <main className="pageMain" style={{ padding: "48px 16px 64px" }}>
@@ -134,8 +142,14 @@ export default function ExtensionConnectClient() {
 
         {billing === "success" ? (
           <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-            ✅ 구독이 완료되었습니다. 결제 반영까지 최대 1분 정도 걸릴 수 있어요. 익스텐션 팝업을 다시 열면
-            늘어난 한도가 적용됩니다.
+            ✅ 구독이 완료되었습니다. 결제 반영까지 최대 1분 정도 걸릴 수 있어요.{" "}
+            {status?.authenticated ? (
+              <>익스텐션 팝업을 다시 열면 늘어난 한도가 적용됩니다.</>
+            ) : (
+              <>
+                <strong>결제에 사용한 이메일로 로그인하면 구독이 자동으로 연결됩니다.</strong>
+              </>
+            )}
           </div>
         ) : null}
 
@@ -145,19 +159,34 @@ export default function ExtensionConnectClient() {
 
           {status && !status.authenticated ? (
             <>
-              <p style={{ marginBottom: 12 }}>계정 연결을 위해 먼저 로그인해주세요.</p>
-              <Link className="btn btnPrimary" href={`/login?next=${encodeURIComponent(loginNext)}`}>
-                로그인하고 연결하기
-              </Link>
+              <p style={{ marginBottom: 8 }}>
+                로그인 없이도 <strong>이메일만으로 바로 결제</strong>할 수 있어요.
+              </p>
+              <p style={{ marginBottom: 12, opacity: 0.8, fontSize: 13 }}>
+                결제 후 같은 이메일로 로그인하면 구독이 자동으로 연결됩니다.
+              </p>
+              {showAutoCheckout ? (
+                <PaddleCheckoutOverlay plan="extension" label="이메일로 바로 결제하기" autoOpen />
+              ) : (
+                <PaddleCheckoutOverlay plan="extension" label="이메일로 바로 결제하기" />
+              )}
+              <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ opacity: 0.6, fontSize: 13 }}>이미 계정이 있나요?</span>
+                <Link className="btn" href={`/login?next=${encodeURIComponent(loginNext)}`}>
+                  로그인하고 연결하기
+                </Link>
+              </div>
             </>
           ) : null}
 
           {status?.authenticated ? (
             <>
               <p style={{ marginBottom: 4 }}>
-                현재 플랜: <strong>{status.tier === "paid" ? "익스텐션 유료 (하루 2,000개)" : "무료 (하루 50개)"}</strong>
+                현재 플랜: <strong>{status.tier === "paid" ? "익스텐션 유료 (무제한)" : "무료 (하루 50개)"}</strong>
               </p>
-              {status.used !== null ? (
+              {status.tier === "paid" ? (
+                <p style={{ marginBottom: 12, opacity: 0.8 }}>오늘 수집: 무제한</p>
+              ) : status.used !== null && status.limit !== null ? (
                 <p style={{ marginBottom: 12, opacity: 0.8 }}>
                   오늘 수집: {status.used.toLocaleString()} / {status.limit.toLocaleString()}개
                 </p>
@@ -184,9 +213,21 @@ export default function ExtensionConnectClient() {
 
               {status.tier !== "paid" ? (
                 <div>
-                  <button className="btn btnPrimary" disabled={checkoutBusy} onClick={() => void startCheckout()}>
-                    {checkoutBusy ? "연결 중…" : "익스텐션 플랜 구독하기 — 하루 2,000개"}
-                  </button>
+                  {showAutoCheckout ? (
+                    <PaddleCheckoutOverlay plan="extension" label="익스텐션 플랜 구독하기 — 무제한" autoOpen />
+                  ) : (
+                    <PaddleCheckoutOverlay plan="extension" label="익스텐션 플랜 구독하기 — 무제한" />
+                  )}
+                  <p style={{ fontSize: 13, opacity: 0.7, marginTop: 8 }}>
+                    <button
+                      className="btn"
+                      disabled={checkoutBusy}
+                      onClick={() => void startCheckoutRedirect()}
+                      style={{ padding: "2px 8px", fontSize: 12 }}
+                    >
+                      {checkoutBusy ? "연결 중…" : "페이지 이동 결제 (대체 방법)"}
+                    </button>
+                  </p>
                   {checkoutError ? <p style={{ color: "#c0392b", marginTop: 8 }}>{checkoutError}</p> : null}
                 </div>
               ) : null}

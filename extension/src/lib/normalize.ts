@@ -46,29 +46,109 @@ function pickHelpful(v: unknown): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
+const COUPANG_STATIC_BASE = "https://static.coupangcdn.com";
+const COUPANG_THUMB_BASE = "https://thumbnail.coupangcdn.com/thumbnails/local/q-1";
+
+/**
+ * 리뷰 첨부 이미지 URL 추출 (방어적, 실 API 형태 기준).
+ * - 쿠팡 실 API(2026-08 확인): attachments[{ attachmentType:"IMAGE", imgSrcOrigin,
+ *   imgSrcThumbnail, uploadedFilePath }] — imgSrcOrigin 이 원본 전체 URL 이다.
+ *   (구형 attachedImages[{ cdnPath }] 도 호환: cdnPath 는 static.coupangcdn.com 을 붙인다)
+ * - 스마트스토어 실 API(2026-08 확인): reviewAttaches[{ reviewAttachmentType:"I",
+ *   attachUrl, attachPath }] — attachUrl 이 전체 URL. 대표 이미지 repThumbnailAttach /
+ *   갤러리 representAttach 도 같은 형태다.
+ * - VIDEO 등 이미지가 아닌 첨부는 제외하고, 중복·비-http(s)·빈 값도 걸러낸다.
+ */
+function pickImageUrls(raw: AnyRec): string[] {
+  const candidates = [
+    raw.attachedImages,
+    raw.attachImages,
+    raw.attachments,
+    raw.images,
+    raw.imageUrls,
+    raw.imageList,
+    raw.reviewAttaches,
+    raw.repThumbnailAttach,
+    raw.representAttach
+  ];
+  const urls: string[] = [];
+  const push = (v: unknown): void => {
+    if (typeof v !== "string") return;
+    const s = v.trim();
+    if (!s) return;
+    let url = s;
+    if (url.startsWith("//")) url = `https:${url}`;
+    else if (url.startsWith("/")) url = `${COUPANG_STATIC_BASE}${url}`;
+    else if (/^image\d?\//.test(url)) url = `${COUPANG_THUMB_BASE}/${url}`;
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") urls.push(parsed.toString());
+    } catch {
+      /* 비-URL 문자열 무시 */
+    }
+  };
+  const pushItem = (item: unknown): void => {
+    if (typeof item === "string") {
+      push(item);
+      return;
+    }
+    if (!item || typeof item !== "object") return;
+    const rec = item as Record<string, unknown>;
+    if (rec.attachmentType != null && rec.attachmentType !== "IMAGE") return; // 쿠팡 VIDEO
+    if (rec.reviewAttachmentType != null && rec.reviewAttachmentType !== "I") return; // 스마트스토어("I"=이미지)
+    if (rec.attachType != null && rec.attachType !== "I") return; // 갤러리 attachType
+    push(
+      rec.imgSrcOrigin ??
+        rec.imgSrcThumbnail ??
+        rec.attachUrl ??
+        rec.attachPath ??
+        rec.imageUrl ??
+        rec.url ??
+        rec.src ??
+        rec.cdnPath ??
+        rec.imagePath ??
+        rec.uploadedFilePath
+    );
+  };
+  for (const c of candidates) {
+    if (Array.isArray(c)) {
+      for (const item of c) pushItem(item);
+    } else if (typeof c === "string") {
+      push(c);
+    } else if (c && typeof c === "object") {
+      pushItem(c);
+    }
+  }
+  return [...new Set(urls)];
+}
+
 type AnyRec = Record<string, unknown> & { member?: { name?: unknown } };
 
 /** 쿠팡 리뷰 raw → RawReview (crawler.js normalizeReview 포팅). */
 export function normalizeCoupangReview(raw: AnyRec): RawReview {
+  const imageUrls = pickImageUrls(raw);
   return {
     text: pickString(raw.content, raw.reviewContent),
     rating: clampRating(raw.rating),
     reviewedAt: toIsoDate(raw.reviewAt ?? raw.createdAt ?? null),
     title: pickString(raw.title, raw.reviewTitle) || undefined,
     author: pickString(raw.displayName, raw.nickname, raw.member?.name) || undefined,
-    helpfulCount: pickHelpful(raw.helpfulCount)
+    helpfulCount: pickHelpful(raw.helpfulCount),
+    ...(imageUrls.length ? { imageUrls } : {})
   };
 }
 
 /** 스마트스토어 리뷰 raw → RawReview (필드명 방어적). */
 export function normalizeSmartstoreReview(raw: AnyRec): RawReview {
+  const imageUrls = pickImageUrls(raw);
   return {
     text: pickString(raw.reviewContent, raw.content, raw.text, raw.body),
     rating: clampRating(raw.reviewScore ?? raw.score ?? raw.rating ?? raw.star),
     reviewedAt: toIsoDate(raw.createDate ?? raw.createdDate ?? raw.writeDate ?? raw.reviewDate ?? null),
     title: pickString(raw.title) || undefined,
     author: pickString(raw.maskedWriterId, raw.writerMemberId, raw.memberId, raw.nickname) || undefined,
-    helpfulCount: pickHelpful(raw.helpCount ?? raw.helpfulCount ?? raw.likeCount)
+    helpfulCount: pickHelpful(raw.helpCount ?? raw.helpfulCount ?? raw.likeCount),
+    ...(imageUrls.length ? { imageUrls } : {})
   };
 }
 

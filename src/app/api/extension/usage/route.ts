@@ -58,7 +58,8 @@ type UsageStatus = {
   authenticated: boolean;
   tier: ExtensionTier | "anonymous";
   day: string;
-  limit: number;
+  /** null = 무제한(유료 플랜). */
+  limit: number | null;
   used: number | null;
   remaining: number | null;
 };
@@ -69,7 +70,11 @@ async function statusForUser(userId: string | null): Promise<UsageStatus> {
     return { authenticated: false, tier: "anonymous", day, limit: EXTENSION_FREE_DAILY_LIMIT, used: null, remaining: null };
   }
   const tier = await resolveExtensionTier(userId);
-  const limit = extensionDailyLimit(tier);
+  if (tier === "paid") {
+    // 유료 플랜: 일일 한도 없음(무제한).
+    return { authenticated: true, tier, day, limit: null, used: null, remaining: null };
+  }
+  const limit = EXTENSION_FREE_DAILY_LIMIT;
   const used = await getExtensionUsageCount(userId, day);
   return {
     authenticated: true,
@@ -133,25 +138,47 @@ export async function POST(req: Request): Promise<Response> {
   const day = kstDayString();
   try {
     const tier = await resolveExtensionTier(verified.userId);
+
+    // 유료 플랜: 일일 한도 없음(무제한) — 소비 기록 없이 바로 성공.
+    if (tier === "paid") {
+      await recordFunnelEvent("extension_usage_post_success", verified.userId, {
+        source: "usage_post",
+        tier,
+        day,
+        count,
+        unlimited: true
+      });
+      return new Response(
+        JSON.stringify({ ok: true, tier, day, limit: null, used: null, remaining: null }),
+        { status: 200, headers: { "content-type": "application/json", "cache-control": "no-store", ...cors } }
+      );
+    }
+
     const limit = extensionDailyLimit(tier);
-    const result = await consumeExtensionQuota({ userId: verified.userId, day, count, dailyLimit: limit });
+    const result = await consumeExtensionQuota({ userId: verified.userId, day, count, dailyLimit: limit ?? EXTENSION_FREE_DAILY_LIMIT });
 
     if (!result.ok && result.reason === "over_limit") {
       await recordFunnelEvent("extension_limit_hit", verified.userId, { source: "server", tier, day, count });
       return fail(
-        new ApiError(429, "EXTENSION_DAILY_LIMIT_EXCEEDED", `오늘 수집 한도(${limit.toLocaleString()}개)를 초과했습니다.`, {
-          help:
-            tier === "paid"
-              ? ["내일 다시 시도해주세요."]
-              : ["익스텐션 플랜을 구독하면 하루 2,000개까지 수집할 수 있습니다."]
+        new ApiError(429, "EXTENSION_DAILY_LIMIT_EXCEEDED", `오늘 수집 한도(${limit?.toLocaleString() ?? 50}개)를 초과했습니다.`, {
+          help: ["익스텐션 플랜을 구독하면 무제한으로 수집할 수 있습니다."]
         })
       );
     }
 
     // storage_off: DB 미구성 — 미터링 불가, 수집은 허용 (graceful degradation).
     const used = result.ok ? result.used : 0;
+    if (result.ok) {
+      await recordFunnelEvent("extension_usage_post_success", verified.userId, {
+        source: "usage_post",
+        tier,
+        day,
+        count,
+        used
+      });
+    }
     return new Response(
-      JSON.stringify({ ok: true, tier, day, limit, used, remaining: Math.max(0, limit - used) }),
+      JSON.stringify({ ok: true, tier, day, limit, used, remaining: Math.max(0, (limit ?? 0) - used) }),
       { status: 200, headers: { "content-type": "application/json", "cache-control": "no-store", ...cors } }
     );
   } catch (error) {

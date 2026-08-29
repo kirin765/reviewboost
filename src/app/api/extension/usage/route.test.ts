@@ -70,14 +70,15 @@ describe("GET /api/extension/usage", () => {
     expect(body).toMatchObject({ authenticated: true, tier: "free", limit: 50, used: 5, remaining: 45 });
   });
 
-  it("returns server-side usage for a valid token", async () => {
+  it("returns unlimited usage for a paid (extension plan) user", async () => {
     mocks.verifyExtensionToken.mockReturnValue({ userId: "user_1" });
     mocks.resolveExtensionTier.mockResolvedValue("paid");
     mocks.getExtensionUsageCount.mockResolvedValue(120);
 
     const res = await GET(usageRequest({ token: "tok" }));
     const body = await res.json();
-    expect(body).toMatchObject({ authenticated: true, tier: "paid", limit: 2000, used: 120, remaining: 1880 });
+    expect(body).toMatchObject({ authenticated: true, tier: "paid", limit: null, used: null, remaining: null });
+    expect(mocks.getExtensionUsageCount).not.toHaveBeenCalled();
   });
 });
 
@@ -120,14 +121,20 @@ describe("POST /api/extension/usage", () => {
     );
   });
 
-  it("does not record a funnel event on a successful consume", async () => {
+  it("records successful authenticated usage posts", async () => {
     mocks.verifyExtensionToken.mockReturnValue({ userId: "user_1" });
     mocks.resolveExtensionTier.mockResolvedValue("free");
     mocks.consumeExtensionQuota.mockResolvedValue({ ok: true, used: 30 });
 
     const res = await POST(usageRequest({ method: "POST", token: "tok", body: { count: 30 } }));
     expect(res.status).toBe(200);
-    expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
+    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith("extension_usage_post_success", "user_1", {
+      source: "usage_post",
+      tier: "free",
+      day: expect.any(String),
+      count: 30,
+      used: 30
+    });
   });
 
   it("rejects an invalid count", async () => {
@@ -145,6 +152,7 @@ describe("POST /api/extension/usage", () => {
 
     const res = await POST(usageRequest({ method: "POST", token: "tok", body: { count: 10 } }));
     expect(res.status).toBe(503);
+    expect(mocks.logApiError).toHaveBeenCalledWith(expect.objectContaining({ code: "QUOTA_CHECK_UNAVAILABLE", status: 503 }));
   });
 
   it("allows unmetered collection when storage is off", async () => {
@@ -156,5 +164,16 @@ describe("POST /api/extension/usage", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toMatchObject({ ok: true });
+  });
+
+  it("skips quota consumption for paid users (unlimited)", async () => {
+    mocks.verifyExtensionToken.mockReturnValue({ userId: "user_1" });
+    mocks.resolveExtensionTier.mockResolvedValue("paid");
+
+    const res = await POST(usageRequest({ method: "POST", token: "tok", body: { count: 5000 } }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ ok: true, tier: "paid", limit: null, used: null, remaining: null });
+    expect(mocks.consumeExtensionQuota).not.toHaveBeenCalled();
   });
 });

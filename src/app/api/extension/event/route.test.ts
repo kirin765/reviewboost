@@ -79,6 +79,13 @@ describe("POST /api/extension/event", () => {
     expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
   });
 
+  it("records usage telemetry events", async () => {
+    mocks.verifyExtensionToken.mockReturnValue({ userId: "user_1" });
+    const res = await POST(eventRequest({ token: "tok", body: { name: "usage_post_401" } }));
+    expect(res.status).toBe(204);
+    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith("extension_usage_post_401", "user_1", { source: "usage_post" });
+  });
+
   it("rejects a non-JSON body with 400 and CORS headers", async () => {
     const res = await POST(eventRequest({ rawBody: "not json" }));
     expect(res.status).toBe(400);

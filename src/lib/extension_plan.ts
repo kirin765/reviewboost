@@ -3,10 +3,13 @@ import { hasExtensionPaidAccess } from "@/lib/billing";
 export type ExtensionTier = "free" | "paid";
 
 export const EXTENSION_FREE_DAILY_LIMIT = 50;
-export const EXTENSION_PAID_DAILY_LIMIT = 2000;
 
-export function extensionDailyLimit(tier: ExtensionTier): number {
-  return tier === "paid" ? EXTENSION_PAID_DAILY_LIMIT : EXTENSION_FREE_DAILY_LIMIT;
+/**
+ * 유료 플랜은 일일 한도 없음(무제한). null = unlimited.
+ * (익스텐션의 1회 수집 안전 상한 COLLECT_HARD_MAX=2000 은 유지 — 일일 한도와 별개)
+ */
+export function extensionDailyLimit(tier: ExtensionTier): number | null {
+  return tier === "paid" ? null : EXTENSION_FREE_DAILY_LIMIT;
 }
 
 export async function resolveExtensionTier(userId: string): Promise<ExtensionTier> {

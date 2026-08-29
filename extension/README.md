@@ -30,11 +30,28 @@ npm run build      # dist/ 생성 (esbuild 번들 + 아이콘 + manifest)
 - **쿠팡 (Risk A): ✅ 확인됨.** 실제 상품 페이지에서 content script와 동일한 same-origin fetch가
   Akamai 차단 없이 리뷰 JSON 반환(라이브 확인). 막히면 페이지 한 번 스크롤 후 재시도.
 - **스마트스토어 (Risk B): ✅ 확정됨.** 라이브 네트워크 캡처로 확정:
-  - 엔드포인트: `GET /i/v1/contents/reviews/product-summary/{productNo}/reviews/GENERAL?checkoutMerchantNo={merchant}&searchSortType=REVIEW_RANKING&page=&pageSize=` (`GENERAL`=전체, `STORE_PICK`=엄선, `ALL/TOTAL/LATEST`=400)
+  - 엔드포인트: `POST /i/v1/contents/reviews/query-pages`
+    body `{ checkoutMerchantNo, originProductNo, page, pageSize, reviewSearchSortType: "REVIEW_RANKING" }`
   - merchant(`checkoutMerchantNo`)는 페이지가 이미 보낸 요청 URL(`performance` resource timing)에서 추출
   - 리뷰 필드: `reviewContent`/`reviewScore`/`createDate`/`maskedWriterId`
+- **브랜드스토어 (brand.naver.com): ✅ 2026-08 수정.** 일반 스마트스토어와 프론트가 달라 세 가지가 틀렸다:
+  - 정렬 필드명: `reviewSearchSortType` → **`searchSortType`** (브랜드스토어 번들 전체가 이 필드를 쓴다)
+  - originProductNo: URL productNo 는 채널상품번이라 **원본상품번과 다르다**. preload 의
+    `simpleProductForDetailPage.productNo` / `channelProductNos↔originalProductNos` 매핑으로 우회.
+  - **묶음상품(group product)**: 브랜드스토어의 "묶음" 상품은 전용 엔드포인트를 쓴다. 라이브 확인:
+    `GET /n/v1/contents/reviews/group-products/product-summary/{groupProductNo}/reviews/GENERAL?checkoutMerchantNo=…&searchSortType=REVIEW_RANKING&page=&pageSize=`
+    (GENERAL=전체. 페이지가 보낸 `group-products/product-summary/{gp}` resource URL 로 판별)
+  - 브랜드스토어 API 는 `x-client-rtk`/`x-client-rts`/`x-client-version` 헤더를 보낸다.
+    인라인 `<script>` 의 `__CLIENT_RTK_RTS_STATE__` 를 파싱해 재사용한다.
+  - 안전망: 페이지가 직접 보낸 query-pages 요청(url/body/headers)을 캡처해 그대로 재사용(replay)한다.
+    캡처 훅은 `chrome.scripting.executeScript(world:"MAIN")` 로 주입한다 — 브랜드스토어 CSP 가
+    인라인 `<script>` 를 막기 때문(`script-src … chrome-extension` 에 `'unsafe-inline'` 없음).
 
-  남은 건 리뷰가 있는 상품에서 `unpacked` 로드 후 실제 수집 개수 1회 눈으로 확인하는 것뿐.
+## 리뷰 수집 기본값 · 최근 기록
+
+- 팝업의 기본 수집 개수는 **10개** (`COLLECT_DEFAULT_MAX = 10`).
+- 수집 완료 결과는 `chrome.storage.local`(`rb_history`)에 **최대 5건** 보관된다.
+  팝업을 닫아도 "최근 수집 기록"에서 복원해 엑셀/CSV 다운로드·분석을 다시 할 수 있다.
 
 ## ReviewBoost 연동
 

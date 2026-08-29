@@ -142,4 +142,117 @@ input[type="number"] {
   flex: 0 0 auto;
 }
 
+.history {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 11px;
+}
+.history-item .h-info { flex: 1; min-width: 0; }
+.history-item .h-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg);
+  font-weight: 600;
+}
+.history-item .h-sub { color: var(--muted); margin-top: 2px; }
+.history-item .h-btn {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+  flex: 0 0 auto;
+}
+.history-item .h-del { color: var(--muted); }
+.history-empty { font-size: 11px; color: var(--muted); padding: 6px 0; }
+
 .hidden { display: none !important; }
+
+/* ---------- 탭 (수집 / 기록 / CS 문의) ---------- */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 12px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.tab {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 7px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------- CS 문의 폼 ---------- */
+#cs-pane select,
+#cs-pane textarea,
+#cs-pane input[type="email"] {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--fg);
+  font-family: inherit;
+}
+#cs-pane textarea { resize: vertical; min-height: 72px; }
+#cs-pane .ok {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #1a7f37;
+  background: rgba(63, 185, 80, 0.1);
+  border: 1px solid rgba(63, 185, 80, 0.3);
+  border-radius: 8px;
+  padding: 10px;
+  white-space: pre-line;
+}
+#cs-pane .err {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #993c1d;
+  background: rgba(255, 122, 102, 0.1);
+  border: 1px solid rgba(255, 122, 102, 0.28);
+  border-radius: 8px;
+  padding: 10px;
+  white-space: pre-line;
+}

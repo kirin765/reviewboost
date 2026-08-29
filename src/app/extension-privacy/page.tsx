@@ -117,7 +117,7 @@ export default function ExtensionPrivacyPage() {
                 kwan765@naver.com
               </a>
               <br />
-              Address: 56, Soha-ro, Gwangmyeong-si, Gyeonggi-do, Republic of Korea
+              Address: 12, Ilsan-ro 463beon-gil, Ilsandong-gu, Goyang-si, Gyeonggi-do, Republic of Korea
             </p>
           </section>
         </article>

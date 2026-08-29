@@ -1,5 +1,5 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { appBaseUrl, isPaddleConfigured, paddleEnv, paddlePriceIdForPlan, paddleRequest } from "@/lib/paddle";
+import { appBaseUrl, isPaddleConfigured, paddleBrowserToken, paddleEnv, paddlePriceIdForPlan, paddleRequest } from "@/lib/paddle";
 import { findPaddleCustomerIdByUserId } from "@/lib/billing";
 import { recordFunnelEvent } from "@/lib/db/queries";
 import { logApiError } from "@/lib/api_log";
@@ -7,6 +7,9 @@ import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
 type Body = {
   plan?: "basic" | "pro" | "extension";
+  mode?: "redirect" | "overlay";
+  /** 게스트(비로그인) 결제용 고객 이메일 — Paddle 고객 정보로 저장돼 나중에 계정과 연결된다. */
+  email?: string;
 };
 
 type CheckoutPlan = "basic" | "pro" | "extension";
@@ -177,14 +180,20 @@ export async function POST(req: Request) {
     const userEmail = clerkUser?.emailAddresses?.[0]?.emailAddress ?? null;
     const user = userId ? { id: userId, email: userEmail } : null;
 
-    if (!user?.id || !user.email) {
-      const payload = {
-        error: "로그인이 필요합니다.",
-        code: "checkout_error" as CheckoutErrorCode
-      };
-      await logCheckoutError(401, payload);
-      return Response.json({ error: payload.error, code: payload.code }, { status: 401 });
+    let body: Body = {};
+    try {
+      body = (await req.json()) as Body;
+    } catch {
+      // empty/non-json body defaults to basic
     }
+
+    const plan: CheckoutPlan = body.plan === "pro" ? "pro" : body.plan === "extension" ? "extension" : "basic";
+    const mode: "redirect" | "overlay" = body.mode === "overlay" ? "overlay" : "redirect";
+    debug.plan = plan;
+
+    // 게스트(비로그인) 결제: 로그인 없이도 진행 가능. 이메일은 Paddle 고객 정보로
+    // 남고, 결제 후 같은 이메일로 로그인하면 구독이 자동 연결된다(웹훅 → pending → claim).
+    const guestEmail = String(body.email ?? "").trim().toLowerCase() || null;
 
     if (!isPaddleConfigured()) {
       const payload = {
@@ -195,16 +204,6 @@ export async function POST(req: Request) {
       await logCheckoutError(503, payload);
       return errorResponse(payload, 503);
     }
-
-    let body: Body = {};
-    try {
-      body = (await req.json()) as Body;
-    } catch {
-      // empty/non-json body defaults to basic
-    }
-
-    const plan: CheckoutPlan = body.plan === "pro" ? "pro" : body.plan === "extension" ? "extension" : "basic";
-    debug.plan = plan;
 
     let priceId: string;
     try {
@@ -256,6 +255,26 @@ export async function POST(req: Request) {
 
     const checkoutUrl = buildCheckoutUrl(baseUrl, plan, "success");
 
+    // 오버레이 결제: 서버에서 트랜잭션을 만들지 않고, 클라이언트가 Paddle.js
+    // Checkout.open(displayMode: overlay) 으로 직접 결제창을 띄우도록 설정값을 내려준다.
+    // (게스트도 로그인 없이 바로 결제 가능 — customer_email 은 클라이언트가 채운다)
+    if (mode === "overlay") {
+      if (plan === "extension") {
+        await recordFunnelEvent("extension_checkout_started", user?.id ?? null, { mode: "overlay", guest: !user });
+      }
+      return Response.json({
+        mode: "overlay",
+        plan,
+        priceId,
+        clientToken: paddleBrowserToken(),
+        environment: paddleEnv(),
+        successUrl: checkoutUrl,
+        email: user?.email ?? guestEmail,
+        hasAccount: !!user,
+        userId: user?.id ?? null
+      });
+    }
+
     try {
       new URL(checkoutUrl);
     } catch {
@@ -269,16 +288,21 @@ export async function POST(req: Request) {
       return errorResponse(payload, 500);
     }
 
-    const knownCustomerId = await findPaddleCustomerIdByUserId(user.id);
+    const knownCustomerId = user ? await findPaddleCustomerIdByUserId(user.id) : null;
 
+    // 게스트(비로그인) 결제: custom_data 에 user_id 없이 plan_tier 만 넣고,
+    // 고객 이메일을 customer.email_address 로 넘겨 웹훅에서 이메일로 계정을 연결한다.
     const checkout = await paddleRequest<PaddleCheckoutResponse>("/transactions", {
       method: "POST",
       body: {
         items: [{ price_id: priceId, quantity: 1 }],
         custom_data: {
-          user_id: user.id,
+          ...(user ? { user_id: user.id } : {}),
           plan_tier: plan
         },
+        ...(user?.email || guestEmail
+          ? { customer: { email_address: (user?.email || guestEmail) as string } }
+          : {}),
         collection_mode: "automatic",
         checkout: {
           url: checkoutUrl
@@ -304,7 +328,7 @@ export async function POST(req: Request) {
 
     // 퍼널 ②: 결제 세션 생성 성공 후에만 기록 — 503/설정 오류가 지표를 부풀리지 않게.
     if (plan === "extension") {
-      await recordFunnelEvent("extension_checkout_started", user.id);
+      await recordFunnelEvent("extension_checkout_started", user?.id ?? null, { mode: "redirect", guest: !user });
     }
 
     return Response.json({ url });

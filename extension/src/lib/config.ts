@@ -27,11 +27,16 @@ export const RB_CONNECT_PAGE = `${RB_ORIGIN}/extension-connect`;
 export const AUTH_STORAGE_KEY = "rb_auth";
 export const USAGE_STORAGE_KEY = "rb_usage";
 
+/** chrome.storage.local 키: 최근 수집 내역 (최대 HISTORY_LIMIT 건 보관) */
+export const HISTORY_STORAGE_KEY = "rb_history";
+
 /** 비로그인(및 무료 계정) 일일 수집 한도 — 서버 EXTENSION_FREE_DAILY_LIMIT 와 동일 */
 export const FREE_DAILY_LIMIT = 50;
 
-/** 수집 정중함/안전 한도 */
-export const COLLECT_DEFAULT_MAX = 300;
+/** 1회 수집 안전 상한(폴리트니스) — 일일 한도와 별개. 유료 플랜은 일일 무제한. */
 export const COLLECT_HARD_MAX = 2000;
+
+/** 수집 정중함/안전 한도 */
+export const COLLECT_DEFAULT_MAX = 10;
 export const COLLECT_PAGE_DELAY_MIN_MS = 300;
 export const COLLECT_PAGE_DELAY_MAX_MS = 600;

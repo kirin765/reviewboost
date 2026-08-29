@@ -192,7 +192,7 @@ function MarketingFooter() {
             <span>대표 김기완</span>
             <span>사업자등록번호 892-02-03657</span>
             <span>통신판매업신고 제2025-경기광명-0525호</span>
-            <span>경기도 광명시 소하로56 302동 902호</span>
+            <span>경기도 고양시 일산동구 일산로463번길 12, 204동 103호</span>
             <span>전화 010-8555-8219</span>
             <span>이메일 kwan765@naver.com</span>
           </div>

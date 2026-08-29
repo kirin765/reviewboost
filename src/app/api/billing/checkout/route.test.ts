@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   paddleEnv: vi.fn(),
   appBaseUrl: vi.fn(),
   paddleRequest: vi.fn(),
+  paddleBrowserToken: vi.fn(),
   findPaddleCustomerIdByUserId: vi.fn(),
   recordFunnelEvent: vi.fn()
 }));
@@ -22,7 +23,8 @@ vi.mock("@/lib/paddle", () => ({
   paddlePriceIdForPlan: mocks.paddlePriceIdForPlan,
   paddleEnv: mocks.paddleEnv,
   appBaseUrl: mocks.appBaseUrl,
-  paddleRequest: mocks.paddleRequest
+  paddleRequest: mocks.paddleRequest,
+  paddleBrowserToken: mocks.paddleBrowserToken
 }));
 
 vi.mock("@/lib/billing", () => ({
@@ -52,15 +54,68 @@ describe("POST /api/billing/checkout", () => {
     });
   });
 
-  it("returns 401 when user is not authenticated", async () => {
+  it("allows guest (anonymous) checkout and does not include user_id / customer_id", async () => {
     mocks.auth.mockResolvedValue({ userId: null });
     mocks.currentUser.mockResolvedValue(null);
 
-    const res = await POST(new Request("https://reviewboost.app/api/billing/checkout", { method: "POST", headers: { origin: "https://reviewboost.app" } }));
+    const res = await POST(
+      new Request("https://reviewboost.app/api/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ plan: "extension", email: "guest@example.com" }),
+        headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+      })
+    );
 
-    expect(res.status).toBe(401);
-    await expect(res.json()).resolves.toMatchObject({ error: "로그인이 필요합니다.", code: "checkout_error" });
-    expect(mocks.isPaddleConfigured).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({ url: "https://checkout.paddle.com/c/test" });
+    expect(mocks.findPaddleCustomerIdByUserId).not.toHaveBeenCalled();
+    expect(mocks.paddleRequest).toHaveBeenCalledWith("/transactions", {
+      method: "POST",
+      body: {
+        items: [{ price_id: "pri_123", quantity: 1 }],
+        custom_data: {
+          plan_tier: "extension"
+        },
+        customer: {
+          email_address: "guest@example.com"
+        },
+        collection_mode: "automatic",
+        checkout: {
+          url: "https://reviewboost.app/extension-connect?billing=success&plan=extension"
+        }
+      }
+    });
+    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith(
+      "extension_checkout_started",
+      null,
+      expect.objectContaining({ guest: true })
+    );
+  });
+
+  it("overlay mode returns client config without creating a transaction", async () => {
+    mocks.paddleBrowserToken.mockReturnValue("test-client-token");
+
+    const res = await POST(
+      new Request("https://reviewboost.app/api/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ plan: "extension", mode: "overlay" }),
+        headers: { "content-type": "application/json", origin: "https://reviewboost.app" }
+      })
+    );
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({
+      mode: "overlay",
+      plan: "extension",
+      priceId: "pri_123",
+      clientToken: "test-client-token",
+      environment: "sandbox",
+      successUrl: "https://reviewboost.app/extension-connect?billing=success&plan=extension",
+      email: "user@example.com",
+      hasAccount: true,
+      userId: "user-1"
+    });
+    expect(mocks.paddleRequest).not.toHaveBeenCalled();
   });
 
   it("returns 503 when paddle configuration is incomplete", async () => {
@@ -132,6 +187,9 @@ describe("POST /api/billing/checkout", () => {
           user_id: "user-1",
           plan_tier: "pro"
         },
+        customer: {
+          email_address: "user@example.com"
+        },
         checkout: {
           url: "https://reviewboost.app/pricing?billing=success&plan=pro"
         },
@@ -168,7 +226,11 @@ describe("POST /api/billing/checkout", () => {
 
     const extRes = await POST(extReq);
     expect(extRes.status).toBe(200);
-    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith("extension_checkout_started", "user-1");
+    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith(
+      "extension_checkout_started",
+      "user-1",
+      expect.objectContaining({ mode: "redirect", guest: false })
+    );
 
     mocks.recordFunnelEvent.mockClear();
     const basicReq = new Request("https://reviewboost.app/api/billing/checkout", {
@@ -230,7 +292,7 @@ describe("POST /api/billing/checkout", () => {
     expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
   });
 
-  it("creates checkout without customer fields when customer id is absent", async () => {
+  it("creates checkout without customer_id when customer id is absent (email still prefilled)", async () => {
     mocks.findPaddleCustomerIdByUserId.mockResolvedValue(null);
 
     const req = new Request("https://reviewboost.app/api/billing/checkout", {
@@ -250,6 +312,9 @@ describe("POST /api/billing/checkout", () => {
         custom_data: {
           user_id: "user-1",
           plan_tier: "basic"
+        },
+        customer: {
+          email_address: "user@example.com"
         },
         checkout: {
           url: "https://reviewboost.app/pricing?billing=success&plan=basic"

@@ -1,5 +1,20 @@
 import { AUTH_STORAGE_KEY, REPORT_STORAGE_KEY } from "../lib/config";
 import type { ExternalRequest, ExternalResponse } from "../lib/messages";
+import { captureHookMainWorld } from "../content/hook";
+
+/**
+ * content script → SW: 페이지 MAIN world 에 리뷰 요청 캡처 훅을 주입한다.
+ * chrome.scripting.executeScript(world:"MAIN") 는 페이지 CSP 를 우회한다
+ * (브랜드스토어는 'unsafe-inline' 없는 CSP 라 인라인 <script> 주입이 막힌다).
+ */
+chrome.runtime.onMessage.addListener((msg: unknown, sender, _sendResponse) => {
+  if ((msg as { type?: string })?.type === "INSTALL_HOOK" && sender.tab?.id != null) {
+    void chrome.scripting
+      .executeScript({ target: { tabId: sender.tab.id }, world: "MAIN", func: captureHookMainWorld })
+      .catch(() => {});
+  }
+  return false;
+});
 
 /**
  * externally_connectable 로 열린 ReviewBoost 페이지의 요청 처리.

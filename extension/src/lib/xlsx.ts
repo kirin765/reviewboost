@@ -1,46 +1,40 @@
 import { strToU8, zipSync } from "fflate";
+import {
+  OFFICIAL_NUMERIC_COLUMNS,
+  reviewToOfficialRow,
+  SMARTSTORE_REVIEW_HEADERS,
+  type ReviewExportContext
+} from "./excel-form";
 import type { RawReview } from "./types";
 
 /**
  * 의존성 최소(SheetJS 미사용)로 만든 최소 OOXML .xlsx 생성기.
+ * 스마트스토어 판매자센터 공식 리뷰 내보내기와 같은 25열 폼을 쓴다.
  * inlineStr 셀을 쓰므로 sharedStrings가 필요 없고, 텍스트는 수식이 아니라 안전하다.
  */
 
-type Col = { header: string; get: (r: RawReview) => string | number | null; numeric?: boolean };
-
-const COLUMNS: Col[] = [
-  { header: "별점", get: (r) => r.rating, numeric: true },
-  { header: "제목", get: (r) => r.title ?? "" },
-  { header: "리뷰내용", get: (r) => r.text },
-  { header: "작성자", get: (r) => r.author ?? "" },
-  { header: "작성일", get: (r) => (r.reviewedAt ? r.reviewedAt.slice(0, 10) : "") },
-  { header: "도움됨", get: (r) => r.helpfulCount ?? 0, numeric: true }
-];
-
-export function reviewsToXlsx(reviews: RawReview[]): Uint8Array {
+export function reviewsToXlsx(reviews: RawReview[], ctx?: ReviewExportContext): Uint8Array {
   const files: Record<string, Uint8Array> = {
     "[Content_Types].xml": strToU8(CONTENT_TYPES),
     "_rels/.rels": strToU8(ROOT_RELS),
     "xl/workbook.xml": strToU8(WORKBOOK),
     "xl/_rels/workbook.xml.rels": strToU8(WORKBOOK_RELS),
-    "xl/worksheets/sheet1.xml": strToU8(buildSheetXml(reviews))
+    "xl/worksheets/sheet1.xml": strToU8(buildSheetXml(reviews, ctx))
   };
   return zipSync(files, { level: 6 });
 }
 
-function buildSheetXml(reviews: RawReview[]): string {
+function buildSheetXml(reviews: RawReview[], ctx?: ReviewExportContext): string {
   const rows: string[] = [];
-  rows.push(rowXml(1, COLUMNS.map((c, col) => textCell(col, 1, c.header))));
+  rows.push(rowXml(1, SMARTSTORE_REVIEW_HEADERS.map((h, col) => textCell(col, 1, h))));
   reviews.forEach((r, i) => {
     const row = i + 2;
-    const cells = COLUMNS.map((c, col) => {
-      const v = c.get(r);
-      if (c.numeric) {
-        const n = typeof v === "number" ? v : Number(v);
-        return Number.isFinite(n) ? numCell(col, row, n) : textCell(col, row, "");
-      }
-      return textCell(col, row, v == null ? "" : String(v));
-    });
+    const values = reviewToOfficialRow(r, ctx);
+    const cells = values.map((v, col) =>
+      OFFICIAL_NUMERIC_COLUMNS.has(col) && /^\d+(\.\d+)?$/.test(v)
+        ? numCell(col, row, Number(v))
+        : textCell(col, row, v)
+    );
     rows.push(rowXml(row, cells));
   });
   return (

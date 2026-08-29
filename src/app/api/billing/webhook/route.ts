@@ -1,7 +1,14 @@
-﻿import { findUserIdByPaddleCustomerId, upsertProfileCustomer, upsertSubscription } from "@/lib/billing";
+import {
+  findUserIdByPaddleCustomerId,
+  upsertPendingSubscription,
+  upsertProfileCustomer,
+  upsertSubscription
+} from "@/lib/billing";
+import { findUserIdByEmail } from "@/lib/clerk_bridge";
 import { recordFunnelEvent } from "@/lib/db/queries";
 import { paddlePlanForPriceId } from "@/lib/paddle";
 import {
+  extractCustomerEmail,
   extractCustomerId,
   extractUserId,
   normalizeSubscriptionPayload,
@@ -119,20 +126,65 @@ async function handleEntitlementEvent(eventType: string, eventId: string | null,
     return;
   }
 
-  const mappedUserId = normalized.userId ?? (await findUserIdByPaddleCustomerId(normalized.customerId));
+  // 게스트(비로그인) 결제 지원: custom_data.user_id → paddle 고객 매핑 → 이메일(Clerk) 순으로 사용자를 찾는다.
+  // 사용자를 찾지 못하면(아직 계정 없음) pending_subscriptions 로 이메일 기준 보관해
+  // 나중에 같은 이메일로 로그인하면 연결(claimPendingSubscriptionByEmail)한다.
+  let mappedUserId = normalized.userId ?? (await findUserIdByPaddleCustomerId(normalized.customerId));
+  const customerEmail = extractCustomerEmail(data);
+  if (!mappedUserId && customerEmail) {
+    mappedUserId = await findUserIdByEmail(customerEmail);
+  }
+
+  const planTier = paddlePlanForPriceId(normalized.priceId);
+
   if (!mappedUserId) {
-    logWebhookWarning({
-      reason: "user_mapping_missing",
-      eventType,
-      eventId,
-      customerId: normalized.customerId
-    });
+    if (customerEmail) {
+      await upsertPendingSubscription({
+        email: customerEmail,
+        paddleSubscriptionId: normalized.id,
+        paddleCustomerId: normalized.customerId,
+        paddlePriceId: normalized.priceId,
+        status: normalized.status,
+        planTier,
+        currentPeriodStart: normalized.currentPeriodStart,
+        currentPeriodEnd: normalized.currentPeriodEnd,
+        cancelAtPeriodEnd: normalized.cancelAtPeriodEnd
+      });
+      logWebhookWarning({
+        reason: "pending_subscription_by_email",
+        eventType,
+        eventId,
+        customerId: normalized.customerId,
+        extra: { email: customerEmail }
+      });
+      if (planTier === "extension") {
+        const transactionId = asTrimmedString(asRecord(data)?.id);
+        await recordFunnelEvent(
+          "extension_payment_completed",
+          null,
+          {
+            event_type: eventType,
+            event_id: eventId,
+            paddle_subscription_id: normalized.id,
+            email: customerEmail,
+            pending: true
+          },
+          transactionId ?? eventId
+        );
+      }
+    } else {
+      logWebhookWarning({
+        reason: "user_mapping_missing",
+        eventType,
+        eventId,
+        customerId: normalized.customerId
+      });
+    }
     return;
   }
 
   await upsertProfileCustomer(mappedUserId, normalized.customerId);
 
-  const planTier = paddlePlanForPriceId(normalized.priceId);
   if (normalized.priceId && planTier === "free") {
     logWebhookWarning({
       reason: "unknown_price_id",
@@ -201,20 +253,65 @@ async function handleSubscriptionEvent(eventType: string, eventId: string | null
     return;
   }
 
-  const mappedUserId = normalized.userId ?? (await findUserIdByPaddleCustomerId(normalized.customerId));
+  // 게스트(비로그인) 결제 지원: custom_data.user_id → paddle 고객 매핑 → 이메일(Clerk) 순으로 사용자를 찾는다.
+  // 사용자를 찾지 못하면(아직 계정 없음) pending_subscriptions 로 이메일 기준 보관해
+  // 나중에 같은 이메일로 로그인하면 연결(claimPendingSubscriptionByEmail)한다.
+  let mappedUserId = normalized.userId ?? (await findUserIdByPaddleCustomerId(normalized.customerId));
+  const customerEmail = extractCustomerEmail(data);
+  if (!mappedUserId && customerEmail) {
+    mappedUserId = await findUserIdByEmail(customerEmail);
+  }
+
+  const planTier = paddlePlanForPriceId(normalized.priceId);
+
   if (!mappedUserId) {
-    logWebhookWarning({
-      reason: "user_mapping_missing",
-      eventType,
-      eventId,
-      customerId: normalized.customerId
-    });
+    if (customerEmail) {
+      await upsertPendingSubscription({
+        email: customerEmail,
+        paddleSubscriptionId: normalized.id,
+        paddleCustomerId: normalized.customerId,
+        paddlePriceId: normalized.priceId,
+        status: normalized.status,
+        planTier,
+        currentPeriodStart: normalized.currentPeriodStart,
+        currentPeriodEnd: normalized.currentPeriodEnd,
+        cancelAtPeriodEnd: normalized.cancelAtPeriodEnd
+      });
+      logWebhookWarning({
+        reason: "pending_subscription_by_email",
+        eventType,
+        eventId,
+        customerId: normalized.customerId,
+        extra: { email: customerEmail }
+      });
+      if (planTier === "extension") {
+        const transactionId = asTrimmedString(asRecord(data)?.id);
+        await recordFunnelEvent(
+          "extension_payment_completed",
+          null,
+          {
+            event_type: eventType,
+            event_id: eventId,
+            paddle_subscription_id: normalized.id,
+            email: customerEmail,
+            pending: true
+          },
+          transactionId ?? eventId
+        );
+      }
+    } else {
+      logWebhookWarning({
+        reason: "user_mapping_missing",
+        eventType,
+        eventId,
+        customerId: normalized.customerId
+      });
+    }
     return;
   }
 
   await upsertProfileCustomer(mappedUserId, normalized.customerId);
 
-  const planTier = paddlePlanForPriceId(normalized.priceId);
   if (normalized.priceId && planTier === "free") {
     logWebhookWarning({
       reason: "unknown_price_id",

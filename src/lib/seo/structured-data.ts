@@ -36,7 +36,7 @@ function pricingOffers() {
   offers.push({
     "@type": "Offer",
     name: "Extension",
-    description: "월 4,900원 — Chrome 익스텐션 리뷰 수집 하루 2,000개 (Basic·Pro 구독 시 포함)",
+    description: "월 4,900원 — Chrome 익스텐션 리뷰 수집 무제한 (Basic·Pro 구독 시 포함)",
     price: "4900",
     priceCurrency: "KRW",
     availability: "https://schema.org/InStock",

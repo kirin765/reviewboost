@@ -44,6 +44,30 @@ export const profiles = pgTable("profiles", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
 
+// 로그인 없이(게스트) 결제한 구독을 이메일로 보관 — 나중에 같은 이메일로 로그인하면
+// 해당 행을 subscriptions 로 옮긴다(claimPendingSubscriptionByEmail).
+export const pendingSubscriptions = pgTable(
+  "pending_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    paddleCustomerId: text("paddle_customer_id").notNull(),
+    paddleSubscriptionId: text("paddle_subscription_id").notNull().unique(),
+    paddlePriceId: text("paddle_price_id"),
+    planTier: text("plan_tier").notNull().default("extension"),
+    status: text("status").notNull(),
+    currentPeriodStart: timestamp("current_period_start", { withTimezone: true }),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    emailIdx: index("pending_subscriptions_email_idx").on(t.email),
+    customerIdx: index("pending_subscriptions_customer_id_idx").on(t.paddleCustomerId)
+  })
+);
+
 // 크롬 익스텐션 일일 수집 쿼터. day 는 KST 기준 YYYY-MM-DD.
 export const extensionUsage = pgTable(
   "extension_usage",

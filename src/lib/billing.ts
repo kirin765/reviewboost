@@ -1,5 +1,5 @@
-﻿import { getDb } from "@/lib/db";
-import { profiles, subscriptions } from "@/lib/db/schema";
+import { getDb } from "@/lib/db";
+import { pendingSubscriptions, profiles, subscriptions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import type { PlanTier } from "@/lib/plan";
 
@@ -204,6 +204,101 @@ export async function findUserIdByPaddleCustomerId(paddleCustomerId: string): Pr
     .limit(1);
 
   return rows[0]?.userId ?? null;
+}
+
+/** 이메일 소문자/트림 정규화. */
+export function normalizeEmail(email: string | null | undefined): string | null {
+  const normalized = String(email ?? "").trim().toLowerCase();
+  return normalized || null;
+}
+
+type PendingSubscriptionArgs = {
+  email: string;
+  paddleSubscriptionId: string;
+  paddleCustomerId: string;
+  paddlePriceId?: string | null;
+  status: string;
+  planTier: PlanTier | "extension";
+  currentPeriodStart?: string | number | null;
+  currentPeriodEnd?: string | number | null;
+  cancelAtPeriodEnd?: boolean | null;
+};
+
+/** 계정이 아직 없는 게스트 구독을 이메일 기준으로 보관 (나중에 로그인 시 claim). */
+export async function upsertPendingSubscription(args: PendingSubscriptionArgs) {
+  const db = getDb();
+  const email = normalizeEmail(args.email);
+  if (!db || !email) return;
+
+  const startIso = billingToIso(args.currentPeriodStart);
+  const endIso = billingToIso(args.currentPeriodEnd);
+  const values = {
+    email,
+    paddleCustomerId: args.paddleCustomerId,
+    paddleSubscriptionId: args.paddleSubscriptionId,
+    paddlePriceId: args.paddlePriceId ?? null,
+    status: normalizeSubscriptionStatus(args.status),
+    planTier: args.planTier,
+    currentPeriodStart: startIso ? new Date(startIso) : null,
+    currentPeriodEnd: endIso ? new Date(endIso) : null,
+    cancelAtPeriodEnd: Boolean(args.cancelAtPeriodEnd),
+    updatedAt: new Date()
+  };
+
+  await db
+    .insert(pendingSubscriptions)
+    .values(values)
+    .onConflictDoUpdate({
+      target: pendingSubscriptions.paddleSubscriptionId,
+      set: {
+        email: values.email,
+        paddleCustomerId: values.paddleCustomerId,
+        paddlePriceId: values.paddlePriceId,
+        status: values.status,
+        planTier: values.planTier,
+        currentPeriodStart: values.currentPeriodStart,
+        currentPeriodEnd: values.currentPeriodEnd,
+        cancelAtPeriodEnd: values.cancelAtPeriodEnd,
+        updatedAt: values.updatedAt
+      }
+    });
+}
+
+/**
+ * 같은 이메일로 로그인한 사용자에게 게스트 결제 구독을 연결한다.
+ * pending_subscriptions → subscriptions + profiles 로 이동하고 pending 행은 삭제.
+ * 연결된 건수를 반환한다.
+ */
+export async function claimPendingSubscriptionByEmail(userId: string, email: string | null | undefined): Promise<number> {
+  const db = getDb();
+  const normalized = normalizeEmail(email);
+  if (!db || !userId || !normalized) return 0;
+
+  const rows = await db
+    .select()
+    .from(pendingSubscriptions)
+    .where(eq(pendingSubscriptions.email, normalized))
+    .limit(20);
+  if (rows.length === 0) return 0;
+
+  let claimed = 0;
+  for (const row of rows) {
+    await upsertProfileCustomer(userId, row.paddleCustomerId);
+    await upsertSubscription({
+      userId,
+      paddleSubscriptionId: row.paddleSubscriptionId,
+      paddleCustomerId: row.paddleCustomerId,
+      paddlePriceId: row.paddlePriceId,
+      status: row.status,
+      planTier: row.planTier === "extension" ? "extension" : (row.planTier as PlanTier),
+      currentPeriodStart: row.currentPeriodStart ? row.currentPeriodStart.toISOString() : null,
+      currentPeriodEnd: row.currentPeriodEnd ? row.currentPeriodEnd.toISOString() : null,
+      cancelAtPeriodEnd: row.cancelAtPeriodEnd
+    });
+    await db.delete(pendingSubscriptions).where(eq(pendingSubscriptions.id, row.id));
+    claimed += 1;
+  }
+  return claimed;
 }
 
 export async function findPaddleCustomerIdByUserId(userId: string): Promise<string | null> {

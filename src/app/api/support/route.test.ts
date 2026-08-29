@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { POST } from "./route";
+import { OPTIONS, POST } from "./route";
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
@@ -77,5 +77,30 @@ describe("POST /api/support", () => {
     mocks.notifySupportInquiry.mockResolvedValue(false);
     const res = await POST(supportRequest(VALID));
     expect(res.status).toBe(503);
+  });
+
+  it("accepts Chrome extension origins (CS form in popup) with CORS headers", async () => {
+    const extOrigin = "chrome-extension://abcdefghijklmnopabcdefghijklmnop";
+    const res = await POST(supportRequest(VALID, { origin: extOrigin }));
+    expect(res.status).toBe(201);
+    expect(res.headers.get("access-control-allow-origin")).toBe(extOrigin);
+    expect(res.headers.get("vary")).toBe("Origin");
+    expect(mocks.createSupportInquiry).toHaveBeenCalled();
+  });
+
+  it("rejects malformed extension origins", async () => {
+    const res = await POST(supportRequest(VALID, { origin: "chrome-extension://user23456789xxabcdefghijklmnopxy" }));
+    expect(res.status).toBe(403);
+    expect(mocks.createSupportInquiry).not.toHaveBeenCalled();
+  });
+
+  it("answers extension preflight (OPTIONS) with CORS headers", async () => {
+    const extOrigin = "chrome-extension://abcdefghijklmnopabcdefghijklmnop";
+    const res = await OPTIONS(
+      new Request(`${ORIGIN}/api/support`, { method: "OPTIONS", headers: { origin: extOrigin } })
+    );
+    expect(res.status).toBe(204);
+    expect(res.headers.get("access-control-allow-origin")).toBe(extOrigin);
+    expect(res.headers.get("access-control-allow-methods")).toContain("POST");
   });
 });

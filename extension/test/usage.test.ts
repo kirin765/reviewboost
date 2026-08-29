@@ -41,4 +41,8 @@ describe("clampToRemaining", () => {
     expect(clampToRemaining(300, 0)).toBe(0);
     expect(clampToRemaining(300, -5)).toBe(0);
   });
+  it("does not clamp when the limit is null (paid/unlimited)", () => {
+    expect(clampToRemaining(2000, null)).toBe(2000);
+    expect(clampToRemaining(10, null)).toBe(10);
+  });
 });

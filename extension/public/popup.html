@@ -16,11 +16,17 @@
     </header>
 
     <main class="bd">
+      <nav class="tabs" aria-label="메뉴">
+        <button id="tab-collect" class="tab active" type="button">리뷰 수집</button>
+        <button id="tab-history" class="tab" type="button">최근 기록</button>
+        <button id="tab-cs" class="tab" type="button">CS 문의</button>
+      </nav>
+
       <div id="usage" class="usage hidden"></div>
       <section id="collect-pane">
         <label class="field">
           <span class="label">최대 수집 개수</span>
-          <input id="max" type="number" min="10" max="2000" step="10" value="300" />
+          <input id="max" type="number" min="10" max="2000" step="10" value="10" />
         </label>
         <button id="collect" class="btn primary" disabled>리뷰 수집</button>
         <div id="progress" class="progress hidden">
@@ -36,7 +42,7 @@
         <ul id="preview" class="preview hidden"></ul>
         <div id="result-upsell" class="upsell hidden">
           <p id="result-upsell-text"></p>
-          <button id="result-upgrade" class="btn primary">업그레이드 — 하루 2,000건</button>
+          <button id="result-upgrade" class="btn primary">업그레이드 — 무제한</button>
         </div>
         <div class="actions">
           <button id="dl-xlsx" class="btn primary">엑셀(.xlsx) 다운로드</button>
@@ -56,7 +62,42 @@
           <div class="paywall-title">오늘 수집 한도를 모두 사용했어요</div>
           <p id="paywall-text" class="muted"></p>
         </div>
-        <button id="paywall-upgrade" class="btn primary">더 수집하기 — 하루 2,000개</button>
+        <button id="paywall-upgrade" class="btn primary">더 수집하기 — 무제한</button>
+      </section>
+
+      <section id="history-pane" class="history hidden">
+        <div class="history-head">
+          <span class="label">최근 수집 기록 <span class="muted small">(최대 5건)</span></span>
+          <button id="history-clear" class="linkBtn small hidden">전체 삭제</button>
+        </div>
+        <p id="history-empty" class="muted small hidden">아직 수집 기록이 없습니다.</p>
+        <ul id="history-list" class="history-list"></ul>
+      </section>
+
+      <section id="cs-pane" class="hidden">
+        <p class="muted small" style="margin: 0 0 10px">
+          리뷰 수집기 사용 중 궁금한 점이나 오류를 보내주세요. 평일 기준 1~2일 내 이메일로 답변드려요.
+        </p>
+        <label class="field">
+          <span class="label">문의 유형</span>
+          <select id="cs-category">
+            <option value="">선택해주세요</option>
+            <option value="usage">사용법 문의</option>
+            <option value="bug">오류 신고</option>
+            <option value="billing">결제·계정</option>
+            <option value="other">기타</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="label">답변받을 이메일</span>
+          <input id="cs-email" type="email" placeholder="you@example.com" autocomplete="email" />
+        </label>
+        <label class="field">
+          <span class="label">문의 내용</span>
+          <textarea id="cs-message" rows="4" maxlength="2000" placeholder="현재 상황을 간단히 적어주세요 (예: 수집이 멈춘 상품 URL 포함하면 빨라요)."></textarea>
+        </label>
+        <button id="cs-send" class="btn primary">보내기</button>
+        <p id="cs-status" class="muted small" role="status"></p>
       </section>
     </main>
 

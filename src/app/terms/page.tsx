@@ -188,7 +188,7 @@ export default function TermsPage() {
               <br />
               Mail-Order Sales Registration (통신판매업신고): 제2025-경기광명-0525호
               <br />
-              Address (주소): 56, Soha-ro, Gwangmyeong-si, Gyeonggi-do, Republic of Korea (경기도 광명시 소하로56 302동 902호)
+              Address (주소): 12, Ilsan-ro 463beon-gil, Ilsandong-gu, Goyang-si, Gyeonggi-do, Republic of Korea (경기도 고양시 일산동구 일산로463번길 12, 204동 103호)
               <br />
               Phone (전화): 010-8555-8219
               <br />

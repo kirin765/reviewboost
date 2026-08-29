@@ -259,7 +259,16 @@ export async function getExtensionUsageCount(userId: string, day: string): Promi
   return rows[0]?.count ?? 0;
 }
 
-export type FunnelEventName = "extension_limit_hit" | "extension_checkout_started" | "extension_payment_completed";
+export type FunnelEventName =
+  | "extension_limit_hit"
+  | "extension_checkout_started"
+  | "extension_payment_completed"
+  | "extension_token_issued"
+  | "extension_usage_post_success"
+  | "extension_usage_post_401"
+  | "extension_usage_post_503"
+  | "extension_usage_post_network_error"
+  | "extension_usage_anonymous_attempt";
 
 /**
  * 결제벽 퍼널 카운터 기록. best-effort — DB 미구성(storage_off)이나 오류 시

@@ -5,9 +5,10 @@ export type AuthState = { token: string; expiresAt: number };
 export type UsageState = {
   authenticated: boolean;
   tier: "anonymous" | "free" | "paid";
-  limit: number;
-  used: number;
-  remaining: number;
+  /** null = 무제한(유료 플랜). */
+  limit: number | null;
+  used: number | null;
+  remaining: number | null;
 };
 
 export type LocalUsage = { day: string; count: number };
@@ -27,8 +28,9 @@ export function normalizeLocalUsage(raw: unknown, day: string): LocalUsage {
   return { day, count: 0 };
 }
 
-/** 요청 수집 개수를 남은 한도로 자른다. */
-export function clampToRemaining(requested: number, remaining: number): number {
+/** 요청 수집 개수를 남은 한도로 자른다. remaining 이 null(무제한)이면 자르지 않는다. */
+export function clampToRemaining(requested: number, remaining: number | null): number {
+  if (remaining === null) return Math.max(0, requested);
   return Math.max(0, Math.min(requested, remaining));
 }
 
@@ -61,7 +63,6 @@ function localUsageState(local: LocalUsage): UsageState {
     remaining: Math.max(0, FREE_DAILY_LIMIT - local.count)
   };
 }
-
 /**
  * 현재 사용량/한도. 계정 연결 시 서버 기준, 아니면(또는 서버 불통 시) 로컬 카운트.
  */
@@ -76,11 +77,12 @@ export async function loadUsage(): Promise<UsageState> {
         const data = (await res.json()) as {
           authenticated?: boolean;
           tier?: string;
-          limit?: number;
+          limit?: number | null;
           used?: number | null;
           remaining?: number | null;
         };
-        if (data.authenticated && typeof data.limit === "number") {
+        if (data.authenticated && (typeof data.limit === "number" || data.limit === null)) {
+          // limit null = 무제한(유료 플랜).
           return {
             authenticated: true,
             tier: data.tier === "paid" ? "paid" : "free",
@@ -108,15 +110,45 @@ export async function recordCollected(count: number): Promise<void> {
   await setLocalUsage({ day: local.day, count: local.count + count });
 
   const auth = await getAuth();
-  if (!auth) return;
+  if (!auth) {
+    await reportUsageTelemetry("usage_anonymous_attempt");
+    return;
+  }
   try {
-    await fetch(RB_USAGE_ENDPOINT, {
+    const res = await fetch(RB_USAGE_ENDPOINT, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${auth.token}` },
       body: JSON.stringify({ count })
     });
+    if (res.ok) return;
+    if (res.status === 401) {
+      await reportUsageTelemetry("usage_post_401", auth);
+    } else if (res.status === 503) {
+      await reportUsageTelemetry("usage_post_503", auth);
+    }
   } catch {
-    // 보고 실패는 치명적이지 않다 — 다음 loadUsage 때 서버 수치로 수렴.
+    await reportUsageTelemetry("usage_post_network_error", auth);
+  }
+}
+
+type UsageTelemetryName =
+  | "usage_anonymous_attempt"
+  | "usage_post_401"
+  | "usage_post_503"
+  | "usage_post_network_error";
+
+async function reportUsageTelemetry(name: UsageTelemetryName, auth?: AuthState): Promise<void> {
+  try {
+    await fetch(RB_EVENT_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(auth ? { authorization: `Bearer ${auth.token}` } : {})
+      },
+      body: JSON.stringify({ name })
+    });
+  } catch {
+    // 계측 실패는 수집을 막지 않는다.
   }
 }
 

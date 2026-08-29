@@ -2,21 +2,26 @@ import { COLLECT_PAGE_DELAY_MAX_MS, COLLECT_PAGE_DELAY_MIN_MS } from "../lib/con
 import { paginate, randomDelay, realSleep } from "../lib/collector";
 import { cleanReviews, normalizeSmartstoreReview } from "../lib/normalize";
 import {
+  buildGroupProductReviewRequest,
+  buildProductSummaryReviewRequest,
   buildQueryPagesRequest,
   extractSmartstoreProductNo,
+  findGroupProductNo,
   findMerchantNo,
   findOriginProductNo,
-  parseSmartstorePage
+  isBrandHost,
+  mapChannelToOrigin,
+  normalizeCapturedHeaders,
+  parseSmartstorePage,
+  preloadOriginProductNo,
+  withPage,
+  type SmartstoreReviewRequest
 } from "../lib/smartstore";
 import { CollectError, type RawReview } from "../lib/types";
+import { clientAuthHeaders, readCapturedRequest, readInlineState, triggerReviewSectionLoad } from "./hook";
 import type { RunOptions } from "./collect-coupang";
 
 const PAGE_SIZE = 20; // query-pages 캡처에서 확인된 값
-
-function readPreloadState(): unknown {
-  const w = window as unknown as Record<string, unknown>;
-  return w.__PRELOADED_STATE__ ?? w.__PRELOAD_STATE__ ?? null;
-}
 
 function resourceUrls(): string[] {
   try {
@@ -27,47 +32,59 @@ function resourceUrls(): string[] {
 }
 
 /**
- * checkoutMerchantNo 와 originProductNo 는 둘 다 페이지가 보낸 리뷰 요청 URL에 있다
- * (merchant=쿼리, origin=경로). 클릭 시점에 아직 없으면 최대 ~4초 폴링.
+ * ① 캡처(페이지가 직접 보낸 요청) ② 묶음상품 GET ③ 일반 상품(브랜드=GET / 스마트스토어=POST) 순으로 확보.
+ * 브랜드스토어는 URL productNo 가 채널상품번이라 원본상품번과 다르고, 묶음상품은 groupProductNo 를 쓴다.
  */
-async function resolveIds(): Promise<{ merchant: string; origin: string } | null> {
-  const fallbackOrigin = extractSmartstoreProductNo(location.pathname) ?? "";
+async function resolveRequest(): Promise<SmartstoreReviewRequest | null> {
+  const captured = readCapturedRequest();
+  if (captured) return { ...captured, headers: normalizeCapturedHeaders(captured.headers) };
+
+  const preload = readInlineState("__PRELOADED_STATE__");
+  const brand = isBrandHost(location.hostname);
+  const urlProductNo = extractSmartstoreProductNo(location.pathname) ?? "";
+
   for (let i = 0; i < 12; i++) {
     const urls = resourceUrls();
-    const merchant = findMerchantNo(urls, readPreloadState());
-    const origin = findOriginProductNo(urls);
-    if (merchant && origin) return { merchant, origin };
+    const merchant = findMerchantNo(urls, preload);
+    const groupNo = findGroupProductNo(urls);
+    if (merchant && groupNo) {
+      const req = buildGroupProductReviewRequest(merchant, groupNo, 1, PAGE_SIZE, location.origin);
+      req.headers = { ...clientAuthHeaders(urls), accept: "application/json" };
+      return req;
+    }
+    const origin =
+      findOriginProductNo(urls) ?? preloadOriginProductNo(preload) ?? mapChannelToOrigin(preload, urlProductNo);
+    if (merchant && origin) {
+      const req = brand
+        ? buildProductSummaryReviewRequest(merchant, origin, 1, PAGE_SIZE, location.origin)
+        : buildQueryPagesRequest(merchant, origin, 1, PAGE_SIZE, location.origin);
+      req.headers = { ...clientAuthHeaders(urls), accept: "application/json", "content-type": "application/json" };
+      return req;
+    }
     await realSleep(350);
   }
-  const urls = resourceUrls();
-  const merchant = findMerchantNo(urls, readPreloadState());
-  if (!merchant) return null;
-  return { merchant, origin: findOriginProductNo(urls) ?? fallbackOrigin };
+
+  const triggered = await triggerReviewSectionLoad(realSleep);
+  if (triggered) return { ...triggered, headers: normalizeCapturedHeaders(triggered.headers) };
+  return null;
 }
 
-export async function collectSmartstore(opts: RunOptions): Promise<RawReview[]> {
-  if (!extractSmartstoreProductNo(location.pathname)) {
-    throw new CollectError("NOT_PRODUCT", "스마트스토어 상품 페이지가 아닙니다.");
-  }
-
-  const ids = await resolveIds();
-  if (!ids || !ids.origin) {
-    throw new CollectError(
-      "EMPTY",
-      "리뷰 정보를 찾지 못했습니다. 리뷰 영역이 보이도록 한 번 스크롤한 뒤 다시 시도해 주세요."
-    );
-  }
-
+async function collectWithRequest(
+  request: SmartstoreReviewRequest,
+  opts: RunOptions
+): Promise<RawReview[]> {
   const raw = await paginate(
     async (page) => {
-      const req = buildQueryPagesRequest(ids.merchant, ids.origin, page, PAGE_SIZE, location.origin);
+      const req = withPage(request, page, PAGE_SIZE);
       let res: Response;
       try {
+        const headers: Record<string, string> = { accept: "application/json", ...req.headers };
+        if (req.body) headers["content-type"] = "application/json";
         res = await fetch(req.url, {
           method: req.method,
           credentials: "include",
-          headers: { accept: "application/json", "content-type": "application/json" },
-          body: req.body
+          headers,
+          ...(req.body ? { body: req.body } : {})
         });
       } catch {
         throw new CollectError("NETWORK", "네트워크 오류로 리뷰를 불러오지 못했습니다.");
@@ -97,4 +114,36 @@ export async function collectSmartstore(opts: RunOptions): Promise<RawReview[]> 
   const reviews = cleanReviews(raw.map((r) => normalizeSmartstoreReview(r as Record<string, unknown>)));
   if (reviews.length === 0) throw new CollectError("EMPTY", "이 상품에는 분석할 리뷰가 없습니다.");
   return reviews;
+}
+
+export async function collectSmartstore(opts: RunOptions): Promise<RawReview[]> {
+  if (!extractSmartstoreProductNo(location.pathname)) {
+    throw new CollectError("NOT_PRODUCT", "스마트스토어 상품 페이지가 아닙니다.");
+  }
+
+  let request = await resolveRequest();
+  if (!request) {
+    throw new CollectError(
+      "EMPTY",
+      "리뷰 정보를 찾지 못했습니다. 리뷰 영역이 보이도록 한 번 스크롤한 뒤 다시 시도해 주세요."
+    );
+  }
+
+  try {
+    return await collectWithRequest(request, opts);
+  } catch (err) {
+    // 히리스틱 요청이 200+HTML(또는 4xx/5xx) 로 실패했고 그 사이 페이지가 실제 리뷰 요청을 보냈다면
+    // 그 요청을 그대로 재사용해 재시도한다 (본문/헤더 필드명 차이 자동 흡수).
+    if (
+      err instanceof CollectError &&
+      (err.code === "UNSUPPORTED" || err.code === "NETWORK") &&
+      isBrandHost(location.hostname)
+    ) {
+      const captured = readCapturedRequest();
+      if (captured) {
+        return await collectWithRequest({ ...captured, headers: normalizeCapturedHeaders(captured.headers) }, opts);
+      }
+    }
+    throw err;
+  }
 }

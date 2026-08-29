@@ -57,13 +57,25 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return withCors(apiErrorResponse(new ApiError(400, "ANALYZE_PAYLOAD_INVALID", "요청 형식이 올바르지 않습니다.")), cors);
   }
-  if (name !== "limit_hit") {
+  const eventName =
+    name === "limit_hit"
+      ? "extension_limit_hit"
+      : name === "usage_anonymous_attempt"
+        ? "extension_usage_anonymous_attempt"
+        : name === "usage_post_401"
+          ? "extension_usage_post_401"
+          : name === "usage_post_503"
+            ? "extension_usage_post_503"
+            : name === "usage_post_network_error"
+              ? "extension_usage_post_network_error"
+              : null;
+  if (!eventName) {
     return withCors(apiErrorResponse(new ApiError(400, "ANALYZE_PAYLOAD_INVALID", "지원하지 않는 이벤트입니다.")), cors);
   }
 
-  // 퍼널 ①: 한도 도달 노출 (팝업 기준). best-effort — DB 미구성/오류 시 조용히 무시.
+  // 계측은 best-effort — DB 미구성/오류가 익스텐션 동작을 막지 않는다.
   const userId = await resolveUserId(req);
-  await recordFunnelEvent("extension_limit_hit", userId, { source: "popup" });
+  await recordFunnelEvent(eventName, userId, { source: name === "limit_hit" ? "popup" : "usage_post" });
 
   return new Response(null, { status: 204, headers: cors });
 }
