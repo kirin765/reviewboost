@@ -1,4 +1,6 @@
-export type Platform = "coupang" | "smartstore";
+import type { PlatformKey } from "./platforms";
+
+export type Platform = "coupang" | "smartstore" | PlatformKey;
 
 /** Matches ReviewBoost's ReviewRow (src/lib/types.ts) for the analysis funnel. */
 export type ReviewRow = {

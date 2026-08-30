@@ -1,4 +1,5 @@
 import type { RawReview, ReviewRow } from "./types";
+import { twentyNineImageUrl } from "./29cm";
 
 /** ReviewBoost csv.ts(78-87) 와 동일한 별점 정규화: 0-5 그대로, 6-10 은 반감. */
 export function clampRating(v: unknown): number | null {
@@ -148,6 +149,24 @@ export function normalizeSmartstoreReview(raw: AnyRec): RawReview {
     title: pickString(raw.title) || undefined,
     author: pickString(raw.maskedWriterId, raw.writerMemberId, raw.memberId, raw.nickname) || undefined,
     helpfulCount: pickHelpful(raw.helpCount ?? raw.helpfulCount ?? raw.likeCount),
+    ...(imageUrls.length ? { imageUrls } : {})
+  };
+}
+
+/** 29CM 리뷰 raw → RawReview (라이브 캡처 스키마 2026-08-30 — contents/point/insertTimestamp/userId). */
+export function normalize29cmReview(raw: AnyRec): RawReview {
+  const uploads = Array.isArray(raw.uploadFiles) ? raw.uploadFiles : [];
+  const imageUrls = uploads
+    .map((u) => twentyNineImageUrl((u as Record<string, unknown>)?.url))
+    .filter(Boolean)
+    .map((u) => u as string);
+  return {
+    text: pickString(raw.contents, raw.content, raw.reviewContent, raw.text),
+    rating: clampRating(raw.point ?? raw.rating ?? raw.reviewScore ?? raw.star),
+    reviewedAt: toIsoDate(raw.insertTimestamp ?? raw.createDate ?? raw.reviewDate ?? null),
+    title: pickString(raw.title) || undefined,
+    author: pickString(raw.userId, raw.writerId, raw.nickname) || undefined,
+    helpfulCount: pickHelpful(raw.helpfulCount ?? raw.likeCount),
     ...(imageUrls.length ? { imageUrls } : {})
   };
 }

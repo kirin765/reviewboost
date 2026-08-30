@@ -1,9 +1,11 @@
 import { extractCoupangProductId } from "../lib/coupang";
 import type { ContentRequest, PageContext, PongResponse, StreamMessage } from "../lib/messages";
 import { extractSmartstoreProductNo, isSmartstoreHost } from "../lib/smartstore";
+import { detectPlatform } from "../lib/platforms";
 import { CollectError, type Platform } from "../lib/types";
 import { collectCoupang, type RunOptions } from "./collect-coupang";
 import { collectSmartstore } from "./collect-smartstore";
+import { collect29cm } from "./collect-29cm";
 import { installReviewCaptureHook } from "./hook";
 
 // 브랜드스토어/스마트스토어에서 페이지가 직접 보내는 리뷰 API 요청을 미리 캡처해 둔다
@@ -25,6 +27,13 @@ function detect(): PageContext {
     if (no) {
       platform = "smartstore";
       productId = no;
+    }
+  } else {
+    // 신규 플랫폼 레지스트리 (lib/platforms.ts)
+    const hit = detectPlatform(location.href);
+    if (hit) {
+      platform = hit.platform.key;
+      productId = hit.productId;
     }
   }
   return { platform, productId, title: document.title };
@@ -69,7 +78,10 @@ async function runCollect(maxItems: number): Promise<void> {
       reviews = await collectCoupang(ctx.productId, opts);
     } else if (ctx.platform === "smartstore") {
       reviews = await collectSmartstore(opts);
+    } else if (ctx.platform === "29cm" && ctx.productId) {
+      reviews = await collect29cm(ctx.productId, opts);
     } else {
+      // 플랫폼은 인식했지만 수집기가 아직 없는 경우 (리뷰 API 실측 대기)
       throw new CollectError("NOT_PRODUCT", "지원하는 상품 페이지가 아닙니다.");
     }
     if (cancelled) return;
