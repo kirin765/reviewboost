@@ -11,7 +11,15 @@ async function signInTestUser(page: Page) {
   // Wait for Clerk to finish loading before signing in — the first navigation
   // after a cold dev compile can otherwise race window.Clerk.
   await clerk.loaded({ page });
-  await clerk.signIn({ page, emailAddress: E2E_EMAIL! });
+  try {
+    await clerk.signIn({ page, emailAddress: E2E_EMAIL! });
+  } catch (err) {
+    // 티켓 로그인 성공 직후 clerk-js가 인증 완료 SPA 리다이렉트를 수행해
+    // page.evaluate 컨텍스트가 파괴되는 것은 정상 (실측: sign_ins 200 complete
+    // + sessions/touch 후 리다이렉트) — 세션은 이미 발급됨. 무시하고 재로드.
+    console.warn(`[e2e] signIn navigation tolerated: ${String(err).slice(0, 120)}`);
+  }
+  await clerk.loaded({ page });
 }
 
 test.describe("ReviewBoost E2E — public pages", () => {

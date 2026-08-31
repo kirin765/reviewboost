@@ -50,3 +50,6 @@ PAYWALL-PLAN-2026-08-07.md
 
 # TypeScript 빌드 산출물 (원복 추적 해제)
 *.tsbuildinfo
+
+# 로컬 E2E용 자체서명 인증서 (dev-https-proxy.mjs) — 커밋 금지
+certificates/
