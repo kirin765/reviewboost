@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default function SignupPage() {
   return (
     <div className="mx-auto max-w-md py-12">
-      <SignUp signInUrl="/login" />
+      <SignUp signInUrl="/login" forceRedirectUrl="/dashboard?signup_success=1" />
       <Suspense fallback={null}>
         <SocialLoginButtons signup />
       </Suspense>
