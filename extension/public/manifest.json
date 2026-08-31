@@ -33,7 +33,16 @@
     "*://brand.naver.com/*",
     "*://reviewboost.co.kr/*",
     "*://www.29cm.co.kr/*",
-    "*://review-api.29cm.co.kr/*"
+    "*://review-api.29cm.co.kr/*",
+    "*://www.11st.co.kr/*",
+    "*://www.ssg.com/*",
+    "*://www.musinsa.com/*",
+    "*://goods.musinsa.com/*",
+    "*://store.ohou.se/*",
+    "*://item.gmarket.co.kr/*",
+    "*://*.auction.co.kr/*",
+    "*://www.kurly.com/*",
+    "*://api.kurly.com/*"
   ],
   "content_scripts": [
     {
@@ -41,7 +50,14 @@
         "*://*.coupang.com/*products/*",
         "*://smartstore.naver.com/*/products/*",
         "*://brand.naver.com/*/products/*",
-        "*://www.29cm.co.kr/products/*"
+        "*://www.29cm.co.kr/products/*",
+        "*://www.11st.co.kr/products/*",
+        "*://www.ssg.com/item/itemView.ssg*",
+        "*://www.musinsa.com/products/*",
+        "*://store.ohou.se/goods/*",
+        "*://item.gmarket.co.kr/Item*",
+        "*://*.auction.co.kr/DetailView.aspx*",
+        "*://www.kurly.com/goods/*"
       ],
       "js": [
         "content.js"

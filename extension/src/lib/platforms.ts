@@ -44,7 +44,8 @@ export const PLATFORMS: PlatformMeta[] = [
     key: "musinsa",
     label: "무신사",
     hostRe: /(^|\.)musinsa\.com$/i,
-    extract: (href) => href.match(/\/goods\/(\d+)/)?.[1] ?? null // [실측]
+    // [실측 2026-08-31] 상품 URL 은 /goods/{no} 가 아니라 /products/{no} (구 /goods/ 404 확인)
+    extract: (href) => href.match(/\/products\/(\d+)/)?.[1] ?? null
   },
   {
     key: "29cm",
@@ -56,13 +57,15 @@ export const PLATFORMS: PlatformMeta[] = [
     key: "gmarket",
     label: "G마켓",
     hostRe: /(^|\.)gmarket\.co\.kr$/i,
-    extract: (href) => href.match(/goodscode=(\d+)/)?.[1] ?? null // [실측]
+    // [실측 2026-08-31] 파라미터는 goodsCode (대문자 C) — 대소문자 무시 매칭
+    extract: (href) => href.match(/goodscode=(\d+)/i)?.[1] ?? null
   },
   {
     key: "auction",
     label: "옥션",
     hostRe: /(^|\.)auction\.co\.kr$/i,
-    extract: (href) => href.match(/itemno=(\d+)/i)?.[1] ?? null // [실측]
+    // [실측 2026-08-31] itemno 는 문자접두+숫자 (F361333759 / C337580252 / B883030836) — 전체를 상품 ID 로 사용
+    extract: (href) => href.match(/itemno=([A-Za-z]?\d+)/i)?.[1] ?? null
   },
   {
     key: "11st",
@@ -74,20 +77,21 @@ export const PLATFORMS: PlatformMeta[] = [
     key: "ssg",
     label: "SSG닷컴",
     hostRe: /(^|\.)ssg\.com$/i,
-    extract: (href) => href.match(/itemId=(\d+)/)?.[1] ?? null // [실측]
+    // itemId (siteNo 는 컬렉터가 location.href 에서 직접 추출)
+    extract: (href) => href.match(/[?&]itemId=(\d+)/i)?.[1] ?? null // [실측]
   },
   {
     key: "ohou",
     label: "오늘의집",
     hostRe: /(^|\.)ohou\.se$/i,
-    extract: (href) => href.match(/\/goods\/(\d+)/)?.[1] ?? null // [실측] store.ohou.se/goods/{id} (2026-08-30)
+    extract: (href) => href.match(/\/goods\/(\d+)/)?.[1] ?? null // [실측] store.ohou.se/goods/{id}
   },
   {
     key: "curly",
     label: "컬리",
     hostRe: /(^|\.)kurly\.com$/i,
     extract: (href) => {
-      const m = href.match(/\/goods\/(\d+)/); // [추정] 신형 URL 규약
+      const m = href.match(/\/goods\/(\d+)/); // [실측 2026-08-31] www.kurly.com/goods/{id}
       if (m) return m[1];
       return href.match(/goodsno=(\d+)/i)?.[1] ?? null; // [실측] 구형 쿼리형
     }

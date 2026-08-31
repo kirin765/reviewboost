@@ -48,14 +48,25 @@
 | 플랫폼 | 상태 | 남은 일 |
 |---|---|---|
 | **29CM** | ✅ 완료(어댑터·테스트) | — |
-| **11번가** | ⚠️ 캡처 19개 엔드포인트 중 리뷰 XHR 0건 — 상품평 탭 트리거 미확인 | 실세션: 상품평 탭(li/[data-tab]) 클릭 → 리뷰 XHR 캡처. 페이지의 상품평 섹션은 클라이언트 렌더(`reviewDetailType`,`review-loading` DOM id 확인됨, 본문에 상품평 글자 자체 없음) |
-| **SSG닷컴** | ⚠️ `www.ssg.com/item/ajaxItemQnaPageList.ssg?itemId=&siteNo=&page=` 캡처됨(질문 목록, 페이지 파라미터 확인). 시도한 상품 2건 모두 고객리뷰 0건이라 리뷰 목록 API 미캡처 | 리뷰>0 상품 1건 찾아 `ajax*Review*.ssg` 캡처 — QnA API와 동형(같은 파라미터 가족)일 가능성 높음. 상품 탐색: SSG 베스트/메인 링크에서 `dealItemView.ssg?itemId=` 위주 |
-| **무신사** | ⚠️ 카테고리 API만 캡처(`api.musinsa.com/api2/dp/v1/...`, goodsNoList 실측: 4022315 등). `/goods/4022315` = 404 — 상품 URL 규약 재확인 필요 | 실세션: 실제 상품 페이지 URL 확보 → 리뷰 API(`api.musinsa.com/api2/goods/...` 추정) 캡처 |
-| **오늘의집** | ❌ `store.ohou.se` Access Denied(헤드리스 차단) | 실세션(로그인 포함): `store.ohou.se/goods/{id}` 리뷰 XHR 캡처. 판매자 시스템은 오로라(`orora.ohou.se`), 후기 다운로드 공개 증거 0건 |
-| **G마켓·옥션** | ❌ challenge 페이지(차단) | 실세션: `item.gmarket.co.kr/Item?goodscode=`(옥션 `itemno=`) 상품평 XHR 캡처 |
-| **컬리** | 未시도(직매입 모델, 미확인) | 실세션: `www.kurly.com/goods/{id}` — 로그인 벽 확인 후 판정. 실패 시 '범위 제외'로 마킹 |
+| **11번가** | ✅ **실측·어댑터 완료 (2026-08-31)** — CDP 실세션: `GET /products/{prdNo}/review-list?pageNo={1-based}&pageSize=10` (HTML 프래그먼트, `li.review_list_element`). 리뷰 iframe(`review-frame`)은 fetch에서 빈 셸 — review-list XHR 사용(실측) | — |
+| **SSG닷컴** | ✅ **실측·어댑터 완료 (2026-08-31)** — `GET /item/ajaxItemCommentList.ssg?itemId=&siteNo=&page={1-based}&pageSize=10...` (`li.rvw_expansion_panel.v2`, 실측 3페이지 각 10건) | — |
+| **무신사** | ✅ **실측·어댑터 완료 (2026-08-31)** — 상품 URL은 **`/products/{no}`**(구 `/goods/{no}` 404). 리뷰 `GET goods.musinsa.com/api2/review/v1/view/list?page={0-based}&pageSize=10&goodsNo=` (JSON) | 이미지 CDN 호스트(`image.msscdn.net`)는 [추정] — 재확인 시 health |
+| **오늘의집** | ✅ **실측·어댑터 완료 (2026-08-31)** — CDP 통과(헤드리스 Access Denied 해소). `GET store.ohou.se/api/goods/reviews?page={1-based}&per=5&productionId=` (리뷰 8,022건 제품 검증) | — |
+| **G마켓·옥션** | ✅ **실측·어댑터 완료 (2026-08-31)** — G마켓 `POST /Item/Review/Text` body `goodsCode=&pageNo=` (HTML, `td.comment-content`). **옥션 추가 실측**: `POST itempage3.auction.co.kr/WebService/ReviewService.asmx/GetReviewList` body JSON `{"itemNo":"(문자접두+숫자)","filterParam":"","sort":"popular","pageIndex":1-based}` → `{"d":"<html>"}` (JSON, `ul.list__review > li.list-item`) — 동일 그룹이지만 API 별개. itemno 는 문자접두+숫자(`F361333759`) | — |
+| **컬리** | ✅ **실측·어댑터 완료 (2026-08-31)** — `GET api.kurly.com/product-review/v4/contents-products/{no}/reviews?size=10&after={cursor}` (커서 기반, `0_0` 종료) | — |
 
-URL 추출기(레지스트리 `extension/src/lib/platforms.ts`)는 8개 전부 이미 존재 — 추정 표기는 `[추정]`으로 남아 있음. 실측 확정되면 표기 정정.
+어댑터 구현: `extension/src/lib/{11st,ssg,musinsa,ohou,gmarket,kurly}.ts` + `normalize{P}` + `content/collect-{p}.ts` + `content/index.ts` 라우팅 + `public/manifest.json`(host_permissions·content_scripts) + 테스트 6개. **extension vitest 126 통과 / tsc 클린 / build OK (2026-08-31).** 단, 스토어 제출은 09-04 게이트 후 (현재 웹스토어 라이브 = v1.4.1 유지).
+
+### 2026-08-31 후속 — 잔여 2건 완료
+
+- **옥션 어댑터 (9개째)**: 실측 `POST itempage3.auction.co.kr/WebService/ReviewService.asmx/GetReviewList` (요청 postData 3건 + 응답 전체 저장: brain `raw/.../auction-review-C337580252.json`, 요약 `auction-live.json`). 검증 상품 itemno `C337580252` (미샤), 페이지당 19건 x 3페이지, 총 328페이지 표기. 
+  - filterParam: 페이지 실요청 `.useruniqueid-{cguid}` — **빈 문자열로 200 실측**(누락 시 500) → 어댑터는 `filterParam:""`.
+  - itemno 는 문자접두+숫자 → `platforms.ts` auction extractor `itemno=(\d+)` 버그 수정(`[A-Za-z]?\d+`).
+  - 이미지: `_thum.jpg` → 정본 `.jpg` + https 승격 실측 로드 OK (`bampic.auction.co.kr`).
+  - `lib/auction.ts` + `normalizeAuctionReview` + `content/collect-auction.ts` + `content/index.ts` dispatch + `public/manifest.json`(`*.auction.co.kr` host_permissions·`DetailView.aspx` matches) + `test/auction.test.ts`. **vitest 132(was 126) / tsc / build 클린.**
+- **무신사 리뷰 이미지 CDN host 확정**: 상품 페이지 렌더가 `https://image.msscdn.net/thumbnails/data/estimate/...?w=260` 으로 실제 요청 10건 캡처 (brain `raw/.../musinsa-estimate-requests.json`) — `lib/musinsa.ts` `MUSINSA_IMAGE_BASE` 주석 [추정]→[실측] 정정. base + 상대경로(원본 크기) 어댑터 로직은 유지.
+
+URL 추출기(레지스트리 `extension/src/lib/platforms.ts`)는 8개 전부 실측 확정 — 추정 잔여는 29CM 이미지 CDN(`cdn.29cm.co.kr`) 뿐.
 
 ## 5. 제약 (반드시 지킴)
 
@@ -81,3 +92,18 @@ node tmp/capture3.mjs <platform> /Users/kiwankim/projects/misc/brain/raw/review-
 
 - 이 파일(플랫폼별 상태 갱신) + brain `wiki/log.md`(query 엔트리) + brain `wiki/decision-log.md`(플랫폼 확정 시 행) + brain `reports/platform-review-download-map-2026-08-30.md`(so-what 갱신).
 - 실측 원자료는 brain `raw/review-platform-capture-2026-08-30/`(불변, pre-commit 훅).
+
+### 2026-08-31 세션 결과 (6개 플랫폼 실측 + 어댑터 완료)
+
+- 캡처 원자료: brain `raw/review-platform-capture-2026-08-30/{11st,ssg,musinsa,ohou,gmarket,kurly}-live.json` (기존 헤드리스 파일은 손대지 않음 — 추가만)
+- 검증 사용 상품: 11st 문화상품권/버거킹쿠폰(13건) · SSG 다이슨 에어랩(3페이지 검증) · 무신사 6254168(21건) · 오늘의집 인덕션(8,022건) · G마켓 크리넥스(85건/6페이지) · 컬리 장어솥밥키트(697건)
+- 재현 스크립트: brain `tmp/capture-cdp.mjs`(CDP 9222 실세션 캡처) — `node tmp/capture-cdp.mjs <platform> <outDir>`
+- 어댑터(+테스트): `extension/src/lib/{11st,ssg,musinsa,ohou,gmarket,kurly}.ts`, `content/collect-{p}.ts`, `content/index.ts`, `public/manifest.json`, `test/*.test.ts` — vitest 126(was 94) / tsc / build 클린
+- ⚠️ HTML 파싱 테스트(11st/ssg/gmarket) 위해 `jsdom` devDependency 추가됨 (extension/package.json)
+- 미확정: 무신사 리뷰 이미지 CDN host(`image.msscdn.net` [추정]), G마켓/옥션 공통 패턴(옥션 미실측), 11st 옵션·포토리뷰(photo-list) 미수집
+
+### 2026-08-31 후속(잔여 완료)
+
+- **옥션 어댑터** (위 본문) + 원자료: brain `raw/.../{auction-live,auction-review-C337580252,auction-fetch-probe,auction-https-img-probe}.json`
+- **무신사 이미지 CDN 실측 확정** (`image.msscdn.net`) + 원자료: brain `raw/.../{musinsa-img-cdn-confirmed,musinsa-img-cdn-confirm,musinsa-estimate-requests}.json`
+- 문서 갱신: `docs/NEXT_SESSION.md` §9 · `docs/multi-platform-crawl.md` 잔여 · brain `wiki/log.md` · `wiki/decision-log.md`

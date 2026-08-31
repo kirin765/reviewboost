@@ -148,7 +148,7 @@
 - ✅ **Clerk 프로덕션 전환 완료!** go-live + `change_domain`(primary `reviewboost.co.kr`, FAPI `clerk.reviewboost.co.kr`, 포털 `accounts.reviewboost.co.kr`) + DNS 5개(grey cloud) + **Vercel 재배포 성공 → reviewboost.co.kr 알리아스 승격** ("Clerk DNS Configuration" 체크 통과). 로그인 페이지가 `pk_live_Y2xlcmsucmV2aWV3Ym9vc3QuY28ua3Ik`(clerk.reviewboost.co.kr) 사용 확인
 - ✅ 키 교체: .env.local + Vercel(3 env) — sk_live_HhEOR0A7... / pk_live_Y2xlcmsu...
 - ✅ 프로덕션 E2E 유저: user_3IZaoFkiwZdoc6wvnX9GNHya3Ge
-- ⏳ **남음**: (1) **프로덕션 로그인 완료 실측** — 비밀번호 로그인은 이메일 OTP 단계까지 확인됨(새 기기 검증, 클렁 메일 발송 = clkmail/DKIM 정상). **OTP 입력 또는 네이버/카카오 OAuth 로그인은 브라우저에서 사용자 확인 필요** (이메일 소관/네이버 세션), (2) 게스트 결제 → 로그인 → 자동 연결(claim) 실측, (3) E2E는 프로덕션 FAPI가 localhost 오리진 거부(400)로 로컬 실행 불가 — 프로덕션 URL 대상 또는 allowed origins 조정 필요 (후속 작업)
+- ⏳ **남음**: (1) **프로덕션 로그인 완료 실측** — 비밀번호 로그인은 이메일 OTP 단계까지 확인됨(새 기기 검증, 클렁 메일 발송 = clkmail/DKIM 정상). **OTP 입력 또는 네이버/카카오 OAuth 로그인은 브라우저에서 사용자 확인 필요** (이메일 소관/네이버 세션), (2) 게스트 결제 → 로그인 → 자동 연결(claim) 실측, (3) ~~E2E 로컬 실행 불가~~ ✅ **해결 (2026-08-31, 아래 "이번 세션(2026-08-31)" 참고 — 전체 11개 통과)**
 
 **헤드리스 검증 완료 (2026-08-29):** 로그인 페이지 Clerk 위젯 로드(hasClerk=true, CSP 수정 후), 이메일+비밀번호 로그인 → "이메일 확인(factor-two)" 단계 도달(새 기기 검증), __session 쿠키 미발급(OTP 대기 — 정상), 익스텐션 토큰 새 키 서명 동작/구 키 거부 확인.
 
@@ -156,15 +156,27 @@
 - ✅ **CSP 수정**: `src/lib/security.ts` — Clerk FAPI 호스트를 publishable key에서 동적 추출(`clerkFrontendApiHost()`: pk_(test|live)_ + base64(FAPI host$)). dev(`*.clerk.accounts.dev`)와 prod(`clerk.reviewboost.co.kr`) 모두 커버. 이전엔 prod FAPI가 CSP script-src에 없어 **Clerk 위젯 로드 실패** → 배포 후 `hasClerk: true` 확인. 유닛 테스트 4개 추가 (`src/lib/security.test.ts`)
 - 참고: dev 인스턴스의 `dev-browser` 게이트는 프로덕션에 없음 → 서버 발급 세션 로그인은 프로덕션에서 동작할 것으로 예상 (실측 필요). **E2E(로컬 dev 서버+prod 키)는 프로덕션 FAPI가 localhost 오리진을 400 거부해 위젯 미초기화로 실패** — 프로덕션 URL 대상 E2E 또는 Clerk 인스턴스 allowed origins에 localhost 추가가 필요 (후속 작업).
 
-**핵심 절차 (다음 세션)**
-1. 도메인 확인: `curl -s https://clerk.reviewboost.co.kr/v1/environment` (403 HTML → JSON이면 프로비저닝 완료)
-2. 재배포: `env -u VERCEL_ORG_ID vercel --prod --yes` (체크 통과 확인)
-3. 로그인 실측: `scripts/naver-login-capture.mjs`(프로덕션 콜백 intercept) + 게스트 결제 → claim
-4. 카카오 Redirect URI: `https://reviewboost.co.kr/api/auth/social/kakao/callback`
-2. **키 교체 + 재배포** — 프로덕션 `sk_live_`/`pk_live_`를 `node scripts/clerk-prod-switch.mjs --secret sk_live_xxx --publishable pk_live_xxx` 로 교체 후 `env -u VERCEL_ORG_ID vercel --prod --yes`
-3. **카카오 승인 확인** → Redirect URI 등록 (`https://reviewboost.co.kr/api/auth/social/kakao/callback`), 네이버 Callback URL 등록 확인
-4. 프로덕션에서 **네이버/카카오 로그인 + 게스트 결제 → 자동 연결** 실측 (로그인 → `/extension-connect` → 팝업 사용)
-5. CWS v1.4.1 제출 (사용자 직접)
+**핵심 절차 (다음 세션)** — ✅ 전부 완료(2026-08-31 기준; 재배포는 불필요):
+1. ✅ 도메인 확인: `curl -s https://clerk.reviewboost.co.kr/v1/environment` → JSON (프로비저닝 완료)
+2. 재배포 불필요 — 웹 앱(src/) 코드 변경 없음 (이번 세션은 scripts/tests/문서만)
+3. ✅ E2E 로컬 실행 복구 — `npm run test:e2e:smoke` 11개 전부 통과 (아래 2026-08-31 참고)
+4. 카카오 Redirect URI 등록(`https://reviewboost.co.kr/api/auth/social/kakao/callback`) + 네이버 Callback URL 확인 — **외부 작업 (카카오 검수 대기)**
+5. 프로덕션에서 네이버/카카오 로그인 + 게스트 결제 → 자동 연결 실측 — **외부 작업 (사용자 브라우저)**
+
+### 이번 세션(2026-08-31) — 로컬 E2E를 프로덕션 Clerk 키로 복구
+
+- **Clerk 인스턴스 설정 (BAPI로 변경, 재현 스크립트: `scripts/clerk-e2e-allowed-origins.mjs` --add/--status/--remove):**
+  - `instance.allowed_origins` += `http://localhost:3001`, `http://127.0.0.1:3001`, `https://dev.reviewboost.co.kr:3443` — 없으면 `POST /v1/client` 가 `origin_invalid`(400) → 위젯 미초기화
+  - `redirect_urls`(native 앱 전용)에는 로컬 패턴 추가 — **웹 handshake 검증엔 영향 없음** (실측 확인)
+  - handshake의 `redirect_url` 검증(422 `form_param_value_invalid`)은 **프로덕션 도메인 구성만 허용** — BAPI로 못 넣음. 서브도메인(`*.reviewboost.co.kr`)은 HTTPS면 포트 무관 허용(실측: 307)
+- **구현 (sudo 없이 공식 가이드의 서브도메인+HTTPS 방식을 로컬로):**
+  - `scripts/dev-https-proxy.mjs`(신규): 자체서명 인증서로 TLS 종료 → 127.0.0.1:3001 전달. `x-forwarded-proto/https + x-forwarded-host` 유지로 앱 CSRF(`isSameOriginRequest`) 통과
+  - `scripts/e2e-web-server.mjs`(신규): Playwright webServer 런처 — `next dev -H 0.0.0.0 -p 3001`(⚠️ `--hostname 127.0.0.1`은 Next가 자기 자신으로 프록시돌며 500 루프 — 사용 금지) + 프록시(3443)
+  - `certificates/`(자체서명, **gitignored**): `openssl req -x509 -newkey rsa:2048 -sha256 -days 825 -nodes -keyout certificates/localhost-key.pem -out certificates/localhost.pem -subj '/CN=*.reviewboost.co.kr' -addext 'subjectAltName=DNS:*.reviewboost.co.kr,DNS:reviewboost.co.kr,DNS:localhost,IP:127.0.0.1'`
+  - `playwright.config.ts`: baseURL `https://dev.reviewboost.co.kr:3443`, `--host-resolver-rules=MAP dev.reviewboost.co.kr 127.0.0.1`(hosts 파일/ sudo 불필요), `ignoreHTTPSErrors`
+  - `tests/e2e.spec.ts`: ticket 로그인 직후 clerk-js가 인증 완료 리다이렉트를 수행해 evaluate 컨텍스트가 파괴되는 것을 try/catch로 흡수 (세션은 이미 발급)
+- **검증:** `npm run test:e2e:smoke` → **11 passed** (인증 4개 포함). `npm run typecheck` ✅, `npx vitest run` ✅ 316
+- 이번 세션 파일 변경: `playwright.config.ts`, `tests/e2e.spec.ts`, `scripts/{dev-https-proxy,e2e-web-server,clerk-e2e-allowed-origins}.mjs`, `.gitignore`, `docs/NEXT_SESSION.md`
 
 ### 이번 세션(2026-08-29) 참고 사항
 
@@ -195,17 +207,30 @@
 
 - ✅ 플랫폼 레지스트리 `extension/src/lib/platforms.ts` — 무신사·29CM·G마켓·옥션·11번가·SSG·오늘의집·컬리 8개 추가(호스트·상품ID 추출)
 - ✅ **29CM 어댑터 완성** — `lib/29cm.ts` + `content/collect-29cm.ts` + `normalize29cmReview` + 라우팅 + manifest(matches·host_permissions) + `test/29cm.test.ts` (94 테스트 통과·typecheck 클린, 커밋 36af7a29)
+- ✅ **캡처 + 어댑터 6개 전부 완료 (2026-08-31)** — 11번가·SSG·무신사·오늘의집·G마켓·컬리 (아래 "이번 세션(2026-08-31) — 다중 플랫폼 실측·어댑터" 참고). 원자료: brain `raw/review-platform-capture-2026-08-30/*-live.json`, 도구: brain `tmp/capture-cdp.mjs` (CDP 9222 실세션)
 - ✅ 약관·robots 실측: 오늘의집 "리뷰 영리 목적 이용 금지"(최강)·G마켓 "영리 수집 금지"·무신사/11번가 robots 전면 차단 — **리스크 수용 확정(사용자), 진행 중**
-- ✅ 헤드리스 캡처 4회: 29CM만 통과. 나머지는 실브라우저 세션 필요
 
 ### 다음 작업 (이 세션이 이어서 할 것 / 다른 세션도 할 수 있음 — 캡처는 세션 중복 비권장)
 
-1. **실세션 캡처 (플랫폼당 상품 1건, 리뷰 있는 것)**: 11번가 → SSG → 무신사 → 오늘의집·G마켓·컬리.
-   - 방법: 사용자 Chrome(CDP) 또는 `brain/tmp/capture4.mjs`(헤드리스) — 봇 차단 플랫폼은 CDP 실세션 필수
-   - 산출: 리뷰 XHR URL·요청 파라미터·응답 스키마·페이지네이션 → `brain/raw/review-platform-capture-2026-08-30/`에 **추가만**(덮어쓰기 금지)
-2. **어댑터 작성 (캡처된 플랫폼만)**: 29CM 패턴 복제 — `lib/{p}.ts`(URL·파서) + normalize + `content/collect-{p}.ts`(paginate, 0-based 페이지 주의) + `index.ts` 라우팅 + manifest + 테스트
-3. **배포 (09-04 게이트 후, 측정 보호)**: 버전 1.4.1 → 1.5.0 · 이름/설명 "쿠팡·스마트스토어" → 지원 목록 갱신 · CWS/Edge/웨일 재제출 · `STORE_LISTING.md` 갱신
-4. **리스크 잔여**: 29CM 약관 본문(robots 허용만 실측됨), 무신사·11번가(최신)·컬리 약관 본문 — 실측 원문 `brain/raw/review-platform-tos-scan-2026-08-30.md`
+1. ✅ **실세션 캡처 완료 (11번가→SSG→무신사→오늘의집→G마켓→컬리, 전부 CDP 통과)** — 산출은 brain raw에 추가만(덮어쓰기 없음).
+2. ✅ **어댑터 작성 완료 (6개)** — 29CM 패턴 복제: lib + normalize + content/collect + 라우팅 + manifest + 테스트. extension vitest **126개** 통과 / tsc / build 클린.
+3. ⏳ **배포 (09-04 게이트 후, 측정 보호)**: 버전 1.4.1 → 1.5.0 · 이름/설명 "쿠팡·스마트스토어" → 지원 목록 갱신 · CWS/Edge/웨일 재제출 · `STORE_LISTING.md` 갱신 — **게이트 전 제출 금지**
+4. ⏳ **리스크 잔여**: ~~옥션(itemno) 어댑터~~ ✅ 완료(2026-08-31, 아래), ~~무신사 리뷰 이미지 CDN host~~ ✅ `image.msscdn.net` 실측 확정(2026-08-31), 29CM 약관 본문 — brain `raw/review-platform-tos-scan-2026-08-30.md` 참고
+
+### 이번 세션(2026-08-31) — 다중 플랫폼 실측·어댑터
+
+- **캡처 방법**: 사용자 Chrome(CDP 9222, `brain/tmp/capture-cdp.mjs`) — 헤드리스로 차단되던 오늘의집·G마켓도 통과. 검증 상품(리뷰수): 11st 버거킹쿠폰(13) · SSG 다이슨 에어랩(3페이지) · 무신사 6254168(21) · 오늘의집 인덕션(8,022) · G마켓 크리넥스(85/6페이지) · 컬리 장어솥밥키트(697)
+- **확정 엔드포인트** (전부 CDP 라이브 실측, 상세: brain `raw/review-platform-capture-2026-08-30/*-live.json`):
+  - 11번가: `GET /products/{prdNo}/review-list?pageNo=1-based&pageSize=10` (HTML; `review-frame` iframe 은 fetch에서 빈 셸 — 금지)
+  - SSG: `GET /item/ajaxItemCommentList.ssg?itemId=&siteNo=&page=1-based&pageSize=10` (HTML + JSON-LD)
+  - 무신사: `GET goods.musinsa.com/api2/review/v1/view/list?page=0-based&pageSize=10&goodsNo=` — **상품 URL `/products/{no}` 변경 실측**(구 `/goods/` 404)
+  - 오늘의집: `GET store.ohou.se/api/goods/reviews?page=1-based&per=5&productionId=`
+  - G마켓: `POST /Item/Review/Text` (form body `goodsCode=&pageNo=`)
+  - **옥션 (2026-08-31 추가 실측)**: `POST itempage3.auction.co.kr/WebService/ReviewService.asmx/GetReviewList` body JSON `{"itemNo":"(문자접두+숫자, 예 F361333759)","filterParam":"","sort":"popular","pageIndex":1-based}` → `{"d":"<html>"}` — G마켓과 같은 eBay Korea 그룹이지만 **API 별개**. itemno 는 문자접두+숫자 (기존 `itemno=(\d+)` 추출기는 버그 → `[A-Za-z]?\d+` 로 수정)
+  - 컬리: `GET api.kurly.com/product-review/v4/contents-products/{no}/reviews?size=10&after={cursor}` (커서, `0_0` 종료)
+- **잔여 후속 완료 (2026-08-31)**: ① 옥션 어댑터 (`lib/auction.ts`+collect+normalize+라우팅+manifest+test) — vitest 132(was 126) ② 무신사 리뷰 이미지 CDN host **실측 확정** = `image.msscdn.net` (페이지 렌더가 `thumbnails/data/estimate/...` 로 실제 요청 10건 캡처; `lib/musinsa.ts` [추정]→[실측] 정정) ③ 11st 포토리뷰·옵션 필드는 텍스트 우선 유지로 보류
+- **변경 파일**: `extension/src/lib/{11st,ssg,musinsa,ohou,gmarket,kurly}.ts`(신규) · `lib/normalize.ts`(+6 normalize) · `lib/platforms.ts`(musinsa URL/gmarket goodsCode 대소문자 수정) · `content/collect-{p}.ts` 6개(신규) · `content/index.ts`(라우팅) · `public/manifest.json`(host_permissions·content_scripts 6개 추가) · `test/*.test.ts` 6개(신규) · `extension/package.json`(+`jsdom` devDep — HTML 파싱 테스트용)
+- ⏳ 09-04 게이트 전 스토어 제출 금지 (웹스토어 라이브 v1.4.1 유지 — manifest 변경분은 게이트 후 1.5.0 으로)
 
 ### 규율 (지키는 것)
 

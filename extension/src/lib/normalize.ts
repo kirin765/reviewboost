@@ -1,5 +1,7 @@
 import type { RawReview, ReviewRow } from "./types";
 import { twentyNineImageUrl } from "./29cm";
+import { musinsaImageUrl } from "./musinsa";
+import { ohouImageUrl } from "./ohou";
 
 /** ReviewBoost csv.ts(78-87) 와 동일한 별점 정규화: 0-5 그대로, 6-10 은 반감. */
 export function clampRating(v: unknown): number | null {
@@ -174,6 +176,114 @@ export function normalize29cmReview(raw: AnyRec): RawReview {
 /** 빈 본문 제거 + 한도 적용. */
 export function cleanReviews(reviews: RawReview[]): RawReview[] {
   return reviews.filter((r) => r.text.trim().length > 0);
+}
+
+/** 11번가 리뷰 raw → RawReview (lib/11st.ts DOM 파싱 산출물 — 2026-08-31 실측 스키마). */
+export function normalize11stReview(raw: AnyRec): RawReview {
+  const imageUrls = (Array.isArray(raw.images) ? raw.images : []).filter((u): u is string => typeof u === "string");
+  return {
+    text: pickString(raw.text, raw.content),
+    rating: clampRating(raw.rating),
+    reviewedAt: toIsoDate(raw.reviewedAt ?? raw.date ?? null),
+    title: pickString(raw.title) || undefined,
+    author: pickString(raw.author) || undefined,
+    helpfulCount: pickHelpful(raw.helpfulCount),
+    ...(imageUrls.length ? { imageUrls } : {})
+  };
+}
+
+/** SSG닷컴 리뷰 raw → RawReview (lib/ssg.ts DOM 파싱 산출물). */
+export function normalizeSsgReview(raw: AnyRec): RawReview {
+  const imageUrls = (Array.isArray(raw.images) ? raw.images : []).filter((u): u is string => typeof u === "string");
+  return {
+    text: pickString(raw.text, raw.content),
+    rating: clampRating(raw.rating),
+    reviewedAt: toIsoDate(raw.reviewedAt ?? raw.date ?? null),
+    title: pickString(raw.title) || undefined,
+    author: pickString(raw.author) || undefined,
+    helpfulCount: pickHelpful(raw.helpfulCount),
+    ...(imageUrls.length ? { imageUrls } : {})
+  };
+}
+
+/** 무신사 리뷰 raw → RawReview (goods.musinsa.com view/list 스키마 — grade 문자열, createDate ISO+09:00). */
+export function normalizeMusinsaReview(raw: AnyRec): RawReview {
+  const images = Array.isArray(raw.images) ? raw.images : [];
+  const imageUrls = images
+    .map((img) => musinsaImageUrl((img as Record<string, unknown>)?.imageUrl))
+    .filter(Boolean)
+    .map((u) => u as string);
+  return {
+    text: pickString(raw.content, raw.text),
+    rating: clampRating(raw.grade ?? raw.rating),
+    reviewedAt: toIsoDate(raw.createDate ?? raw.reviewedAt ?? null),
+    title: pickString(raw.title) || undefined,
+    // userId/encryptedUserId 는 해시 — 사용자식별로는 쓸 수 없어 author 미기재(프라이버시 유리)
+    helpfulCount: pickHelpful(raw.likeCount ?? raw.helpfulCount),
+    ...(imageUrls.length ? { imageUrls } : {})
+  };
+}
+
+/** 오늘의집 리뷰 raw → RawReview (store.ohou.se api/goods/reviews 스키마 — review.comment/starAvg). */
+export function normalizeOhouReview(raw: AnyRec): RawReview {
+  const review = (raw.review ?? {}) as Record<string, unknown>;
+  const card = (raw.card ?? {}) as Record<string, unknown>;
+  const imageUrls = [card.imageUrl, card.imgUrl, card.imgUrlPc]
+    .map((u) => ohouImageUrl(u))
+    .filter(Boolean)
+    .map((u) => u as string);
+  return {
+    text: pickString(review.comment, raw.contents, raw.reviewText),
+    rating: clampRating(review.starAvg ?? raw.starAvg),
+    reviewedAt: toIsoDate(raw.createdAt ?? review.createdAt ?? null),
+    title: pickString(raw.title) || undefined,
+    author: pickString(raw.writerNickname) || undefined,
+    helpfulCount: pickHelpful(raw.praiseCount ?? raw.likeCount),
+    ...(imageUrls.length ? { imageUrls } : {})
+  };
+}
+
+/** G마켓 상품평 raw → RawReview (lib/gmarket.ts DOM 파싱 산출물 — 별점 없음, 이미지 없음). */
+export function normalizeGmarketReview(raw: AnyRec): RawReview {
+  return {
+    text: pickString(raw.text, raw.content),
+    rating: clampRating(raw.rating), // 프래그먼트에 리뷰별 별점 없음 → null (실측)
+    reviewedAt: toIsoDate(raw.reviewedAt ?? raw.date ?? null),
+    title: pickString(raw.title) || undefined,
+    author: pickString(raw.author) || undefined,
+    helpfulCount: 0
+  };
+}
+
+/** 컬리 후기 raw → RawReview (product-review/v4 스키마 — contents/registeredAt, 별점 없음). */
+export function normalizeCurlyReview(raw: AnyRec): RawReview {
+  const images = Array.isArray(raw.images) ? raw.images : [];
+  const imageUrls = images
+    .map((img) => (img as Record<string, unknown>)?.image)
+    .filter((u): u is string => typeof u === "string" && u.trim().length > 0);
+  return {
+    text: pickString(raw.contents, raw.content, raw.text),
+    rating: clampRating(raw.rating ?? raw.starAvg), // 실측: 컬리 후기에 별점 필드 없음 → null
+    reviewedAt: toIsoDate(raw.registeredAt ?? raw.createdAt ?? null),
+    title: pickString(raw.title) || undefined,
+    author: pickString(raw.ownerName, raw.writerName) || undefined,
+    helpfulCount: pickHelpful(raw.likeCount),
+    ...(imageUrls.length ? { imageUrls } : {})
+  };
+}
+
+/** 옥션 리뷰 raw → RawReview (lib/auction.ts DOM 파싱 산출물 — 2026-08-31 실측 스키마). */
+export function normalizeAuctionReview(raw: AnyRec): RawReview {
+  const imageUrls = (Array.isArray(raw.images) ? raw.images : []).filter((u): u is string => typeof u === "string");
+  return {
+    text: pickString(raw.text, raw.content),
+    rating: clampRating(raw.rating),
+    reviewedAt: toIsoDate(raw.reviewedAt ?? raw.date ?? null),
+    // 옥션 리뷰 프래그먼트에 리뷰 제목은 없음 (실측: text__option / box__review-text 만 존재)
+    author: pickString(raw.author) || undefined,
+    helpfulCount: pickHelpful(raw.helpfulCount),
+    ...(imageUrls.length ? { imageUrls } : {})
+  };
 }
 
 /** 깔때기 전송용 — ReviewRow 필드만 남긴다. */
