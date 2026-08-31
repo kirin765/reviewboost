@@ -214,7 +214,7 @@
 
 1. ✅ **실세션 캡처 완료 (11번가→SSG→무신사→오늘의집→G마켓→컬리, 전부 CDP 통과)** — 산출은 brain raw에 추가만(덮어쓰기 없음).
 2. ✅ **어댑터 작성 완료 (6개)** — 29CM 패턴 복제: lib + normalize + content/collect + 라우팅 + manifest + 테스트. extension vitest **126개** 통과 / tsc / build 클린.
-3. ⏳ **배포 (09-04 게이트 후, 측정 보호)**: 버전 1.4.1 → 1.5.0 · 이름/설명 "쿠팡·스마트스토어" → 지원 목록 갱신 · CWS/Edge/웨일 재제출 · `STORE_LISTING.md` 갱신 — **게이트 전 제출 금지**
+3. 🟡 **배포 (09-04 게이트 후, 측정 보호)**: 버전 1.4.1 → 1.5.0 · 이름/설명 "쿠팡·스마트스토어" → 지원 목록 갱신 · CWS/Edge/웨일 재제출 · `STORE_LISTING.md` 갱신 — **게이트 전 제출 금지** (✅ 2026-08-31 패키지·문서 준비 완료: manifest/package 1.5.0, CHANGELOG v1.5.0, STORE_LISTING/EDGE/WHALE 갱신, `reviewboost-extension-{v,edge,whale}-1.5.0.zip` 3종 빌드 완료 — **제출 자체는 게이트 후**)
 4. ⏳ **리스크 잔여**: ~~옥션(itemno) 어댑터~~ ✅ 완료(2026-08-31, 아래), ~~무신사 리뷰 이미지 CDN host~~ ✅ `image.msscdn.net` 실측 확정(2026-08-31), 29CM 약관 본문 — brain `raw/review-platform-tos-scan-2026-08-30.md` 참고
 
 ### 이번 세션(2026-08-31) — 다중 플랫폼 실측·어댑터
@@ -230,7 +230,7 @@
   - 컬리: `GET api.kurly.com/product-review/v4/contents-products/{no}/reviews?size=10&after={cursor}` (커서, `0_0` 종료)
 - **잔여 후속 완료 (2026-08-31)**: ① 옥션 어댑터 (`lib/auction.ts`+collect+normalize+라우팅+manifest+test) — vitest 132(was 126) ② 무신사 리뷰 이미지 CDN host **실측 확정** = `image.msscdn.net` (페이지 렌더가 `thumbnails/data/estimate/...` 로 실제 요청 10건 캡처; `lib/musinsa.ts` [추정]→[실측] 정정) ③ 11st 포토리뷰·옵션 필드는 텍스트 우선 유지로 보류
 - **변경 파일**: `extension/src/lib/{11st,ssg,musinsa,ohou,gmarket,kurly}.ts`(신규) · `lib/normalize.ts`(+6 normalize) · `lib/platforms.ts`(musinsa URL/gmarket goodsCode 대소문자 수정) · `content/collect-{p}.ts` 6개(신규) · `content/index.ts`(라우팅) · `public/manifest.json`(host_permissions·content_scripts 6개 추가) · `test/*.test.ts` 6개(신규) · `extension/package.json`(+`jsdom` devDep — HTML 파싱 테스트용)
-- ⏳ 09-04 게이트 전 스토어 제출 금지 (웹스토어 라이브 v1.4.1 유지 — manifest 변경분은 게이트 후 1.5.0 으로)
+- ⏳ 09-04 게이트 전 스토어 제출 금지 (웹스토어 라이브 v1.4.1 유지 — manifest 변경분은 게이트 후 1.5.0 으로). ✅ 소스 manifest/패키지·문서는 이미 1.5.0 선반영(2026-08-31) — **제출만 게이트 이후**
 
 ### 규율 (지키는 것)
 
