@@ -92,12 +92,17 @@
 - **유료 플랜 무제한** (아래 5장 참고)
 - 패키지: `extension/reviewboost-extension-v1.4.1.zip` (manifest가 zip 루트, 버전 1.4.1)
 
+**이후 진행 (2026-08-30):**
+- ✅ **CWS v1.4.1 제출 완료 (사용자 직접)**
+- ✅ **Edge/웨일 v1.4.1 패키지 생성** — `extension/reviewboost-extension-edge-1.4.1.zip` / `extension/reviewboost-extension-whale-1.4.1.zip` (HEAD 빌드 = CWS 제출본과 동일 소스, manifest 루트, v1.4.1, **CS 문의 탭 + `*://reviewboost.co.kr/*` 호스트 권한 포함**). 기존 10:19 빌드(CS 탭 없음)는 `reviewboost-extension-v1.4.1-before-cs-tab.zip`으로 백업
+- ⏳ **Edge/웨일 제출은 사용자 직접** — `extension/EDGE_STORE.md` / `extension/WHALE_STORE.md` (기존 v1.3.0 항목 **업데이트 제출**로 진행)
+
 **실 URL 검증 도구 (유지):**
 - `extension/scripts/e2e-extension.mjs` — 진짜 Chrome + unpacked 확장 E2E (쿠팡/스마트스토어 실측, popup 버튼 클릭 → 다운로드 파일 검증). `LIVE_URL=... node scripts/e2e-extension.mjs`
 - `extension/scripts/live-verify.mjs` — 실 URL API 캡처 → 실제 lib 코드로 정규화/내보내기 검증
 - 참고: 스마트스토어 실측은 `~/chrome-cdp-profile`(네이버 로그인 세션) Chrome + CDP 9222 필요, 네이버 봇 감지로 재시도 필요할 수 있음
 
-**CWS 제출:** `extension/STORE_LISTING.md`에 등록정보/개인정보 문구 전부 준비됨 (v1.4.1로 갱신됨). 사용자가 직접 제출 예정.
+**CWS 제출:** `extension/STORE_LISTING.md`에 등록정보/개인정보 문구 전부 준비됨 (v1.4.1로 갱신됨). ✅ **사용자가 직접 제출 완료 (2026-08-30).** Edge/웨일은 아래 "이후 진행" 참고.
 
 **✅ 라이브 E2E 실측 (2026-08-29, dist v1.4.1 = 제출 zip과 동일 소스):**
 - **쿠팡**: Toocki C to C 60W 케이블 상품 — 9개 수집(이미지 2개), CSV 25열 폼 + `thumbnail.coupangcdn.com` 이미지 URL 확인, exit 0
@@ -180,3 +185,30 @@
 - `npm test`는 소스텍스트 가드 스크립트 + vitest를 함께 돈다
 - dev Clerk 인스턴스의 dev-browser 게이트 때문에 **로컬(dev)에서는 서버 발급 세션 로그인이 안 됨** — 프로덕션 전환 전에 "안 되는 게 정상"이라고 혼동하지 말 것
 - 웹훅/결제 관련 사전 수정분(`src/app/extension-privacy`, `terms`, `AppShell`, `api/extension/event`, `db/queries.ts` 등)이 커밋 전 상태로 섞여 있음 — 커밋 시 이번 세션 작업과 구분해 리뷰할 것
+
+## 9. 다중 플랫폼 확장 — 계획 (2026-08-30, brain 세션)
+
+> 확장의 크롤링·다운로드 대상 확장. 상세 상태·리스크: `docs/multi-platform-crawl.md`.
+> 다른 세션이 이 파일 경로에서 유사 작업을 진행 중이면 **이 섹션과 multi-platform-crawl.md를 먼저 읽고** 겹치지 않게 진행할 것.
+
+### 지금까지 한 것 (병행 금지 대상)
+
+- ✅ 플랫폼 레지스트리 `extension/src/lib/platforms.ts` — 무신사·29CM·G마켓·옥션·11번가·SSG·오늘의집·컬리 8개 추가(호스트·상품ID 추출)
+- ✅ **29CM 어댑터 완성** — `lib/29cm.ts` + `content/collect-29cm.ts` + `normalize29cmReview` + 라우팅 + manifest(matches·host_permissions) + `test/29cm.test.ts` (94 테스트 통과·typecheck 클린, 커밋 36af7a29)
+- ✅ 약관·robots 실측: 오늘의집 "리뷰 영리 목적 이용 금지"(최강)·G마켓 "영리 수집 금지"·무신사/11번가 robots 전면 차단 — **리스크 수용 확정(사용자), 진행 중**
+- ✅ 헤드리스 캡처 4회: 29CM만 통과. 나머지는 실브라우저 세션 필요
+
+### 다음 작업 (이 세션이 이어서 할 것 / 다른 세션도 할 수 있음 — 캡처는 세션 중복 비권장)
+
+1. **실세션 캡처 (플랫폼당 상품 1건, 리뷰 있는 것)**: 11번가 → SSG → 무신사 → 오늘의집·G마켓·컬리.
+   - 방법: 사용자 Chrome(CDP) 또는 `brain/tmp/capture4.mjs`(헤드리스) — 봇 차단 플랫폼은 CDP 실세션 필수
+   - 산출: 리뷰 XHR URL·요청 파라미터·응답 스키마·페이지네이션 → `brain/raw/review-platform-capture-2026-08-30/`에 **추가만**(덮어쓰기 금지)
+2. **어댑터 작성 (캡처된 플랫폼만)**: 29CM 패턴 복제 — `lib/{p}.ts`(URL·파서) + normalize + `content/collect-{p}.ts`(paginate, 0-based 페이지 주의) + `index.ts` 라우팅 + manifest + 테스트
+3. **배포 (09-04 게이트 후, 측정 보호)**: 버전 1.4.1 → 1.5.0 · 이름/설명 "쿠팡·스마트스토어" → 지원 목록 갱신 · CWS/Edge/웨일 재제출 · `STORE_LISTING.md` 갱신
+4. **리스크 잔여**: 29CM 약관 본문(robots 허용만 실측됨), 무신사·11번가(최신)·컬리 약관 본문 — 실측 원문 `brain/raw/review-platform-tos-scan-2026-08-30.md`
+
+### 규율 (지키는 것)
+
+- **게이트(09-04) 전 스토어 제출 금지** — 확장 v1.4.1 라이브 유지, 가격·문구 동결 그대로
+- raw 불변 — 캡처 결과 추가만(이 레포 훅 아님, brain 훅이 차단)
+- 29CM 이미지 CDN(`cdn.29cm.co.kr`)은 추정값 — 이미지 깨지면 수정
