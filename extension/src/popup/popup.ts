@@ -348,8 +348,11 @@ function startCollect(): void {
   });
 }
 
+/** 스마트스토어 판매자센터 엑셀 다운로드 파일명 규칙과 동일 — review_YYYYMMDD_HHMMSS (로컬 시각). */
 function stamp(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const p = (n: number): string => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 }
 
 function triggerDownload(filename: string, data: string | Uint8Array, mime: string): void {
@@ -481,13 +484,13 @@ el("cancel").addEventListener("click", () => {
 });
 el("dl-xlsx").addEventListener("click", () =>
   triggerDownload(
-    `reviews_${restored?.platform ?? platform}_${stamp()}.xlsx`,
+    `review_${stamp()}.xlsx`,
     reviewsToXlsx(collected, exportCtx),
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   )
 );
 el("dl-csv").addEventListener("click", () =>
-  triggerDownload(`reviews_${restored?.platform ?? platform}_${stamp()}.csv`, reviewsToCsv(collected, exportCtx), "text/csv;charset=utf-8")
+  triggerDownload(`review_${stamp()}.csv`, reviewsToCsv(collected, exportCtx), "text/csv;charset=utf-8")
 );
 el("analyze").addEventListener("click", () => void analyze());
 el("reset").addEventListener("click", resetToCollect);

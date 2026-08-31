@@ -94,5 +94,5 @@ export function reviewToOfficialRow(review: RawReview, ctx: ReviewExportContext 
   ];
 }
 
-/** 공식 폼에서 숫자 셀로 써야 하는 열 인덱스 (구매자평점=3, 리뷰도움수=6). */
-export const OFFICIAL_NUMERIC_COLUMNS = new Set([3, 6]);
+/** 공식 폼에서 숫자 셀(t="n")로 써야 하는 열 인덱스 — 구매자평점=3, 리뷰도움수=6, 리뷰글번호=10 (판매자센터 내보내기 실측). */
+export const OFFICIAL_NUMERIC_COLUMNS = new Set([3, 6, 10]);

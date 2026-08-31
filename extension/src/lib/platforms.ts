@@ -30,10 +30,11 @@ export type PlatformMeta = {
   extract: (href: string) => string | null;
 };
 
-/** 호스트만 떼어낸다 (스킴/경로/쿼리 제거). */
+/** 호스트만 떼어낸다 (스킴/경로/쿼리 제거). 스킴 없는 bare hostname 도 허용한다. */
 function bareHost(h: string): string {
   try {
-    return new URL(h).hostname.toLowerCase();
+    const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(h) ? h : `https://${h}`;
+    return new URL(withScheme).hostname.toLowerCase();
   } catch {
     return "";
   }

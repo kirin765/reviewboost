@@ -1,5 +1,11 @@
 import { COLLECT_PAGE_DELAY_MAX_MS, COLLECT_PAGE_DELAY_MIN_MS } from "../lib/config";
-import { GMARKET_REVIEW_ENDPOINT, gmarketReviewBody, parseGmarketPage } from "../lib/gmarket";
+import {
+  GMARKET_REVIEW_ENDPOINT,
+  GMARKET_REVIEW_SHELL_ENDPOINT,
+  gmarketReviewBody,
+  parseGmarketPage,
+  parseGmarketTotalPages
+} from "../lib/gmarket";
 import { paginate, randomDelay, realSleep } from "../lib/collector";
 import { cleanReviews, normalizeGmarketReview } from "../lib/normalize";
 import { CollectError } from "../lib/types";
@@ -8,15 +14,19 @@ import type { RunOptions } from "./collect-coupang";
 const PAGE_SIZE = 10; // Review/Text 는 페이지당 10행 (실측)
 
 export async function collectGmarket(goodsCode: string, opts: RunOptions): Promise<import("../lib/types").RawReview[]> {
+  // 사이트 변경(실측 2026-08-31 후속): 1페이지는 POST /Review(셸 — data-total-page 동봉),
+  // 2페이지+는 POST /Review/Text 에 totalPage 필수 (누락 시 서버가 연결 reset).
+  let totalPages: number | null = null;
   const raw = await paginate(
     async (page) => {
+      const shell = page === 1;
       let res: Response;
       try {
-        res = await fetch(GMARKET_REVIEW_ENDPOINT, {
+        res = await fetch(shell ? GMARKET_REVIEW_SHELL_ENDPOINT : GMARKET_REVIEW_ENDPOINT, {
           method: "POST",
           credentials: "include",
           headers: { "content-type": "application/x-www-form-urlencoded" },
-          body: gmarketReviewBody(goodsCode, page)
+          body: shell ? gmarketReviewBody(goodsCode, 1) : gmarketReviewBody(goodsCode, page, totalPages ?? undefined)
         });
       } catch {
         throw new CollectError("NETWORK", "네트워크 오류로 상품평을 불러오지 못했습니다.");
@@ -29,7 +39,8 @@ export async function collectGmarket(goodsCode: string, opts: RunOptions): Promi
       }
       const html = await res.text().catch(() => "");
       const doc = new DOMParser().parseFromString(html, "text/html");
-      return { items: parseGmarketPage(doc) };
+      if (shell) totalPages = parseGmarketTotalPages(html);
+      return { items: parseGmarketPage(doc), totalPages: shell ? (totalPages ?? undefined) : undefined };
     },
     {
       maxItems: opts.maxItems,
