@@ -6,6 +6,8 @@
 
 > v1.4.1 변경: 리뷰 **이미지 URL** 수집(쿠팡/스마트스토어) + 내보내기 **스마트스토어 공식 리뷰 엑셀 25열 폼** 채택(포토/영상 열 포함) + 유료 플랜 **무제한**. 상세는 `extension/CHANGELOG.md` 참고.
 
+> Edge·웨일 제출도 동일한 v1.4.1 빌드 사용: `extension/reviewboost-extension-edge-1.4.1.zip`, `extension/reviewboost-extension-whale-1.4.1.zip` (제출 절차는 `EDGE_STORE.md` / `WHALE_STORE.md`).
+
 ---
 
 ## 제출 전 필수 선행 작업
