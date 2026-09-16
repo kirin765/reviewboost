@@ -86,7 +86,8 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
     planLabel: planDisplay,
     monthlyLimit: monthlyLimitForPlan(plan),
     monthlyUsed: 0,
-    aiAdvancedAvailable: plan !== "free"
+    aiAdvancedAvailable: plan !== "free",
+    extensionPlan: session.extensionPlan
   };
 
   const reviewRows = await getReviewsForAnalysis(row.id, userId, 120);
@@ -117,7 +118,7 @@ export default async function AnalysisDetailPage(props: { params: Promise<{ id: 
           caps={caps}
           busy={false}
           downloadHref={`/api/report/${row.id}`}
-          headerDescription={`${created} · 우선순위 ${priorityScore.toFixed(1)} · ${planDisplay} 플랜`}
+          headerDescription={`${created} · 우선순위 ${priorityScore.toFixed(1)} · ${planDisplay} 플랜${session.extensionPlan ? " · 익스텐션 구독 중" : ""}`}
           secondaryHref="/dashboard"
           secondaryLabel="홈"
           resultContext={resultContext}

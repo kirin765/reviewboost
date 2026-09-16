@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getCapabilitiesBase } from "@/lib/capabilities";
+import { hasExtensionPaidAccess } from "@/lib/billing";
 import { monthStartIso, monthlyLimitForPlan, planLabel, resolvePlanTierForUser } from "@/lib/plan";
 import { countAnalysesForUserSince } from "@/lib/db/queries";
 
@@ -26,10 +27,16 @@ export async function GET() {
   const plan = await resolvePlanTierForUser({ userId, email });
   const monthlyLimit = monthlyLimitForPlan(plan);
   let monthlyUsed = 0;
+  let extensionPlan = false;
 
   if (base.databaseConfigured && userId) {
     try {
       monthlyUsed = await countAnalysesForUserSince(userId, monthStartIso());
+    } catch {
+      // ignore
+    }
+    try {
+      extensionPlan = await hasExtensionPaidAccess(userId);
     } catch {
       // ignore
     }
@@ -41,6 +48,7 @@ export async function GET() {
     planLabel: planLabel(plan),
     monthlyLimit,
     monthlyUsed,
-    aiAdvancedAvailable: base.openaiConfigured
+    aiAdvancedAvailable: base.openaiConfigured,
+    extensionPlan
   });
 }

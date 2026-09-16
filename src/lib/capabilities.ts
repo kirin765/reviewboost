@@ -9,6 +9,8 @@ export type Capabilities = {
   monthlyLimit: number | null;
   monthlyUsed: number;
   aiAdvancedAvailable: boolean;
+  /** 익스텐션 유료(수집 무제한) 구독 여부 — 분석 플랜(plan)과 별개. */
+  extensionPlan?: boolean;
 };
 
 export function isDatabaseConfigured() {

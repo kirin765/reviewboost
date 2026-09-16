@@ -9,6 +9,7 @@ vi.mock("@/lib/db", () => ({
 }));
 
 import {
+  hasExtensionPaidAccess,
   normalizeBillingTimestamp,
   resolvePlanTierByBilling,
   upsertProfileCustomer,
@@ -146,5 +147,54 @@ describe("billing utilities", () => {
     expect(onConflictDoUpdate).toHaveBeenCalledTimes(1);
     const [conflict] = onConflictDoUpdate.mock.calls[0];
     expect(conflict.target).toBeDefined();
+  });
+});
+
+describe("hasExtensionPaidAccess", () => {
+  const now = Date.parse("2026-09-16T00:00:00Z");
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("grants access for an active tier with a future period end", async () => {
+    const { db } = makeSelectDb([
+      { planTier: "extension", status: "active", currentPeriodEnd: new Date("2026-10-16T00:00:00Z") }
+    ]);
+    getDbMock.mockReturnValue(db);
+    expect(await hasExtensionPaidAccess("user-1", now)).toBe(true);
+  });
+
+  it("revokes after the grace period once the period end has passed", async () => {
+    const { db } = makeSelectDb([
+      { planTier: "extension", status: "active", currentPeriodEnd: new Date("2026-09-01T00:00:00Z") }
+    ]);
+    getDbMock.mockReturnValue(db);
+    expect(await hasExtensionPaidAccess("user-1", now)).toBe(false);
+  });
+
+  it("keeps access within the grace window (webhook delay buffer)", async () => {
+    const { db } = makeSelectDb([
+      { planTier: "extension", status: "active", currentPeriodEnd: new Date("2026-09-15T00:00:00Z") }
+    ]);
+    getDbMock.mockReturnValue(db);
+    expect(await hasExtensionPaidAccess("user-1", now)).toBe(true);
+  });
+
+  it("does not block rows with an unknown period end", async () => {
+    const { db } = makeSelectDb([
+      { planTier: "extension", status: "active", currentPeriodEnd: null }
+    ]);
+    getDbMock.mockReturnValue(db);
+    expect(await hasExtensionPaidAccess("user-1", now)).toBe(true);
+  });
+
+  it("ignores canceled subscriptions and non-paid tiers", async () => {
+    const { db } = makeSelectDb([
+      { planTier: "extension", status: "canceled", currentPeriodEnd: new Date("2027-01-01T00:00:00Z") },
+      { planTier: "free", status: "active", currentPeriodEnd: new Date("2027-01-01T00:00:00Z") }
+    ]);
+    getDbMock.mockReturnValue(db);
+    expect(await hasExtensionPaidAccess("user-1", now)).toBe(false);
   });
 });

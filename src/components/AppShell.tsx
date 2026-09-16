@@ -209,6 +209,7 @@ export default function AppShell({ children }: AppShellProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [open, setOpen] = useState(false);
   const [plan, setPlan] = useState<PlanTier>("free");
+  const [extensionPlan, setExtensionPlan] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const drawerFirstLinkRef = useRef<HTMLAnchorElement | null>(null);
 
@@ -218,12 +219,13 @@ export default function AppShell({ children }: AppShellProps) {
     fetch("/api/navigation-session", { cache: "no-store", credentials: "same-origin" })
       .then(async (res) => {
         if (!res.ok) return null;
-        return (await res.json()) as { plan?: PlanTier; userEmail?: string | null } | null;
+        return (await res.json()) as { plan?: PlanTier; userEmail?: string | null; extensionPlan?: boolean } | null;
       })
       .then((session) => {
         if (!active || !session) return;
         setPlan(session.plan === "basic" || session.plan === "pro" ? session.plan : "free");
         setUserEmail(typeof session.userEmail === "string" ? session.userEmail : null);
+        setExtensionPlan(Boolean(session.extensionPlan));
       })
       .catch(() => {
         // Public shell falls back to guest mode when auth lookup is unavailable.
@@ -272,7 +274,7 @@ export default function AppShell({ children }: AppShellProps) {
           className="fixed inset-y-0 left-0 z-40 w-[296px] border-r border-[color:#e6e8f2] bg-white px-5 py-6 backdrop-blur-xl"
           aria-label="주요 메뉴"
         >
-          <SidebarNav variant="app" plan={plan} userEmail={userEmail} firstLinkRef={drawerFirstLinkRef} onNavigate={() => setOpen(false)} />
+          <SidebarNav variant="app" plan={plan} extensionPlan={extensionPlan} userEmail={userEmail} firstLinkRef={drawerFirstLinkRef} onNavigate={() => setOpen(false)} />
         </aside>
       ) : null}
 
@@ -296,7 +298,8 @@ export default function AppShell({ children }: AppShellProps) {
                 aria-label="주요 메뉴"
                 className="fixed inset-y-0 left-0 z-40 w-[296px] border-r border-[color:#e6e8f2] bg-white px-5 py-6 backdrop-blur-xl xl:hidden"
               >
-                <SidebarNav variant="app" plan={plan} userEmail={userEmail} firstLinkRef={drawerFirstLinkRef} onNavigate={() => setOpen(false)} />
+          <SidebarNav variant="app" plan={plan} extensionPlan={extensionPlan} userEmail={userEmail} firstLinkRef={drawerFirstLinkRef} onNavigate={() => setOpen(false)} />
+
               </aside>
             </>
           ) : null}

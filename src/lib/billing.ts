@@ -159,21 +159,36 @@ export async function resolvePlanTierByBilling(args: {
   return args.fallbackPlan;
 }
 
-/** 익스텐션 유료 쿼터 접근 여부 — 익스텐션 전용 구독 또는 Basic/Pro 구독(덤 제공)이 활성이면 true. 조회 실패는 free 취급. */
-export async function hasExtensionPaidAccess(userId: string | null | undefined): Promise<boolean> {
+/** 유료 기간 종료 후에도 갱신 웹훅 지연을 감안해 접근을 유지하는 유예 기간. */
+export const EXTENSION_ACCESS_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
+
+/** 익스텐션 유료 쿼터 접근 여부 — 익스텐션 전용 구독 또는 Basic/Pro 구독(덤 제공)이 활성이면 true.
+ *  취소/만료 웹훅이 누락돼도 기간 종료일(+유예)이 지나면 회수한다. period 종료일이 없는 행은 막지 않는다. */
+export async function hasExtensionPaidAccess(userId: string | null | undefined, now = Date.now()): Promise<boolean> {
   if (!userId) return false;
   const db = getDb();
   if (!db) return false;
 
   try {
     const rows = await db
-      .select({ status: subscriptions.status, planTier: subscriptions.planTier })
+      .select({
+        status: subscriptions.status,
+        planTier: subscriptions.planTier,
+        currentPeriodEnd: subscriptions.currentPeriodEnd
+      })
       .from(subscriptions)
       .where(eq(subscriptions.userId, userId))
       .limit(50);
     return rows.some((r) => {
       const tier = String(r.planTier);
-      return (tier === "extension" || tier === "basic" || tier === "pro") && isBillingActiveStatus(r.status);
+      if (!((tier === "extension" || tier === "basic" || tier === "pro") && isBillingActiveStatus(r.status))) {
+        return false;
+      }
+      const end = r.currentPeriodEnd;
+      if (!end) return true;
+      const endMs = end instanceof Date ? end.getTime() : Date.parse(String(end));
+      if (!Number.isFinite(endMs)) return true;
+      return endMs > now - EXTENSION_ACCESS_GRACE_MS;
     });
   } catch {
     return false;

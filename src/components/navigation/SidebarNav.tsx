@@ -21,6 +21,8 @@ type SidebarNavItem = {
 type SidebarNavProps = {
   variant: SidebarVariant;
   plan: PlanTier;
+  /** 익스텐션 유료(수집 무제한) 구독 여부. */
+  extensionPlan?: boolean;
   userEmail: string | null;
   firstLinkRef?: React.Ref<HTMLAnchorElement>;
   onNavigate?: () => void;
@@ -101,6 +103,7 @@ function renderIcon(icon: SidebarNavItem["icon"]) {
 
 export default function SidebarNav({
   plan,
+  extensionPlan = false,
   userEmail,
   firstLinkRef,
   onNavigate
@@ -175,6 +178,11 @@ export default function SidebarNav({
             <div>
               <p className="text-sm font-medium text-[var(--rb-fg)]">{displayName}</p>
               <p className="mt-1 text-xs text-[var(--rb-muted)]">{currentPlanLabel}</p>
+              {extensionPlan ? (
+                <span className="mt-1 inline-flex items-center rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10px] font-semibold text-[#4f46e5]">
+                  익스텐션 플랜 · 수집 무제한
+                </span>
+              ) : null}
             </div>
           </div>
           <div className="mt-4 flex items-center gap-3">
