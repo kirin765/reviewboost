@@ -102,15 +102,39 @@ async function reportWebhookFailure(args: {
   );
 
   const url = String(process.env.BILLING_ALERT_WEBHOOK_URL ?? "").trim();
-  if (!url) return;
-  try {
-    await fetch(url, {
+  if (url) {
+    await postAlert(url, {
       method: "POST",
       headers: { "content-type": "text/plain; charset=utf-8" },
       body: `[ReviewBoost] 결제 웹훅 실패: ${args.reason} (${args.eventType}, customer=${args.customerId ?? "?"})`
     });
+  }
+
+  const tgToken = String(
+    process.env.BILLING_ALERT_TELEGRAM_BOT_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN ?? ""
+  ).trim();
+  const tgChat = String(
+    process.env.BILLING_ALERT_TELEGRAM_CHAT_ID ?? process.env.TELEGRAM_CHAT_ID ?? ""
+  ).trim();
+  if (tgToken && tgChat) {
+    await postAlert(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        chat_id: tgChat,
+        text: `[ReviewBoost] 결제 웹훅 실패: ${args.reason}\n${args.eventType} · customer=${args.customerId ?? "?"}`,
+        disable_web_page_preview: true
+      })
+    });
+  }
+}
+
+/** 관리자 알림 전송(best-effort). 실패해도 웹훅 처리를 막지 않는다. */
+async function postAlert(url: string, init: RequestInit): Promise<void> {
+  try {
+    await fetch(url, init);
   } catch {
-    // 알림 실패는 웹훅 처리를 막지 않는다.
+    // ignore
   }
 }
 

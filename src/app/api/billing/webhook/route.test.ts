@@ -629,4 +629,38 @@ describe("POST /api/billing/webhook", () => {
       fetchSpy.mockRestore();
     }
   });
+
+  it("posts a Telegram alert when Telegram env is configured", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true } as Response);
+    process.env.BILLING_ALERT_TELEGRAM_BOT_TOKEN = "bot123";
+    process.env.BILLING_ALERT_TELEGRAM_CHAT_ID = "999";
+    try {
+      mocks.findUserIdByPaddleCustomerId.mockResolvedValue(null);
+      mocks.fetchPaddleCustomerEmail.mockResolvedValue(null);
+
+      const req = signedRequest({
+        event_type: "transaction.completed",
+        event_id: "evt_tg",
+        data: {
+          custom_data: {},
+          customer_id: "ctm_tg",
+          subscription_id: "sub_tg",
+          status: "completed",
+          items: [{ price: { id: "pri_basic" } }]
+        }
+      });
+
+      const res = await POST(req);
+
+      expect(res.status).toBe(200);
+      expect(fetchSpy).toHaveBeenCalledWith(
+        "https://api.telegram.org/botbot123/sendMessage",
+        expect.objectContaining({ method: "POST" })
+      );
+    } finally {
+      delete process.env.BILLING_ALERT_TELEGRAM_BOT_TOKEN;
+      delete process.env.BILLING_ALERT_TELEGRAM_CHAT_ID;
+      fetchSpy.mockRestore();
+    }
+  });
 });
