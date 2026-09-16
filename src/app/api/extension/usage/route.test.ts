@@ -77,7 +77,8 @@ describe("GET /api/extension/usage", () => {
 
     const res = await GET(usageRequest({ token: "tok" }));
     const body = await res.json();
-    expect(body).toMatchObject({ authenticated: true, tier: "paid", limit: null, used: null, remaining: null });
+    expect(body).toMatchObject({ authenticated: true, tier: "paid", limit: null, used: null });
+    expect(body.remaining).toBeGreaterThan(0);
     expect(mocks.getExtensionUsageCount).not.toHaveBeenCalled();
   });
 });
@@ -173,7 +174,8 @@ describe("POST /api/extension/usage", () => {
     const res = await POST(usageRequest({ method: "POST", token: "tok", body: { count: 5000 } }));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toMatchObject({ ok: true, tier: "paid", limit: null, used: null, remaining: null });
+    expect(body).toMatchObject({ ok: true, tier: "paid", limit: null, used: null });
+    expect(body.remaining).toBeGreaterThan(0);
     expect(mocks.consumeExtensionQuota).not.toHaveBeenCalled();
   });
 });

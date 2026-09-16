@@ -16,6 +16,16 @@ export const runtime = "nodejs";
 
 const MAX_CONSUME_PER_REQUEST = 5000;
 
+/**
+ * 유료(무제한) 응답의 remaining 센티널.
+ * `limit: null` 은 "무제한"의 기준값이지만, 구버전 익스텐션(≤1.5.0)은
+ * `(remaining ?? 0) <= 0` 로 결제벽을 판정해서 `remaining: null` 을 0(소진)으로
+ * 오해한다. 유한한 큰 값을 내려주면 무제한 표시(limit===null)는 유지하면서
+ * 결제벽 오노출을 피할 수 있다. 실제 소비는 이 값으로 절대 clamp 되지 않는다
+ * (클라이언트 COLLECT_HARD_MAX=2000 < 센티널).
+ */
+const UNLIMITED_REMAINING = 1_000_000_000;
+
 // CORS: 익스텐션 팝업(chrome-extension://)에서 호출된다. /api/extension/analyze 와 동일 정책.
 function corsHeaders(origin: string | null): Record<string, string> {
   const headers: Record<string, string> = {
@@ -71,8 +81,8 @@ async function statusForUser(userId: string | null): Promise<UsageStatus> {
   }
   const tier = await resolveExtensionTier(userId);
   if (tier === "paid") {
-    // 유료 플랜: 일일 한도 없음(무제한).
-    return { authenticated: true, tier, day, limit: null, used: null, remaining: null };
+    // 유료 플랜: 일일 한도 없음(무제한). remaining 은 구버전 클라이언트 호환 센티널.
+    return { authenticated: true, tier, day, limit: null, used: null, remaining: UNLIMITED_REMAINING };
   }
   const limit = EXTENSION_FREE_DAILY_LIMIT;
   const used = await getExtensionUsageCount(userId, day);
@@ -149,7 +159,7 @@ export async function POST(req: Request): Promise<Response> {
         unlimited: true
       });
       return new Response(
-        JSON.stringify({ ok: true, tier, day, limit: null, used: null, remaining: null }),
+        JSON.stringify({ ok: true, tier, day, limit: null, used: null, remaining: UNLIMITED_REMAINING }),
         { status: 200, headers: { "content-type": "application/json", "cache-control": "no-store", ...cors } }
       );
     }

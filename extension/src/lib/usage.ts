@@ -34,6 +34,14 @@ export function clampToRemaining(requested: number, remaining: number | null): n
   return Math.max(0, Math.min(requested, remaining));
 }
 
+/**
+ * 잔여 한도가 소진됐는지. remaining 이 null(유료·무제한)이면 절대 소진이 아니다.
+ * (null 을 0 으로 취급하면 유료 사용자에게 결제벽이 잘못 노출된다.)
+ */
+export function isQuotaExhausted(usage: { remaining: number | null }): boolean {
+  return usage.remaining !== null && usage.remaining <= 0;
+}
+
 async function getAuth(): Promise<AuthState | null> {
   const data = await chrome.storage.local.get(AUTH_STORAGE_KEY);
   const auth = (data as Record<string, unknown>)[AUTH_STORAGE_KEY] as AuthState | undefined;

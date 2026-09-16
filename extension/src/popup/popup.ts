@@ -12,7 +12,15 @@ import { addHistory, clearHistory, loadHistory, makeHistoryId, removeHistory, ty
 import type { ContentRequest, PongResponse, StreamMessage } from "../lib/messages";
 import { toReviewRows } from "../lib/normalize";
 import type { Platform, RawReview } from "../lib/types";
-import { clampToRemaining, isConnected, loadUsage, recordCollected, reportLimitHit, type UsageState } from "../lib/usage";
+import {
+  clampToRemaining,
+  isConnected,
+  isQuotaExhausted,
+  loadUsage,
+  recordCollected,
+  reportLimitHit,
+  type UsageState
+} from "../lib/usage";
 import { buildSupportRequest, RB_SUPPORT_ENDPOINT, validateSupportPayload, type SupportCategory } from "../lib/support";
 import { reviewsToXlsx } from "../lib/xlsx";
 
@@ -129,7 +137,6 @@ function renderUsage(): void {
     usageEl.append(
       `오늘 수집 `,
       Object.assign(document.createElement("strong"), { textContent: "무제한" }),
-      ` · 유료 플랜`,
       tierLabel
     );
   } else {
@@ -138,7 +145,7 @@ function renderUsage(): void {
     }), ` · 잔여 ${(usage.remaining ?? 0).toLocaleString()}개`, tierLabel);
   }
   usageEl.classList.remove("hidden");
-  if ((usage.remaining ?? 0) <= 0 && !collectPane.classList.contains("hidden")) showPaywall();
+  if (isQuotaExhausted(usage) && !collectPane.classList.contains("hidden")) showPaywall();
 }
 
 /** 결과 화면 미리보기 — 스펙 "건수 + 샘플 몇 줄": 첫 2개 리뷰(별점 + 내용 ~60자). */
@@ -405,7 +412,7 @@ async function analyze(): Promise<void> {
 }
 
 function resetToCollect(): void {
-  if (usage && (usage.remaining ?? 0) <= 0) {
+  if (usage && isQuotaExhausted(usage)) {
     showPaywall();
     return;
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampToRemaining, kstDay, normalizeLocalUsage } from "../src/lib/usage";
+import { clampToRemaining, isQuotaExhausted, kstDay, normalizeLocalUsage } from "../src/lib/usage";
 
 describe("kstDay", () => {
   it("uses KST midnight as the day boundary", () => {
@@ -44,5 +44,16 @@ describe("clampToRemaining", () => {
   it("does not clamp when the limit is null (paid/unlimited)", () => {
     expect(clampToRemaining(2000, null)).toBe(2000);
     expect(clampToRemaining(10, null)).toBe(10);
+  });
+});
+
+describe("isQuotaExhausted", () => {
+  it("never treats unlimited (null remaining) as exhausted", () => {
+    expect(isQuotaExhausted({ remaining: null })).toBe(false);
+  });
+  it("is exhausted only when a finite remaining hits zero", () => {
+    expect(isQuotaExhausted({ remaining: 0 })).toBe(true);
+    expect(isQuotaExhausted({ remaining: -5 })).toBe(true);
+    expect(isQuotaExhausted({ remaining: 1 })).toBe(false);
   });
 });
