@@ -268,7 +268,8 @@ export type FunnelEventName =
   | "extension_usage_post_401"
   | "extension_usage_post_503"
   | "extension_usage_post_network_error"
-  | "extension_usage_anonymous_attempt";
+  | "extension_usage_anonymous_attempt"
+  | "billing_webhook_failed";
 
 /**
  * 결제벽 퍼널 카운터 기록. best-effort — DB 미구성(storage_off)이나 오류 시

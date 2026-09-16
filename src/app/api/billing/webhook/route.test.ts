@@ -570,4 +570,63 @@ describe("POST /api/billing/webhook", () => {
       })
     );
   });
+
+  it("records billing_webhook_failed when the guest cannot be mapped", async () => {
+    mocks.findUserIdByPaddleCustomerId.mockResolvedValue(null);
+    mocks.fetchPaddleCustomerEmail.mockResolvedValue(null);
+
+    const req = signedRequest({
+      event_type: "transaction.completed",
+      event_id: "evt_unmapped",
+      data: {
+        custom_data: {},
+        customer_id: "ctm_unmapped",
+        subscription_id: "sub_unmapped",
+        status: "completed",
+        items: [{ price: { id: "pri_basic" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith(
+      "billing_webhook_failed",
+      null,
+      expect.objectContaining({ reason: "user_mapping_missing", customer_id: "ctm_unmapped" }),
+      "evt_unmapped"
+    );
+  });
+
+  it("posts an admin alert to BILLING_ALERT_WEBHOOK_URL on mapping failure", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true } as Response);
+    process.env.BILLING_ALERT_WEBHOOK_URL = "https://ntfy.sh/test-topic";
+    try {
+      mocks.findUserIdByPaddleCustomerId.mockResolvedValue(null);
+      mocks.fetchPaddleCustomerEmail.mockResolvedValue(null);
+
+      const req = signedRequest({
+        event_type: "transaction.completed",
+        event_id: "evt_alert",
+        data: {
+          custom_data: {},
+          customer_id: "ctm_alert",
+          subscription_id: "sub_alert",
+          status: "completed",
+          items: [{ price: { id: "pri_basic" } }]
+        }
+      });
+
+      const res = await POST(req);
+
+      expect(res.status).toBe(200);
+      expect(fetchSpy).toHaveBeenCalledWith(
+        "https://ntfy.sh/test-topic",
+        expect.objectContaining({ method: "POST" })
+      );
+    } finally {
+      delete process.env.BILLING_ALERT_WEBHOOK_URL;
+      fetchSpy.mockRestore();
+    }
+  });
 });

@@ -74,6 +74,46 @@ function logWebhookWarning(args: {
   );
 }
 
+/**
+ * 웹훅 처리 실패(매핑 실패/잘못된 페이로드/가격 미매핑) 보고.
+ * ① 콘솔 경고 ② `funnel_events` 기록(event_id 로 재시도 dedupe) ③ 관리자 웹훅 알림(best-effort).
+ * 결제는 완료됐는데 entitlement 가 저장되지 않는 사고를 조기에 감지하기 위함.
+ */
+async function reportWebhookFailure(args: {
+  reason: string;
+  eventType: string;
+  eventId: string | null;
+  customerId?: string | null;
+  extra?: Record<string, unknown>;
+}): Promise<void> {
+  logWebhookWarning(args);
+
+  await recordFunnelEvent(
+    "billing_webhook_failed",
+    null,
+    {
+      reason: args.reason,
+      event_type: args.eventType,
+      event_id: args.eventId,
+      customer_id: args.customerId ?? null,
+      ...(args.extra ?? {})
+    },
+    args.eventId ?? `${args.reason}:${args.customerId ?? "unknown"}`
+  );
+
+  const url = String(process.env.BILLING_ALERT_WEBHOOK_URL ?? "").trim();
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "text/plain; charset=utf-8" },
+      body: `[ReviewBoost] 결제 웹훅 실패: ${args.reason} (${args.eventType}, customer=${args.customerId ?? "?"})`
+    });
+  } catch {
+    // 알림 실패는 웹훅 처리를 막지 않는다.
+  }
+}
+
 function extractPriceId(data: unknown): string | null {
   const record = asRecord(data);
   if (!record) return null;
@@ -117,7 +157,7 @@ function normalizeEntitlementPayload(data: unknown): NormalizedEntitlement | nul
 async function handleEntitlementEvent(eventType: string, eventId: string | null, data: unknown) {
   const normalized = normalizeEntitlementPayload(data);
   if (!normalized) {
-    logWebhookWarning({
+    await reportWebhookFailure({
       reason: "invalid_entitlement_payload",
       eventType,
       eventId,
@@ -177,7 +217,7 @@ async function handleEntitlementEvent(eventType: string, eventId: string | null,
         );
       }
     } else {
-      logWebhookWarning({
+      await reportWebhookFailure({
         reason: "user_mapping_missing",
         eventType,
         eventId,
@@ -190,7 +230,7 @@ async function handleEntitlementEvent(eventType: string, eventId: string | null,
   await upsertProfileCustomer(mappedUserId, normalized.customerId);
 
   if (normalized.priceId && planTier === "free") {
-    logWebhookWarning({
+    await reportWebhookFailure({
       reason: "unknown_price_id",
       eventType,
       eventId,
@@ -248,7 +288,7 @@ async function handleCustomerMappingEvent(eventType: string, eventId: string | n
 async function handleSubscriptionEvent(eventType: string, eventId: string | null, data: unknown) {
   const normalized = normalizeSubscriptionPayload(data);
   if (!normalized) {
-    logWebhookWarning({
+    await reportWebhookFailure({
       reason: "invalid_subscription_payload",
       eventType,
       eventId,
@@ -308,7 +348,7 @@ async function handleSubscriptionEvent(eventType: string, eventId: string | null
         );
       }
     } else {
-      logWebhookWarning({
+      await reportWebhookFailure({
         reason: "user_mapping_missing",
         eventType,
         eventId,
@@ -321,7 +361,7 @@ async function handleSubscriptionEvent(eventType: string, eventId: string | null
   await upsertProfileCustomer(mappedUserId, normalized.customerId);
 
   if (normalized.priceId && planTier === "free") {
-    logWebhookWarning({
+    await reportWebhookFailure({
       reason: "unknown_price_id",
       eventType,
       eventId,
