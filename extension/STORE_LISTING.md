@@ -1,16 +1,16 @@
 # 크롬 웹스토어 제출 패키지 — ReviewBoost 리뷰 수집기
 
-업로드 파일: **`extension/reviewboost-extension-v1.5.0.zip`** (manifest가 ZIP 루트에 위치, v1.5.0)
+업로드 파일: **`extension/reviewboost-extension-v1.5.1.zip`** (manifest가 ZIP 루트에 위치, v1.5.1)
 
 > ⚠️ 제출은 본인 Google 계정 로그인 + (최초 1회) 개발자 등록 $5 결제 + "제출" 클릭이 필요해 **직접** 하셔야 합니다. 아래 문구를 그대로 붙여넣으면 됩니다.
 
-> 🆕 v1.5.0 (2026-08-31) — **다중 플랫폼 확장**: 무신사·29CM·G마켓·옥션·11번가·SSG닷컴·오늘의집·컬리 추가 (총 10개 쇼핑몰) + G마켓/무신사 사이트 변경 대응. 상세는 `extension/CHANGELOG.md` 참고.
+> 🆕 v1.5.1 (2026-09-16) — **버그 수정**: 유료(무제한) 구독자인데도 팝업에 결제 안내가 잘못 떠서 리뷰 수집이 막히던 문제를 수정했습니다. (직전 v1.5.0에서 무신사·29CM·G마켓·옥션·11번가·SSG닷컴·오늘의집·컬리 추가 — 총 10개 쇼핑몰) 상세는 `extension/CHANGELOG.md` 참고.
 
 > ⚠️ 크롬 웹스토어에 **v1.4.1 항목이 이미 있으므로** "새 항목(New item)"이 아니라 **기존 항목의 업데이트 제출**로 진행합니다 (기존 항목 → 새 패키지 업로드 → 제출).
 
-> Edge·웨일 제출도 동일한 v1.5.0 빌드 사용: `extension/reviewboost-extension-edge-1.5.0.zip`, `extension/reviewboost-extension-whale-1.5.0.zip` (제출 절차는 `EDGE_STORE.md` / `WHALE_STORE.md`).
+> Edge·웨일 제출도 동일한 v1.5.1 빌드 사용: `extension/reviewboost-extension-edge-1.5.1.zip`, `extension/reviewboost-extension-whale-1.5.1.zip` (제출 절차는 `EDGE_STORE.md` / `WHALE_STORE.md`).
 
-> ⏰ **09-04 게이트 규칙**: `docs/NEXT_SESSION.md` §9에 따라 다중 플랫폼(1.5.0) **스토어 제출은 09-04 게이트 이후**로 예정되어 있습니다 (측정 보호). 게이트 전 제출 시 크롬 퍼널 측정이 오염될 수 있습니다 — 제출 시점은 해당 문서를 확인하고 결정하세요.
+> ⏰ 09-04 게이트는 경과했습니다. v1.5.1은 유료 구독자 버그 픽스 릴리스로, 측정 보호 게이트와 무관하게 제출할 수 있습니다.
 
 ---
 
@@ -106,7 +106,7 @@ ReviewBoost 리뷰 수집기는 셀러가 지금 보고 있는 쿠팡·스마트
 
 1. https://chromewebstore.google.com/devconsole 접속 → Google 로그인
 2. (최초 1회) 개발자 등록 $5 결제 — 기존 등록자는 불필요
-3. **기존 항목**(ReviewBoost 리뷰 수집기) 선택 → 새 패키지 **업로드**: `reviewboost-extension-v1.5.0.zip`
+3. **기존 항목**(ReviewBoost 리뷰 수집기) 선택 → 새 패키지 **업로드**: `reviewboost-extension-v1.5.1.zip`
 4. **스토어 등록정보** 탭: 위 이름/요약/설명/카테고리/언어 입력 + 스크린샷 유지/교체
 5. **개인정보 보호 사항** 탭: 위 단일 목적/권한 사유(신규 호스트 8개 포함)/데이터 사용/방침 URL/원격코드 없음/Limited Use 입력
 6. **제출** → 검토(보통 수일 내) — v1.4.1 심사가 진행 중이면 완료 후 제출

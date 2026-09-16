@@ -1,14 +1,14 @@
-# Microsoft Edge Add-ons 제출 패키지 — ReviewBoost 리뷰 수집기 (v1.5.0)
+# Microsoft Edge Add-ons 제출 패키지 — ReviewBoost 리뷰 수집기 (v1.5.1)
 
-업로드 파일: **`extension/reviewboost-extension-edge-1.5.0.zip`** (manifest가 ZIP 루트, v1.5.0)
+업로드 파일: **`extension/reviewboost-extension-edge-1.5.1.zip`** (manifest가 ZIP 루트, v1.5.1)
 
 > ⚠️ 제출은 Microsoft 계정 + Partner Center 개발자 등록이 필요해 **직접** 하셔야 합니다. 등록은 무료입니다.
 > 시작: https://partner.microsoft.com/dashboard/microsoftedge/public/login
 
-> 🆕 v1.5.0 (2026-08-31) — 기존 v1.3.0 항목이 스토어에 있으므로 **"새 확장 만들기"가 아니라 기존 항목의 업데이트 제출**로 진행합니다.
-> 변경 내용: **8개 쇼핑몰 추가 지원(총 10개)** — 무신사·29CM·G마켓·옥션·11번가·SSG닷컴·오늘의집·컬리 + G마켓/무신사 사이트 변경 대응. 상세는 `extension/CHANGELOG.md` 참고.
+> 🆕 v1.5.1 (2026-09-16) — 기존 항목의 업데이트 제출로 진행합니다.
+> 변경 내용: **버그 수정** — 유료(무제한) 구독자인데 팝업에 결제 안내가 잘못 떠 수집이 막히던 문제 수정. 상세는 `extension/CHANGELOG.md` 참고.
 
-> ⏰ **09-04 게이트 규칙**: `docs/NEXT_SESSION.md` §9에 따라 다중 플랫폼(1.5.0) **스토어 제출은 09-04 게이트 이후**로 예정되어 있습니다 (측정 보호). 게이트 전 제출 시 크롬 퍼널 측정이 오염될 수 있습니다 — 제출 시점은 해당 문서를 확인하고 결정하세요.
+> ⏰ 09-04 게이트는 경과했습니다. v1.5.1은 유료 구독자 버그 픽스 릴리스로, 측정 보호 게이트와 무관하게 제출할 수 있습니다.
 
 ## 제출 전 필수 선행
 
@@ -113,7 +113,7 @@ No test account required for the extension itself.
 ## 제출 절차 요약
 
 1. Partner Center 로그인 → Edge → 기존 항목(ReviewBoost 리뷰 수집기) 선택 (없으면 Create new extension)
-2. `reviewboost-extension-edge-1.5.0.zip` 업로드 (manifest 루트 — 검증 통과 확인)
+2. `reviewboost-extension-edge-1.5.1.zip` 업로드 (manifest 루트 — 검증 통과 확인)
 3. Availability → Properties → Privacy → Store listings(ko) 순서로 위 내용 입력 (기존 등록정보는 그대로 두고 변경된 개인정보 항목·설명만 갱신해도 됨)
 4. Certification notes 입력 → **Publish** 제출 — v1.4.1(또는 이전) 심사가 진행 중이면 완료 후 제출
 5. 인증 최대 7영업일, 통과 시 "In the Store" → Edge Add-ons 노출 (기존 사용자는 자동 업데이트)
@@ -122,4 +122,4 @@ No test account required for the extension itself.
 
 - Edge 설치 수 = Partner Center Analytics 분모(일별 설치·노출·주간 유저).
 - 09-04 게이트(크롬 확장 정가 결제) 판정 시 **Edge·웨일 유입은 분리 집계** — 게이트는 크롬 퍼널만 본다. UA 감지(Whale/Edg/Chrome) source 태깅은 별도 작업으로 원장에 제안만 기록.
-- **09-04 게이트 전 스토어 제출 금지** (`docs/NEXT_SESSION.md` §9) — 1.5.0 제출은 게이트 이후.
+- 09-04 게이트는 경과했습니다 — v1.5.1 버그 픽스 제출 가능.
