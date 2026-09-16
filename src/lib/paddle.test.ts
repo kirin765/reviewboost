@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   appBaseUrl,
+  fetchPaddleCustomerEmail,
   isPaddleConfigured,
   paddleBrowserToken,
   paddleEnv,
@@ -160,5 +161,43 @@ describe("paddleRequest", () => {
     } as Response);
 
     await expect(paddleRequest("/transactions")).rejects.toThrow("Paddle request failed (502)");
+  });
+});
+
+describe("fetchPaddleCustomerEmail", () => {
+  it("returns the lowercased email from the Paddle customer endpoint", async () => {
+    vi.stubEnv("PADDLE_ENV", "live");
+    vi.stubEnv("PADDLE_API_KEY", "key_test");
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ data: { id: "ctm_1", email: "Guest@Example.com" } })
+    } as Response);
+
+    expect(await fetchPaddleCustomerEmail("ctm_1")).toBe("guest@example.com");
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "https://api.paddle.com/customers/ctm_1",
+      expect.objectContaining({ method: "GET" })
+    );
+  });
+
+  it("returns null for non-customer ids without calling the API", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    expect(await fetchPaddleCustomerEmail("sub_123")).toBeNull();
+    expect(await fetchPaddleCustomerEmail(null)).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("returns null when the API request fails", async () => {
+    vi.stubEnv("PADDLE_API_KEY", "key_test");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => JSON.stringify({})
+    } as Response);
+
+    expect(await fetchPaddleCustomerEmail("ctm_missing")).toBeNull();
   });
 });

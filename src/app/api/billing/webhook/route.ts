@@ -6,7 +6,7 @@ import {
 } from "@/lib/billing";
 import { findUserIdByEmail } from "@/lib/clerk_bridge";
 import { recordFunnelEvent } from "@/lib/db/queries";
-import { paddlePlanForPriceId } from "@/lib/paddle";
+import { fetchPaddleCustomerEmail, paddlePlanForPriceId } from "@/lib/paddle";
 import {
   extractCustomerEmail,
   extractCustomerId,
@@ -130,7 +130,11 @@ async function handleEntitlementEvent(eventType: string, eventId: string | null,
   // 사용자를 찾지 못하면(아직 계정 없음) pending_subscriptions 로 이메일 기준 보관해
   // 나중에 같은 이메일로 로그인하면 연결(claimPendingSubscriptionByEmail)한다.
   let mappedUserId = normalized.userId ?? (await findUserIdByPaddleCustomerId(normalized.customerId));
-  const customerEmail = extractCustomerEmail(data);
+  let customerEmail = extractCustomerEmail(data);
+  // 페이로드에 이메일이 없으면(예: customer_id 만 오는 게스트 결제) Paddle API로 보강한다.
+  if (!mappedUserId && !customerEmail) {
+    customerEmail = await fetchPaddleCustomerEmail(normalized.customerId);
+  }
   if (!mappedUserId && customerEmail) {
     mappedUserId = await findUserIdByEmail(customerEmail);
   }
@@ -257,7 +261,11 @@ async function handleSubscriptionEvent(eventType: string, eventId: string | null
   // 사용자를 찾지 못하면(아직 계정 없음) pending_subscriptions 로 이메일 기준 보관해
   // 나중에 같은 이메일로 로그인하면 연결(claimPendingSubscriptionByEmail)한다.
   let mappedUserId = normalized.userId ?? (await findUserIdByPaddleCustomerId(normalized.customerId));
-  const customerEmail = extractCustomerEmail(data);
+  let customerEmail = extractCustomerEmail(data);
+  // 페이로드에 이메일이 없으면(예: customer_id 만 오는 게스트 결제) Paddle API로 보강한다.
+  if (!mappedUserId && !customerEmail) {
+    customerEmail = await fetchPaddleCustomerEmail(normalized.customerId);
+  }
   if (!mappedUserId && customerEmail) {
     mappedUserId = await findUserIdByEmail(customerEmail);
   }
@@ -365,7 +373,7 @@ export async function POST(req: Request) {
     const eventId = String(event?.event_id ?? "").trim() || null;
     const data = event.data;
 
-    if (type === "transaction.completed" || type === "order.completed") {
+    if (type === "transaction.completed" || type === "order.completed" || type === "transaction.paid") {
       await handleEntitlementEvent(type, eventId, data);
     } else if (type === "transaction.updated") {
       await handleCustomerMappingEvent(type, eventId, data);

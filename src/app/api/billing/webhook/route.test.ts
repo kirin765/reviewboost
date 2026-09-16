@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   findUserIdByEmail: vi.fn(),
   upsertPendingSubscription: vi.fn(),
   paddlePlanForPriceId: vi.fn(),
+  fetchPaddleCustomerEmail: vi.fn(),
   recordFunnelEvent: vi.fn()
 }));
 
@@ -23,7 +24,8 @@ vi.mock("@/lib/clerk_bridge", () => ({
 }));
 
 vi.mock("@/lib/paddle", () => ({
-  paddlePlanForPriceId: mocks.paddlePlanForPriceId
+  paddlePlanForPriceId: mocks.paddlePlanForPriceId,
+  fetchPaddleCustomerEmail: mocks.fetchPaddleCustomerEmail
 }));
 
 vi.mock("@/lib/db/queries", () => ({
@@ -58,6 +60,7 @@ describe("POST /api/billing/webhook", () => {
       priceId === "pri_pro" ? "pro" : priceId === "pri_basic" ? "basic" : "free"
     );
     mocks.findUserIdByPaddleCustomerId.mockResolvedValue("user-from-profile");
+    mocks.fetchPaddleCustomerEmail.mockResolvedValue(null);
   });
 
   it("returns 400 for invalid signatures", async () => {
@@ -479,5 +482,92 @@ describe("POST /api/billing/webhook", () => {
     expect(mocks.upsertSubscription).not.toHaveBeenCalled();
     expect(mocks.upsertPendingSubscription).not.toHaveBeenCalled();
     expect(mocks.upsertProfileCustomer).not.toHaveBeenCalled();
+  });
+
+  it("backfills the guest email via Paddle API when the payload has no email", async () => {
+    mocks.findUserIdByPaddleCustomerId.mockResolvedValue(null);
+    mocks.fetchPaddleCustomerEmail.mockResolvedValue("guest@example.com");
+    mocks.findUserIdByEmail.mockResolvedValue("user-by-email");
+    mocks.paddlePlanForPriceId.mockReturnValue("extension");
+
+    const req = signedRequest({
+      event_type: "transaction.completed",
+      event_id: "evt_guest_fetch",
+      data: {
+        id: "txn_guest_fetch",
+        custom_data: { plan_tier: "extension" },
+        customer_id: "ctm_guest_fetch",
+        subscription_id: "sub_guest_fetch",
+        status: "completed",
+        items: [{ price: { id: "pri_ext" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.fetchPaddleCustomerEmail).toHaveBeenCalledWith("ctm_guest_fetch");
+    expect(mocks.findUserIdByEmail).toHaveBeenCalledWith("guest@example.com");
+    expect(mocks.upsertSubscription).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user-by-email", paddleSubscriptionId: "sub_guest_fetch" })
+    );
+    expect(mocks.upsertPendingSubscription).not.toHaveBeenCalled();
+  });
+
+  it("stores a pending subscription using the email fetched from Paddle when no account exists", async () => {
+    mocks.findUserIdByPaddleCustomerId.mockResolvedValue(null);
+    mocks.fetchPaddleCustomerEmail.mockResolvedValue("new@example.com");
+    mocks.findUserIdByEmail.mockResolvedValue(null);
+    mocks.paddlePlanForPriceId.mockReturnValue("extension");
+
+    const req = signedRequest({
+      event_type: "transaction.completed",
+      event_id: "evt_pending_fetch",
+      data: {
+        id: "txn_pending_fetch",
+        custom_data: { plan_tier: "extension" },
+        customer_id: "ctm_pending_fetch",
+        subscription_id: "sub_pending_fetch",
+        status: "completed",
+        items: [{ price: { id: "pri_ext" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.upsertPendingSubscription).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "new@example.com",
+        paddleSubscriptionId: "sub_pending_fetch",
+        planTier: "extension"
+      })
+    );
+    expect(mocks.upsertSubscription).not.toHaveBeenCalled();
+  });
+
+  it("handles transaction.paid as an entitlement event", async () => {
+    const req = signedRequest({
+      event_type: "transaction.paid",
+      data: {
+        custom_data: { user_id: "user-paid" },
+        customer_id: "ctm_paid",
+        subscription_id: "sub_paid",
+        status: "paid",
+        items: [{ price: { id: "pri_pro" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.upsertProfileCustomer).toHaveBeenCalledWith("user-paid", "ctm_paid");
+    expect(mocks.upsertSubscription).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-paid",
+        paddleSubscriptionId: "sub_paid",
+        planTier: "pro"
+      })
+    );
   });
 });

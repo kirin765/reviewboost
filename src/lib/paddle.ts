@@ -94,6 +94,25 @@ export function paddlePriceIdForPlan(plan: "basic" | "pro" | "extension") {
   return priceId;
 }
 
+/**
+ * Paddle 고객의 이메일을 API로 조회한다.
+ * 웹훅 페이로드에는 `customer_id` 만 있고 이메일이 없는 경우가 많아(게스트 결제 등),
+ * 계정 매핑/`pending_subscriptions` 생성을 위해 이메일을 보강한다. 실패 시 null.
+ */
+export async function fetchPaddleCustomerEmail(customerId: string | null | undefined): Promise<string | null> {
+  const id = String(customerId ?? "").trim();
+  if (!id.startsWith("ctm_")) return null;
+  try {
+    const customer = await paddleRequest<{ email?: unknown }>(`/customers/${encodeURIComponent(id)}`, {
+      method: "GET"
+    });
+    const email = String(customer?.email ?? "").trim().toLowerCase();
+    return email || null;
+  } catch {
+    return null;
+  }
+}
+
 export function paddlePlanForPriceId(priceId: string | null | undefined): "free" | "basic" | "pro" | "extension" {
   const normalizedPriceId = String(priceId ?? "").trim();
   if (!normalizedPriceId) return "free";
