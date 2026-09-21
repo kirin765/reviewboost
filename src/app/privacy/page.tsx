@@ -215,7 +215,7 @@ export default function PrivacyPage() {
               <br />
               Business Registration Number (사업자등록번호): 892-02-03657
               <br />
-              Mail-Order Sales Registration (통신판매업신고): 제2025-경기광명-0525호
+              Mail-Order Sales Registration (통신판매업신고): 제2026-고양일산동-1760호
               <br />
               Address (주소): 12, Ilsan-ro 463beon-gil, Ilsandong-gu, Goyang-si, Gyeonggi-do, Republic of Korea (경기도 고양시 일산동구 일산로463번길 12, 204동 103호)
               <br />
