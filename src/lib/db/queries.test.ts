@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from "vitest";
-import { buildAnalysisListQueryFilter, recordFunnelEvent } from "./queries";
+import { buildAnalysisListQueryFilter, recordFunnelEvent, recordFunnelEventOnce } from "./queries";
 import { funnelEvents } from "./schema";
 
 const mocks = vi.hoisted(() => ({ getDb: vi.fn() }));
@@ -60,5 +60,43 @@ describe("recordFunnelEvent", () => {
     mocks.getDb.mockReturnValue(null);
     await expect(recordFunnelEvent("extension_limit_hit")).resolves.toBeUndefined();
     expect(insert).not.toHaveBeenCalled();
+  });
+});
+
+describe("recordFunnelEventOnce", () => {
+  const returning = vi.fn();
+  const onConflictDoNothing = vi.fn(() => ({ returning }));
+  const values = vi.fn(() => ({ onConflictDoNothing }));
+  const insert = vi.fn(() => ({ values }));
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    returning.mockResolvedValue([{ id: "evt_row_1" }]);
+    mocks.getDb.mockReturnValue({ insert });
+  });
+
+  it("returns true when a new row is inserted", async () => {
+    await expect(
+      recordFunnelEventOnce("billing_payment_received", "user_1", { total: 4900 }, "txn_1")
+    ).resolves.toBe(true);
+    expect(onConflictDoNothing).toHaveBeenCalledWith({ target: funnelEvents.dedupeKey });
+  });
+
+  it("returns false when the dedupe key already exists (retry)", async () => {
+    returning.mockResolvedValue([]);
+    await expect(
+      recordFunnelEventOnce("billing_payment_received", null, null, "txn_1")
+    ).resolves.toBe(false);
+  });
+
+  it("returns null when the DB is unconfigured", async () => {
+    mocks.getDb.mockReturnValue(null);
+    await expect(recordFunnelEventOnce("billing_payment_received")).resolves.toBeNull();
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("returns null when the insert throws", async () => {
+    returning.mockRejectedValue(new Error("boom"));
+    await expect(recordFunnelEventOnce("billing_payment_received")).resolves.toBeNull();
   });
 });

@@ -269,7 +269,8 @@ export type FunnelEventName =
   | "extension_usage_post_503"
   | "extension_usage_post_network_error"
   | "extension_usage_anonymous_attempt"
-  | "billing_webhook_failed";
+  | "billing_webhook_failed"
+  | "billing_payment_received";
 
 /**
  * 결제벽 퍼널 카운터 기록. best-effort — DB 미구성(storage_off)이나 오류 시
@@ -291,6 +292,33 @@ export async function recordFunnelEvent(
       .onConflictDoNothing({ target: funnelEvents.dedupeKey });
   } catch {
     // 계측 실패가 본 요청을 막으면 안 된다.
+  }
+}
+
+/**
+ * recordFunnelEvent 와 같지만 "이번 호출에서 실제로 새 행이 삽입됐는지"를 반환한다.
+ * - true: 최초 기록 (dedupeKey 충돌 없음)
+ * - false: 같은 dedupeKey 가 이미 존재 (Paddle 웹훅 재시도 중복)
+ * - null: DB 미구성/오류로 판별 불가 (중복 여부를 알 수 없음)
+ * 결제 알림처럼 최초 1회에만 부수효과를 일으켜야 하는 경로에서 사용한다.
+ */
+export async function recordFunnelEventOnce(
+  name: FunnelEventName,
+  userId?: string | null,
+  meta?: Record<string, unknown> | null,
+  dedupeKey?: string | null
+): Promise<boolean | null> {
+  try {
+    const db = getDb();
+    if (!db) return null;
+    const inserted = await db
+      .insert(funnelEvents)
+      .values({ name, userId: userId ?? null, meta: meta ?? null, dedupeKey: dedupeKey ?? null })
+      .onConflictDoNothing({ target: funnelEvents.dedupeKey })
+      .returning({ id: funnelEvents.id });
+    return inserted.length > 0;
+  } catch {
+    return null;
   }
 }
 

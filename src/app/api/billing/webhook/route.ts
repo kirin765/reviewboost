@@ -5,7 +5,7 @@ import {
   upsertSubscription
 } from "@/lib/billing";
 import { findUserIdByEmail } from "@/lib/clerk_bridge";
-import { recordFunnelEvent } from "@/lib/db/queries";
+import { recordFunnelEvent, recordFunnelEventOnce } from "@/lib/db/queries";
 import { fetchPaddleCustomerEmail, paddlePlanForPriceId } from "@/lib/paddle";
 import {
   extractCustomerEmail,
@@ -17,10 +17,22 @@ import {
 
 export const runtime = "nodejs";
 
-function getWebhookSecret() {
-  const v = process.env.PADDLE_WEBHOOK_SECRET;
-  if (!v) throw new Error("PADDLE_WEBHOOK_SECRET is not set");
-  return v;
+/**
+ * 웹훅 서명 검증에 쓸 시크릿 목록.
+ * PADDLE_WEBHOOK_SECRET(단일) + PADDLE_WEBHOOK_SECRETS(콤마 구분)를 합쳐 중복 제거한다.
+ * Paddle 알림 destination 을 여러 개 쓰면 destination 마다 시크릿이 다르므로 모두 허용한다.
+ */
+function getWebhookSecrets(): string[] {
+  const single = String(process.env.PADDLE_WEBHOOK_SECRET ?? "").trim();
+  const many = String(process.env.PADDLE_WEBHOOK_SECRETS ?? "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const secrets = Array.from(new Set([single, ...many].filter(Boolean)));
+  if (secrets.length === 0) {
+    throw new Error("PADDLE_WEBHOOK_SECRET is not set");
+  }
+  return secrets;
 }
 
 type WebhookEvent = {
@@ -38,6 +50,16 @@ type NormalizedEntitlement = {
   currentPeriodStart: string | number | null;
   currentPeriodEnd: string | number | null;
   cancelAtPeriodEnd: boolean;
+};
+
+/** 결제 완료 알림에 필요한 정보. 처리 실패/귀속 불가 시 null. */
+type PaymentReceipt = {
+  userId: string | null;
+  customerId: string;
+  customerEmail: string | null;
+  planTier: string;
+  subscriptionId: string;
+  pending: boolean;
 };
 
 function toWebhookEvent(payload: unknown): WebhookEvent | null {
@@ -138,6 +160,227 @@ async function postAlert(url: string, init: RequestInit): Promise<void> {
   }
 }
 
+/** 결제 완료 알림용 텔레그램 자격증명. BILLING_NOTIFY_* → BILLING_ALERT_* → TELEGRAM_* 순으로 폴백. */
+function billingNotifyTelegramCreds(): { token: string; chatId: string } | null {
+  const token = String(
+    process.env.BILLING_NOTIFY_TELEGRAM_BOT_TOKEN ??
+      process.env.BILLING_ALERT_TELEGRAM_BOT_TOKEN ??
+      process.env.TELEGRAM_BOT_TOKEN ??
+      ""
+  ).trim();
+  const chatId = String(
+    process.env.BILLING_NOTIFY_TELEGRAM_CHAT_ID ??
+      process.env.BILLING_ALERT_TELEGRAM_CHAT_ID ??
+      process.env.TELEGRAM_CHAT_ID ??
+      ""
+  ).trim();
+  return token && chatId ? { token, chatId } : null;
+}
+
+const ZERO_DECIMAL_CURRENCIES = new Set([
+  "KRW",
+  "JPY",
+  "VND",
+  "CLP",
+  "ISK",
+  "HUF",
+  "TWD",
+  "BIF",
+  "DJF",
+  "GNF",
+  "KMF",
+  "PYG",
+  "RWF",
+  "UGX",
+  "VUV",
+  "XAF",
+  "XOF",
+  "XPF"
+]);
+
+/** Paddle 금액(최소 단위)을 사람이 읽는 문자열로 변환. 알 수 없으면 null. */
+function formatPaymentAmount(total: number | null, currency: string | null): string | null {
+  if (total == null || !Number.isFinite(total)) return null;
+  const code = String(currency ?? "").toUpperCase();
+  const major = ZERO_DECIMAL_CURRENCIES.has(code) ? total : total / 100;
+  if (!code) return major.toLocaleString("ko-KR");
+  try {
+    return new Intl.NumberFormat("ko-KR", { style: "currency", currency: code }).format(major);
+  } catch {
+    return `${major.toLocaleString("ko-KR")} ${code}`;
+  }
+}
+
+function planLabel(tier: string): string {
+  if (tier === "pro") return "Pro";
+  if (tier === "basic") return "Basic";
+  if (tier === "extension") return "익스텐션";
+  return "Free/기타";
+}
+
+/** 알림에 표시할 상품/플랜 라벨. ReviewBoost 플랜이 아니면 price/product id 로 표기한다. */
+function paymentProductLabel(
+  planTier: string | null,
+  priceId: string | null,
+  productId: string | null
+): string {
+  if (planTier === "basic" || planTier === "pro" || planTier === "extension") {
+    return planLabel(planTier);
+  }
+  const ref = productId ?? priceId;
+  return ref ? `기타 상품(${ref})` : "알 수 없음";
+}
+
+/** Paddle transaction/order 페이로드에서 거래 ID를 뽑는다. order.completed 는 transaction_id 를 갖는다. */
+function extractTransactionId(data: unknown, eventId: string | null): string | null {
+  const record = asRecord(data);
+  return asTrimmedString(record?.transaction_id) ?? asTrimmedString(record?.id) ?? eventId;
+}
+
+/** 결제 상품 ID 추출(items[0].product_id 또는 items[0].price.product_id). 외부 상품 식별용. */
+function extractProductId(data: unknown): string | null {
+  const record = asRecord(data);
+  const items = Array.isArray(record?.items)
+    ? record.items
+    : Array.isArray(asRecord(record?.items)?.data)
+      ? (asRecord(record?.items)?.data as unknown[])
+      : [];
+  const first = asRecord(items[0]);
+  const price = asRecord(first?.price);
+  return asTrimmedString(first?.product_id) ?? asTrimmedString(price?.product_id);
+}
+
+/**
+ * ReviewBoost 결제인지 판별한다. 계정 공용(모든 상품) 알림을 받으므로, 외부 상품 결제에는
+ * ReviewBoost entitlement/실패 알림을 적용하지 않도록 이 함수로 게이팅한다.
+ * (= custom_data.plan_tier/user_id 가 있거나 가격 ID가 ReviewBoost 플랜에 매핑됨)
+ */
+function isReviewBoostTransaction(data: unknown): boolean {
+  const record = asRecord(data);
+  const customData = asRecord(record?.custom_data);
+  if (asTrimmedString(customData?.user_id)) return true;
+  const declaredPlan = asTrimmedString(customData?.plan_tier);
+  if (declaredPlan === "basic" || declaredPlan === "pro" || declaredPlan === "extension") return true;
+  return paddlePlanForPriceId(extractPriceId(data)) !== "free";
+}
+
+/** 결제 금액/통화 추출. Paddle 은 details.totals.total(최소 단위) + currency_code 로 준다. */
+function extractPaymentTotals(data: unknown): { total: number | null; currency: string | null } {
+  const record = asRecord(data);
+  const details = asRecord(record?.details);
+  const totals = asRecord(details?.totals);
+  const raw = totals?.total ?? totals?.grand_total ?? details?.grand_total ?? record?.total;
+  const parsed = raw != null && String(raw).trim() !== "" ? Number(raw) : null;
+  const currency =
+    asTrimmedString(record?.currency_code) ?? asTrimmedString(details?.currency_code) ?? null;
+  return { total: parsed != null && Number.isFinite(parsed) ? parsed : null, currency };
+}
+
+/**
+ * 새 결제 완료를 관리자 텔레그램으로 알린다. best-effort.
+ * Paddle 계정의 모든 상품 결제를 대상으로 하며, ReviewBoost 로 귀속되지 않는
+ * 외부 상품 결제라도 알림은 보낸다(managed=false).
+ * 같은 거래(transaction id)에 대해 Paddle 이 재시도/중복 이벤트를 보내도
+ * `recordFunnelEventOnce` 로 최초 1회만 발송한다.
+ */
+async function notifyPaymentReceived(args: {
+  eventType: string;
+  eventId: string | null;
+  userId: string | null;
+  customerId: string | null;
+  customerEmail: string | null;
+  planTier: string | null;
+  priceId: string | null;
+  productId: string | null;
+  subscriptionId: string | null;
+  transactionId: string | null;
+  total: number | null;
+  currency: string | null;
+  managed: boolean;
+  pending: boolean;
+}): Promise<void> {
+  const dedupeKey = `payment:${args.transactionId ?? args.subscriptionId ?? args.eventId ?? args.customerId ?? "unknown"}`;
+
+  const fresh = await recordFunnelEventOnce(
+    "billing_payment_received",
+    args.userId,
+    {
+      event_type: args.eventType,
+      event_id: args.eventId,
+      paddle_subscription_id: args.subscriptionId,
+      paddle_price_id: args.priceId,
+      paddle_product_id: args.productId,
+      customer_id: args.customerId,
+      email: args.customerEmail,
+      plan_tier: args.planTier,
+      total: args.total,
+      currency: args.currency,
+      managed: args.managed,
+      pending: args.pending
+    },
+    dedupeKey
+  );
+  // false = 이미 알림을 보낸 거래(재시도). null = DB 미구성/오류라 판별 불가 → 알림은 진행.
+  if (fresh === false) return;
+
+  const creds = billingNotifyTelegramCreds();
+  if (!creds) return;
+
+  const amount = formatPaymentAmount(args.total, args.currency);
+  const customer = args.customerEmail ?? (args.userId ? `uid:${args.userId}` : "알 수 없음");
+  const lines = [
+    "[Paddle] 신규 결제",
+    `상품: ${paymentProductLabel(args.planTier, args.priceId, args.productId)}`,
+    amount ? `금액: ${amount}` : null,
+    `고객: ${customer}`,
+    `상태: ${args.managed ? (args.pending ? "계정 미연결(pending)" : "구독 반영 완료") : "외부 상품(구독 미관리)"}`,
+    args.subscriptionId ? `구독: ${args.subscriptionId}` : null,
+    args.transactionId ? `거래: ${args.transactionId}` : null
+  ].filter((v): v is string => Boolean(v));
+
+  await postAlert(`https://api.telegram.org/bot${creds.token}/sendMessage`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      chat_id: creds.chatId,
+      text: lines.join("\n"),
+      disable_web_page_preview: true
+    })
+  });
+}
+
+/** 결제 이벤트(엔티틀먼트/외부 상품 공통)에서 텔레그램 알림 인자를 만든다. */
+function buildPaymentNotification(args: {
+  eventType: string;
+  eventId: string | null;
+  data: unknown;
+  receipt: PaymentReceipt | null;
+}) {
+  const record = asRecord(args.data);
+  const customData = asRecord(record?.custom_data);
+  const priceId = extractPriceId(args.data);
+  const planTier =
+    args.receipt?.planTier ??
+    asTrimmedString(customData?.plan_tier) ??
+    paddlePlanForPriceId(priceId);
+
+  return {
+    eventType: args.eventType,
+    eventId: args.eventId,
+    userId: args.receipt?.userId ?? extractUserId(args.data),
+    customerId: args.receipt?.customerId ?? extractCustomerId(args.data),
+    customerEmail: args.receipt?.customerEmail ?? extractCustomerEmail(args.data),
+    planTier,
+    priceId,
+    productId: extractProductId(args.data),
+    subscriptionId: args.receipt?.subscriptionId ?? asTrimmedString(record?.subscription_id) ?? null,
+    transactionId: extractTransactionId(args.data, args.eventId),
+    ...extractPaymentTotals(args.data),
+    managed: Boolean(args.receipt),
+    pending: args.receipt?.pending ?? false
+  };
+}
+
 function extractPriceId(data: unknown): string | null {
   const record = asRecord(data);
   if (!record) return null;
@@ -178,7 +421,11 @@ function normalizeEntitlementPayload(data: unknown): NormalizedEntitlement | nul
   };
 }
 
-async function handleEntitlementEvent(eventType: string, eventId: string | null, data: unknown) {
+async function handleEntitlementEvent(
+  eventType: string,
+  eventId: string | null,
+  data: unknown
+): Promise<PaymentReceipt | null> {
   const normalized = normalizeEntitlementPayload(data);
   if (!normalized) {
     await reportWebhookFailure({
@@ -187,7 +434,7 @@ async function handleEntitlementEvent(eventType: string, eventId: string | null,
       eventId,
       customerId: extractCustomerId(data)
     });
-    return;
+    return null;
   }
 
   // 게스트(비로그인) 결제 지원: custom_data.user_id → paddle 고객 매핑 → 이메일(Clerk) 순으로 사용자를 찾는다.
@@ -240,15 +487,23 @@ async function handleEntitlementEvent(eventType: string, eventId: string | null,
           transactionId ?? eventId
         );
       }
-    } else {
-      await reportWebhookFailure({
-        reason: "user_mapping_missing",
-        eventType,
-        eventId,
-        customerId: normalized.customerId
-      });
+      return {
+        userId: null,
+        customerId: normalized.customerId,
+        customerEmail,
+        planTier,
+        subscriptionId: normalized.id,
+        pending: true
+      };
     }
-    return;
+
+    await reportWebhookFailure({
+      reason: "user_mapping_missing",
+      eventType,
+      eventId,
+      customerId: normalized.customerId
+    });
+    return null;
   }
 
   await upsertProfileCustomer(mappedUserId, normalized.customerId);
@@ -291,6 +546,15 @@ async function handleEntitlementEvent(eventType: string, eventId: string | null,
       transactionId ?? eventId
     );
   }
+
+  return {
+    userId: mappedUserId,
+    customerId: normalized.customerId,
+    customerEmail,
+    planTier,
+    subscriptionId: normalized.id,
+    pending: false
+  };
 }
 
 async function handleCustomerMappingEvent(eventType: string, eventId: string | null, data: unknown) {
@@ -412,8 +676,8 @@ export async function POST(req: Request) {
   const signature = req.headers.get("paddle-signature");
 
   try {
-    const secret = getWebhookSecret();
-    if (!verifyPaddleSignature(rawBody, signature, secret)) {
+    const secrets = getWebhookSecrets();
+    if (!secrets.some((secret) => verifyPaddleSignature(rawBody, signature, secret))) {
       return Response.json({ error: "invalid signature" }, { status: 400 });
     }
   } catch {
@@ -438,7 +702,13 @@ export async function POST(req: Request) {
     const data = event.data;
 
     if (type === "transaction.completed" || type === "order.completed" || type === "transaction.paid") {
-      await handleEntitlementEvent(type, eventId, data);
+      // 계정 공용 알림: ReviewBoost 결제가 아니어도(외부 상품) 모든 결제 완료를 알린다.
+      // ReviewBoost entitlement/실패 알림은 ReviewBoost 거래에만 적용해 외부 상품의
+      // pending 오염/실패 알림 스팸을 막는다.
+      const receipt = isReviewBoostTransaction(data)
+        ? await handleEntitlementEvent(type, eventId, data)
+        : null;
+      await notifyPaymentReceived(buildPaymentNotification({ eventType: type, eventId, data, receipt }));
     } else if (type === "transaction.updated") {
       await handleCustomerMappingEvent(type, eventId, data);
     } else if (
