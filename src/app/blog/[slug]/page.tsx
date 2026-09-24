@@ -48,6 +48,8 @@ function getContentBlockKey(block: ContentBlock, index: number) {
 
 function renderContentBlock(block: ContentBlock, key: string) {
   switch (block.type) {
+    case "link":
+      return <p key={key} className="articleParagraph"><a href={block.href} className="underline underline-offset-4">{block.text}</a></p>;
     case "h2":
       return <h2 key={key} className="articleHeading2">{block.text}</h2>;
     case "h3":

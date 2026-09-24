@@ -322,6 +322,10 @@ const publicRecords: SeoPageRecord[] = [
 ];
 
 const blogRecordMetaBySlug: Record<string, BlogRecordMeta> = {
+  "cafe24-review-migration-checklist": {
+    updatedAt: "2026-09-24",
+    primaryKeyword: "카페24 리뷰 이전"
+  },
   "coupang-review-analysis": {
     updatedAt: "2026-03-31",
     primaryKeyword: "쿠팡 리뷰 분석"
