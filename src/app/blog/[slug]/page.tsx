@@ -39,6 +39,9 @@ export async function generateMetadata(props: BlogDetailPageProps): Promise<Meta
 }
 
 function getContentBlockKey(block: ContentBlock, index: number) {
+  if (block.type === "image") {
+    return `image-${block.src}-${index}`;
+  }
   if ("text" in block) {
     return `${block.type}-${block.text}-${index}`;
   }
@@ -48,6 +51,13 @@ function getContentBlockKey(block: ContentBlock, index: number) {
 
 function renderContentBlock(block: ContentBlock, key: string) {
   switch (block.type) {
+    case "image":
+      return (
+        <figure key={key} className="my-6">
+          <img src={block.src} alt={block.alt} width={block.width} height={block.height} loading="lazy" className="mx-auto h-auto max-w-full rounded-xl border border-[color:#e6e8f2]" />
+          <figcaption className="mt-3 text-center text-sm text-[var(--rb-muted-strong)]">{block.caption}</figcaption>
+        </figure>
+      );
     case "link":
       return <p key={key} className="articleParagraph"><a href={block.href} className="underline underline-offset-4">{block.text}</a></p>;
     case "h2":

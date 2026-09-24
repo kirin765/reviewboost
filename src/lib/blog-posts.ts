@@ -1,4 +1,5 @@
 export type ContentBlock =
+  | { type: "image"; src: string; alt: string; caption: string; width: number; height: number }
   | { type: "link"; text: string; href: string }
   | { type: "h2"; text: string }
   | { type: "h3"; text: string }
@@ -20,7 +21,7 @@ export const blogPosts: BlogPost[] = [
 {
   "slug": "reviewboost-extension-excel-guide",
   "title": "쿠팡·스마트스토어 리뷰 엑셀 다운로드: ReviewBoost 확장 사용법",
-  "summary": "상품 페이지에서 리뷰를 수집하고 엑셀·CSV로 저장하는 방법. 하루 50개 무료 한도, 파일 확인과 선택형 분석 흐름을 안내합니다.",
+  "summary": "쿠팡 상품에서 10개를 요청해 9행·25열 파일을 저장한 시험 결과와 가상 샘플 파일. 수집 방법, 빈칸과 상품명 확인, 하루 50개 무료 한도를 안내합니다.",
   "tag": "리뷰 수집기 사용법",
   "image": "/blog-images/reviewboost-extension-export.png",
   "content": [
@@ -60,6 +61,53 @@ export const blogPosts: BlogPost[] = [
     {
       "type": "p",
       "text": "내보내는 파일은 스마트스토어 리뷰 엑셀의 25개 열 구성을 따릅니다. 그렇다고 판매자센터의 주문 정보까지 가져오는 것은 아닙니다. 공개 화면에서 얻지 못한 항목은 빈칸으로 남을 수 있습니다."
+    },
+    {
+      "type": "h2",
+      "text": "실제 시험: 10개 요청 → 9개 저장, CSV·엑셀 모두 25열"
+    },
+    {
+      "type": "p",
+      "text": "2026년 9월 24일, 쿠팡 충전 케이블 상품 1개에서 최대 수집 개수를 10개로 설정하고 수집·다운로드 버튼을 실행했습니다. 결과 화면에는 9개가 표시됐고, 내려받은 CSV와 XLSX 모두 헤더를 제외한 데이터 9행·25열이었습니다. 요청 수와 저장 수는 같지 않을 수 있습니다. 한 상품·한 번의 시험이며 전체 상품의 수집 성공률을 뜻하지 않습니다."
+    },
+    {
+      "type": "image",
+      "src": "/blog-images/reviewboost-collection-test-20260924.png",
+      "alt": "실제 시험에서 리뷰 9개 수집 완료와 엑셀·CSV 다운로드 버튼이 표시된 ReviewBoost 화면",
+      "caption": "실제 수집 완료 화면. 고객 리뷰 원문이 보이는 미리보기 영역은 가렸습니다.",
+      "width": 340,
+      "height": 549
+    },
+    {
+      "type": "ul",
+      "items": [
+        "9행 모두 값이 있었던 항목: 상품번호, 상품명, 구매자평점, 리뷰상세내용, 등록자, 리뷰등록일.",
+        "일부 행에만 값이 있었던 항목: 포토/영상 3행, 리뷰도움수 1행. 포토/영상 열의 값은 이미지 주소이며 사진 파일을 함께 내려받는 것은 아닙니다.",
+        "상품주문번호, 답글여부, 리뷰글번호 등 17개 열은 이번 파일에서 모두 비어 있었습니다. 25열 형식이 판매자센터의 모든 정보를 제공한다는 뜻은 아닙니다.",
+        "이번 시험의 상품명은 실제 상품명 대신 ‘쿠팡!’으로 저장됐습니다. 상품명만 믿지 말고 상품번호와 원래 상품 페이지를 함께 대조하세요."
+      ]
+    },
+    {
+      "type": "p",
+      "text": "시험 환경은 Chromium 152와 ReviewBoost 1.5.1 소스의 개발용 빌드입니다. 확장 화면을 별도 탭으로 열어 실제 수집·다운로드 버튼을 사용했습니다. Chrome 웹 스토어 배포본의 설치 과정을 시험한 것은 아니며, 이번에 스마트스토어 수집을 다시 검증한 것도 아닙니다. 분석 서비스로 전송하거나 유료 분석을 실행하지 않았습니다."
+    },
+    {
+      "type": "h3",
+      "text": "직접 열어 볼 수 있는 25열 샘플"
+    },
+    {
+      "type": "p",
+      "text": "아래 파일은 같은 내보내기 기능으로 만든 가상 상품·가상 리뷰 9행입니다. 실제로 수집한 고객 리뷰가 아니며, 별점·내용·등록자·날짜를 모두 예시로 구성했습니다. 열 이름과 파일 열기, 정렬·필터를 연습하는 용도로 사용하세요. 외부 쇼핑몰에 리뷰를 등록하는 파일이 아닙니다."
+    },
+    {
+      "type": "link",
+      "text": "가상 리뷰 샘플 CSV 내려받기 — 9행·25열",
+      "href": "/samples/reviewboost-synthetic-25-columns.csv"
+    },
+    {
+      "type": "link",
+      "text": "가상 리뷰 샘플 엑셀 내려받기 — 9행·25열",
+      "href": "/samples/reviewboost-synthetic-25-columns.xlsx"
     },
     {
       "type": "h2",
@@ -112,7 +160,7 @@ export const blogPosts: BlogPost[] = [
     {
       "type": "link",
       "text": "Chrome에 ReviewBoost 리뷰 수집기 설치하기",
-      "href": "https://chromewebstore.google.com/detail/kdmjkpfbccikgbaemcbifemeichmehlm"
+      "href": "https://chromewebstore.google.com/detail/kdmjkpfbccikgbaemcbifemeichmehlm?utm_source=reviewboost_blog&utm_medium=referral&utm_campaign=reviewboost_extension_excel_guide"
     }
   ]
 },
