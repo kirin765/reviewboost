@@ -60,7 +60,9 @@
 
 ## 4. Store listings — 한국어 (ko)
 
-- **Extension name**: manifest에서 자동 (ReviewBoost 리뷰 수집기 — 쿠팡·스마트스토어·무신사·11번가 등 리뷰 엑셀 내보내기)
+- **Extension name**: manifest에서 자동 (ReviewBoost 리뷰 수집기)
+
+  > ⚠️ v1.5.1 이름 심사 거절(정책 1.1.2, "excessive descriptive text") 대응 — 이름을 `ReviewBoost 리뷰 수집기`로 축약했습니다. 지원 쇼핑몰·기능 설명은 **Description**에 유지됩니다.
 - **Description** (최소 250자 — 아래는 700자대, 충족):
 ```
 ReviewBoost 리뷰 수집기는 셀러가 지금 보고 있는 쿠팡·스마트스토어·무신사·11번가·SSG·G마켓·옥션·오늘의집·컬리·29CM 상품 한 건의 리뷰를 손쉽게 백업·분석하도록 돕는 도구입니다.

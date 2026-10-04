@@ -5,7 +5,10 @@
   "type": "module",
   "description": "쿠팡·스마트스토어 상품 리뷰를 엑셀로 내보내고 ReviewBoost 무료 분석으로 연결하는 크롬 익스텐션",
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/build.mjs chrome",
+    "build:firefox": "node scripts/build.mjs firefox",
+    "build:all": "node scripts/build.mjs all",
+    "package:firefox": "npm run build:firefox && node scripts/package-firefox.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

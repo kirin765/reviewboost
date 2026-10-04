@@ -74,4 +74,15 @@ describe("POST /api/extension/analyze", () => {
     expect(res.headers.get("access-control-allow-origin")).toBe(EXT_ORIGIN);
     expect(res.headers.get("access-control-allow-methods")).toContain("POST");
   });
+
+  it("echoes the Firefox extension origin too", async () => {
+    const firefoxOrigin = "moz-extension://3f6a1c2e-9b4d-4e5f-8a1b-2c3d4e5f6a7b";
+    const req = new Request("https://reviewboost.co.kr/api/extension/analyze", {
+      method: "OPTIONS",
+      headers: { origin: firefoxOrigin }
+    });
+    const res = await OPTIONS(req);
+    expect(res.status).toBe(204);
+    expect(res.headers.get("access-control-allow-origin")).toBe(firefoxOrigin);
+  });
 });

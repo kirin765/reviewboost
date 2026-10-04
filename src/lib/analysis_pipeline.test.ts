@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runAnalysisPipeline } from "./analysis_pipeline";
 
 const openAi = vi.hoisted(() => ({
@@ -14,7 +14,30 @@ vi.mock("./openai_suggestions", () => ({
   generateSuggestions: openAi.generateSuggestions
 }));
 
+beforeEach(() => { vi.stubEnv("TYPESAFE_API_KEY", ""); });
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+
 describe("runAnalysisPipeline", () => {
+  it("uses TypeSafe when configured and feeds its labels into report statistics", async () => {
+    vi.stubEnv("TYPESAFE_API_KEY", "test-key");
+    const choice = (value: string, keys: string[]) => ({
+      type: "choice", choice: value, confidence: 0.95,
+      probabilities: Object.fromEntries(keys.map(key => [key, key === value ? 1 : 0]))
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ answers: {
+      sentiment_0: choice("negative", ["positive", "neutral", "negative"]),
+      category_0: choice("품질", ["배송", "품질", "가격", "사용성", "CS", "기타"])
+    } })));
+    openAi.generateSuggestions.mockResolvedValue({ detailPageCopy: [], csResponseTemplates: [], faqRecommendations: [], notes: [] });
+    const before = openAi.classifyReviewsWithOpenAI.mock.calls.length;
+    const result = await runAnalysisPipeline({
+      csvText: "review,rating\n하루 만에 고장났어요,5", headerMode: "header", textCol: null,
+      ratingCol: null, dateCol: null, plan: "basic", useLLM: true
+    });
+    expect(openAi.classifyReviewsWithOpenAI.mock.calls.length).toBe(before);
+    expect(result.payload.classified[0]).toMatchObject({ sentiment: "negative", category: "품질" });
+    expect(result.payload.stats.negative).toBe(1);
+  });
   const baseCsv = ["review,rating,reviewed_at", "좋아요,5,2026-01-01", "배송이 느려요,2,2026-01-01"].join("\n");
 
   it("기본 히유리스틱 경로를 안정적으로 수행한다", async () => {

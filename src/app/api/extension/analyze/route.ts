@@ -1,6 +1,7 @@
 import { ApiError, apiErrorResponse } from "@/lib/api_error";
 import { logApiError } from "@/lib/api_log";
 import { runAnalysisPipeline } from "@/lib/analysis_pipeline";
+import { isExtensionOrigin } from "@/lib/csrf";
 import { getClientIp } from "@/lib/request-utils";
 import type { ReviewRow } from "@/lib/types";
 import { getErrorMessage } from "@/types/common";
@@ -32,8 +33,9 @@ function rateLimited(ip: string | null): boolean {
   return false;
 }
 
-// CORS: this endpoint is intentionally cross-origin (called from chrome-extension://).
-// Echo the extension origin, never "*". Always set Vary: Origin.
+// CORS: this endpoint is intentionally cross-origin (called from browser extensions).
+// Echo the extension origin (Chrome chrome-extension:// / Firefox moz-extension://), never "*".
+// Always set Vary: Origin.
 function corsHeaders(origin: string | null): Record<string, string> {
   const headers: Record<string, string> = {
     Vary: "Origin",
@@ -41,7 +43,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
     "Access-Control-Allow-Headers": "content-type",
     "Access-Control-Max-Age": "600"
   };
-  if (origin && origin.startsWith("chrome-extension://")) {
+  if (isExtensionOrigin(origin)) {
     headers["Access-Control-Allow-Origin"] = origin;
   }
   return headers;

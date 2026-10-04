@@ -8,6 +8,7 @@ import { PlanProvider } from "@/contexts/PlanContext";
 import { downloadReportPdf } from "@/lib/api/analysis";
 import type { DashboardAnalysisResult } from "@/lib/api/analysis";
 import type { Capabilities } from "@/lib/capabilities";
+import { requestExtension } from "@/lib/extensionBridge";
 import { getErrorMessage } from "@/types/common";
 
 const FREE_CAPS: Capabilities = {
@@ -23,29 +24,9 @@ const FREE_CAPS: Capabilities = {
 
 type Status = "loading" | "done" | "missing" | "error";
 
-type ChromeRuntime = {
-  runtime?: {
-    sendMessage?: (extensionId: string, message: unknown, cb: (response: unknown) => void) => void;
-    lastError?: { message?: string };
-  };
-};
-
-type PullResponse = { ok: true; payload: DashboardAnalysisResult } | { ok: false };
-
-function pullReport(extId: string): Promise<DashboardAnalysisResult | null> {
-  const chromeApi = (window as unknown as { chrome?: ChromeRuntime }).chrome;
-  const send = chromeApi?.runtime?.sendMessage;
-  if (!send) return Promise.resolve(null);
-  return new Promise((resolve) => {
-    try {
-      send(extId, { type: "PULL_REPORT" }, (response: unknown) => {
-        const resp = response as PullResponse | undefined;
-        resolve(resp && resp.ok ? resp.payload : null);
-      });
-    } catch {
-      resolve(null);
-    }
-  });
+async function pullReport(extId: string): Promise<DashboardAnalysisResult | null> {
+  const response = await requestExtension(extId, "PULL_REPORT");
+  return response.ok ? (response.payload as DashboardAnalysisResult) : null;
 }
 
 export default function ExtensionReportClient() {

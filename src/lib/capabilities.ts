@@ -1,3 +1,4 @@
+import { isTypeSafeConfigured } from "./typesafe_classify";
 import type { PlanTier } from "@/lib/plan";
 
 export type Capabilities = {
@@ -25,5 +26,5 @@ export function getCapabilitiesBase() {
   const databaseConfigured = isDatabaseConfigured();
   const authConfigured = isAuthConfigured();
   const openaiConfigured = Boolean(process.env.OPENAI_API_KEY);
-  return { databaseConfigured, authConfigured, openaiConfigured };
+  return { databaseConfigured, authConfigured, openaiConfigured, typesafeConfigured: isTypeSafeConfigured() };
 }

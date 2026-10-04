@@ -48,7 +48,7 @@ export async function GET() {
     planLabel: planLabel(plan),
     monthlyLimit,
     monthlyUsed,
-    aiAdvancedAvailable: base.openaiConfigured,
+    aiAdvancedAvailable: base.openaiConfigured || base.typesafeConfigured,
     extensionPlan
   });
 }

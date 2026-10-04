@@ -19,7 +19,7 @@ export default function ExtensionPrivacyPage() {
           <br />
           <strong>Company Name:</strong> Onnuri stationery
           <br />
-          <strong>Extension:</strong> ReviewBoost 리뷰 수집기 — 쿠팡·스마트스토어 리뷰 엑셀 내보내기
+          <strong>Extension:</strong> ReviewBoost 리뷰 수집기 (ReviewBoost Review Collector)
           <br />
           <strong>Website:</strong>{" "}
           <a className="link" href="https://reviewboost.co.kr" target="_blank" rel="noreferrer">
@@ -31,7 +31,7 @@ export default function ExtensionPrivacyPage() {
           <section className="legalSection">
             <h3>1. Introduction</h3>
             <p>
-              This Privacy Policy explains what data the ReviewBoost Review Collector Chrome extension (the
+              This Privacy Policy explains what data the ReviewBoost Review Collector browser extension (the
               &quot;Extension&quot;) accesses, how it is used, and how it is shared. It supplements the main{" "}
               <a className="link" href="https://reviewboost.co.kr/privacy" target="_blank" rel="noreferrer">
                 ReviewBoost Privacy Policy
@@ -62,9 +62,10 @@ export default function ExtensionPrivacyPage() {
                 before export.
               </li>
               <li>
-                <strong>externally_connectable</strong> (reviewboost.co.kr) — allows the Extension to hand off
+                <strong>page-to-extension messaging</strong> (reviewboost.co.kr) — allows the Extension to hand off
                 collected review data directly to the ReviewBoost web app when you choose to analyze it, without
-                a manual file upload step.
+                a manual file upload step. Chrome uses <code>externally_connectable</code>; Firefox uses a
+                content-script message bridge on reviewboost.co.kr.
               </li>
             </ul>
           </section>
@@ -98,7 +99,7 @@ export default function ExtensionPrivacyPage() {
             <h3>6. Your Choices</h3>
             <p>
               You can remove locally stored data at any time by uninstalling the Extension or clearing its storage
-              via Chrome&apos;s extension settings.
+              via your browser&apos;s extension settings.
             </p>
           </section>
 

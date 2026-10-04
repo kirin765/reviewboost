@@ -75,7 +75,8 @@ export async function POST(req: Request) {
   const dateCol = (form.get("dateCol") as string | null) ?? null;
   const forcedMode = devForcedAnalysisMode();
   const openaiAvailable = Boolean(process.env.OPENAI_API_KEY);
-  const useLLM = forcedMode === "llm" ? true : forcedMode === "heuristic" ? false : openaiAvailable;
+  const typesafeAvailable = Boolean(process.env.TYPESAFE_API_KEY?.trim());
+  const useLLM = forcedMode === "llm" ? true : forcedMode === "heuristic" ? false : (openaiAvailable || typesafeAvailable);
   const baseCaps = getCapabilitiesBase();
 
   let userId: string | null = null;
@@ -120,6 +121,7 @@ export async function POST(req: Request) {
     allowLLM: gates.allowLLM,
     devBypass,
     openaiConfigured: openaiAvailable,
+    typesafeConfigured: typesafeAvailable,
     forcedMode
   });
 

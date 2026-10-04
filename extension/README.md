@@ -1,7 +1,7 @@
-# ReviewBoost 리뷰 수집기 (Chrome MV3)
+# ReviewBoost 리뷰 수집기 (Chrome · Firefox MV3)
 
 쿠팡·스마트스토어 상품 페이지에서 그 상품의 리뷰를 수집해 **엑셀(.xlsx)/CSV로 내려받고**, 선택적으로
-**ReviewBoost 무료 분석**으로 보내는 크롬 확장 프로그램.
+**ReviewBoost 무료 분석**으로 보내는 브라우저 확장 프로그램.
 
 콘텐츠 스크립트가 **페이지 origin + 사용자 실제 쿠키** 안에서 내부 리뷰 API를 호출하므로,
 서버 크롤러를 막던 Akamai 차단·프록시·OOM 문제 없이 동작한다.
@@ -11,19 +11,48 @@
 ```bash
 cd extension
 npm install
-npm run test       # 순수 함수 단위 테스트 (vitest)
-npm run typecheck  # tsc --noEmit
-npm run build      # dist/ 생성 (esbuild 번들 + 아이콘 + manifest)
+npm run test          # 순수 함수 단위 테스트 (vitest)
+npm run typecheck     # tsc --noEmit
+npm run build         # Chrome/Edge/웨일 → dist/
+npm run build:firefox # Firefox → dist-firefox/ (+ package:firefox 는 ZIP까지)
+npm run build:all     # 두 빌드 모두
 ```
 
 ## 브라우저에 로드 (unpacked)
 
+**Chrome / Edge / 웨일**
+
 1. `npm run build`
-2. `chrome://extensions` → 개발자 모드 ON → **압축해제된 확장 프로그램을 로드** → `extension/dist` 선택
+2. `chrome://extensions` (Edge `edge://extensions`) → 개발자 모드 ON → **압축해제된 확장 프로그램을 로드** → `extension/dist` 선택
 3. 쿠팡(`/vp/products/...`) 또는 스마트스토어(`/{store}/products/...`) 상품 페이지에서 아이콘 클릭
+
+**Firefox**
+
+1. `npm run build:firefox`
+2. `about:debugging#/runtime/this-firefox` → **임시 부가 기능 로드** → `extension/dist-firefox/manifest.json` 선택
+   (Firefox 140+ 필요 — 아래 "브라우저별 차이" 참고)
+3. 동일하게 상품 페이지에서 아이콘 클릭
 
 로컬 ReviewBoost(`http://localhost:3001`)로 깔때기를 테스트하려면 `src/lib/config.ts`의 `RB_ORIGIN`을
 `http://localhost:3001`로 바꿔 다시 빌드한다.
+
+## 브라우저별 차이
+
+Chrome(MV3 service worker)과 Firefox(MV3 event page)는 manifest·백그라운드 형태가 달라 빌드를 분리한다.
+
+| | Chrome / Edge / 웨일 | Firefox |
+|---|---|---|
+| manifest | `public/manifest.json` | `public/manifest.firefox.json` |
+| background | `service_worker` | `scripts` (event page) |
+| 웹↔익스텐션 통신 | `externally_connectable` + `chrome.runtime.sendMessage` | `bridge.js` content script + `window.postMessage` |
+| 최소 버전 | Chrome 110+ | Firefox 140+ |
+
+- **Firefox 는 `externally_connectable` 을 지원하지 않는다**(bug 1319168). 그래서 reviewboost.co.kr 에
+  `bridge.js` 를 주입해, 웹 페이지의 `window.postMessage` 요청(PULL_REPORT/AUTH_TOKEN)을 background 로
+  중계하고 응답을 돌려준다. 웹 앱은 `src/lib/extensionBridge.ts` 에서 Chrome 직접 호출/브리지를 자동 선택한다.
+- 브랜드스토어 캡처 훅은 `scripting.executeScript({world:"MAIN"})` 를 쓰며, Firefox 는 128+ 부터 지원한다.
+- AMO 제출을 위해 `browser_specific_settings.gecko`(id·data_collection_permissions)를 포함한다. 제출 절차는
+  `FIREFOX_STORE.md` 참고.
 
 ## 라이브 검증 상태
 
@@ -56,6 +85,7 @@ npm run build      # dist/ 생성 (esbuild 번들 + 아이콘 + manifest)
 ## ReviewBoost 연동
 
 - 깔때기 엔드포인트: `POST /api/extension/analyze` (CORS, chrome-extension origin echo, 무로그인 free 분석)
-- 결과 페이지: `/extension-report` (익스텐션이 `externally_connectable`로 payload 전달 → 기존
-  `AnalysisResults` 재사용 렌더)
+- 결과 페이지: `/extension-report` (Chrome 은 `externally_connectable`, Firefox 는 `bridge.js`
+  postMessage 브리지로 payload 전달 → 기존 `AnalysisResults` 재사용 렌더)
+- 연결 페이지: `/extension-connect` (동일 경로로 AUTH_TOKEN 저장)
 - 개인정보처리방침(웹스토어 등록용): `/extension-privacy`

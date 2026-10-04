@@ -245,3 +245,24 @@ PDFKit fallback 모드에서 한글이 깨지면 아래 둘 중 하나를 선택
 - `REPORT_FONT_PATH`는 대체 경로로만 사용하고, 기본 동작은 `assets/fonts` 자동 탐색입니다.
 - `x-report-renderer=puppeteer-failed` + `x-report-fallback-error`가 `PDFKit 한글 폰트 미설치`로 오면 해당 요청은 PDFKit 폰트 미존재로 fail-closed 처리된 상태입니다.
 - 정상 폰트 반영 시 `x-report-renderer=pdfkit-fallback` + 깨짐 없는 텍스트 PDF를 기대하세요.
+
+### TypeSafe review classifier
+
+Set server-side `TYPESAFE_API_KEY` to use TypeSafe for sentiment and category
+classification. It takes precedence over OpenAI classification; without it the
+existing OpenAI/heuristic path remains available. `TYPESAFE_MODEL` defaults to
+`jev-latest`. Existing plan gates, review sampling limits, and analysis deadlines
+still apply. OpenAI remains the optional provider for generated suggestions.
+
+The classifier sends review text only (up to 600 characters per review), in batches
+of 10 with two concurrent requests. Each review has independent sentiment and
+category Choice questions. Invalid, missing, timed-out, or low-confidence answers
+retain the corresponding heuristic value. There are no automatic retries.
+`TYPESAFE_MIN_CONFIDENCE` defaults to 0.6; this is an initial operational threshold,
+not an accuracy guarantee. Validate it against labeled Korean reviews (including
+sarcasm, mixed sentiment, delivery versus product defects, and CS complaints)
+before production rollout. Raw probabilities and confidence are returned by the
+classifier for evaluation; they are not stored in saved reports.
+
+API contract: [TypeSafe HTTP API](https://docs.typesafe.ai/api),
+[Choice guidance](https://docs.typesafe.ai/primitives/choice).

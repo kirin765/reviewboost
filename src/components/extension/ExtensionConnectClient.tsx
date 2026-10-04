@@ -3,15 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { requestExtension } from "@/lib/extensionBridge";
 import { getErrorMessage } from "@/types/common";
 import PaddleCheckoutOverlay from "./PaddleCheckoutOverlay";
-
-type ChromeRuntime = {
-  runtime?: {
-    sendMessage?: (extensionId: string, message: unknown, cb: (response: unknown) => void) => void;
-    lastError?: { message?: string };
-  };
-};
 
 type UsageStatus = {
   authenticated: boolean;
@@ -70,13 +64,6 @@ export default function ExtensionConnectClient() {
 
   const connectExtension = useCallback(async () => {
     if (!extId) return;
-    const chrome = (window as unknown as { chrome?: ChromeRuntime }).chrome;
-    const sendMessage = chrome?.runtime?.sendMessage;
-    if (!sendMessage) {
-      setConnect("failed");
-      setConnectError("Chrome 브라우저에서 익스텐션이 설치된 상태로 열어주세요.");
-      return;
-    }
     setConnect("connecting");
     setConnectError(null);
     try {
@@ -84,15 +71,13 @@ export default function ExtensionConnectClient() {
       if (res.status === 401) throw new Error("로그인이 필요합니다.");
       if (!res.ok) throw new Error("토큰 발급에 실패했습니다.");
       const { token, expiresAt } = (await res.json()) as { token: string; expiresAt: number };
-      sendMessage(extId, { type: "AUTH_TOKEN", token, expiresAt }, (response) => {
-        const ok = Boolean((response as { ok?: boolean } | undefined)?.ok);
-        if (chrome?.runtime?.lastError || !ok) {
-          setConnect("failed");
-          setConnectError("익스텐션에 연결하지 못했습니다. 익스텐션이 설치되어 있는지 확인해주세요.");
-        } else {
-          setConnect("connected");
-        }
-      });
+      const result = await requestExtension(extId, "AUTH_TOKEN", { token, expiresAt });
+      if (!result.ok) {
+        setConnect("failed");
+        setConnectError("익스텐션에 연결하지 못했습니다. 익스텐션이 설치되어 있는지 확인해주세요.");
+      } else {
+        setConnect("connected");
+      }
     } catch (err) {
       setConnect("failed");
       setConnectError(getErrorMessage(err));

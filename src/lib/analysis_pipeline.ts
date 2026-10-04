@@ -13,6 +13,7 @@
 
 import { classifyHeuristic, computeAnalysisFromClassified } from "@/lib/analysis";
 import { parseReviewCsvWithMapping, type CsvHeaderMode } from "@/lib/csv";
+import { classifyReviewsWithTypeSafe, isTypeSafeConfigured, TYPESAFE_CLASSIFY_TIMEOUT_MS } from "@/lib/typesafe_classify";
 import { classifyReviewsWithOpenAI } from "@/lib/openai_classify";
 import { generateSuggestions } from "@/lib/openai_suggestions";
 import { env } from "@/lib/config";
@@ -198,13 +199,14 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
           category: classified[i]!.category
         }));
         const classifyBudgetMs = remainingBudgetMs();
-        const llm = await classifyReviewsWithOpenAI({
+        const classify = isTypeSafeConfigured() ? classifyReviewsWithTypeSafe : classifyReviewsWithOpenAI;
+        const llm = await classify({
           texts: targetTexts,
           fallbackClassifications: targetFallbacks,
           timeBudgetMs: classifyBudgetMs,
           maxConcurrency: env.openai.classifyMaxConcurrency
         });
-        if (llm) {
+        if (llm && llm.appliedCount > 0) {
           let appliedFromLlm = 0;
           for (let i = 0; i < targetIdx.length; i++) {
             const idx = targetIdx[i]!;
@@ -227,7 +229,7 @@ export async function runAnalysisPipeline(input: AnalysisPipelineInput): Promise
         } else {
           aiDiagnosticReason = "LLM_CLASSIFY_FAILED";
           aiFallbackReason =
-            classifyBudgetMs < env.openai.classifyTimeoutMs + CLASSIFY_TIMEOUT_GUARD_MS
+            classifyBudgetMs < (isTypeSafeConfigured() ? TYPESAFE_CLASSIFY_TIMEOUT_MS : env.openai.classifyTimeoutMs) + CLASSIFY_TIMEOUT_GUARD_MS
               ? "time_budget_exhausted"
               : "llm_classify_error";
           logger.warn('[LLM:analyze] 분류 결과 null 또는 길이 불일치 — heuristic 유지');

@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { ApiError, apiErrorResponse } from "@/lib/api_error";
 import { logApiError } from "@/lib/api_log";
+import { isExtensionOrigin } from "@/lib/csrf";
 import {
   EXTENSION_FREE_DAILY_LIMIT,
   extensionDailyLimit,
@@ -26,7 +27,8 @@ const MAX_CONSUME_PER_REQUEST = 5000;
  */
 const UNLIMITED_REMAINING = 1_000_000_000;
 
-// CORS: 익스텐션 팝업(chrome-extension://)에서 호출된다. /api/extension/analyze 와 동일 정책.
+// CORS: 익스텐션 팝업(Chrome chrome-extension:// / Firefox moz-extension://)에서 호출된다.
+// /api/extension/analyze 와 동일 정책.
 function corsHeaders(origin: string | null): Record<string, string> {
   const headers: Record<string, string> = {
     Vary: "Origin",
@@ -34,7 +36,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
     "Access-Control-Allow-Headers": "content-type, authorization",
     "Access-Control-Max-Age": "600"
   };
-  if (origin && origin.startsWith("chrome-extension://")) {
+  if (isExtensionOrigin(origin)) {
     headers["Access-Control-Allow-Origin"] = origin;
   }
   return headers;
