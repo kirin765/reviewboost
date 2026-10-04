@@ -14,6 +14,7 @@ import { collectGmarket } from "./collect-gmarket";
 import { collectCurly } from "./collect-curly";
 import { collectAuction } from "./collect-auction";
 import { installReviewCaptureHook } from "./hook";
+import { productTitle } from "./product-title";
 
 // 브랜드스토어/스마트스토어에서 페이지가 직접 보내는 리뷰 API 요청을 미리 캡처해 둔다
 // (브랜드스토어는 본문 필드명/헤더가 다르므로 페이지의 실제 요청을 재사용하는 게 가장 안전하다).
@@ -43,7 +44,7 @@ function detect(): PageContext {
       productId = hit.productId;
     }
   }
-  return { platform, productId, title: document.title };
+  return { platform, productId, title: productTitle(document, platform) };
 }
 
 let cancelled = false;

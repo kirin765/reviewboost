@@ -192,7 +192,7 @@ function historyEntryFromCurrent(): HistoryEntry {
     platform: platform ?? "smartstore",
     productId: "",
     productUrl: tabUrl,
-    productTitle: tabTitle || document.title,
+    productTitle: tabTitle,
     count: collected.length,
     createdAt: Date.now(),
     reviews: collected
@@ -319,7 +319,7 @@ chrome.runtime.onMessage.addListener((msg: StreamMessage) => {
   } else if (msg.type === "DONE") {
     collected = msg.reviews;
     restored = null;
-    exportCtx = { productNo: tabProductId, productTitle: tabTitle || document.title };
+    exportCtx = { productNo: tabProductId, productTitle: tabTitle };
     countEl.textContent = collected.length.toLocaleString();
     renderPreview();
     resultUpsell.classList.add("hidden");
