@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ReviewBoost 리뷰 수집기",
   "version": "1.5.1",
-  "description": "지금 보고 있는 쿠팡·스마트스토어·무신사·11번가 등 10개 쇼핑몰 상품의 리뷰를 엑셀/CSV로 내려받고, ReviewBoost 무료 분석으로 바로 연결합니다.",
+  "description": "지금 보고 있는 쿠팡·스마트스토어·무신사·11번가 등 11개 쇼핑몰 상품의 리뷰를 엑셀/CSV로 내려받고, ReviewBoost 무료 분석으로 바로 연결합니다.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -43,7 +43,9 @@
     "*://item.gmarket.co.kr/*",
     "*://*.auction.co.kr/*",
     "*://www.kurly.com/*",
-    "*://api.kurly.com/*"
+    "*://api.kurly.com/*",
+    "*://www.oliveyoung.co.kr/*",
+    "*://m.oliveyoung.co.kr/review/api/*"
   ],
   "content_scripts": [
     {
@@ -58,7 +60,8 @@
         "*://store.ohou.se/goods/*",
         "*://item.gmarket.co.kr/Item*",
         "*://*.auction.co.kr/DetailView.aspx*",
-        "*://www.kurly.com/goods/*"
+        "*://www.kurly.com/goods/*",
+        "*://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do*"
       ],
       "js": [
         "content.js"

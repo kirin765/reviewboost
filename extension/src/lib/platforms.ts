@@ -19,7 +19,8 @@ export type PlatformKey =
   | "11st"
   | "ssg"
   | "ohou"
-  | "curly";
+  | "curly"
+  | "oliveyoung";
 
 export type PlatformMeta = {
   key: PlatformKey;
@@ -41,6 +42,17 @@ function bareHost(h: string): string {
 }
 
 export const PLATFORMS: PlatformMeta[] = [
+  {
+    key: "oliveyoung",
+    label: "올리브영",
+    hostRe: /^www\.oliveyoung\.co\.kr$/i,
+    extract: (href) => {
+      const url = new URL(href);
+      if (url.pathname !== "/store/goods/getGoodsDetail.do") return null;
+      const id = url.searchParams.get("goodsNo");
+      return id && /^[A-Z]\d+$/.test(id) ? id : null;
+    }
+  },
   {
     key: "musinsa",
     label: "무신사",
@@ -98,6 +110,12 @@ export const PLATFORMS: PlatformMeta[] = [
     }
   }
 ];
+
+export function platformLabel(key: PlatformKey): string {
+  if (key === "coupang") return "쿠팡";
+  if (key === "smartstore") return "스마트스토어";
+  return PLATFORMS.find((p) => p.key === key)?.label ?? key;
+}
 
 /** 호스트명으로 플랫폼 메타 조회. 등록 안 된 호스트면 null. */
 export function platformForHost(hostname: string): PlatformMeta | null {

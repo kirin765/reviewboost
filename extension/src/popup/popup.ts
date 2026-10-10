@@ -12,6 +12,7 @@ import { addHistory, clearHistory, loadHistory, makeHistoryId, removeHistory, ty
 import type { ContentRequest, PongResponse, StreamMessage } from "../lib/messages";
 import { toReviewRows } from "../lib/normalize";
 import type { Platform, RawReview } from "../lib/types";
+import { platformLabel } from "../lib/platforms";
 import {
   clampToRemaining,
   isConnected,
@@ -178,8 +179,6 @@ function sendToTab<T = unknown>(msg: ContentRequest): Promise<T> {
   return chrome.tabs.sendMessage(tabId, msg) as Promise<T>;
 }
 
-const platformLabel = (p: Platform): string => (p === "coupang" ? "쿠팡" : "스마트스토어");
-
 function fmtHistoryTime(ts: number): string {
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -269,7 +268,7 @@ function onHistoryClick(ev: MouseEvent): void {
 function notProduct(): void {
   ctxLabel.textContent = "지원 상품 페이지가 아닙니다";
   collectBtn.disabled = true;
-  hint.textContent = "쿠팡 또는 스마트스토어 상품 상세 페이지에서 실행해 주세요.";
+  hint.textContent = "쿠팡·스마트스토어·올리브영 등 지원 쇼핑몰의 상품 상세 페이지에서 실행해 주세요.";
 }
 
 async function init(): Promise<void> {
@@ -294,7 +293,7 @@ async function init(): Promise<void> {
   }
   tabTitle = pong?.ctx.title ?? tabTitle;
   tabProductId = pong?.ctx.productId ?? null;
-  ctxLabel.textContent = platform === "coupang" ? "쿠팡 상품 감지됨" : "스마트스토어 상품 감지됨";
+  ctxLabel.textContent = `${platformLabel(platform)} 상품 감지됨`;
   collectBtn.disabled = false;
   hint.textContent = "버튼을 누르면 이 상품의 리뷰를 모읍니다.";
 }

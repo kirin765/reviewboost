@@ -88,6 +88,7 @@ ReviewBoost 리뷰 수집기는 셀러가 지금 보고 있는 쿠팡·스마트
 - 호스트 권한 `*://item.gmarket.co.kr/*`: G마켓 상품 페이지의 공개 리뷰를 읽기 위해 필요합니다.
 - 호스트 권한 `*://*.auction.co.kr/*`: 옥션 상품 페이지의 공개 리뷰를 읽기 위해 필요합니다.
 - 호스트 권한 `*://www.kurly.com/*`, `*://api.kurly.com/*`: 컬리 상품 페이지의 공개 리뷰(리뷰 API 포함)를 읽기 위해 필요합니다.
+- 호스트 권한 `*://www.oliveyoung.co.kr/*`, `*://m.oliveyoung.co.kr/review/api/*`: 올리브영 상품 페이지를 감지하고 공개 리뷰 API를 읽기 위해 필요합니다.
 - 호스트 권한 `*://reviewboost.co.kr/*`: "ReviewBoost로 분석" 요청과 팝업의 **CS 문의 폼 전송**을 위해 필요합니다.
 
 **데이터 사용 (Data usage)**

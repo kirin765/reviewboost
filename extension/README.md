@@ -89,3 +89,9 @@ Chrome(MV3 service worker)과 Firefox(MV3 event page)는 manifest·백그라운�
   postMessage 브리지로 payload 전달 → 기존 `AnalysisResults` 재사용 렌더)
 - 연결 페이지: `/extension-connect` (동일 경로로 AUTH_TOKEN 저장)
 - 개인정보처리방침(웹스토어 등록용): `/extension-privacy`
+
+## 올리브영
+
+- `https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=...` 상품 페이지에서 수집합니다.
+- 데스크톱 페이지가 사용하는 `m.oliveyoung.co.kr/review/api/v2/reviews/cursor`를 동일한 로그인 세션으로 호출합니다. 다음 페이지는 ID·점수·개수 커서를 사용합니다.
+- 리뷰 본문·별점·작성일·공개 닉네임·도움 수·이미지 URL을 수집합니다. 사이트와 동일하게 연결 상품의 리뷰가 포함될 수 있습니다. 로그인 요구·요청 제한은 오류로 안내하며 중복 페이지는 중단합니다.

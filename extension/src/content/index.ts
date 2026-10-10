@@ -13,6 +13,7 @@ import { collectOhou } from "./collect-ohou";
 import { collectGmarket } from "./collect-gmarket";
 import { collectCurly } from "./collect-curly";
 import { collectAuction } from "./collect-auction";
+import { collectOliveYoung } from "./collect-oliveyoung";
 import { installReviewCaptureHook } from "./hook";
 
 // 브랜드스토어/스마트스토어에서 페이지가 직접 보내는 리뷰 API 요청을 미리 캡처해 둔다
@@ -101,6 +102,8 @@ async function runCollect(maxItems: number): Promise<void> {
       reviews = await collectAuction(ctx.productId, opts);
     } else if (ctx.platform === "curly" && ctx.productId) {
       reviews = await collectCurly(ctx.productId, opts);
+    } else if (ctx.platform === "oliveyoung" && ctx.productId) {
+      reviews = await collectOliveYoung(ctx.productId, opts);
     } else {
       // 플랫폼은 인식했지만 수집기가 아직 없는 경우
       throw new CollectError("NOT_PRODUCT", "지원하는 상품 페이지가 아닙니다.");

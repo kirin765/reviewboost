@@ -2,6 +2,7 @@ import type { RawReview, ReviewRow } from "./types";
 import { twentyNineImageUrl } from "./29cm";
 import { musinsaImageUrl } from "./musinsa";
 import { ohouImageUrl } from "./ohou";
+import { oliveYoungImageUrl } from "./oliveyoung";
 
 /** ReviewBoost csv.ts(78-87) 와 동일한 별점 정규화: 0-5 그대로, 6-10 은 반감. */
 export function clampRating(v: unknown): number | null {
@@ -282,6 +283,21 @@ export function normalizeAuctionReview(raw: AnyRec): RawReview {
     // 옥션 리뷰 프래그먼트에 리뷰 제목은 없음 (실측: text__option / box__review-text 만 존재)
     author: pickString(raw.author) || undefined,
     helpfulCount: pickHelpful(raw.helpfulCount),
+    ...(imageUrls.length ? { imageUrls } : {})
+  };
+}
+
+/** 올리브영 v2 cursor API (2026-10-11 실측). */
+export function normalizeOliveYoungReview(raw: AnyRec): RawReview {
+  const profile = raw.profileDto as Record<string, unknown> | undefined;
+  const photos = Array.isArray(raw.photoReviewList) ? raw.photoReviewList : [];
+  const imageUrls = [...new Set(photos.map((photo) => oliveYoungImageUrl(photo?.imagePath)).filter(Boolean))];
+  return {
+    text: pickString(raw.content),
+    rating: clampRating(raw.reviewScore),
+    reviewedAt: toIsoDate(raw.createdDateTime),
+    author: pickString(profile?.memberNickname) || undefined,
+    helpfulCount: pickHelpful(raw.recommendCount),
     ...(imageUrls.length ? { imageUrls } : {})
   };
 }

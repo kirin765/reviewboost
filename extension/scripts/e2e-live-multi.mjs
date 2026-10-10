@@ -30,6 +30,7 @@ const CHROME_BIN = process.env.CHROME_BIN ?? "/usr/bin/chromium";
 
 // 플랫폼 매트릭스 — 상품 URL 은 각 어댑터 테스트 픽스처(실측 캡처)에서 가져온 실상품
 const PLATFORMS = [
+  { key: "oliveyoung", label: "올리브영", url: "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A000000247719", apiHint: "review/api/v2/reviews/cursor" },
   { key: "29cm", label: "29CM", url: "https://www.29cm.co.kr/products/2632177", apiHint: "review-api.29cm.co.kr" },
   { key: "11st", label: "11번가", url: "https://www.11st.co.kr/products/9553196713", apiHint: "review-list" },
   { key: "ssg", label: "SSG닷컴", url: "https://www.ssg.com/item/itemView.ssg?itemId=1000827457933&siteNo=6004", apiHint: "ajaxItemCommentList" },
