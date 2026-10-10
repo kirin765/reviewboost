@@ -1,3 +1,4 @@
+import { supportedSites } from "@/lib/supported-sites";
 import { getBaseUrl } from "@/lib/seo/metadata";
 import { getGatesForPlan } from "@/lib/plan_gates";
 import { blogPosts } from "@/lib/blog-posts";
@@ -17,6 +18,8 @@ export function GET() {
     ``,
     `## Key pages`,
     `- Home: ${baseUrl}/`,
+    `- Review collection extension and supported sites: ${baseUrl}/extension`,
+    `- Olive Young review download guide: ${baseUrl}/help/oliveyoung-review-csv-export`,
     `- Pricing: ${baseUrl}/pricing`,
     `- Help hub: ${baseUrl}/help`,
     `- CSV checklist: ${baseUrl}/help/csv-checklist`,
@@ -31,6 +34,13 @@ export function GET() {
     `- Starter (free): ${getGatesForPlan("free").monthlyAnalysisLimit} review analyses per month`,
     `- Basic (KRW 19,000/month): ${getGatesForPlan("basic").monthlyAnalysisLimit} review analyses per month`,
     `- Pro (KRW 45,000/month): ${getGatesForPlan("pro").monthlyAnalysisLimit} review analyses per month`,
+    ``,
+    `## Review collection extension`,
+    `- Supported sites: ${supportedSites.map((site) => site.name).join(", ")}`,
+    `- Export product reviews as CSV or Excel using the desktop browser extension`,
+    `- Olive Young requires version 1.5.2 or later on PC product detail pages; store review and update timing vary by browser`,
+    `- Free: 50 reviews per day; paid extension: KRW 4,900/month without a daily limit; maximum 2,000 reviews per collection`,
+    `- Review collection and AI analysis have separate limits; image URLs are exported, not image files`,
     ``,
     `## Product facts`,
     `- Upload review CSV files and confirm columns before analysis`,

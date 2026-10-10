@@ -175,6 +175,7 @@ function MarketingFooter() {
           <div className="space-y-3">
             <Link href="/dashboard/analyze" className="block hover:text-[var(--rb-fg)]">분석하기</Link>
             <Link href="/features" className="block hover:text-[var(--rb-fg)]">기능</Link>
+            <Link href="/extension" className="block hover:text-[var(--rb-fg)]">리뷰 수집 지원 사이트</Link>
             <Link href="/pricing" className="block hover:text-[var(--rb-fg)]">요금제</Link>
             <Link href="/help" className="block hover:text-[var(--rb-fg)]">사용법</Link>
           </div>

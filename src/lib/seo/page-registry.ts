@@ -1,3 +1,4 @@
+import { extensionDescription } from "@/lib/supported-sites";
 import { blogPosts } from "@/lib/blog-posts";
 
 export type SeoSection =
@@ -90,14 +91,30 @@ function breadcrumbs(...items: SeoBreadcrumb[]) {
 
 const publicRecords: SeoPageRecord[] = [
   {
+    section: "features", slug: "extension",
+    title: "리뷰 다운로드 확장 프로그램 | 올리브영 등 11개 사이트",
+    description: extensionDescription,
+    primaryKeyword: "리뷰 다운로드 확장 프로그램", canonicalPath: "/extension",
+    updatedAt: "2026-10-11", schema: ["softwareApplication"], indexable: true,
+    breadcrumbs: [HOME_BREADCRUMB, { label: "리뷰 수집기", path: "/extension" }]
+  },
+  {
+    section: "help", slug: "oliveyoung-review-csv-export",
+    title: "올리브영 리뷰 CSV·엑셀 다운로드 방법",
+    description: "ReviewBoost 확장 프로그램 1.5.2 이상으로 올리브영 PC 상품 리뷰를 CSV·엑셀로 저장하는 방법을 안내합니다. 설치, 수집 한도, 이미지 URL과 연관 상품 리뷰 범위를 확인하세요.",
+    primaryKeyword: "올리브영 리뷰 다운로드", canonicalPath: "/help/oliveyoung-review-csv-export",
+    updatedAt: "2026-10-11", schema: ["article"], indexable: true,
+    breadcrumbs: [HOME_BREADCRUMB, { label: "사용법", path: "/help" }, { label: "올리브영 리뷰 다운로드", path: "/help/oliveyoung-review-csv-export" }]
+  },
+  {
     section: "home",
     slug: "home",
-    title: "쿠팡·스마트스토어 AI 리뷰 분석 툴",
+    title: "리뷰 수집·AI 분석 툴 | 올리브영 등 11개 사이트 지원",
     description:
-      "쿠팡·스마트스토어 리뷰 CSV를 업로드하면 AI가 감성 분류, 부정 키워드 추출, 상세페이지 개선 문구와 FAQ 제안까지 한 번에 정리합니다.",
+      "쿠팡·스마트스토어·무신사·올리브영 등 11개 쇼핑몰 리뷰를 확장 프로그램으로 CSV·엑셀 다운로드하고 AI로 분석하세요. 지원 사이트와 설치 방법을 확인할 수 있습니다.",
     primaryKeyword: "AI 리뷰 분석",
     canonicalPath: "/",
-    updatedAt: "2026-03-31",
+    updatedAt: "2026-10-11",
     schema: ["softwareApplication"],
     indexable: true,
     breadcrumbs: [HOME_BREADCRUMB]

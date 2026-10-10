@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import StructuredData from "@/components/seo/StructuredData";
+import SupportedSites from "@/components/marketing/SupportedSites";
 import HomePageContent from "@/components/home/HomePageContent";
 import HomePageStatus from "@/components/home/HomePageStatus";
 import { generatePageMetadata } from "@/lib/seo/metadata";
@@ -33,6 +34,7 @@ export default function HomePage() {
       <Suspense fallback={null}>
         <HomePageStatus />
       </Suspense>
+      <SupportedSites />
       <HomePageContent />
     </main>
   );

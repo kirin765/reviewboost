@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { supportedSites, extensionStores } from "../src/lib/supported-sites";
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
 
 const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL;
@@ -25,7 +26,43 @@ async function signInTestUser(page: Page) {
 test.describe("ReviewBoost E2E — public pages", () => {
   test("homepage loads successfully", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/AI 리뷰 분석 툴/);
+    await expect(page).toHaveTitle(/리뷰 수집·AI 분석 툴/);
+  });
+
+  test("supported sites and browser install links are visible on desktop and mobile", async ({ page }) => {
+    for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(viewport);
+      await page.goto("/extension");
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("11개 쇼핑몰 리뷰를 CSV·엑셀로 다운로드");
+      for (const site of supportedSites) await expect(page.getByRole("heading", { name: site.name, exact: true })).toBeVisible();
+      for (const store of extensionStores) await expect(page.getByRole("link", { name: `${store.name}에서 설치` })).toHaveAttribute("href", store.url);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  });
+
+  test("public support content is readable with JavaScript disabled", async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false, ignoreHTTPSErrors: true, baseURL });
+    const page = await context.newPage();
+    try {
+      for (const path of ["/", "/extension"]) {
+        await page.goto(path);
+        for (const site of supportedSites) await expect(page.getByRole("heading", { name: site.name, exact: true })).toBeVisible();
+      }
+      await page.goto("/help/oliveyoung-review-csv-export");
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("올리브영 리뷰 CSV·엑셀 다운로드 방법");
+    } finally {
+      await context.close();
+    }
+  });
+
+  test("homepage leads to supported sites and the Olive Young guide", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "지원 사이트·설치 방법 보기", exact: true }).click();
+    await expect(page).toHaveURL(/\/extension$/);
+    await page.getByRole("link", { name: "올리브영 리뷰 다운로드 방법", exact: true }).click();
+    await expect(page).toHaveURL(/\/help\/oliveyoung-review-csv-export$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("올리브영 리뷰 CSV·엑셀 다운로드 방법");
+    await expect(page.getByText("ReviewBoost 리뷰 수집기 1.5.2 이상에서", { exact: false })).toBeVisible();
   });
 
   test("login page renders the Clerk sign-in widget", async ({ page }) => {

@@ -1,3 +1,4 @@
+import { supportedSites, extensionStores } from "@/lib/supported-sites";
 import { buildCanonicalUrl } from "@/lib/seo/url";
 import { getBaseUrl } from "@/lib/seo/metadata";
 import { getGatesForPlan } from "@/lib/plan_gates";
@@ -116,6 +117,7 @@ export function createSoftwareApplicationStructuredData(record: SeoPageRecord) {
         description: record.description,
         inLanguage: "ko",
         featureList: [
+          ...supportedSites.map((site) => `${site.name} 리뷰 CSV·엑셀 다운로드`),
           "리뷰 CSV 업로드와 자동 컬럼 확인",
           "감성 분석과 이슈 카테고리 분류",
           "부정 키워드와 긴급 리뷰 탐지",
@@ -228,5 +230,30 @@ export function createWebPageStructuredData(record: SeoPageRecord) {
   return {
     "@context": "https://schema.org",
     "@graph": [webpageNode(record), breadcrumbList(record.breadcrumbs)]
+  };
+}
+
+export function createExtensionStructuredData(record: SeoPageRecord) {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${absoluteUrl(record.canonicalPath)}#software`,
+        name: "ReviewBoost 리뷰 수집기",
+        applicationCategory: "BrowserApplication",
+        operatingSystem: "Windows, macOS, Linux",
+        url: absoluteUrl(record.canonicalPath),
+        description: record.description,
+        inLanguage: "ko",
+        featureList: supportedSites.map((site) => `${site.name} 리뷰 CSV·엑셀 다운로드${site.key === "oliveyoung" ? " (1.5.2 이상)" : ""}`),
+        downloadUrl: extensionStores.map((store) => store.url),
+        offers: [
+          { "@type": "Offer", name: "무료 리뷰 수집", price: "0", priceCurrency: "KRW", description: "하루 50개 리뷰 수집", url: absoluteUrl("/extension") },
+          { "@type": "Offer", name: "확장 프로그램 월 구독", price: "4900", priceCurrency: "KRW", description: "일일 수집 한도 없음 · 한 번에 최대 2,000개", url: absoluteUrl("/pricing") }
+        ]
+      },
+      breadcrumbList(record.breadcrumbs)
+    ]
   };
 }
