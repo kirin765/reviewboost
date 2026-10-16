@@ -1,4 +1,5 @@
 export type ContentBlock =
+  | { type: "video"; src: string; poster: string; captions: string; href: string; title: string; caption: string }
   | { type: "image"; src: string; alt: string; caption: string; width: number; height: number }
   | { type: "link"; text: string; href: string }
   | { type: "h2"; text: string }
@@ -177,6 +178,19 @@ export const blogPosts: BlogPost[] = [
     {
       "type": "p",
       "text": "이 글은 카페24 앱 리뷰이사를 개발·운영하는 작성자의 안내입니다. 여기서 설명하는 이전 기능은 ReviewBoost의 리뷰 분석 기능과 별개인 리뷰이사에서 제공합니다."
+    },
+    {
+      "type": "h2",
+      "text": "영상으로 이전 과정 확인하기"
+    },
+    {
+      "type": "video",
+      "src": "/videos/reviewisa-walkthrough.mp4",
+      "poster": "/videos/reviewisa-walkthrough-poster.png",
+      "captions": "/videos/reviewisa-walkthrough.ko.vtt",
+      "href": "https://www.youtube.com/watch?v=4BWEvjrZ4b4",
+      "title": "스마트스토어 리뷰를 카페24로 옮기는 방법 | 리뷰이사 사용 가이드",
+      "caption": "상품 선택부터 엑셀 미리보기, 이관 결과 확인까지 약 86초로 살펴보세요. 실제 앱 UI와 예시 데이터를 사용한 로컬 데모이며, 영상 속 리뷰는 실제 쇼핑몰에 등록되지 않았습니다."
     },
     {
       "type": "h2",

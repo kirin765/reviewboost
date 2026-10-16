@@ -39,6 +39,9 @@ export async function generateMetadata(props: BlogDetailPageProps): Promise<Meta
 }
 
 function getContentBlockKey(block: ContentBlock, index: number) {
+  if (block.type === "video") {
+    return `video-${block.src}-${index}`;
+  }
   if (block.type === "image") {
     return `image-${block.src}-${index}`;
   }
@@ -51,6 +54,29 @@ function getContentBlockKey(block: ContentBlock, index: number) {
 
 function renderContentBlock(block: ContentBlock, key: string) {
   switch (block.type) {
+    case "video":
+      return (
+        <figure key={key} className="my-6">
+          <video
+            controls
+            playsInline
+            preload="none"
+            poster={block.poster}
+            aria-label={block.title}
+            width={1920}
+            height={1080}
+            className="aspect-video h-auto w-full rounded-xl border border-[color:#e6e8f2]"
+          >
+            <source src={block.src} type="video/mp4" />
+            <track kind="captions" src={block.captions} srcLang="ko" label="한국어" />
+            <a href={block.href}>YouTube에서 영상 보기</a>
+          </video>
+          <figcaption className="mt-3 text-pretty text-sm leading-7 text-[var(--rb-muted-strong)]">
+            {block.caption}{" "}
+            <a href={block.href} className="rounded underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">YouTube에서 영상 보기</a>
+          </figcaption>
+        </figure>
+      );
     case "image":
       return (
         <figure key={key} className="my-6">

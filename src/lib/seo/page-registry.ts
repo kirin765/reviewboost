@@ -341,7 +341,7 @@ const publicRecords: SeoPageRecord[] = [
 const blogRecordMetaBySlug: Record<string, BlogRecordMeta> = {
   "reviewboost-extension-excel-guide": { updatedAt: "2026-09-24", primaryKeyword: "리뷰 엑셀 다운로드" },
   "cafe24-review-migration-checklist": {
-    updatedAt: "2026-09-24",
+    updatedAt: "2026-10-16",
     primaryKeyword: "카페24 리뷰 이전"
   },
   "coupang-review-analysis": {
