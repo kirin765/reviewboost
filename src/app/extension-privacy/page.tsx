@@ -15,7 +15,7 @@ export default function ExtensionPrivacyPage() {
       <div className="card">
         <h1>Privacy Policy — ReviewBoost Review Collector Extension</h1>
         <p className="muted">
-          <strong>Effective Date:</strong> 2026-07-10
+          <strong>Effective Date:</strong> 2026-10-14
           <br />
           <strong>Company Name:</strong> Onnuri stationery
           <br />
@@ -43,8 +43,9 @@ export default function ExtensionPrivacyPage() {
           <section className="legalSection">
             <h3>2. What the Extension Does</h3>
             <p>
-              The Extension reads publicly visible product review content from the Coupang and Naver Smart
-              Store/Brand Store product pages you are currently viewing, so you can export that review data as
+              The Extension reads publicly visible product review content from Coupang, Naver Smart Store/Brand
+              Store, Musinsa, 29CM, Gmarket, Auction, 11st, SSG, Ohouse, Kurly, Olive Young and Kakao Talk
+              Store product pages, so you can export that review data as
               CSV/Excel or send it to ReviewBoost for analysis.
             </p>
           </section>
@@ -53,33 +54,39 @@ export default function ExtensionPrivacyPage() {
             <h3>3. Permissions and Why We Need Them</h3>
             <ul>
               <li>
-                <strong>activeTab / host permissions</strong> (coupang.com, smartstore.naver.com, brand.naver.com) —
-                lets the Extension read review content on the product page you are actively viewing. The Extension
-                does not run on, or read data from, any other site.
+                <strong>activeTab / marketplace host permissions</strong> — let the Extension identify the active
+                product page and read public reviews from the supported marketplaces and their review APIs when
+                you request collection. ReviewBoost host access supports account connection, usage limits,
+                optional analysis and support requests.
               </li>
               <li>
-                <strong>storage</strong> — used to temporarily save collected review data locally in your browser
-                before export.
+                <strong>storage</strong> — stores collected reviews, up to five recent collection records
+                (including product URL, title and collection time), daily usage counts, and the account
+                connection token and its expiration time locally in your browser.
+              </li>
+              <li>
+                <strong>scripting</strong> — injects packaged scripts needed to collect reviews, including
+                capturing Smart Store/Brand Store review API requests for the collection you initiate.
               </li>
               <li>
                 <strong>page-to-extension messaging</strong> (reviewboost.co.kr) — allows the Extension to hand off
-                collected review data directly to the ReviewBoost web app when you choose to analyze it, without
-                a manual file upload step. Chrome uses <code>externally_connectable</code>; Firefox uses a
+                collected review data directly to the ReviewBoost web app when you choose to analyze it, and
+                receive an authentication token when you connect your account. Chrome uses <code>externally_connectable</code>; Firefox uses a
                 content-script message bridge on reviewboost.co.kr.
               </li>
             </ul>
           </section>
 
           <section className="legalSection">
-            <h3>4. Information We Do Not Collect</h3>
-            <p>The Extension does not collect, and has no access to:</p>
+            <h3>4. Information Handled by the Extension</h3>
             <ul>
-              <li>Your name, email address, or account credentials</li>
-              <li>Payment or financial information</li>
-              <li>Browsing history outside the product pages listed above</li>
-              <li>Keystrokes, passwords, or form data unrelated to review content</li>
+              <li>Public review text, ratings, dates, displayed author identifiers, image URLs and product information used for export or optional analysis.</li>
+              <li>An account connection token used to identify your ReviewBoost account and check collection limits. Your login password is not provided to the Extension.</li>
+              <li>Collection counts and operational events, such as reaching the free limit, anonymous collection and usage-request errors. Connected-account events may be linked to your account.</li>
+              <li>The email address, inquiry category and message you enter when you choose to send a support request.</li>
             </ul>
-            <p>We do not sell or share collected data with third parties for advertising purposes.</p>
+            <p>The Extension does not collect your general browsing history, unrelated keystrokes or payment-card details. Checkout is handled on the website by the payment provider.</p>
+            <p>We do not sell user data or use it for personalized advertising. Our use and transfer of information received through the Extension complies with the Chrome Web Store User Data Policy, including its Limited Use requirements.</p>
           </section>
 
           <section className="legalSection">
@@ -93,13 +100,28 @@ export default function ExtensionPrivacyPage() {
               </a>
               .
             </p>
+            <p>
+              Exporting a file does not upload its review contents to ReviewBoost. Account-connected collection
+              sends usage counts and uses the stored token to check your plan. Operational usage events can
+              also be sent without account connection. These requests do not include review text. Network
+              requests may produce routine server logs, including IP address and request time.
+            </p>
+            <p>
+              Support requests send the email address, category and message you provide to our server for
+              storage and to our support operator through a Telegram notification. Optional analysis uses
+              ReviewBoost hosting, storage and AI service providers as described in the main privacy policy.
+              Data is transferred over HTTPS and used to provide, maintain and support these features.
+            </p>
           </section>
 
           <section className="legalSection">
             <h3>6. Your Choices</h3>
             <p>
               You can remove locally stored data at any time by uninstalling the Extension or clearing its storage
-              via your browser&apos;s extension settings.
+              via your browser&apos;s extension settings. You can also delete recent collection records in the
+              Extension. Exported files remain on your device until you delete them. Analysis and support
+              submissions are optional. Contact us below to request deletion of server-held account, usage or
+              support data; records required for legal obligations may need to be retained.
             </p>
           </section>
 

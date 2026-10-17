@@ -9,6 +9,7 @@
 ## URL 구조
 
 - `/`
+- `/extension` — 리뷰 수집 확장 프로그램의 설치·지원 쇼핑몰·수집 한도·FAQ
 - `/features`
 - `/features/ai-review-analysis`
 - `/features/review-csv-export`
@@ -98,3 +99,53 @@
   - `first_touch_path`
 - `utm_source=chatgpt.com` 이 있으면 OpenAI 유입으로 우선 분류한다.
 - referrer 기반 분류는 `claude.ai`, `perplexity.ai`, `gemini.google.com`, `copilot.microsoft.com` 을 우선 처리한다.
+
+## 확장 프로그램 검색·AI 검색 개선 (2026-10-07)
+
+- `/extension`은 서버에서 HTML을 생성한다. 상품 설명, 10개 쇼핑몰 목록, 사용 단계, 무료·유료 한도와 FAQ를 로그인이나 클라이언트 JavaScript 없이 읽을 수 있다.
+- 최상위 `loading.tsx`를 `(auth)/loading.tsx`로 옮겨 공개 페이지의 본문이 JavaScript로 해제해야 하는 숨겨진 Suspense 영역에 들어가지 않도록 했다. 대시보드는 기존 전용 로딩 화면을 유지한다.
+- 제품 정보는 `src/lib/extension-content.ts`에서 관리하고 화면·SoftwareApplication/FAQPage JSON-LD·기존 `/llms.txt`에 함께 사용한다. 한도는 실제 확장 프로그램 설정과 테스트로 대조한다.
+- canonical과 Open Graph URL은 `/extension`으로 일치시키고, 전용 1200×630 공유 이미지를 제공한다. core sitemap과 헤더·푸터·홈·리뷰 추출 가이드에서 연결한다.
+- `/extension-connect`, `/extension-report`는 기존 noindex를 유지하며 sitemap에 추가하지 않는다.
+- `extension/STORE_LISTING.md`에 검색 의도가 분명한 제목·요약, 수집 한도, 제품 홈페이지 링크를 준비했다. Chrome·Firefox manifest의 `homepage_url`도 같은 제품 페이지를 가리킨다.
+
+### 배포 후 확인
+
+1. `/extension`, `/extension/opengraph-image`, `/sitemaps/core.xml`, `/llms.txt`의 운영 응답을 확인한다. 로컬 수정만으로 운영 페이지나 스토어 등록정보가 바뀌지는 않는다.
+2. Search Console에서 `/extension` URL 검사와 색인 요청을 진행하고 노출·클릭·쿼리 변화를 확인한다. AI 검색 기능 포함 여부도 Search Console 설정에서 확인한다.
+3. 스토어 등록정보를 갱신할 때 제품 홈페이지와 위 문서를 사용한다. manifest 수정은 다음 확장 프로그램 배포에 포함한다.
+4. 실제 소셜 서비스에서 공유 이미지 표시를 확인한다. 개발 환경 이미지 검증은 운영 서비스의 캐시 갱신까지 검증하지 않는다.
+
+### 근거와 범위
+
+- [Google의 AI 검색 최적화 안내](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide): 읽기 쉬운 고유 콘텐츠, 크롤링·색인 가능성, 명확한 사이트 구조가 기본이다. 별도 GEO/AEO schema나 `llms.txt`가 Google 검색 노출에 필요한 것은 아니다. 기존 `llms.txt`는 다른 소비자를 위한 제품 참고 정보로 유지한다.
+- [Chrome 웹 스토어 등록정보 안내](https://developer.chrome.com/docs/webstore/best-listing): 이름과 설명에서 실제 기능을 분명히 전달한다. 키워드 반복, 존재하지 않는 평가·리뷰·기능을 추가하지 않는다.
+- FAQ JSON-LD는 화면에 보이는 답변과 동일한 내용만 담는다. 리치 결과, 순위 상승 또는 AI 답변 인용을 보장하지 않는다.
+
+## Extension as the main product (2026-10-07)
+
+- Homepage, public navigation, pricing, features and help now lead with review collection and Excel/CSV export. AI analysis remains an optional workflow with its existing routes and plans.
+- The primary CTA is Chrome installation; the first pricing comparison is free (50 reviews/day) versus Extension (KRW 4,900/month). All collection plans retain the 2,000-review per-run cap.
+- Homepage product content and FAQs render on the server. The existing 30-second demonstration is user-controlled and explicitly labeled as an example.
+- Root metadata, social image, manifest, structured data and `llms.txt` describe the collector. `/extension` remains the detailed product reference; the two marketplace guides link directly to installation.
+
+### Acquisition and purchase measurement
+
+- `extension_install_click` measures store-link clicks, not completed installs. `placement` distinguishes header, homepage, pricing and guides.
+- Browser analytics queues events before Google's deferred script loads. Return query strings emit `checkout_return`, never verified revenue.
+- Checkout captures a bounded first-touch source/medium/campaign for 30 days and retrieves available GA client/session IDs. Both redirect and overlay checkout carry those fields in Paddle custom data. This does not automatically carry UTMs across a Chrome Web Store installation or another browser/device.
+- Signed Paddle completion webhooks send the standard GA4 `purchase` event with actual currency amounts, tax and a stable transaction ID. The Google Measurement Protocol API secret is server-only (`GA4_API_SECRET`, configured in Vercel Production). Sandbox/preview payments and visitors without a GA client ID are skipped.
+- GA's transaction-ID deduplication handles repeated deliveries. Delivery failures return a retryable webhook response after entitlement is persisted. `billing_analytics_sent` records accepted HTTP deliveries; GA's collect endpoint acceptance alone does not prove report ingestion.
+- Renewal events retain their own transaction IDs and do not reuse a checkout session older than 24 hours. Subscription creation no longer adds a second `extension_payment_completed` event.
+- Paddle/database payments remain the financial source of truth. GA may omit blocked analytics and cannot reconstruct historic acquisition data. Do not interpret `checkout_return`, store clicks, or quota consumption as proof of a saved export.
+- Google's non-ingesting validation endpoint accepted the purchase payload with zero validation messages. Verify attribution/revenue against the next real payment and subsequent renewal; no test purchase was charged to a customer.
+
+### First distribution experiment and customer learning (2026-10-07)
+
+- Published a distinct weekly review-checking tutorial on the existing Naver Blog: https://blog.naver.com/kwan765/224434516176. It discloses the developer's relationship to ReviewBoost, explains a repeat-use workflow and links to the existing demo and installation page. Source: `docs/marketing/2026-10-weekly-review-naver.html`.
+- Campaign: `utm_source=naver_blog&utm_medium=referral&utm_campaign=weekly_review_20261007`. Review after seven days (October 14): campaign sessions → store-link clicks → attributed completed purchases, with self-reported sources as a separate measure. Store-link clicks are not installs, and cross-browser attribution remains incomplete. Do not call a channel successful based only on impressions or a handful of clicks.
+- Paid users who successfully connect the extension can optionally answer two questions: intended task and discovery source. Neither question is required, and skipping sends no response. Answers use fixed options, are stored in first-party `funnel_events` with account-bound deduplication, and are not sent to GA4. Browser-local dismissal suppresses the prompt on return; another browser may show it again, but the server retains only the first response per account.
+- The production audit found no new completed payment after the analytics release. The latest payment remains October 6, KRW 4,900. That customer's recorded paid usage occurred on the purchase date (30 usage events); this is evidence of use, not 30 exports or multi-day retention. Seven-day retention and the next monthly renewal are not yet observable for this customer.
+- Chrome Web Store listing update submitted on October 7 using the publisher's happylife2080100 account, with automatic publication after approval enabled. Google confirmed submission. The existing v1.5.1 package, title/summary, category, video and screenshots remain in place; the detailed description, homepage/support links, permission explanations and data-use disclosures were updated. No new extension package was uploaded.
+- `/extension-privacy` was corrected and deployed before submission to cover all ten marketplaces, local collection history, account tokens, usage telemetry, support email/messages and operator notifications. Typecheck and all 393 unit tests passed; production privacy/product/support pages returned HTTP 200.
+- At 21:31 KST, Google rejected the first listing revision for **Yellow Argon / keyword spam**, specifically the ten-brand list in the description. The [spam FAQ](https://developer.chrome.com/docs/webstore/program-policies/spam-faq#keyword-spam) explicitly limits descriptions to five supported brands/sites. The revised 849-character description uses two examples and links to the full product-page list; the duplicate brand list in the single-purpose field was removed too. Google confirmed resubmission with automatic publication after approval enabled. No appeal or new binary was needed; approval is still pending.

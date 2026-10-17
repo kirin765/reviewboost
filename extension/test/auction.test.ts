@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("../src/lib/collector", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/lib/collector")>()),
+  realSleep: vi.fn().mockResolvedValue(undefined)
+}));
+
 import {
   AUCTION_REVIEW_ENDPOINT,
   auctionImageUrl,
@@ -8,6 +14,7 @@ import {
   parseAuctionPayload
 } from "../src/lib/auction";
 import { normalizeAuctionReview } from "../src/lib/normalize";
+import { collectAuction } from "../src/content/collect-auction";
 
 describe("auctionReviewBody", () => {
   it("builds JSON body with 1-based pageIndex (라이브 캡처 스키마)", () => {
@@ -114,5 +121,37 @@ describe("normalizeAuctionReview", () => {
     expect(r.author).toBe("abc****");
     expect(r.reviewedAt).toMatch(/^2026-08-26T/);
     expect(r.imageUrls).toEqual(["https://bampic.auction.co.kr/x.jpg"]);
+  });
+});
+
+describe("collectAuction", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("keeps body-less (별점만) reviews — 2026-10-14 실측 마크업(box__review-text 부재)", async () => {
+    // 라이브 캡처(아이템 F287965040)에서 33건 중 19건이 이 형태 — 수집·내보내기에 포함되어야 한다.
+    const page1 = {
+      d: `<ul class="list__review">
+        <li class="list-item" id="434359656" data-review-seq="434359656">
+          <div class="box__review-item"><div class="box__content">
+            <div class="box__info">
+              <div class="box__star"><span class="sprite__vip image__star"><span class="sprite__vip image__star-fill" style="width: 80%"></span><span class="for-a11y">이용자 평점 4점</span></span></div>
+              <p class="text__writer">jom****</p>
+              <p class="text__date">2026.08.03</p>
+            </div>
+            <div class="text__option">선택 <span class="text__option-selected">색상 / 그레이 / 355,900원 / </span></div>
+          </div></div>
+        </li>
+      </ul>`
+    };
+    const page2 = { d: `<ul class="list__review"></ul>` };
+    const okJson = (body: unknown) =>
+      new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+    const fetch = vi.fn().mockResolvedValueOnce(okJson(page1)).mockResolvedValueOnce(okJson(page2));
+    vi.stubGlobal("fetch", fetch);
+    const reviews = await collectAuction("F287965040", { maxItems: 10 });
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0].text).toBe("");
+    expect(reviews[0].rating).toBe(4);
+    expect(reviews[0].author).toBe("jom****");
   });
 });

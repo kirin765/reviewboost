@@ -1,3 +1,5 @@
+import { sendPurchaseAnalytics } from "@/lib/purchase-analytics";
+import { sanitizeCheckoutAttribution } from "@/lib/checkout-attribution";
 import {
   findUserIdByPaddleCustomerId,
   upsertPendingSubscription,
@@ -298,6 +300,7 @@ async function notifyPaymentReceived(args: {
   currency: string | null;
   managed: boolean;
   pending: boolean;
+  attribution: Record<string, string>;
 }): Promise<void> {
   const dedupeKey = `payment:${args.transactionId ?? args.subscriptionId ?? args.eventId ?? args.customerId ?? "unknown"}`;
 
@@ -316,7 +319,8 @@ async function notifyPaymentReceived(args: {
       total: args.total,
       currency: args.currency,
       managed: args.managed,
-      pending: args.pending
+      pending: args.pending,
+      ...args.attribution
     },
     dedupeKey
   );
@@ -365,6 +369,7 @@ function buildPaymentNotification(args: {
     paddlePlanForPriceId(priceId);
 
   return {
+    attribution: sanitizeCheckoutAttribution(customData),
     eventType: args.eventType,
     eventId: args.eventId,
     userId: args.receipt?.userId ?? extractUserId(args.data),
@@ -620,21 +625,7 @@ async function handleSubscriptionEvent(eventType: string, eventId: string | null
         customerId: normalized.customerId,
         extra: { email: customerEmail }
       });
-      if (planTier === "extension") {
-        const transactionId = asTrimmedString(asRecord(data)?.id);
-        await recordFunnelEvent(
-          "extension_payment_completed",
-          null,
-          {
-            event_type: eventType,
-            event_id: eventId,
-            paddle_subscription_id: normalized.id,
-            email: customerEmail,
-            pending: true
-          },
-          transactionId ?? eventId
-        );
-      }
+
     } else {
       await reportWebhookFailure({
         reason: "user_mapping_missing",
@@ -705,10 +696,26 @@ export async function POST(req: Request) {
       // 계정 공용 알림: ReviewBoost 결제가 아니어도(외부 상품) 모든 결제 완료를 알린다.
       // ReviewBoost entitlement/실패 알림은 ReviewBoost 거래에만 적용해 외부 상품의
       // pending 오염/실패 알림 스팸을 막는다.
-      const receipt = isReviewBoostTransaction(data)
+      //
+      // transaction.paid 는 결제만 끝난 시점(processing 이전)이라 payload 에 subscription_id 가
+      // 아직 없다 — Paddle 이 이후 처리 단계에서 채운다. 여기서 entitlement 를 시도하면
+      // invalid_entitlement_payload 오탐 알림이 발생하므로, 자격 반영은 subscription_id 가
+      // 포함되는 transaction.completed/order.completed 에서만 수행한다.
+      const canProvisionEntitlement = type === "transaction.completed" || type === "order.completed";
+      const receipt = canProvisionEntitlement && isReviewBoostTransaction(data)
         ? await handleEntitlementEvent(type, eventId, data)
         : null;
       await notifyPaymentReceived(buildPaymentNotification({ eventType: type, eventId, data, receipt }));
+      // Only signed, completed ReviewBoost transactions count as GA revenue.
+      if (canProvisionEntitlement && isReviewBoostTransaction(data)) {
+        const plan = paddlePlanForPriceId(extractPriceId(data));
+        const outcome = await sendPurchaseAnalytics(data, plan);
+        if (outcome === "sent") {
+          await recordFunnelEvent("billing_analytics_sent", receipt?.userId, {
+            transaction_id: extractTransactionId(data, eventId), plan_tier: plan
+          }, `ga-purchase:${extractTransactionId(data, eventId)}`);
+        }
+      }
     } else if (type === "transaction.updated") {
       await handleCustomerMappingEvent(type, eventId, data);
     } else if (

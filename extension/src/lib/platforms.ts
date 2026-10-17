@@ -9,6 +9,8 @@
  * URL 형태는 2026-08-30 실측/추정: [실측] = 직접 확인, [추정] = URL 규약 기반.
  */
 
+import { extractTalkstoreProduct } from "./talkstore";
+
 export type PlatformKey =
   | "coupang"
   | "smartstore"
@@ -20,7 +22,8 @@ export type PlatformKey =
   | "ssg"
   | "ohou"
   | "curly"
-  | "oliveyoung";
+  | "oliveyoung"
+  | "talkstore";
 
 export type PlatformMeta = {
   key: PlatformKey;
@@ -42,6 +45,14 @@ function bareHost(h: string): string {
 }
 
 export const PLATFORMS: PlatformMeta[] = [
+  {
+    key: "talkstore",
+    label: "톡스토어",
+    hostRe: /^store\.kakao\.com$/i,
+    // [실측 2026-10-14] store.kakao.com/{store}/products/{id} — store 슬러그는 수집기가
+    // location.href 에서 함께 추출해 리뷰 API 경로(/a/f-m/{store}/...)에 사용한다.
+    extract: (href) => extractTalkstoreProduct(href)?.productId ?? null
+  },
   {
     key: "oliveyoung",
     label: "올리브영",

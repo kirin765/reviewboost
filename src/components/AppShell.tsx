@@ -4,10 +4,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import SidebarNav from "@/components/navigation/SidebarNav";
+import ExtensionInstallLink from "@/components/extension/ExtensionInstallLink";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { buttonStyles } from "@/components/ui/Button";
 import { ShellContainer } from "@/components/ui/Primitives";
-import { EXTENSION_STORE_URL } from "@/lib/extension";
 import type { PlanTier } from "@/types/user";
 
 type AppShellProps = {
@@ -118,8 +118,8 @@ function getChromeConfig(pathname: string): ChromeConfig {
 function MarketingHeader({ userEmail }: { userEmail: string | null }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[color:#e6e8f2] bg-[rgba(255,255,255,0.85)] backdrop-blur-xl">
-      <ShellContainer className="flex h-18 items-center justify-between gap-6">
-        <div className="flex items-center gap-8">
+      <ShellContainer className="flex min-h-18 items-center justify-between gap-3 py-3">
+        <div className="flex min-w-0 items-center gap-8">
           <Link href="/" className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[var(--rb-accent)] text-[#ffffff]">
               <svg viewBox="0 0 20 20" className="h-5 w-5">
@@ -131,20 +131,19 @@ function MarketingHeader({ userEmail }: { userEmail: string | null }) {
             </span>
             <div>
               <strong className="block text-sm font-semibold tracking-[-0.02em] text-[var(--rb-fg)]">ReviewBoost</strong>
-              <span className="block text-[11px] text-[var(--rb-muted)]">셀러를 위한 AI 리뷰 분석</span>
+              <span className="block text-[11px] text-[var(--rb-muted)]">쇼핑몰 리뷰 → 엑셀·CSV</span>
             </div>
           </Link>
-          <nav className="hidden items-center gap-6 text-sm text-[var(--rb-muted-strong)] lg:flex">
-            <Link href="/features" className="hover:text-[var(--rb-fg)]">기능</Link>
+          <nav className="hidden items-center gap-5 text-sm text-[var(--rb-muted-strong)] lg:flex">
+            <Link href="/extension" className="hover:text-[var(--rb-fg)]">리뷰 수집기</Link>
             <Link href="/pricing" className="hover:text-[var(--rb-fg)]">요금제</Link>
-            <a href={EXTENSION_STORE_URL} target="_blank" rel="noreferrer" className="hover:text-[var(--rb-fg)]">Chrome 확장프로그램</a>
             <Link href="/help" className="hover:text-[var(--rb-fg)]">사용법</Link>
             <Link href="/blog" className="hover:text-[var(--rb-fg)]">블로그</Link>
+            <Link href="/features/ai-review-analysis" className="hover:text-[var(--rb-fg)]">AI 분석</Link>
           </nav>
         </div>
 
         <div className="flex items-center gap-3">
-          <LanguageSwitcher />
           {userEmail ? (
             <Link href="/dashboard" className={buttonStyles({ variant: "secondary", size: "sm" })}>
               대시보드
@@ -154,11 +153,12 @@ function MarketingHeader({ userEmail }: { userEmail: string | null }) {
               로그인
             </Link>
           )}
-          <Link href="/dashboard/analyze" className={buttonStyles({ variant: "primary", size: "sm" })}>
-            리뷰 분석
-          </Link>
+          <ExtensionInstallLink placement="header" className={buttonStyles({ variant: "primary", size: "sm" })}>무료 설치</ExtensionInstallLink>
         </div>
       </ShellContainer>
+      <nav aria-label="제품 메뉴" className="flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-[var(--rb-border)] px-5 py-3 text-sm lg:hidden">
+        <Link href="/extension">리뷰 수집기</Link><Link href="/pricing">요금제</Link><Link href="/help">사용법</Link><Link href="/features/ai-review-analysis">AI 분석</Link>
+      </nav>
     </header>
   );
 }
@@ -170,12 +170,12 @@ function MarketingFooter() {
         <div className="grid gap-8 text-sm text-[var(--rb-muted-strong)] md:grid-cols-3">
           <div>
             <h2 className="text-base font-semibold tracking-[-0.03em] text-[var(--rb-fg)]">ReviewBoost</h2>
-            <p className="mt-3 max-w-xs leading-7">쿠팡과 스마트스토어 셀러를 위한 AI 리뷰 분석 작업면.</p>
+            <p className="mt-3 max-w-xs leading-7">쿠팡과 스마트스토어 쇼핑몰 리뷰 → 엑셀·CSV 작업면.</p>
           </div>
           <div className="space-y-3">
             <Link href="/dashboard/analyze" className="block hover:text-[var(--rb-fg)]">분석하기</Link>
             <Link href="/features" className="block hover:text-[var(--rb-fg)]">기능</Link>
-            <Link href="/extension" className="block hover:text-[var(--rb-fg)]">리뷰 수집 지원 사이트</Link>
+            <Link href="/extension" className="block hover:text-[var(--rb-fg)]">리뷰 수집 확장 프로그램</Link>
             <Link href="/pricing" className="block hover:text-[var(--rb-fg)]">요금제</Link>
             <Link href="/help" className="block hover:text-[var(--rb-fg)]">사용법</Link>
           </div>

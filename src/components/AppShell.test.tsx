@@ -58,8 +58,8 @@ describe("AppShell", () => {
     );
 
     expect(screen.getAllByRole("link", { name: "요금제" }).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByRole("link", { name: "Chrome 확장프로그램" })).toBeTruthy();
-    expect(screen.getAllByRole("navigation").length).toBe(1);
+    expect(screen.getAllByRole("link", { name: "리뷰 수집기" }).length).toBeGreaterThan(0);
+    expect(screen.getByRole("navigation", { name: "제품 메뉴" })).toBeTruthy();
     expect(screen.getByText("문의: kwan765@naver.com")).toBeTruthy();
   });
 

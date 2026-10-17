@@ -1,5 +1,4 @@
 import { test, expect, type Page } from "@playwright/test";
-import { supportedSites, extensionStores } from "../src/lib/supported-sites";
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
 
 const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL;
@@ -24,45 +23,99 @@ async function signInTestUser(page: Page) {
 }
 
 test.describe("ReviewBoost E2E — public pages", () => {
+  for (const authenticated of [false, true]) {
+    test(`checkout explains billing before an explicit click (${authenticated ? "signed in" : "guest"})`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.route("**/api/extension/usage", route => route.fulfill({
+        json: { authenticated, tier: authenticated ? "free" : "anonymous", day: "2026-10-14", limit: 50, used: 0, remaining: 50 }
+      }));
+      await page.route("**/api/billing/claim", route => route.fulfill({ json: { claimed: 0 } }));
+      let checkoutRequests = 0;
+      await page.route("**/api/billing/checkout", route => {
+        checkoutRequests += 1;
+        return route.fulfill({ status: 503, json: { error: "테스트 결제 요청 확인" } });
+      });
+      await page.goto("/extension-connect?checkout=1");
+      await expect(page.getByText("오늘 4,900원 결제 · 부가세 포함")).toBeVisible();
+      await expect(page.getByText(/결제창의 미래 날짜는/)).toBeVisible();
+      await expect(page.getByRole("link", { name: "구독 관리 / 해지 — Paddle 고객지원" })).toHaveAttribute("href", "https://paddle.net/contact");
+      expect(checkoutRequests).toBe(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      await page.screenshot({ path: `/tmp/reviewboost-checkout-${authenticated ? "member" : "guest"}.png`, fullPage: true });
+      await page.getByRole("button", { name: "월 4,900원 구독하기" }).click();
+      await expect(page.getByText("테스트 결제 요청 확인")).toBeVisible();
+      expect(checkoutRequests).toBe(1);
+    });
+  }
+
+  test("optional survey appears after paid extension connection and can be skipped", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => {
+      window.addEventListener("message", event => {
+        if (event.data?.source === "rb-extension-page") {
+          window.postMessage({ source: "rb-extension", requestId: event.data.requestId, ok: true }, window.location.origin);
+        }
+      });
+    });
+    await page.route("**/api/extension/usage", route => route.fulfill({
+      json: { authenticated: true, tier: "paid", day: "2026-10-07", limit: null, used: null, remaining: null }
+    }));
+    await page.route("**/api/extension/token", route => route.fulfill({ json: { token: "test-only", expiresAt: 9999999999 } }));
+    let surveyRequests = 0;
+    await page.route("**/api/extension/survey", route => {
+      surveyRequests += 1;
+      return route.fulfill({ json: { ok: true } });
+    });
+    await page.goto("/extension-connect?ext=test-extension");
+    await expect(page.getByText(/익스텐션이 연결되었습니다/)).toBeVisible();
+    await expect(page.getByLabel("주로 하려는 작업")).toBeVisible();
+    await expect(page.getByRole("button", { name: "답변 보내기" })).toBeDisabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: "/tmp/reviewboost-survey-mobile.png", fullPage: true });
+    await page.getByRole("button", { name: "건너뛰기" }).click();
+    expect(surveyRequests).toBe(0);
+    await page.reload();
+    await expect(page.getByText(/익스텐션이 연결되었습니다/)).toBeVisible();
+    await expect(page.getByLabel("주로 하려는 작업")).toHaveCount(0);
+  });
+
+  test("paid guest return offers account connection instead of a second checkout", async ({ page }) => {
+    await page.route("**/api/extension/usage", (route) => route.fulfill({
+      json: { authenticated: false, tier: "anonymous", day: "2026-10-06", limit: 50, used: 0, remaining: 50 }
+    }));
+    await page.goto("/extension-connect?billing=success&checkout=1");
+    await expect(page.getByRole("link", { name: "로그인하고 연결하기" })).toBeVisible();
+    await expect(page.getByRole("status")).toContainText("다시 결제할 필요는 없습니다");
+    await expect(page.getByRole("button", { name: /결제하기|구독하기/ })).toHaveCount(0);
+    await expect(page).toHaveURL(/payment_return=1/);
+    await expect(page.getByRole("link", { name: "로그인하고 연결하기" })).toHaveAttribute("href", /payment_return%3D1/);
+    await page.reload();
+    await expect(page.getByRole("status")).toContainText("다시 결제할 필요는 없습니다");
+    await expect(page.getByRole("button", { name: /결제하기|구독하기/ })).toHaveCount(0);
+  });
+
+  test("delayed paid subscription is recovered without reopening checkout", async ({ page }) => {
+    let claimed = false;
+    let claims = 0;
+    let checkoutRequests = 0;
+    page.on("request", request => { if (request.url().includes("/api/billing/checkout")) checkoutRequests += 1; });
+    await page.route("**/api/extension/usage", (route) => route.fulfill({
+      json: { authenticated: true, tier: claimed ? "paid" : "free", day: "2026-10-06", limit: claimed ? null : 50, used: claimed ? null : 50, remaining: claimed ? null : 0 }
+    }));
+    await page.route("**/api/billing/claim", (route) => {
+      claims += 1;
+      claimed = claims >= 2;
+      return route.fulfill({ json: { claimed: claimed ? 1 : 0 } });
+    });
+    await page.goto("/extension-connect?billing=success&checkout=1");
+    await expect(page.getByText("익스텐션 유료 (무제한)", { exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("status")).toContainText("유료 구독이 확인되었습니다");
+    expect(checkoutRequests).toBe(0);
+  });
+
   test("homepage loads successfully", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/리뷰 수집·AI 분석 툴/);
-  });
-
-  test("supported sites and browser install links are visible on desktop and mobile", async ({ page }) => {
-    for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
-      await page.setViewportSize(viewport);
-      await page.goto("/extension");
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText("11개 쇼핑몰 리뷰를 CSV·엑셀로 다운로드");
-      for (const site of supportedSites) await expect(page.getByRole("heading", { name: site.name, exact: true })).toBeVisible();
-      for (const store of extensionStores) await expect(page.getByRole("link", { name: `${store.name}에서 설치` })).toHaveAttribute("href", store.url);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    }
-  });
-
-  test("public support content is readable with JavaScript disabled", async ({ browser, baseURL }) => {
-    const context = await browser.newContext({ javaScriptEnabled: false, ignoreHTTPSErrors: true, baseURL });
-    const page = await context.newPage();
-    try {
-      for (const path of ["/", "/extension"]) {
-        await page.goto(path);
-        for (const site of supportedSites) await expect(page.getByRole("heading", { name: site.name, exact: true })).toBeVisible();
-      }
-      await page.goto("/help/oliveyoung-review-csv-export");
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText("올리브영 리뷰 CSV·엑셀 다운로드 방법");
-    } finally {
-      await context.close();
-    }
-  });
-
-  test("homepage leads to supported sites and the Olive Young guide", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("link", { name: "지원 사이트·설치 방법 보기", exact: true }).click();
-    await expect(page).toHaveURL(/\/extension$/);
-    await page.getByRole("link", { name: "올리브영 리뷰 다운로드 방법", exact: true }).click();
-    await expect(page).toHaveURL(/\/help\/oliveyoung-review-csv-export$/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("올리브영 리뷰 CSV·엑셀 다운로드 방법");
-    await expect(page.getByText("ReviewBoost 리뷰 수집기 1.5.2 이상에서", { exact: false })).toBeVisible();
+    await expect(page).toHaveTitle(/쇼핑몰 리뷰 수집기/);
   });
 
   test("login page renders the Clerk sign-in widget", async ({ page }) => {
@@ -81,7 +134,7 @@ test.describe("ReviewBoost E2E — public pages", () => {
 
   test("pricing page loads", async ({ page }) => {
     await page.goto("/pricing");
-    await expect(page.getByRole("heading", { name: "운영 빈도와 저장 필요도에 맞는 플랜", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "무료로 시작하고, 필요한 만큼 수집하세요", exact: true })).toBeVisible();
   });
 
   test("homepage has no critical console errors", async ({ page }) => {

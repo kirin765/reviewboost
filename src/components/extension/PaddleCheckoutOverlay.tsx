@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { getCheckoutAnalytics } from "@/lib/checkout-analytics";
+
+import { useCallback, useRef, useState } from "react";
 
 /**
  * Paddle Checkout Overlay 결제 버튼 — 별도 페이지 이동 없이 현재 페이지 위에
@@ -19,6 +21,7 @@ type OverlayConfig = {
   successUrl: string;
   email?: string | null;
   hasAccount: boolean;
+  analytics?: Record<string, string>;
   userId?: string | null;
 };
 
@@ -45,21 +48,17 @@ export default function PaddleCheckoutOverlay({
   label = "결제하기",
   busyLabel = "결제 준비 중…",
   className = "btn btnPrimary",
-  autoOpen = false,
   onError
 }: {
   plan?: "basic" | "pro" | "extension";
   label?: string;
   busyLabel?: string;
   className?: string;
-  /** ?checkout=1 딥링크처럼 페이지 진입 즉시 결제창을 연다. */
-  autoOpen?: boolean;
   onError?: (message: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const paddlePromise = useRef<Promise<void> | null>(null);
-  const autoFired = useRef(false);
 
   const ensurePaddle = useCallback(() => {
     if (!paddlePromise.current) {
@@ -86,7 +85,7 @@ export default function PaddleCheckoutOverlay({
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan, mode: "overlay" })
+        body: JSON.stringify({ plan, mode: "overlay", analytics: await getCheckoutAnalytics() })
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -104,6 +103,7 @@ export default function PaddleCheckoutOverlay({
       window.Paddle?.Checkout.open({
         items: [{ priceId: cfg.priceId, quantity: 1 }],
         customData: {
+          ...cfg.analytics,
           plan_tier: cfg.plan,
           ...(cfg.userId ? { user_id: cfg.userId } : {})
         },
@@ -123,14 +123,6 @@ export default function PaddleCheckoutOverlay({
       setBusy(false);
     }
   }, [plan, ensurePaddle, onError]);
-
-  // ?checkout=1 딥링크: 마운트 후 1회 자동으로 결제창을 연다.
-  useEffect(() => {
-    if (autoOpen && !autoFired.current) {
-      autoFired.current = true;
-      void open();
-    }
-  }, [autoOpen, open]);
 
   return (
     <div>

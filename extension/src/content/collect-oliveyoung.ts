@@ -1,6 +1,6 @@
 import { COLLECT_PAGE_DELAY_MAX_MS, COLLECT_PAGE_DELAY_MIN_MS } from "../lib/config";
 import { paginate, randomDelay, realSleep } from "../lib/collector";
-import { cleanReviews, normalizeOliveYoungReview } from "../lib/normalize";
+import { normalizeOliveYoungReview } from "../lib/normalize";
 import { OLIVEYOUNG_REVIEW_URL, oliveYoungReviewBody, parseOliveYoungPage, type OliveYoungCursor } from "../lib/oliveyoung";
 import { CollectError, type RawReview } from "../lib/types";
 import type { RunOptions } from "./collect-coupang";
@@ -42,7 +42,7 @@ export async function collectOliveYoung(goodsNumber: string, opts: RunOptions): 
       seenReviews.add(key);
       return true;
     });
-    return { items: cleanReviews(unique.map(normalizeOliveYoungReview)), totalPages: cursor ? undefined : page };
+    return { items: unique.map(normalizeOliveYoungReview), totalPages: cursor ? undefined : page };
   }, {
     maxItems: opts.maxItems,
     pageSize: 10,

@@ -10,7 +10,8 @@ const mocks = vi.hoisted(() => ({
   paddlePlanForPriceId: vi.fn(),
   fetchPaddleCustomerEmail: vi.fn(),
   recordFunnelEvent: vi.fn(),
-  recordFunnelEventOnce: vi.fn()
+  recordFunnelEventOnce: vi.fn(),
+  sendPurchaseAnalytics: vi.fn()
 }));
 
 vi.mock("@/lib/billing", () => ({
@@ -34,6 +35,8 @@ vi.mock("@/lib/db/queries", () => ({
   recordFunnelEventOnce: mocks.recordFunnelEventOnce
 }));
 
+vi.mock("@/lib/purchase-analytics", () => ({ sendPurchaseAnalytics: mocks.sendPurchaseAnalytics }));
+
 import { POST } from "./route";
 
 function signedRequest(body: unknown, secret = "whsec_test") {
@@ -55,6 +58,7 @@ function signedRequest(body: unknown, secret = "whsec_test") {
 describe("POST /api/billing/webhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.sendPurchaseAnalytics.mockResolvedValue("skipped");
     process.env.PADDLE_WEBHOOK_SECRET = "whsec_test";
     delete process.env.PADDLE_WEBHOOK_SECRETS;
     process.env.PADDLE_BASIC_PRICE_ID = "pri_basic";
@@ -73,6 +77,28 @@ describe("POST /api/billing/webhook", () => {
     delete process.env.BILLING_ALERT_TELEGRAM_CHAT_ID;
     delete process.env.TELEGRAM_BOT_TOKEN;
     delete process.env.TELEGRAM_CHAT_ID;
+  });
+
+  it("only sends GA revenue from signed completed ReviewBoost transactions", async () => {
+    const data = { id: "txn_123", subscription_id: "sub_123", customer_id: "ctm_123", custom_data: { user_id: "user-1", plan_tier: "basic" }, items: [{ price: { id: "pri_basic" } }] };
+    const invalid = await POST(signedRequest({ event_type: "transaction.completed", data }, "wrong-secret"));
+    expect(invalid.status).toBe(400);
+    await POST(signedRequest({ event_type: "transaction.paid", data }));
+    await POST(signedRequest({ event_type: "subscription.created", data }));
+    expect(mocks.sendPurchaseAnalytics).not.toHaveBeenCalled();
+    const completed = await POST(signedRequest({ event_type: "transaction.completed", data }));
+    expect(completed.status).toBe(200);
+    expect(mocks.sendPurchaseAnalytics).toHaveBeenCalledExactlyOnceWith(data, "basic");
+  });
+
+  it("keeps paid access provisioned and lets Paddle retry when GA delivery fails", async () => {
+    mocks.sendPurchaseAnalytics.mockRejectedValue(new Error("purchase analytics delivery failed"));
+    const response = await POST(signedRequest({ event_type: "transaction.completed", data: {
+      id: "txn_retry", subscription_id: "sub_retry", customer_id: "ctm_123", custom_data: { user_id: "user-1", plan_tier: "basic" }, items: [{ price: { id: "pri_basic" } }]
+    } }));
+    expect(mocks.upsertSubscription).toHaveBeenCalled();
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: "purchase analytics delivery failed" });
   });
 
   it("returns 400 for invalid signatures", async () => {
@@ -479,11 +505,8 @@ describe("POST /api/billing/webhook", () => {
     );
     expect(mocks.upsertSubscription).not.toHaveBeenCalled();
     expect(mocks.upsertProfileCustomer).not.toHaveBeenCalled();
-    expect(mocks.recordFunnelEvent).toHaveBeenCalledWith(
-      "extension_payment_completed",
-      null,
-      expect.objectContaining({ email: "new@example.com", pending: true }),
-      "sub_pending"
+    expect(mocks.recordFunnelEvent).not.toHaveBeenCalledWith(
+      "extension_payment_completed", expect.anything(), expect.anything(), expect.anything()
     );
   });
 
@@ -571,14 +594,39 @@ describe("POST /api/billing/webhook", () => {
     expect(mocks.upsertSubscription).not.toHaveBeenCalled();
   });
 
-  it("handles transaction.paid as an entitlement event", async () => {
+  it("does not provision entitlement from transaction.paid (no subscription_id yet) and does not report a failure", async () => {
+    // Paddle fires transaction.paid before processing finishes, so the payload has no
+    // subscription_id yet. Entitlement must be provisioned from transaction.completed /
+    // subscription.* instead — attempting it here used to emit a false invalid_entitlement_payload alert.
     const req = signedRequest({
       event_type: "transaction.paid",
+      event_id: "evt_paid_no_sub",
+      data: {
+        id: "txn_paid_no_sub",
+        custom_data: { plan_tier: "extension" },
+        customer_id: "ctm_paid",
+        status: "paid",
+        items: [{ price: { id: "pri_ext" } }]
+      }
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mocks.upsertProfileCustomer).not.toHaveBeenCalled();
+    expect(mocks.upsertSubscription).not.toHaveBeenCalled();
+    expect(mocks.upsertPendingSubscription).not.toHaveBeenCalled();
+    expect(mocks.recordFunnelEvent).not.toHaveBeenCalled();
+  });
+
+  it("still provisions entitlement from transaction.completed when subscription_id is present", async () => {
+    const req = signedRequest({
+      event_type: "transaction.completed",
       data: {
         custom_data: { user_id: "user-paid" },
         customer_id: "ctm_paid",
         subscription_id: "sub_paid",
-        status: "paid",
+        status: "completed",
         items: [{ price: { id: "pri_pro" } }]
       }
     });

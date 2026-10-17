@@ -1,5 +1,7 @@
 "use client";
 
+import { getCheckoutAnalytics } from "@/lib/checkout-analytics";
+
 import React, { useMemo, useState } from "react";
 import FeedbackModal from "@/components/FeedbackModal";
 import { getErrorMessage } from "@/types/common";
@@ -32,7 +34,7 @@ export default function PricingActions({ plan }: Props) {
         headers: {
           "content-type": "application/json"
         },
-        body: JSON.stringify({ plan })
+        body: JSON.stringify({ plan, analytics: await getCheckoutAnalytics() })
       });
 
       let payload: CheckoutResponse | null = null;

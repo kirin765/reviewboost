@@ -1,7 +1,7 @@
 {
   "name": "ReviewBoost",
   "short_name": "ReviewBoost",
-  "description": "AI 리뷰 분석 · 우선순위 액션 제안 · PDF 리포트",
+  "description": "쇼핑몰 리뷰 수집 · 엑셀·CSV 내보내기 · 선택형 AI 분석",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

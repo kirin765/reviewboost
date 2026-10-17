@@ -14,29 +14,13 @@ describe("HomePageContent", () => {
       </I18nProvider>
     );
 
-    expect(screen.getByRole("heading", { name: "리뷰에서 상품의 문제를 찾아 매출을 개선하세요" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "리뷰 분석" })).toBeTruthy();
-    expect(screen.getAllByRole("link", { name: "Chrome 확장프로그램 설치" }).length).toBeGreaterThan(0);
-    expect(Array.from(document.querySelectorAll("[data-home-section]")).map((node) => node.getAttribute("data-home-section"))).toEqual([
-      "hero",
-      "problem",
-      "solution",
-      "product",
-      "result",
-      "pricing",
-      "faq",
-      "extension",
-      "explore",
-      "cta"
-    ]);
-    expect(screen.getByRole("link", { name: "Chrome에 설치하기" }).getAttribute("href")).toContain("chromewebstore.google.com");
-
-    const promo = document.querySelector<HTMLVideoElement>('[data-home-section="extension"] video');
-    expect(promo?.getAttribute("src")).toBe("/extension-promo.mp4");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toContain("쇼핑몰 리뷰 수집부터");
+    expect(screen.getAllByRole("link", { name: "Chrome에 무료로 설치" })[0].getAttribute("href")).toContain("chromewebstore.google.com");
+    expect(screen.getByRole("link", { name: "월 4,900원으로 시작" }).getAttribute("href")).toBe("/extension-connect?checkout=1");
+    expect(screen.getByRole("link", { name: "이미 파일이 있다면 분석하기" }).getAttribute("href")).toBe("/dashboard/analyze");
+    const promo = document.querySelector<HTMLVideoElement>('video');
+    expect(promo?.querySelector("source")?.getAttribute("src")).toBe("/extension-promo.mp4");
     expect(promo?.hasAttribute("controls")).toBe(true);
-    // React sets `muted` as a DOM property, never an attribute — assert the property.
-    expect(promo?.muted).toBe(true);
-    expect(screen.queryByText("home.heroTitle")).toBeNull();
-    expect(screen.queryByText("home.heroLead")).toBeNull();
+    expect(promo?.hasAttribute("autoplay")).toBe(false);
   });
 });

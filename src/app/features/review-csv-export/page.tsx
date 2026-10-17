@@ -43,6 +43,12 @@ export default function ReviewCsvExportFeaturePage() {
         ]}
         relatedLinks={[
           {
+            href: "/extension",
+            title: "리뷰 수집 확장 프로그램",
+            description: "12개 쇼핑몰 지원, 엑셀·CSV 다운로드 방법과 무료 수집 한도를 확인하세요.",
+            tag: "확장 프로그램"
+          },
+          {
             href: "/help/coupang-review-csv-export",
             title: "쿠팡 리뷰 CSV 추출 가이드",
             description: "실제 추출 단계와 업로드 흐름을 단계별로 확인하세요.",

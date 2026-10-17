@@ -21,23 +21,20 @@ import AnalyticsQueryEvents from "./AnalyticsQueryEvents";
 
 describe("AnalyticsQueryEvents payment_success handling", () => {
   beforeEach(() => {
+    window.history.replaceState({}, "", "/pricing");
     vi.clearAllMocks();
     mocks.useSearchParams.mockReturnValue(
       new URLSearchParams("payment_success=1&value=39000&currency=KRW&transaction_id=tx-1")
     );
   });
 
-  it("tracks payment event and strips processed query params", async () => {
+  it("tracks checkout return without trusting query-string revenue and strips processed query params", async () => {
     const replaceSpy = vi.spyOn(window.history, "replaceState");
 
     render(<AnalyticsQueryEvents />);
 
     await waitFor(() => {
-      expect(mocks.gtagEvent).toHaveBeenCalledWith("payment", {
-        value: 39000,
-        currency: "KRW",
-        transaction_id: "tx-1"
-      });
+      expect(mocks.gtagEvent).toHaveBeenCalledWith("checkout_return");
     });
 
     expect(replaceSpy).toHaveBeenCalled();
@@ -46,18 +43,14 @@ describe("AnalyticsQueryEvents payment_success handling", () => {
     expect(nextUrl.includes("transaction_id")).toBe(false);
   });
 
-  it("tracks payment on Paddle billing=success return and strips billing", async () => {
+  it("tracks checkout return on Paddle billing=success return and strips billing", async () => {
     mocks.useSearchParams.mockReturnValue(new URLSearchParams("billing=success&plan=extension&ext=abc"));
     const replaceSpy = vi.spyOn(window.history, "replaceState");
 
     render(<AnalyticsQueryEvents />);
 
     await waitFor(() => {
-      expect(mocks.gtagEvent).toHaveBeenCalledWith("payment", {
-        value: 0,
-        currency: "KRW",
-        transaction_id: undefined
-      });
+      expect(mocks.gtagEvent).toHaveBeenCalledWith("checkout_return");
     });
 
     const nextUrl = String(replaceSpy.mock.calls.at(-1)?.[2] ?? "");
@@ -71,6 +64,24 @@ describe("AnalyticsQueryEvents payment_success handling", () => {
     render(<AnalyticsQueryEvents />);
 
     await new Promise((r) => setTimeout(r, 0));
+    expect(mocks.gtagEvent).not.toHaveBeenCalled();
+  });
+
+  it("preserves extension payment recovery when removing analytics flags", async () => {
+    window.history.replaceState({}, "", "/extension-connect?billing=success&checkout=1&ext=abc");
+    mocks.useSearchParams.mockReturnValue(new URLSearchParams("billing=success&checkout=1&ext=abc"));
+    render(<AnalyticsQueryEvents />);
+    await waitFor(() => expect(mocks.gtagEvent).toHaveBeenCalledTimes(1));
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get("payment_return")).toBe("1");
+    expect(params.has("billing")).toBe(false);
+    expect(params.has("checkout")).toBe(false);
+    expect(params.get("ext")).toBe("abc");
+  });
+
+  it("does not count the recovery flag as a new payment", () => {
+    mocks.useSearchParams.mockReturnValue(new URLSearchParams("payment_return=1&ext=abc"));
+    render(<AnalyticsQueryEvents />);
     expect(mocks.gtagEvent).not.toHaveBeenCalled();
   });
 });

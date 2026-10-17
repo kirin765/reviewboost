@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyBlankTextOption,
   cleanReviews,
   clampRating,
   normalizeCoupangReview,
@@ -168,5 +169,21 @@ describe("cleanReviews / toReviewRows", () => {
   it("strips extra fields for the funnel payload", () => {
     const rows = toReviewRows([{ text: "ok", rating: 5, reviewedAt: "2026-01-01T00:00:00.000Z", title: "t", author: "a", helpfulCount: 2 }]);
     expect(rows[0]).toEqual({ text: "ok", rating: 5, reviewedAt: "2026-01-01T00:00:00.000Z" });
+  });
+});
+
+describe("applyBlankTextOption", () => {
+  const reviews = [
+    { text: "좋아요", rating: 5 },
+    { text: "", rating: 4 },
+    { text: "   ", rating: 3 }
+  ];
+  it("keeps every review when the option is on (기본)", () => {
+    expect(applyBlankTextOption(reviews, true)).toHaveLength(3);
+  });
+  it("drops body-less reviews when the option is off", () => {
+    const filtered = applyBlankTextOption(reviews, false);
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].text).toBe("좋아요");
   });
 });

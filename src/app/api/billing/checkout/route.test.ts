@@ -118,6 +118,20 @@ describe("POST /api/billing/checkout", () => {
     expect(mocks.paddleRequest).not.toHaveBeenCalled();
   });
 
+  it("passes bounded attribution through overlay and redirect checkout without allowing identity overrides", async () => {
+    for (const mode of ["overlay", "redirect"]) {
+      const response = await POST(new Request("https://reviewboost.app/api/billing/checkout", {
+        method: "POST", headers: { origin: "https://reviewboost.app", "content-type": "application/json" },
+        body: JSON.stringify({ plan: "extension", mode, analytics: { ga_client_id: "123.456", ga_session_id: "789", acquisition_source: "naver", user_id: "other-user", ga_checkout_at: "1" } })
+      }));
+      expect(response.status).toBe(200);
+      const metadata = mode === "overlay" ? (await response.json()).analytics : mocks.paddleRequest.mock.calls.at(-1)![1].body.custom_data;
+      expect(metadata).toMatchObject({ ga_client_id: "123.456", ga_session_id: "789", acquisition_source: "naver" });
+      expect(Number(metadata.ga_checkout_at)).toBeGreaterThan(1);
+      expect(metadata.user_id).not.toBe("other-user");
+    }
+  });
+
   it("returns 503 when paddle configuration is incomplete", async () => {
     mocks.isPaddleConfigured.mockReturnValue(false);
 

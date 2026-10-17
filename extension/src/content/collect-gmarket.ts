@@ -7,7 +7,7 @@ import {
   parseGmarketTotalPages
 } from "../lib/gmarket";
 import { paginate, randomDelay, realSleep } from "../lib/collector";
-import { cleanReviews, normalizeGmarketReview } from "../lib/normalize";
+import { normalizeGmarketReview } from "../lib/normalize";
 import { CollectError } from "../lib/types";
 import type { RunOptions } from "./collect-coupang";
 
@@ -52,7 +52,7 @@ export async function collectGmarket(goodsCode: string, opts: RunOptions): Promi
     }
   );
 
-  const reviews = cleanReviews(raw.map((r) => normalizeGmarketReview(r as Record<string, unknown>)));
+  const reviews = raw.map((r) => normalizeGmarketReview(r as Record<string, unknown>));
   if (reviews.length === 0) throw new CollectError("EMPTY", "이 상품에는 분석할 상품평이 없습니다.");
   return reviews;
 }

@@ -1,7 +1,7 @@
 import { COLLECT_PAGE_DELAY_MAX_MS, COLLECT_PAGE_DELAY_MIN_MS } from "../lib/config";
 import { musinsaReviewUrl, parseMusinsaPage } from "../lib/musinsa";
 import { paginate, randomDelay, realSleep } from "../lib/collector";
-import { cleanReviews, normalizeMusinsaReview } from "../lib/normalize";
+import { normalizeMusinsaReview } from "../lib/normalize";
 import { CollectError } from "../lib/types";
 import type { RunOptions } from "./collect-coupang";
 
@@ -46,7 +46,7 @@ export async function collectMusinsa(goodsNo: string, opts: RunOptions): Promise
     }
   );
 
-  const reviews = cleanReviews(raw.map((r) => normalizeMusinsaReview(r as Record<string, unknown>)));
+  const reviews = raw.map((r) => normalizeMusinsaReview(r as Record<string, unknown>));
   if (reviews.length === 0) throw new CollectError("EMPTY", "이 상품에는 분석할 리뷰가 없습니다.");
   return reviews;
 }

@@ -1,6 +1,6 @@
 /**
  * 리눅스용 다중 플랫폼 실시간 E2E — 실제 확장(dist)을 Chromium 에 로드하고,
- * 8개 신규 플랫폼(29CM·11번가·SSG·무신사·오늘의집·G마켓·컬리·옥션)의
+ * 신규 플랫폼(29CM·11번가·SSG·무신사·오늘의집·G마켓·컬리·옥션·올리브영·톡스토어)의
  * 실제 상품 페이지에서 리뷰 수집 → popup 다운로드(CSV/XLSX)까지 검증한다.
  *
  * (e2e-extension.mjs 의 macOS/쿠팡 전용 흐름을 Linux + 전체 플랫폼으로 일반화)
@@ -30,6 +30,7 @@ const CHROME_BIN = process.env.CHROME_BIN ?? "/usr/bin/chromium";
 
 // 플랫폼 매트릭스 — 상품 URL 은 각 어댑터 테스트 픽스처(실측 캡처)에서 가져온 실상품
 const PLATFORMS = [
+  { key: "talkstore", label: "톡스토어", url: "https://store.kakao.com/dongwonfnb/products/61887415", apiHint: "/reviews?" },
   { key: "oliveyoung", label: "올리브영", url: "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A000000247719", apiHint: "review/api/v2/reviews/cursor" },
   { key: "29cm", label: "29CM", url: "https://www.29cm.co.kr/products/2632177", apiHint: "review-api.29cm.co.kr" },
   { key: "11st", label: "11번가", url: "https://www.11st.co.kr/products/9553196713", apiHint: "review-list" },

@@ -1,3 +1,4 @@
+import { sanitizeCheckoutAttribution } from "@/lib/checkout-attribution";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { appBaseUrl, isPaddleConfigured, paddleBrowserToken, paddleEnv, paddlePriceIdForPlan, paddleRequest } from "@/lib/paddle";
 import { findPaddleCustomerIdByUserId } from "@/lib/billing";
@@ -6,6 +7,7 @@ import { logApiError } from "@/lib/api_log";
 import { csrfErrorResponse, isSameOriginRequest } from "@/lib/csrf";
 
 type Body = {
+  analytics?: unknown;
   plan?: "basic" | "pro" | "extension";
   mode?: "redirect" | "overlay";
   /** 게스트(비로그인) 결제용 고객 이메일 — Paddle 고객 정보로 저장돼 나중에 계정과 연결된다. */
@@ -190,6 +192,8 @@ export async function POST(req: Request) {
     const plan: CheckoutPlan = body.plan === "pro" ? "pro" : body.plan === "extension" ? "extension" : "basic";
     const mode: "redirect" | "overlay" = body.mode === "overlay" ? "overlay" : "redirect";
     debug.plan = plan;
+    const analytics = sanitizeCheckoutAttribution(body.analytics);
+    if (analytics.ga_session_id) analytics.ga_checkout_at = String(Date.now());
 
     // 게스트(비로그인) 결제: 로그인 없이도 진행 가능. 이메일은 Paddle 고객 정보로
     // 남고, 결제 후 같은 이메일로 로그인하면 구독이 자동 연결된다(웹훅 → pending → claim).
@@ -260,10 +264,11 @@ export async function POST(req: Request) {
     // (게스트도 로그인 없이 바로 결제 가능 — customer_email 은 클라이언트가 채운다)
     if (mode === "overlay") {
       if (plan === "extension") {
-        await recordFunnelEvent("extension_checkout_started", user?.id ?? null, { mode: "overlay", guest: !user });
+        await recordFunnelEvent("extension_checkout_started", user?.id ?? null, { mode: "overlay", guest: !user, ...analytics });
       }
       return Response.json({
         mode: "overlay",
+        analytics,
         plan,
         priceId,
         clientToken: paddleBrowserToken(),
@@ -297,6 +302,7 @@ export async function POST(req: Request) {
       body: {
         items: [{ price_id: priceId, quantity: 1 }],
         custom_data: {
+          ...analytics,
           ...(user ? { user_id: user.id } : {}),
           plan_tier: plan
         },
@@ -328,7 +334,7 @@ export async function POST(req: Request) {
 
     // 퍼널 ②: 결제 세션 생성 성공 후에만 기록 — 503/설정 오류가 지표를 부풀리지 않게.
     if (plan === "extension") {
-      await recordFunnelEvent("extension_checkout_started", user?.id ?? null, { mode: "redirect", guest: !user });
+      await recordFunnelEvent("extension_checkout_started", user?.id ?? null, { mode: "redirect", guest: !user, ...analytics });
     }
 
     return Response.json({ url });

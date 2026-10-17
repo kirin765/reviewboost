@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ReviewBoost 리뷰 수집기",
-  "version": "1.5.2",
+  "version": "1.6.1",
   "homepage_url": "https://reviewboost.co.kr/extension",
   "description": "쿠팡·스마트스토어 등 지원 쇼핑몰 상품의 공개 리뷰를 엑셀/CSV로 저장하고, 선택하여 ReviewBoost 무료 분석으로 연결합니다.",
   "icons": {
@@ -45,7 +45,8 @@
     "*://www.kurly.com/*",
     "*://api.kurly.com/*",
     "*://www.oliveyoung.co.kr/*",
-    "*://m.oliveyoung.co.kr/review/api/*"
+    "*://m.oliveyoung.co.kr/review/api/*",
+    "*://store.kakao.com/*"
   ],
   "content_scripts": [
     {
@@ -61,7 +62,8 @@
         "*://item.gmarket.co.kr/Item*",
         "*://*.auction.co.kr/DetailView.aspx*",
         "*://www.kurly.com/goods/*",
-        "*://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do*"
+        "*://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do*",
+        "*://store.kakao.com/*/products/*"
       ],
       "js": [
         "content.js"

@@ -1,5 +1,5 @@
-import { extensionDescription } from "@/lib/supported-sites";
 import { blogPosts } from "@/lib/blog-posts";
+import { extensionProduct } from "@/lib/extension-content";
 
 export type SeoSection =
   | "home"
@@ -91,12 +91,28 @@ function breadcrumbs(...items: SeoBreadcrumb[]) {
 
 const publicRecords: SeoPageRecord[] = [
   {
-    section: "features", slug: "extension",
-    title: "리뷰 다운로드 확장 프로그램 | 올리브영 등 11개 사이트",
-    description: extensionDescription,
-    primaryKeyword: "리뷰 다운로드 확장 프로그램", canonicalPath: "/extension",
-    updatedAt: "2026-10-11", schema: ["softwareApplication"], indexable: true,
-    breadcrumbs: [HOME_BREADCRUMB, { label: "리뷰 수집기", path: "/extension" }]
+    section: "features",
+    slug: "extension",
+    title: "리뷰 수집 확장 프로그램 · 쿠팡·스마트스토어 엑셀 다운로드",
+    description: extensionProduct.description,
+    primaryKeyword: "리뷰 수집 확장 프로그램",
+    canonicalPath: extensionProduct.path,
+    updatedAt: extensionProduct.updatedAt,
+    schema: ["softwareApplication", "webPage"],
+    indexable: true,
+    breadcrumbs: breadcrumbs({ label: "리뷰 수집 확장 프로그램", path: extensionProduct.path })
+  },
+  {
+    section: "home",
+    slug: "home",
+    title: "쇼핑몰 리뷰 수집기 · 쿠팡·스마트스토어 엑셀 다운로드",
+    description: extensionProduct.description,
+    primaryKeyword: "리뷰 수집기",
+    canonicalPath: "/",
+    updatedAt: extensionProduct.updatedAt,
+    schema: ["softwareApplication"],
+    indexable: true,
+    breadcrumbs: [HOME_BREADCRUMB]
   },
   {
     section: "help", slug: "oliveyoung-review-csv-export",
@@ -107,22 +123,9 @@ const publicRecords: SeoPageRecord[] = [
     breadcrumbs: [HOME_BREADCRUMB, { label: "사용법", path: "/help" }, { label: "올리브영 리뷰 다운로드", path: "/help/oliveyoung-review-csv-export" }]
   },
   {
-    section: "home",
-    slug: "home",
-    title: "리뷰 수집·AI 분석 툴 | 올리브영 등 11개 사이트 지원",
-    description:
-      "쿠팡·스마트스토어·무신사·올리브영 등 11개 쇼핑몰 리뷰를 확장 프로그램으로 CSV·엑셀 다운로드하고 AI로 분석하세요. 지원 사이트와 설치 방법을 확인할 수 있습니다.",
-    primaryKeyword: "AI 리뷰 분석",
-    canonicalPath: "/",
-    updatedAt: "2026-10-11",
-    schema: ["softwareApplication"],
-    indexable: true,
-    breadcrumbs: [HOME_BREADCRUMB]
-  },
-  {
     section: "features",
     slug: "features",
-    title: "리뷰 운영 기능 모음",
+    title: "리뷰 수집과 AI 분석 기능",
     description:
       "AI 리뷰 분석, 리뷰 CSV 추출, 부정리뷰 대응, FAQ 생성까지 ReviewBoost의 핵심 기능을 한곳에서 비교하고 바로 시작할 수 있습니다.",
     primaryKeyword: "리뷰 분석 툴",
@@ -156,7 +159,7 @@ const publicRecords: SeoPageRecord[] = [
       "쿠팡과 스마트스토어 상품 URL에서 리뷰 CSV를 손쉽게 확보하고 분석 단계로 바로 연결하는 ReviewBoost 리뷰 CSV 추출 기능 안내입니다.",
     primaryKeyword: "쿠팡 리뷰 CSV 추출",
     canonicalPath: "/features/review-csv-export",
-    updatedAt: "2026-03-31",
+    updatedAt: "2026-10-07",
     schema: ["webPage"],
     indexable: true,
     breadcrumbs: breadcrumbs(
@@ -199,12 +202,11 @@ const publicRecords: SeoPageRecord[] = [
   {
     section: "pricing",
     slug: "pricing",
-    title: "AI 리뷰 분석 요금제 비교",
-    description:
-      "무료·Basic·Pro 플랜을 비교하고 리뷰 분석 횟수, 저장 기능, PDF 리포트, 대량 분석 지원 범위를 확인하세요.",
-    primaryKeyword: "리뷰 분석 툴",
+    title: "리뷰 수집기 요금제 · 무료와 월 4,900원",
+    description: "하루 50개 무료 수집과 월 4,900원 Extension 플랜을 비교하세요. 일일 수집 한도 해제와 선택형 AI 분석 Basic·Pro 요금제를 안내합니다.",
+    primaryKeyword: "리뷰 수집기 요금제",
     canonicalPath: "/pricing",
-    updatedAt: "2026-03-31",
+    updatedAt: "2026-10-07",
     schema: ["offerCatalog"],
     indexable: true,
     breadcrumbs: breadcrumbs({ label: "가격", path: "/pricing" })
@@ -212,12 +214,11 @@ const publicRecords: SeoPageRecord[] = [
   {
     section: "help",
     slug: "help",
-    title: "리뷰 분석 사용법 허브",
-    description:
-      "CSV 준비, 쿠팡 리뷰 CSV 추출, 스마트스토어 리뷰 관리, FAQ 활용까지 ReviewBoost 사용법을 단계별 가이드로 정리했습니다.",
-    primaryKeyword: "스마트스토어 리뷰 관리",
+    title: "리뷰 수집기 사용법 · 엑셀·CSV 다운로드 가이드",
+    description: "ReviewBoost 확장 프로그램 설치부터 쿠팡·스마트스토어 리뷰 수집과 엑셀·CSV 다운로드까지. 수집 한도와 선택형 AI 분석 방법을 확인하세요.",
+    primaryKeyword: "리뷰 수집기 사용법",
     canonicalPath: "/help",
-    updatedAt: "2026-03-31",
+    updatedAt: "2026-10-07",
     schema: ["collectionPage"],
     indexable: true,
     breadcrumbs: breadcrumbs({ label: "사용법", path: "/help" })
@@ -246,7 +247,7 @@ const publicRecords: SeoPageRecord[] = [
       "쿠팡 리뷰 CSV를 추출하고 ReviewBoost에서 바로 분석하는 흐름을 단계별로 설명하는 실전 가이드입니다.",
     primaryKeyword: "쿠팡 리뷰 CSV 추출",
     canonicalPath: "/help/coupang-review-csv-export",
-    updatedAt: "2026-03-31",
+    updatedAt: "2026-10-07",
     schema: ["article"],
     indexable: true,
     breadcrumbs: breadcrumbs(
@@ -262,7 +263,7 @@ const publicRecords: SeoPageRecord[] = [
       "스마트스토어 리뷰 데이터를 내려받고 ReviewBoost로 감성 분석과 FAQ 생성까지 연결하는 사용 가이드입니다.",
     primaryKeyword: "스마트스토어 리뷰 CSV 추출",
     canonicalPath: "/help/smartstore-review-csv-export",
-    updatedAt: "2026-03-31",
+    updatedAt: "2026-10-07",
     schema: ["article"],
     indexable: true,
     breadcrumbs: breadcrumbs(
@@ -341,7 +342,7 @@ const publicRecords: SeoPageRecord[] = [
 const blogRecordMetaBySlug: Record<string, BlogRecordMeta> = {
   "reviewboost-extension-excel-guide": { updatedAt: "2026-09-24", primaryKeyword: "리뷰 엑셀 다운로드" },
   "cafe24-review-migration-checklist": {
-    updatedAt: "2026-10-16",
+    updatedAt: "2026-09-24",
     primaryKeyword: "카페24 리뷰 이전"
   },
   "coupang-review-analysis": {
@@ -375,6 +376,10 @@ const blogRecordMetaBySlug: Record<string, BlogRecordMeta> = {
   "review-negative-keyword-extraction": {
     updatedAt: "2026-07-01",
     primaryKeyword: "리뷰 부정 키워드 추출"
+  },
+  "review-collection-methods-comparison": {
+    updatedAt: "2026-10-17",
+    primaryKeyword: "리뷰 수집 방법 비교"
   }
 };
 

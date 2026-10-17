@@ -1,7 +1,7 @@
 import { COLLECT_PAGE_DELAY_MAX_MS, COLLECT_PAGE_DELAY_MIN_MS } from "../lib/config";
 import { parseTwentyNinePage, twentyNineReviewApiUrl } from "../lib/29cm";
 import { paginate, randomDelay, realSleep } from "../lib/collector";
-import { cleanReviews, normalize29cmReview } from "../lib/normalize";
+import { normalize29cmReview } from "../lib/normalize";
 import { CollectError } from "../lib/types";
 import type { RunOptions } from "./collect-coupang";
 
@@ -52,7 +52,7 @@ export async function collect29cm(itemId: string, opts: RunOptions): Promise<imp
     }
   );
 
-  const reviews = cleanReviews(raw.map((r) => normalize29cmReview(r as Record<string, unknown>)));
+  const reviews = raw.map((r) => normalize29cmReview(r as Record<string, unknown>));
   if (reviews.length === 0) throw new CollectError("EMPTY", "이 상품에는 분석할 리뷰가 없습니다.");
   return reviews;
 }

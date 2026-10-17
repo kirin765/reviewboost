@@ -6,7 +6,7 @@ import {
   parseAuctionPayload
 } from "../lib/auction";
 import { paginate, randomDelay, realSleep } from "../lib/collector";
-import { cleanReviews, normalizeAuctionReview } from "../lib/normalize";
+import { normalizeAuctionReview } from "../lib/normalize";
 import { CollectError } from "../lib/types";
 import type { RunOptions } from "./collect-coupang";
 
@@ -53,7 +53,8 @@ export async function collectAuction(itemNo: string, opts: RunOptions): Promise<
     }
   );
 
-  const reviews = cleanReviews(raw.map((r) => normalizeAuctionReview(r as Record<string, unknown>)));
+  // 본문 없는 별점만 후기도 포함 (실측 2026-10-14 — 옥션에 다수 존재, .box__review-text 부재).
+  const reviews = raw.map((r) => normalizeAuctionReview(r as Record<string, unknown>));
   if (reviews.length === 0) throw new CollectError("EMPTY", "이 상품에는 분석할 리뷰가 없습니다.");
   return reviews;
 }

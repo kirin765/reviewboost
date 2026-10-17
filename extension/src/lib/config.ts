@@ -30,6 +30,9 @@ export const USAGE_STORAGE_KEY = "rb_usage";
 /** chrome.storage.local 키: 최근 수집 내역 (최대 HISTORY_LIMIT 건 보관) */
 export const HISTORY_STORAGE_KEY = "rb_history";
 
+/** chrome.storage.local 키: 팝업 수집 옵션 (본문 없는 별점만 리뷰 포함 여부) */
+export const PREFERENCES_STORAGE_KEY = "rb_prefs";
+
 /** 비로그인(및 무료 계정) 일일 수집 한도 — 서버 EXTENSION_FREE_DAILY_LIMIT 와 동일 */
 export const FREE_DAILY_LIMIT = 50;
 

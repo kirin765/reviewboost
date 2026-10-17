@@ -1,6 +1,6 @@
 import { COLLECT_PAGE_DELAY_MAX_MS, COLLECT_PAGE_DELAY_MIN_MS } from "../lib/config";
 import { paginate, randomDelay, realSleep } from "../lib/collector";
-import { cleanReviews, normalizeSmartstoreReview } from "../lib/normalize";
+import { normalizeSmartstoreReview } from "../lib/normalize";
 import {
   buildGroupProductReviewRequest,
   buildProductSummaryReviewRequest,
@@ -89,8 +89,11 @@ async function collectWithRequest(
       } catch {
         throw new CollectError("NETWORK", "네트워크 오류로 리뷰를 불러오지 못했습니다.");
       }
-      if (res.status === 403) {
-        throw new CollectError("BLOCKED", "네이버가 자동 요청을 차단했습니다. 잠시 후 다시 시도해 주세요.");
+      if (res.status === 403 || res.status === 429) {
+        throw new CollectError(
+          "BLOCKED",
+          "네이버가 리뷰 요청을 일시적으로 제한했습니다.\n10~30분 후 다시 시도해 주세요."
+        );
       }
       if (res.status === 204) return { items: [] }; // 리뷰 없음
       const ct = res.headers.get("content-type") || "";
@@ -111,7 +114,8 @@ async function collectWithRequest(
     }
   );
 
-  const reviews = cleanReviews(raw.map((r) => normalizeSmartstoreReview(r as Record<string, unknown>)));
+  // 별점만 남긴 리뷰(본문 없음)도 수집·내보내기에 포함한다 — 텍스트 필터는 분석 전송(toReviewRows)에서만.
+  const reviews = raw.map((r) => normalizeSmartstoreReview(r as Record<string, unknown>));
   if (reviews.length === 0) throw new CollectError("EMPTY", "이 상품에는 분석할 리뷰가 없습니다.");
   return reviews;
 }

@@ -1,11 +1,11 @@
-# Source build — ReviewBoost 리뷰 수집기 (Firefox) v1.5.2
+# Source build — ReviewBoost 리뷰 수집기 (Firefox) v1.6.1
 
 This archive is the readable source for the submitted Firefox add-on. The files in the
 submitted `.zip` are generated from this source with **esbuild** (bundled + minified).
 
 ## Requirements
 
-- Node.js 20+ (developed on Node 24)
+- Node.js 20+ (release verified on Node 22.23.2)
 - npm (uses the included `package-lock.json`)
 
 ## Reproduce the submitted build
@@ -13,7 +13,7 @@ submitted `.zip` are generated from this source with **esbuild** (bundled + mini
 ```bash
 npm ci
 npm run build:firefox          # bundles src/ -> dist-firefox/, copies public/
-# optional: npm run package:firefox  -> reviewboost-extension-firefox-1.5.2.zip
+# optional: npm run package:firefox  -> reviewboost-extension-firefox-1.6.1.zip
 ```
 
 `dist-firefox/` is byte-for-byte the same content as the root of the submitted package.

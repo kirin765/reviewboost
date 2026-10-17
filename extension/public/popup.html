@@ -28,6 +28,10 @@
           <span class="label">최대 수집 개수</span>
           <input id="max" type="number" min="10" max="2000" step="10" value="10" />
         </label>
+        <label class="check" title="끄면 본문이 있는 리뷰만 수집합니다">
+          <input id="include-blank-text" type="checkbox" checked />
+          <span>별점만 있는 리뷰도 포함</span>
+        </label>
         <button id="collect" class="btn primary" disabled>리뷰 수집</button>
         <div id="progress" class="progress hidden">
           <div class="bar"><div id="bar-fill" class="fill"></div></div>
@@ -39,6 +43,7 @@
 
       <section id="result-pane" class="hidden">
         <div class="count"><strong id="count">0</strong>개 리뷰 수집됨</div>
+        <p id="collection-summary" class="muted" role="status"></p>
         <ul id="preview" class="preview hidden"></ul>
         <div id="result-upsell" class="upsell hidden">
           <p id="result-upsell-text"></p>

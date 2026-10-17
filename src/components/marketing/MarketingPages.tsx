@@ -1,3 +1,4 @@
+import ExtensionInstallLink from "@/components/extension/ExtensionInstallLink";
 import Link from "next/link";
 
 export interface MarketingCardItem {
@@ -90,7 +91,8 @@ export function MarketingArticlePage({
   lead,
   sections,
   faq,
-  relatedLinks
+  relatedLinks,
+  collectionGuide = false
 }: {
   eyebrow: string;
   title: string;
@@ -98,6 +100,7 @@ export function MarketingArticlePage({
   sections: MarketingSection[];
   faq?: MarketingFaqItem[];
   relatedLinks?: MarketingCardItem[];
+  collectionGuide?: boolean;
 }) {
   return (
     <main className="pageMain marketingPage">
@@ -170,13 +173,11 @@ export function MarketingArticlePage({
       <section className="card marketingCallout marketingPageCallout">
         <div>
           <p className="sectionEyebrow marketingPageEyebrow">Start free</p>
-          <h2 className="marketingCalloutTitle">리뷰 운영 흐름을 바로 검증해보세요.</h2>
-          <p className="muted marketingCalloutLead">CSV 업로드부터 인사이트 확인까지 한 번에 이어집니다.</p>
+          <h2 className="marketingCalloutTitle">{collectionGuide ? "내 상품의 리뷰 파일을 만들어 보세요" : "리뷰 운영 흐름을 바로 검증해보세요."}</h2>
+          <p className="muted marketingCalloutLead">{collectionGuide ? "확장 프로그램을 설치하면 하루 50개까지 무료로 수집할 수 있습니다." : "CSV 업로드부터 인사이트 확인까지 한 번에 이어집니다."}</p>
         </div>
         <div className="actionRow">
-          <a className="btn btnPrimary" href="/dashboard">
-            무료로 분석 시작
-          </a>
+          <>{collectionGuide ? <ExtensionInstallLink placement="collection_guide" /> : <a className="btn btnPrimary" href="/dashboard">무료로 분석 시작</a>}</>
           <a className="btn btnOutline" href="/sample.csv" download>
             샘플 CSV 다운로드
           </a>

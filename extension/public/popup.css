@@ -40,6 +40,24 @@ body {
 
 .field { display: block; margin-bottom: 12px; }
 .label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--fg);
+  cursor: pointer;
+  user-select: none;
+}
+.check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+  cursor: pointer;
+}
 input[type="number"] {
   width: 100%;
   padding: 8px 10px;

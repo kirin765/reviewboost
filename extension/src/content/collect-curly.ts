@@ -1,7 +1,7 @@
 import { COLLECT_PAGE_DELAY_MAX_MS, COLLECT_PAGE_DELAY_MIN_MS } from "../lib/config";
 import { kurlyReviewUrl, parseKurlyPage, type KurlyPage } from "../lib/kurly";
 import { randomDelay, realSleep } from "../lib/collector";
-import { cleanReviews, normalizeCurlyReview } from "../lib/normalize";
+import { normalizeCurlyReview } from "../lib/normalize";
 import { CollectError } from "../lib/types";
 import type { RunOptions } from "./collect-coupang";
 
@@ -35,7 +35,7 @@ export async function collectCurly(goodsNo: string, opts: RunOptions): Promise<i
     await realSleep(randomDelay(COLLECT_PAGE_DELAY_MIN_MS, COLLECT_PAGE_DELAY_MAX_MS)());
   }
 
-  const reviews = cleanReviews(raw.map((r) => normalizeCurlyReview(r as Record<string, unknown>)));
+  const reviews = raw.map((r) => normalizeCurlyReview(r as Record<string, unknown>));
   if (reviews.length === 0) throw new CollectError("EMPTY", "이 상품에는 분석할 후기가 없습니다.");
   return reviews.slice(0, opts.maxItems);
 }

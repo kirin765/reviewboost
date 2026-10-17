@@ -20,10 +20,10 @@ export function extractCoupangProductId(rawUrl: string): string | null {
  * 쿠팡 내부 리뷰 API. crawler-server/src/crawler.js 와 동일한 형태.
  * size=10 유지(50은 차단됨). 페이지 origin에서 same-origin 으로 호출한다.
  */
-export function coupangReviewApiUrl(productId: string, page: number, size = 10): string {
+export function coupangReviewApiUrl(productId: string, page: number, size = 10, sortBy: "ORDER_SCORE_ASC" | "DATE_DESC" = "ORDER_SCORE_ASC", rating?: number): string {
   return (
     `/next-api/review?productId=${encodeURIComponent(productId)}&page=${page}&size=${size}` +
-    `&sortBy=ORDER_SCORE_ASC&ratingSummary=false&ratings=&market=`
+    `&sortBy=${sortBy}&ratingSummary=false&ratings=${rating ?? ""}&market=`
   );
 }
 

@@ -1,7 +1,7 @@
 import { COLLECT_PAGE_DELAY_MAX_MS, COLLECT_PAGE_DELAY_MIN_MS } from "../lib/config";
 import { parseSsgPage, ssgReviewListUrl } from "../lib/ssg";
 import { paginate, randomDelay, realSleep } from "../lib/collector";
-import { cleanReviews, normalizeSsgReview } from "../lib/normalize";
+import { normalizeSsgReview } from "../lib/normalize";
 import { CollectError } from "../lib/types";
 import type { RunOptions } from "./collect-coupang";
 
@@ -56,7 +56,7 @@ export async function collectSsg(itemId: string, opts: RunOptions): Promise<impo
     }
   );
 
-  const reviews = cleanReviews(raw.map((r) => normalizeSsgReview(r as Record<string, unknown>)));
+  const reviews = raw.map((r) => normalizeSsgReview(r as Record<string, unknown>));
   if (reviews.length === 0) throw new CollectError("EMPTY", "이 상품에는 분석할 리뷰가 없습니다.");
   return reviews;
 }

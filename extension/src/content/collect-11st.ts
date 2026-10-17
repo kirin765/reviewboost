@@ -1,7 +1,7 @@
 import { COLLECT_PAGE_DELAY_MAX_MS, COLLECT_PAGE_DELAY_MIN_MS } from "../lib/config";
 import { elevenStreetReviewUrl, parseElevenStreetPage } from "../lib/11st";
 import { paginate, randomDelay, realSleep } from "../lib/collector";
-import { cleanReviews, normalize11stReview } from "../lib/normalize";
+import { normalize11stReview } from "../lib/normalize";
 import { CollectError } from "../lib/types";
 import type { RunOptions } from "./collect-coupang";
 
@@ -43,7 +43,8 @@ export async function collect11st(itemId: string, opts: RunOptions): Promise<imp
     }
   );
 
-  const reviews = cleanReviews(raw.map((r) => normalize11stReview(r as Record<string, unknown>)));
+  // 본문 없는 별점만 후기도 포함 (실측 2026-10-14 — 11번가에 존재).
+  const reviews = raw.map((r) => normalize11stReview(r as Record<string, unknown>));
   if (reviews.length === 0) throw new CollectError("EMPTY", "이 상품에는 분석할 리뷰가 없습니다.");
   return reviews;
 }

@@ -3,6 +3,7 @@ import { detectPlatform, platformForHost } from "../src/lib/platforms";
 
 // 실측 픽스처 기반 실상품 URL — 각 어댑터 테스트의 캡처와 동일한 ID 사용
 const CASES: Array<{ key: string; url: string; productId: string }> = [
+  { key: "talkstore", url: "https://store.kakao.com/dongwonfnb/products/61887415", productId: "61887415" },
   { key: "musinsa", url: "https://www.musinsa.com/products/6254168", productId: "6254168" },
   { key: "29cm", url: "https://www.29cm.co.kr/products/2632177", productId: "2632177" },
   { key: "11st", url: "https://www.11st.co.kr/products/9553196713", productId: "9553196713" },

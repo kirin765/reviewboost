@@ -260,6 +260,7 @@ export async function getExtensionUsageCount(userId: string, day: string): Promi
 }
 
 export type FunnelEventName =
+  | "extension_customer_survey"
   | "extension_limit_hit"
   | "extension_checkout_started"
   | "extension_payment_completed"
@@ -270,7 +271,8 @@ export type FunnelEventName =
   | "extension_usage_post_network_error"
   | "extension_usage_anonymous_attempt"
   | "billing_webhook_failed"
-  | "billing_payment_received";
+  | "billing_payment_received"
+  | "billing_analytics_sent";
 
 /**
  * 결제벽 퍼널 카운터 기록. best-effort — DB 미구성(storage_off)이나 오류 시

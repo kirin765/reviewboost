@@ -1,7 +1,7 @@
 import { COLLECT_PAGE_DELAY_MAX_MS, COLLECT_PAGE_DELAY_MIN_MS } from "../lib/config";
 import { ohouReviewUrl, parseOhouPage } from "../lib/ohou";
 import { paginate, randomDelay, realSleep } from "../lib/collector";
-import { cleanReviews, normalizeOhouReview } from "../lib/normalize";
+import { normalizeOhouReview } from "../lib/normalize";
 import { CollectError } from "../lib/types";
 import type { RunOptions } from "./collect-coupang";
 
@@ -45,7 +45,7 @@ export async function collectOhou(productionId: string, opts: RunOptions): Promi
     }
   );
 
-  const reviews = cleanReviews(raw.map((r) => normalizeOhouReview(r as Record<string, unknown>)));
+  const reviews = raw.map((r) => normalizeOhouReview(r as Record<string, unknown>));
   if (reviews.length === 0) throw new CollectError("EMPTY", "이 상품에는 분석할 리뷰가 없습니다.");
   return reviews;
 }

@@ -15,10 +15,10 @@ describe("ssgReviewListUrl", () => {
 });
 
 describe("parseSsgPage", () => {
-  it("parses rvw_expansion_panel.v2 fragment (라이브 캡처 스키마)", () => {
+  it("parses current div.rvw_expansion_panel.v2 fragment (2026-10-14 라이브 확인)", () => {
     const html = `
-      <ul>
-        <li class="rvw_expansion_panel v2" data-postngid="1267295680">
+      <div>
+        <div class="rvw_expansion_panel v2" data-postngid="1267295680">
           <div class="rvw_expansion_panel_head">
             <div class="cdtl_star_area"><span class="cdtl_star_on" style="width:100%"><span class="blind">구매고객 총 평점 별 5개 중 <em>5</em>개</span></span></div>
             <div class="rvw_item_label rvw_item_user_id">cha*******</div>
@@ -29,8 +29,8 @@ describe("parseSsgPage", () => {
             <div class="rvw_item_label rvw_item_date">2026.04.14</div>
             <div class="rvw_help_wrap"><button class="rvw_help_btn"><span data-cnt="12">12</span></button></div>
           </div>
-        </li>
-      </ul>`;
+        </div>
+      </div>`;
     const doc = new DOMParser().parseFromString(html, "text/html");
     const items = parseSsgPage(doc);
     expect(items).toHaveLength(1);
@@ -42,9 +42,14 @@ describe("parseSsgPage", () => {
     expect(items[0].helpfulCount).toBe("12");
     expect(items[0].images?.[0]).toBe("https://succ.ssgcdn.com/uphoto/a.jpg");
   });
-  it("selects li.rvw_expansion_panel.v2 only", () => {
-    const doc = new DOMParser().parseFromString("<li class='rvw_expansion_panel v2'></li><div class='rvw_expansion_panel v2'></div>", "text/html");
-    expect(parseSsgPage(doc)).toHaveLength(1);
+  it("matches the wrapper class regardless of tag (li legacy / div current)", () => {
+    const doc = new DOMParser().parseFromString(
+      "<ul><li class='rvw_expansion_panel v2' data-postngid='1'></li><li class='other'></li></ul><div class='rvw_expansion_panel v2' data-postngid='2'></div>",
+      "text/html"
+    );
+    const items = parseSsgPage(doc);
+    expect(items).toHaveLength(2);
+    expect(items.map((i) => i.reviewId)).toEqual(["1", "2"]);
   });
 });
 

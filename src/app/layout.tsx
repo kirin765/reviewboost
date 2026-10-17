@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     default: "ReviewBoost",
     template: "%s | ReviewBoost"
   },
-  description: "쿠팡·스마트스토어 셀러를 위한 AI 리뷰 분석 워크스페이스입니다.",
+  description: "쿠팡·스마트스토어 등 12개 쇼핑몰 리뷰를 엑셀·CSV로 저장하는 리뷰 수집기. 무료 수집부터 선택형 AI 분석까지.",
   authors: [{ name: "ReviewBoost" }],
   metadataBase: new URL(baseUrl),
   manifest: "/manifest.json",

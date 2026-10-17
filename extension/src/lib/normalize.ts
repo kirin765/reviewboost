@@ -3,6 +3,7 @@ import { twentyNineImageUrl } from "./29cm";
 import { musinsaImageUrl } from "./musinsa";
 import { ohouImageUrl } from "./ohou";
 import { oliveYoungImageUrl } from "./oliveyoung";
+import { talkstoreCreatedAt, talkstoreImageUrl, talkstoreRatingToFive } from "./talkstore";
 
 /** ReviewBoost csv.ts(78-87) 와 동일한 별점 정규화: 0-5 그대로, 6-10 은 반감. */
 export function clampRating(v: unknown): number | null {
@@ -132,7 +133,7 @@ type AnyRec = Record<string, unknown> & { member?: { name?: unknown } };
 export function normalizeCoupangReview(raw: AnyRec): RawReview {
   const imageUrls = pickImageUrls(raw);
   return {
-    text: pickString(raw.content, raw.reviewContent),
+    text: pickString(raw.content, raw.reviewContent, raw.title, raw.reviewTitle),
     rating: clampRating(raw.rating),
     reviewedAt: toIsoDate(raw.reviewAt ?? raw.createdAt ?? null),
     title: pickString(raw.title, raw.reviewTitle) || undefined,
@@ -174,9 +175,16 @@ export function normalize29cmReview(raw: AnyRec): RawReview {
   };
 }
 
-/** 빈 본문 제거 + 한도 적용. */
+/** 분석(깔때기) 전송용 필터 — 본문 없는 별점만 리뷰를 제외한다.
+ *  수집·CSV/XLSX 내보내기에는 사용 금지: 수집 결과에는 별점만 리뷰도 포함한다 (2026-10-14). */
 export function cleanReviews(reviews: RawReview[]): RawReview[] {
   return reviews.filter((r) => r.text.trim().length > 0);
+}
+
+/** 팝업 옵션('별점만 있는 리뷰도 포함') 적용 — 끄면 본문 없는 리뷰를 걸러낸다.
+ *  팝업·수집 인덱스(content/index.ts)에서 수집 결과에 적용하는 단일 지점. */
+export function applyBlankTextOption(reviews: RawReview[], includeBlankText: boolean): RawReview[] {
+  return includeBlankText ? reviews : reviews.filter((r) => r.text.trim().length > 0);
 }
 
 /** 11번가 리뷰 raw → RawReview (lib/11st.ts DOM 파싱 산출물 — 2026-08-31 실측 스키마). */
@@ -302,7 +310,27 @@ export function normalizeOliveYoungReview(raw: AnyRec): RawReview {
   };
 }
 
+/** 톡스토어 리뷰 raw → RawReview (store.kakao.com reviews API — 2026-10-14 실측).
+ * 별점은 4점 척도라 talkstoreRatingToFive 로 공용 5점 척도로 변환한다. */
+export function normalizeTalkstoreReview(raw: AnyRec): RawReview {
+  const rating = (raw.ratingView ?? {}) as Record<string, unknown>;
+  const writer = (raw.writer ?? {}) as Record<string, unknown>;
+  const like = (raw.likeView ?? {}) as Record<string, unknown>;
+  const views = Array.isArray(raw.imageViews) ? raw.imageViews : [];
+  const imageUrls = [
+    ...new Set(views.map((v) => talkstoreImageUrl((v as Record<string, unknown>)?.originUrl)).filter(Boolean))
+  ];
+  return {
+    text: pickString(raw.content),
+    rating: talkstoreRatingToFive(rating.productStarRating),
+    reviewedAt: talkstoreCreatedAt(raw.createdAt),
+    author: pickString(writer.displayName) || undefined,
+    helpfulCount: pickHelpful(like.likeCount),
+    ...(imageUrls.length ? { imageUrls } : {})
+  };
+}
+
 /** 깔때기 전송용 — ReviewRow 필드만 남긴다. */
 export function toReviewRows(reviews: RawReview[]): ReviewRow[] {
-  return reviews.map((r) => ({ text: r.text, rating: r.rating, reviewedAt: r.reviewedAt ?? null }));
+  return cleanReviews(reviews).map((r) => ({ text: r.text, rating: r.rating, reviewedAt: r.reviewedAt ?? null }));
 }

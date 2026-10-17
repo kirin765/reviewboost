@@ -1,3 +1,4 @@
+import type { CollectionSummary } from "../lib/types";
 import {
   COLLECT_DEFAULT_MAX,
   COLLECT_HARD_MAX,
@@ -11,6 +12,7 @@ import type { ReviewExportContext } from "../lib/excel-form";
 import { addHistory, clearHistory, loadHistory, makeHistoryId, removeHistory, type HistoryEntry } from "../lib/history";
 import type { ContentRequest, PongResponse, StreamMessage } from "../lib/messages";
 import { toReviewRows } from "../lib/normalize";
+import { loadPreferences, savePreferences } from "../lib/preferences";
 import type { Platform, RawReview } from "../lib/types";
 import { platformLabel } from "../lib/platforms";
 import {
@@ -45,6 +47,7 @@ const resultUpgrade = el("result-upgrade") as HTMLButtonElement;
 const accountBtn = el("account") as HTMLButtonElement;
 const ctxLabel = el("ctx");
 const maxInput = el("max") as HTMLInputElement;
+const includeBlankInput = el("include-blank-text") as HTMLInputElement;
 const collectBtn = el("collect") as HTMLButtonElement;
 const progress = el("progress");
 const barFill = el("bar-fill");
@@ -163,7 +166,7 @@ function renderPreview(): void {
       }));
     }
     const text = review.text.trim();
-    li.append(text.length > 60 ? `${text.slice(0, 60)}…` : text);
+    li.append(text.length > 60 ? `${text.slice(0, 60)}…` : text || "작성된 리뷰 글 없음");
     previewEl.appendChild(li);
   }
 }
@@ -185,6 +188,22 @@ function fmtHistoryTime(ts: number): string {
   return `${d.getMonth() + 1}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+let collectionSummary: CollectionSummary | undefined;
+
+function renderCollectionSummary(): void {
+  const textCount = toReviewRows(collected).length;
+  const parts = [`다운로드 ${collected.length.toLocaleString()}개 · 글이 있는 리뷰 ${textCount.toLocaleString()}개`];
+  if (textCount < collected.length) parts.push("별점만 있는 리뷰도 다운로드에 포함됩니다. 분석은 글이 있는 리뷰만 사용합니다.");
+  if (collectionSummary?.partial) {
+    const total = collectionSummary.reportedTotal;
+    const current = restored?.platform ?? platform;
+    const who = current ? platformLabel(current) : "상품";
+    parts.push(`${total ? `${who} 표시 ${total.toLocaleString()}개 중 ` : ""}일부만 수집되었습니다. 요청한 수량에 도달하기 전에 수집이 끝났습니다.`);
+  }
+  el("collection-summary").textContent = parts.join(" ");
+  (el("analyze") as HTMLButtonElement).disabled = textCount === 0;
+}
+
 function historyEntryFromCurrent(): HistoryEntry {
   return {
     id: makeHistoryId(),
@@ -194,7 +213,8 @@ function historyEntryFromCurrent(): HistoryEntry {
     productTitle: tabTitle || document.title,
     count: collected.length,
     createdAt: Date.now(),
-    reviews: collected
+    reviews: collected,
+    summary: collectionSummary
   };
 }
 
@@ -246,6 +266,8 @@ function restoreHistoryEntry(id: string): void {
     const entry = entries.find((e) => e.id === id);
     if (!entry) return;
     collected = entry.reviews;
+    collectionSummary = entry.summary;
+    renderCollectionSummary();
     restored = { platform: entry.platform, url: entry.productUrl };
     exportCtx = { productNo: entry.productId, productTitle: entry.productTitle };
     countEl.textContent = collected.length.toLocaleString();
@@ -306,6 +328,11 @@ async function initUsage(): Promise<void> {
   }
 }
 
+/** 저장된 수집 옵션('별점만 있는 리뷰도 포함')을 체크박스에 반영한다. */
+async function initPreferences(): Promise<void> {
+  includeBlankInput.checked = (await loadPreferences()).includeBlankText;
+}
+
 chrome.runtime.onMessage.addListener((msg: StreamMessage) => {
   if (msg.type === "PROGRESS") {
     progressText.textContent = `${msg.collected.toLocaleString()}개 수집 중…`;
@@ -317,7 +344,10 @@ chrome.runtime.onMessage.addListener((msg: StreamMessage) => {
     }
   } else if (msg.type === "DONE") {
     collected = msg.reviews;
+    collectionSummary = msg.summary;
+    // 새 수집 결과이므로 이전 복원 맥락은 먼저 지운다 — 아래 label/전송에 새 탭 기준이 쓰이도록.
     restored = null;
+    renderCollectionSummary();
     exportCtx = { productNo: tabProductId, productTitle: tabTitle || document.title };
     countEl.textContent = collected.length.toLocaleString();
     renderPreview();
@@ -348,7 +378,7 @@ function startCollect(): void {
   progress.classList.remove("hidden");
   barFill.style.width = "5%";
   progressText.textContent = "수집 시작…";
-  void sendToTab({ type: "COLLECT_START", maxItems }).catch(() => {
+  void sendToTab({ type: "COLLECT_START", maxItems, includeBlankText: includeBlankInput.checked }).catch(() => {
     errorText.textContent = "콘텐츠 스크립트와 통신하지 못했습니다. 페이지를 새로고침해 주세요.";
     show(errorPane);
   });
@@ -470,6 +500,9 @@ async function sendSupport(): Promise<void> {
 }
 
 collectBtn.addEventListener("click", startCollect);
+includeBlankInput.addEventListener("change", () => {
+  void savePreferences({ includeBlankText: includeBlankInput.checked }).catch(() => {});
+});
 tabCollect.addEventListener("click", () => {
   setActiveTab("collect");
   show(currentCollect);
@@ -509,4 +542,5 @@ resultUpgrade.addEventListener("click", () => void chrome.tabs.create({ url: con
 
 void init();
 void initUsage();
+void initPreferences();
 void refreshHistory();

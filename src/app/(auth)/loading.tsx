@@ -1,5 +1,8 @@
 import PageLoading from "@/components/PageLoading";
 
+// Public marketing pages must render directly, including with JavaScript disabled.
+// Workspace routes have their own loading boundary in dashboard/loading.tsx.
+
 export default function Loading() {
   return (
     <PageLoading

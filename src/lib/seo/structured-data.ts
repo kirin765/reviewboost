@@ -1,8 +1,9 @@
-import { supportedSites, extensionStores } from "@/lib/supported-sites";
 import { buildCanonicalUrl } from "@/lib/seo/url";
 import { getBaseUrl } from "@/lib/seo/metadata";
 import { getGatesForPlan } from "@/lib/plan_gates";
 import type { SeoBreadcrumb, SeoPageRecord } from "@/lib/seo/page-registry";
+import { EXTENSION_STORE_URL } from "@/lib/extension";
+import { extensionProduct, extensionFaqs } from "@/lib/extension-content";
 
 function absoluteUrl(path: string) {
   return buildCanonicalUrl(getBaseUrl(), path);
@@ -34,10 +35,10 @@ function pricingOffers() {
     url: absoluteUrl("/pricing")
   }));
 
-  offers.push({
+  offers.unshift({
     "@type": "Offer",
     name: "Extension",
-    description: "월 4,900원 — Chrome 익스텐션 리뷰 수집 무제한 (Basic·Pro 구독 시 포함)",
+    description: "월 4,900원 — 일일 수집 한도 없음, 1회 최대 2,000개 (Basic·Pro 구독 시 포함)",
     price: "4900",
     priceCurrency: "KRW",
     availability: "https://schema.org/InStock",
@@ -79,7 +80,7 @@ function websiteNode() {
     name: "ReviewBoost",
     inLanguage: "ko",
     description:
-      "쿠팡·스마트스토어 리뷰 데이터를 분석하고 부정리뷰 대응, FAQ 작성, 상세페이지 개선 문구까지 연결하는 AI 리뷰 분석 도구"
+      "쿠팡·스마트스토어 등 12개 쇼핑몰의 상품 리뷰를 엑셀·CSV로 저장하고, 선택하여 AI 분석으로 연결하는 리뷰 수집기"
   };
 }
 
@@ -103,6 +104,61 @@ export function createGlobalStructuredData() {
   };
 }
 
+export function createExtensionStructuredData(record: SeoPageRecord) {
+  const url = absoluteUrl(record.canonicalPath);
+  const softwareId = `${url}#software`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      { ...webpageNode(record), dateModified: record.updatedAt, mainEntity: { "@id": softwareId } },
+      {
+        "@type": "SoftwareApplication",
+        "@id": softwareId,
+        name: extensionProduct.name,
+        alternateName: "ReviewBoost Review Collector",
+        url,
+        description: extensionProduct.description,
+        applicationCategory: "BrowserApplication",
+        operatingSystem: "Windows, macOS, Linux",
+        softwareRequirements: "Desktop Google Chrome 110 or later",
+        inLanguage: "ko",
+        publisher: { "@id": organizationId() },
+        downloadUrl: EXTENSION_STORE_URL,
+        sameAs: [EXTENSION_STORE_URL],
+        image: absoluteUrl("/extension/opengraph-image"),
+        screenshot: absoluteUrl("/blog-images/reviewboost-extension-export.png"),
+        featureList: extensionProduct.features,
+        offers: [
+          {
+            "@type": "Offer",
+            name: "무료",
+            price: "0",
+            priceCurrency: "KRW",
+            description: `하루 ${extensionProduct.freeDailyLimit}개까지 리뷰 수집`,
+            url
+          },
+          {
+            "@type": "Offer",
+            name: "Extension 월 구독",
+            price: String(extensionProduct.monthlyPrice),
+            priceCurrency: "KRW",
+            description: `월 ${extensionProduct.monthlyPrice.toLocaleString("ko-KR")}원. 일일 수집 한도 없음. 1회 최대 ${extensionProduct.perCollectionLimit.toLocaleString("ko-KR")}개. Basic·Pro 구독에도 포함.`,
+            url: absoluteUrl("/pricing"),
+            priceSpecification: {
+              "@type": "UnitPriceSpecification",
+              price: String(extensionProduct.monthlyPrice),
+              priceCurrency: "KRW",
+              billingDuration: "P1M"
+            }
+          }
+        ]
+      },
+      // The FAQ text is rendered verbatim on the page; no rich-result promise.
+      ...createFaqStructuredData(record, extensionFaqs)["@graph"]
+    ]
+  };
+}
+
 export function createSoftwareApplicationStructuredData(record: SeoPageRecord) {
   return {
     "@context": "https://schema.org",
@@ -117,7 +173,6 @@ export function createSoftwareApplicationStructuredData(record: SeoPageRecord) {
         description: record.description,
         inLanguage: "ko",
         featureList: [
-          ...supportedSites.map((site) => `${site.name} 리뷰 CSV·엑셀 다운로드`),
           "리뷰 CSV 업로드와 자동 컬럼 확인",
           "감성 분석과 이슈 카테고리 분류",
           "부정 키워드와 긴급 리뷰 탐지",
@@ -230,30 +285,5 @@ export function createWebPageStructuredData(record: SeoPageRecord) {
   return {
     "@context": "https://schema.org",
     "@graph": [webpageNode(record), breadcrumbList(record.breadcrumbs)]
-  };
-}
-
-export function createExtensionStructuredData(record: SeoPageRecord) {
-  return {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "SoftwareApplication",
-        "@id": `${absoluteUrl(record.canonicalPath)}#software`,
-        name: "ReviewBoost 리뷰 수집기",
-        applicationCategory: "BrowserApplication",
-        operatingSystem: "Windows, macOS, Linux",
-        url: absoluteUrl(record.canonicalPath),
-        description: record.description,
-        inLanguage: "ko",
-        featureList: supportedSites.map((site) => `${site.name} 리뷰 CSV·엑셀 다운로드${site.key === "oliveyoung" ? " (1.5.2 이상)" : ""}`),
-        downloadUrl: extensionStores.map((store) => store.url),
-        offers: [
-          { "@type": "Offer", name: "무료 리뷰 수집", price: "0", priceCurrency: "KRW", description: "하루 50개 리뷰 수집", url: absoluteUrl("/extension") },
-          { "@type": "Offer", name: "확장 프로그램 월 구독", price: "4900", priceCurrency: "KRW", description: "일일 수집 한도 없음 · 한 번에 최대 2,000개", url: absoluteUrl("/pricing") }
-        ]
-      },
-      breadcrumbList(record.breadcrumbs)
-    ]
   };
 }

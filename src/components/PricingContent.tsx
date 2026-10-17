@@ -2,10 +2,10 @@
 
 import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import ExtensionPlans from "@/components/extension/ExtensionPlans";
 import PricingActions from "@/components/PricingActions";
 import { SectionHeader, ShellContainer, Surface } from "@/components/ui/Primitives";
 import { getSiteContent } from "@/lib/site-content";
-import { getGatesForPlan } from "@/lib/plan_gates";
 import { useTranslation } from "@/lib/i18n";
 
 function BillingNotice() {
@@ -24,42 +24,25 @@ export default function PricingContent() {
   const { locale } = useTranslation();
   const content = getSiteContent(locale).pricing;
 
-  const planSummary = content.plans
-    .map((plan) => {
-      const planName = plan.name === "free" ? "Starter" : plan.name === "basic" ? "Basic" : "Pro";
-      const tier = plan.name === "basic" || plan.name === "pro" ? plan.name : "free";
-      const limit = getGatesForPlan(tier).monthlyAnalysisLimit.toLocaleString("ko-KR");
-      return locale === "en"
-        ? `${planName} ${plan.price} (${limit} analyses/month)`
-        : `${planName} ${plan.price} (월 ${limit}회 분석)`;
-    })
-    .join(", ");
-
   return (
     <main className="pageMain pricingPage pb-8">
       <ShellContainer className="pt-8 md:pt-12">
         <Surface className="px-6 py-7 md:px-8 md:py-9">
-          <SectionHeader eyebrow={content.eyebrow} title={content.title} description={content.lead} />
-          <p className="mt-4 text-sm leading-7 text-[var(--rb-muted-strong)]">
-            {locale === "en" ? `ReviewBoost offers 3 plans: ${planSummary}.` : `ReviewBoost 요금제는 ${planSummary} 3가지입니다.`}
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            {content.pills.map((pill) => (
-              <span
-                key={pill}
-                className="rounded-full border border-[color:#e6e8f2] bg-white px-3 py-1 text-xs text-[var(--rb-muted-strong)]"
-              >
-                {pill}
-              </span>
-            ))}
-          </div>
+          <p className="text-sm text-[var(--rb-accent)]">리뷰 수집 요금제</p>
+          <h1 className="mt-3 text-balance text-3xl font-semibold md:text-4xl">무료로 시작하고, 필요한 만큼 수집하세요</h1>
+          <p className="mt-5 max-w-3xl text-pretty leading-8 text-[var(--rb-muted-strong)]">하루 50개 무료 수집부터 월 4,900원 Extension 구독까지. 먼저 내 상품의 리뷰를 엑셀·CSV로 내려받아 보세요.</p>
           <Suspense fallback={null}>
             <BillingNotice />
           </Suspense>
         </Surface>
       </ShellContainer>
 
-      <ShellContainer className="mt-8">
+      <ShellContainer className="mt-8"><ExtensionPlans placement="pricing" /></ShellContainer>
+      <ShellContainer className="mt-16">
+        <div id="analysis-plans" className="scroll-mt-36 mb-8">
+          <h2 className="text-balance text-2xl font-semibold">리뷰를 더 깊이 살펴보고 싶다면: AI 분석 요금제</h2>
+          <p className="mt-4 text-pretty leading-8 text-[var(--rb-muted-strong)]">감성·이슈 분류와 개선안, PDF 리포트가 필요할 때 선택하세요. Basic·Pro에는 Extension의 일일 수집 한도 해제가 포함되어 별도 결제가 필요 없습니다.</p>
+        </div>
         <div className="grid gap-4 lg:grid-cols-3">
           {content.plans.map((plan) => {
             const planName = plan.name === "free" ? "무료" : plan.name === "basic" ? "Basic" : "Pro";
@@ -109,25 +92,7 @@ export default function PricingContent() {
         </div>
       </ShellContainer>
 
-      <ShellContainer className="mt-4">
-        <Surface className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between md:p-7">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">{content.extension.label}</p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--rb-fg)]">{content.extension.title}</h2>
-            <p className="mt-3 text-sm leading-7 text-[var(--rb-muted-strong)]">{content.extension.meta}</p>
-            <p className="mt-2 text-sm leading-7 text-[var(--rb-accent)]">{content.extension.note}</p>
-          </div>
-          <div className="flex shrink-0 flex-col items-start gap-4 md:items-end">
-            <strong className="block text-[2.2rem] font-semibold leading-none tracking-[-0.06em] text-[var(--rb-fg)]">
-              {content.extension.price}
-              <span className="ml-1 text-base font-normal tracking-normal text-[var(--rb-muted)]">{content.extension.per}</span>
-            </strong>
-            <a className="btn btnPrimary justify-center" href="/extension-connect">
-              {content.extension.cta}
-            </a>
-          </div>
-        </Surface>
-      </ShellContainer>
+
 
       <ShellContainer className="mt-8">
         <Surface className="px-6 py-6 md:px-8">

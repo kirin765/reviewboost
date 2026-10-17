@@ -44,6 +44,7 @@ export default function PrivacyPage() {
               <li>Account credentials</li>
               <li>Billing information (processed via third-party payment providers)</li>
               <li>Uploaded review data (CSV files and related content)</li>
+              <li>Optional survey answers about your intended use and how you discovered ReviewBoost, linked to your account for product improvement and acquisition research. Skipping the survey does not affect access.</li>
             </ul>
 
             <h3>2.2 Automatically Collected Information</h3>

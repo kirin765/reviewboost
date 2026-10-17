@@ -3,7 +3,7 @@
  * 팝업을 닫아도 직전 수집 결과를 복원할 수 있게 한다 (다운로드/분석 재사용).
  */
 import { HISTORY_STORAGE_KEY } from "./config";
-import type { Platform, RawReview } from "./types";
+import type { CollectionSummary, Platform, RawReview } from "./types";
 
 export type HistoryEntry = {
   id: string;
@@ -14,6 +14,7 @@ export type HistoryEntry = {
   count: number;
   createdAt: number;
   reviews: RawReview[];
+  summary?: CollectionSummary;
 };
 
 export const HISTORY_LIMIT = 5;

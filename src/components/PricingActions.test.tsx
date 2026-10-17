@@ -13,6 +13,10 @@ vi.mock("@/components/FeedbackModal", () => ({
   )
 }));
 
+vi.mock("@/lib/checkout-analytics", () => ({
+  getCheckoutAnalytics: async () => ({ acquisition_source: "naver", acquisition_medium: "blog" })
+}));
+
 import PricingActions from "./PricingActions";
 
 describe("PricingActions", () => {
@@ -64,7 +68,7 @@ describe("PricingActions", () => {
       expect(fetchMock).toHaveBeenCalledWith("/api/billing/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: "basic" })
+        body: JSON.stringify({ plan: "basic", analytics: { acquisition_source: "naver", acquisition_medium: "blog" } })
       });
     });
 

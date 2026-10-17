@@ -1,4 +1,4 @@
-import type { CollectErrorCode, Platform, RawReview } from "./types";
+import type { CollectionSummary, CollectErrorCode, Platform, RawReview } from "./types";
 
 export type PageContext = {
   platform: Platform | null;
@@ -9,7 +9,7 @@ export type PageContext = {
 /** popup → content script */
 export type ContentRequest =
   | { type: "PING" }
-  | { type: "COLLECT_START"; maxItems: number }
+  | { type: "COLLECT_START"; maxItems: number; includeBlankText?: boolean }
   | { type: "COLLECT_CANCEL" };
 
 /** content script → popup (PING은 sendResponse, 나머지는 runtime broadcast) */
@@ -17,7 +17,7 @@ export type PongResponse = { type: "PONG"; ctx: PageContext };
 
 export type StreamMessage =
   | { type: "PROGRESS"; collected: number; total: number | null }
-  | { type: "DONE"; reviews: RawReview[] }
+  | { type: "DONE"; reviews: RawReview[]; summary?: CollectionSummary }
   | { type: "ERROR"; code: CollectErrorCode; message: string };
 
 /** ReviewBoost 페이지 → background (externally_connectable) */

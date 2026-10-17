@@ -30,9 +30,10 @@ export function generatePageMetadata(
   const title = record.title;
   const canonicalUrl = buildCanonicalUrl(getBaseUrl(), record.canonicalPath);
   const keywords = uniqueKeywords([...SEO_KEYWORDS, record.primaryKeyword, ...(options.keywords ?? [])]);
-  const ogImage = options.image
+  const image = options.image
     ? { url: options.image, width: 1200, height: 630, alt: title }
     : DEFAULT_OG_IMAGE;
+  const ogImage = { ...image, url: new URL(image.url, getBaseUrl()).toString() };
   const robots: Metadata["robots"] = record.indexable
     ? {
         index: true,

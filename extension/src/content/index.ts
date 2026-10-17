@@ -1,3 +1,4 @@
+import type { CollectionSummary } from "../lib/types";
 import { extractCoupangProductId } from "../lib/coupang";
 import type { ContentRequest, PageContext, PongResponse, StreamMessage } from "../lib/messages";
 import { extractSmartstoreProductNo, isSmartstoreHost } from "../lib/smartstore";
@@ -14,6 +15,9 @@ import { collectGmarket } from "./collect-gmarket";
 import { collectCurly } from "./collect-curly";
 import { collectAuction } from "./collect-auction";
 import { collectOliveYoung } from "./collect-oliveyoung";
+import { collectTalkstore } from "./collect-talkstore";
+import { extractTalkstoreProduct } from "../lib/talkstore";
+import { applyBlankTextOption } from "../lib/normalize";
 import { installReviewCaptureHook } from "./hook";
 
 // 브랜드스토어/스마트스토어에서 페이지가 직접 보내는 리뷰 API 요청을 미리 캡처해 둔다
@@ -66,15 +70,18 @@ chrome.runtime.onMessage.addListener((req: ContentRequest, _sender, sendResponse
   }
   if (req.type === "COLLECT_START") {
     cancelled = false;
-    void runCollect(req.maxItems);
+    // 구버전 팝업(옵션 미포함)과의 호환: undefined 는 포함(기본)으로 본다.
+    void runCollect(req.maxItems, req.includeBlankText !== false);
     sendResponse({ ok: true });
     return;
   }
 });
 
-async function runCollect(maxItems: number): Promise<void> {
+async function runCollect(maxItems: number, includeBlankText: boolean): Promise<void> {
   const ctx = detect();
+  let summary: CollectionSummary | undefined;
   const opts: RunOptions = {
+    onSummary: (value) => { summary = value; },
     maxItems,
     onProgress: (collected, total) => broadcast({ type: "PROGRESS", collected, total }),
     shouldCancel: () => cancelled
@@ -104,12 +111,29 @@ async function runCollect(maxItems: number): Promise<void> {
       reviews = await collectCurly(ctx.productId, opts);
     } else if (ctx.platform === "oliveyoung" && ctx.productId) {
       reviews = await collectOliveYoung(ctx.productId, opts);
+    } else if (ctx.platform === "talkstore" && ctx.productId) {
+      // 리뷰 API 경로에 상품 id 외 store 슬러그가 필요해 location.href 에서 함께 추출한다.
+      const hit = extractTalkstoreProduct(location.href);
+      if (!hit) throw new CollectError("NOT_PRODUCT", "지원하는 상품 페이지가 아닙니다.");
+      reviews = await collectTalkstore(hit.store, hit.productId, opts);
     } else {
       // 플랫폼은 인식했지만 수집기가 아직 없는 경우
       throw new CollectError("NOT_PRODUCT", "지원하는 상품 페이지가 아닙니다.");
     }
     if (cancelled) return;
-    broadcast({ type: "DONE", reviews });
+    // 팝업 옵션: '별점만 있는 리뷰도 포함' 해제 시 본문 없는 리뷰를 제외한다.
+    if (!includeBlankText) {
+      const textOnly = applyBlankTextOption(reviews, false);
+      if (textOnly.length === 0) {
+        throw new CollectError(
+          "EMPTY",
+          "글이 있는 리뷰가 없습니다.\n‘별점만 있는 리뷰도 포함’을 켜고 다시 시도해 주세요."
+        );
+      }
+      reviews = textOnly;
+      if (summary) summary = { ...summary, collected: reviews.length };
+    }
+    broadcast({ type: "DONE", reviews, summary });
   } catch (err) {
     const code = err instanceof CollectError ? err.code : "UNKNOWN";
     const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";

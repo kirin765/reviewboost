@@ -17,16 +17,18 @@ export default function HelpSmartstoreReviewCsvExportPage() {
     <>
       <StructuredData data={createArticleStructuredData(record)} />
       <MarketingArticlePage
+        collectionGuide
         eyebrow="Guide"
         title="스마트스토어 리뷰 CSV 추출 가이드"
-        lead="스마트스토어 리뷰 데이터를 내려받아 감성 분석, 부정 키워드 파악, FAQ 작성까지 연결하는 기본 흐름을 정리했습니다."
+        lead="ReviewBoost 리뷰 수집기를 설치하고 스마트스토어 또는 네이버 브랜드스토어 상품 상세 페이지에서 리뷰를 엑셀·CSV로 저장하세요. 내려받은 CSV는 ReviewBoost AI 분석에 사용할 수 있습니다."
         sections={[
           {
-            title: "1. 스마트스토어 리뷰 데이터를 내려받습니다",
+            title: "1. 스마트스토어·브랜드스토어 상품 페이지에서 수집합니다",
             ordered: [
-              "스마트스토어 센터에 로그인합니다.",
-              "상품 또는 리뷰 관리 메뉴에서 기간을 선택합니다.",
-              "리뷰 데이터를 엑셀 또는 CSV로 내려받습니다."
+              "아래 확장 프로그램 안내에서 Chrome 웹 스토어로 이동해 ReviewBoost 리뷰 수집기를 설치합니다.",
+              "smartstore.naver.com 또는 brand.naver.com의 상품 상세 페이지를 열고 리뷰 영역을 확인합니다.",
+              "확장 프로그램에서 수집할 개수를 정한 뒤 ‘리뷰 수집’을 누릅니다.",
+              "수집 완료 후 엑셀(.xlsx) 또는 CSV로 내려받습니다. 무료는 하루 50개이며 쇼핑몰의 공개 범위와 접근 제한이 적용됩니다."
             ]
           },
           {
@@ -34,10 +36,10 @@ export default function HelpSmartstoreReviewCsvExportPage() {
             paragraphs: [
               "스마트스토어 파일은 컬럼명이 매번 조금씩 다를 수 있습니다. 리뷰 본문과 별점만 있으면 분석은 가능합니다."
             ],
-            bullets: ["리뷰 내용", "별점", "작성일", "문의/답변 여부(선택)"]
+            bullets: ["리뷰 내용", "별점", "작성일", "상품 옵션(제공되는 경우)"]
           },
           {
-            title: "3. ReviewBoost에서 반복 질문까지 확인합니다",
+            title: "3. 선택: ReviewBoost에서 반복 질문까지 확인합니다",
             paragraphs: [
               "스마트스토어는 구매 전 질문과 후기의 간격이 짧기 때문에 리뷰에서 FAQ 패턴을 찾는 것이 중요합니다.",
               "분석 결과에서 반복 질문과 부정 키워드를 함께 보면 상세페이지 보완 포인트가 더 선명해집니다."
@@ -54,6 +56,12 @@ export default function HelpSmartstoreReviewCsvExportPage() {
           }
         ]}
         relatedLinks={[
+          {
+            href: "/extension",
+            title: "리뷰 수집 확장 프로그램 설치·사용법",
+            description: "스마트스토어·브랜드스토어 지원과 무료 한도, 설치 방법을 확인하세요.",
+            tag: "확장 프로그램"
+          },
           {
             href: "/blog/smartstore-review-management",
             title: "스마트스토어 리뷰 관리 완벽 가이드",

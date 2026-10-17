@@ -6,7 +6,9 @@
  *   - QnA(ajaxItemQnaPageList.ssg) 와 같은 파라미터 패밀리. filterCol=10(전체) 고정.
  *   - itemNm 은 상품명(URL 인코딩) — 비어도 동작했으나(실측) 정확도를 위해 페이지의
  *     상품명을 넣는다. canonicalUrl 은 itemView URL.
- *   - 응답: HTML — li.rvw_expansion_panel.v2 목록 (schema.org JSON-LD Review 포함).
+ *   - 응답: HTML — .rvw_expansion_panel.v2 목록 (schema.org JSON-LD Review 포함).
+ *     (2026-08-31 캡처는 li 래퍼였으나 2026-10-14 라이브 확인 시 div 래퍼로 변경됨 —
+ *      inner class/속성은 동일. 래퍼 태그에 의존하지 않고 class 로만 선택한다.)
  * 동일 오리진(www.ssg.com) — 페이지 쿠키로 CORS 성립.
  */
 export function ssgReviewListUrl(
@@ -49,9 +51,9 @@ export type SsgItem = {
   images: string[];
 };
 
-/** 리뷰 목록 프래그먼트 DOM → 항목 배열. */
+/** 리뷰 목록 프래그먼트 DOM → 항목 배열. 래퍼는 li(구) 또는 div(현재) — class 로만 판별. */
 export function parseSsgPage(doc: Document): SsgItem[] {
-  return Array.from(doc.querySelectorAll("li.rvw_expansion_panel.v2")).map((li) => {
+  return Array.from(doc.querySelectorAll(".rvw_expansion_panel.v2")).map((li) => {
     const idEl = li.getAttribute("data-postngid") || "";
     const ratingEl = li.querySelector(".cdtl_star_area .blind em, .cdtl_star_area em");
     const authorEl = li.querySelector(".rvw_item_user_id");

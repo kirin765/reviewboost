@@ -35,3 +35,12 @@ export class CollectError extends Error {
     this.name = "CollectError";
   }
 }
+
+/** Source counts are separate from the rows available for export and text analysis. */
+export type CollectionSummary = {
+  reportedTotal: number | null;
+  requested: number;
+  collected: number;
+  textReviews: number;
+  partial: boolean;
+};
