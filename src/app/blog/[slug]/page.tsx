@@ -3,9 +3,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import StructuredData from "@/components/seo/StructuredData";
+import ExtensionInstallLink from "@/components/extension/ExtensionInstallLink";
 import { buttonStyles } from "@/components/ui/Button";
 import { ShellContainer } from "@/components/ui/Primitives";
-import { blogPosts, type ContentBlock } from "@/lib/blog-posts";
+import { blogPosts, getBlogCtaIntent, type ContentBlock } from "@/lib/blog-posts";
 import { generatePageMetadata } from "@/lib/seo/metadata";
 import { getSeoPageRecordByPath } from "@/lib/seo/page-registry";
 import { createArticleStructuredData } from "@/lib/seo/structured-data";
@@ -160,6 +161,17 @@ export default async function BlogDetailPage(props: BlogDetailPageProps) {
           {post.content.map((block, index) => renderContentBlock(block, getContentBlockKey(block, index)))}
         </article>
 
+        {getBlogCtaIntent(post.slug) === "collection" ? (
+          <section className="rounded-[26px] border border-[color:#e6e8f2] bg-white px-6 py-6 md:px-8">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Start free</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--rb-fg)]">상품 리뷰를 엑셀·CSV로 저장해 보세요.</h2>
+            <p className="mt-4 text-sm leading-7 text-[var(--rb-muted-strong)]">12개 지원 쇼핑몰의 상품 페이지에서 공개 리뷰를 수집할 수 있습니다. 무료로 하루 50개까지 시작하세요.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <ExtensionInstallLink placement={`blog_${post.slug}`} />
+              <Link className={buttonStyles({ variant: "secondary" })} href="/extension">지원 쇼핑몰·사용법 보기</Link>
+            </div>
+          </section>
+        ) : getBlogCtaIntent(post.slug) === "analysis" ? (
         <section className="rounded-[26px] border border-[color:#e6e8f2] bg-white px-6 py-6 md:px-8">
           <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--rb-muted)]">Start free</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--rb-fg)]">리뷰 분석, 지금 바로 시작해보세요.</h2>
@@ -169,6 +181,7 @@ export default async function BlogDetailPage(props: BlogDetailPageProps) {
             <a className={buttonStyles({ variant: "secondary" })} href="/sample.csv" download>샘플 CSV 다운로드</a>
           </div>
         </section>
+        ) : null}
       </ShellContainer>
     </main>
   );

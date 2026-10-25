@@ -149,3 +149,24 @@
 - Chrome Web Store listing update submitted on October 7 using the publisher's happylife2080100 account, with automatic publication after approval enabled. Google confirmed submission. The existing v1.5.1 package, title/summary, category, video and screenshots remain in place; the detailed description, homepage/support links, permission explanations and data-use disclosures were updated. No new extension package was uploaded.
 - `/extension-privacy` was corrected and deployed before submission to cover all ten marketplaces, local collection history, account tokens, usage telemetry, support email/messages and operator notifications. Typecheck and all 393 unit tests passed; production privacy/product/support pages returned HTTP 200.
 - At 21:31 KST, Google rejected the first listing revision for **Yellow Argon / keyword spam**, specifically the ten-brand list in the description. The [spam FAQ](https://developer.chrome.com/docs/webstore/program-policies/spam-faq#keyword-spam) explicitly limits descriptions to five supported brands/sites. The revised 849-character description uses two examples and links to the full product-page list; the duplicate brand list in the single-purpose field was removed too. Google confirmed resubmission with automatic publication after approval enabled. No appeal or new binary was needed; approval is still pending.
+
+## Extension discovery content pass (2026-10-25)
+
+- Scope: one implementation pass for the customer job of saving shopping-site product reviews as Excel/CSV, with no paid promotion or new advertising spend. Improved existing pages and store source copy instead of creating thin keyword pages.
+- Current product facts are aligned across `/extension`, visible FAQs, structured data and `/llms.txt`: 12 supported shopping sites, rating-only review inclusion, 50 reviews/day free, 2,000 reviews/run maximum and optional AI analysis.
+- The help hub and extension page now link the existing Olive Young guide. Collection-intent articles and the blog hub use measurable `extension_install_click` actions; analysis articles retain the analysis CTA, and the separate Reviewisa article has no unrelated ReviewBoost footer CTA.
+- Same-site article links no longer carry UTMs that would overwrite acquisition attribution. Store-link clicks remain clicks, not completed installations.
+- Chrome, Firefox, Edge and Whale listing source documents now describe 1.6.1 and current collection capabilities. These are local source edits only: no store was submitted, no new review was approved and no live listing changed in this pass. Historical submission notes remain historical.
+- Unsupported numerical, marketplace-ranking, time-saving and guaranteed sales/rating claims were removed or qualified. No customer outcome, ranking or AI citation is claimed.
+
+### Current official guidance applied
+
+- [Google AI features and your website](https://developers.google.com/search/docs/appearance/ai-features), last updated 2025-12-10 and checked 2026-10-25: AI Overviews and AI Mode require indexing and snippet eligibility; there is no additional technical requirement. Useful textual content, internal links, crawlability and matching structured data remain the foundation. AI-feature traffic is included in Search Console's Web performance report.
+- [Chrome Web Store listing guidance](https://developer.chrome.com/docs/webstore/best-listing), checked 2026-10-25: use a concise functional title, accurate summary/description and current product screenshots; avoid keyword stuffing. No new AI-only schema, crawler rule or `llms.txt` requirement was added.
+
+### Baseline and next manual review
+
+- On 2026-10-25, current Search Console query/impression/click baselines, URL indexing results, AI answer mentions/citations and Chrome store listing-view/install baselines were **not inspected**. They are unmeasured, not zero. The small search-result review informed search intent only and is not search-volume or stable-rank data.
+- After site deployment, request recrawling where appropriate and inspect `/extension`, `/help`, the three collection guides and the updated articles. A HTTP 200 response or sitemap entry is not proof of indexing.
+- Review 28 days after deployment: Search Console queries/impressions/clicks and indexing; GA4 `extension_install_click` by `blog_hub` and article placements plus `assistant_landing`; Chrome store listing views/installs/uninstalls. Keep these sources and denominators separate, and do not infer installs or purchases from clicks.
+- For a small AI-answer baseline, use the existing `docs/marketing/ai-search-prompt-snapshot.md` manually and record tool/model/date/search status, mention, citation URL and factual accuracy. Do not convert a few answers into a market-share percentage. No automatic monitoring schedule was created.

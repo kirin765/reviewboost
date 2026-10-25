@@ -14,6 +14,7 @@ export const metadata: Metadata = generatePageMetadata(record);
 const guides = [
   { path: "/help/coupang-review-csv-export", name: "쿠팡 리뷰 엑셀·CSV 다운로드", body: "쿠팡 상품 페이지에서 리뷰를 수집하고 파일로 저장하는 방법" },
   { path: "/help/smartstore-review-csv-export", name: "스마트스토어 리뷰 엑셀·CSV 다운로드", body: "스마트스토어·브랜드스토어의 상품 리뷰를 내보내는 방법" },
+  { path: "/help/oliveyoung-review-csv-export", name: "올리브영 리뷰 엑셀·CSV 다운로드", body: "올리브영 PC 상품 페이지의 리뷰를 수집하고 저장 범위를 확인하는 방법" },
   { path: "/extension", name: "지원 쇼핑몰과 수집 한도", body: "12개 쇼핑몰 지원 범위, 무료·유료 한도와 오류 해결 방법" }
 ];
 export default function HelpPage() {

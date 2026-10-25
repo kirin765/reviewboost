@@ -68,6 +68,7 @@ export default function ExtensionPage() {
           <div className="flex flex-wrap gap-4">
             <Link href="/help/coupang-review-csv-export" className="underline">쿠팡 리뷰 추출 가이드</Link>
             <Link href="/help/smartstore-review-csv-export" className="underline">스마트스토어 리뷰 추출 가이드</Link>
+            <Link href="/help/oliveyoung-review-csv-export" className="underline">올리브영 리뷰 추출 가이드</Link>
           </div>
         </section>
 

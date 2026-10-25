@@ -20,6 +20,6 @@ export default function OliveYoungReviewGuide() {
       { title: "4. 저장된 리뷰와 수집 범위를 확인합니다", bullets: ["리뷰 본문과 별점", "작성일과 작성자 닉네임", "도움이 돼요 수와 리뷰 이미지 URL(제공되는 경우)"], paragraphs: ["이미지는 URL로 저장됩니다. 이미지 파일 자체를 내려받지는 않습니다. 올리브영이 상품 페이지에 연결해 보여주는 연관 상품 리뷰가 함께 포함될 수 있으므로 분석 전에 파일의 리뷰 범위를 확인하세요."] },
       { title: "올리브영 지원이 표시되지 않거나 수집이 멈추나요?", paragraphs: ["확장 프로그램이 1.5.2 이상인지, 올리브영 PC 상품 페이지를 열었는지 확인한 뒤 페이지를 새로고침하세요. 로그인 요청이나 접근 제한이 표시되면 사이트에서 안내하는 절차를 먼저 완료합니다. 사이트 변경이나 접근 제한이 지속되면 수집이 일시적으로 불가능할 수 있습니다."] }
     ]}
-    relatedLinks={[{ href: "/extension", title: "11개 지원 사이트와 브라우저별 설치", description: "올리브영 외 지원 쇼핑몰과 수집 한도를 확인하세요." }, { href: "/help/csv-checklist", title: "분석 전 CSV 확인 사항", description: "저장된 리뷰 파일의 컬럼과 내용을 확인하세요." }]}
+    relatedLinks={[{ href: "/extension", title: "12개 지원 사이트와 브라우저별 설치", description: "올리브영 외 지원 쇼핑몰과 수집 한도를 확인하세요." }, { href: "/help/csv-checklist", title: "분석 전 CSV 확인 사항", description: "저장된 리뷰 파일의 컬럼과 내용을 확인하세요." }]}
   /></>;
 }

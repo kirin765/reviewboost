@@ -3,7 +3,7 @@
 export const extensionProduct = {
   name: "ReviewBoost 리뷰 수집기",
   path: "/extension",
-  updatedAt: "2026-10-14",
+  updatedAt: "2026-10-25",
   description: "쿠팡·스마트스토어·무신사 등 12개 쇼핑몰의 상품 리뷰를 엑셀(.xlsx)과 CSV로 저장하는 Chrome 확장 프로그램입니다. 무료로 하루 50개를 수집하고, 필요할 때 ReviewBoost AI 분석으로 연결하세요.",
   platforms: ["쿠팡", "스마트스토어·브랜드스토어", "무신사", "29CM", "G마켓", "옥션", "11번가", "SSG닷컴", "오늘의집", "컬리", "올리브영", "톡스토어"],
   freeDailyLimit: 50,
@@ -14,6 +14,7 @@ export const extensionProduct = {
     "엑셀(.xlsx)·CSV 다운로드",
     "리뷰 본문·별점·작성일 및 제공되는 이미지 URL 내보내기",
     "최근 수집 기록 최대 5건 다시 열기",
+    "본문 없이 별점만 있는 리뷰도 포함하도록 선택 가능",
     "선택 시 ReviewBoost AI 리뷰 분석으로 전송"
   ]
 };

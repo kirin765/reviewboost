@@ -46,6 +46,7 @@ export function GET() {
     `- Olive Young requires version 1.5.2 or later on PC product detail pages; store review and update timing vary by browser`,
     `- Free: 50 reviews per day; paid extension: KRW 4,900/month without a daily limit; maximum 2,000 reviews per collection`,
     `- Review collection and AI analysis have separate limits; image URLs are exported, not image files`,
+    ...extensionProduct.features.map((feature) => `- ${feature}`),
     ``,
     `## Product facts`,
     `- Upload review CSV files and confirm columns before analysis`,

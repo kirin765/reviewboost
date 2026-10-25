@@ -32,6 +32,8 @@ describe("extension discoverability", () => {
     expect(app.aggregateRating).toBeUndefined();
     expect(app.review).toBeUndefined();
     for (const feature of app.featureList) expect(doc.body.textContent).toContain(feature);
+    expect(doc.body.textContent).toContain("본문 없이 별점만 있는 리뷰도 포함하도록 선택 가능");
+    expect(doc.querySelector('a[href="/help/oliveyoung-review-csv-export"]')).not.toBeNull();
   });
 
   it("keeps advertised limits and store coverage consistent with the shipped extension", () => {
@@ -59,6 +61,7 @@ describe("extension discoverability", () => {
     expect(sitemap).not.toContain("<loc>https://reviewboost.co.kr/extension-report</loc>");
     const llms = await getLlms().text();
     expect(llms).toContain("https://reviewboost.co.kr/extension)");
+    for (const feature of extensionProduct.features) expect(llms).toContain(feature);
     for (const faq of extensionFaqs) expect(llms).toContain(faq.answer);
   });
 

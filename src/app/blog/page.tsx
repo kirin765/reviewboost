@@ -2,6 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import StructuredData from "@/components/seo/StructuredData";
+import ExtensionInstallLink from "@/components/extension/ExtensionInstallLink";
 import { buttonStyles } from "@/components/ui/Button";
 import { ShellContainer } from "@/components/ui/Primitives";
 import { blogPosts } from "@/lib/blog-posts";
@@ -72,14 +73,15 @@ export default function BlogPage() {
         <section className="rounded-[30px] border border-[color:#e6e8f2] bg-white px-5 py-7 md:px-8 md:py-8">
           <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rb-muted)]">Start free</p>
           <h2 className="mt-4 max-w-3xl text-[clamp(2rem,4vw,3.4rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--rb-fg)]">
-            리뷰 분석, 지금 바로 시작해보세요.
+            쇼핑몰 리뷰를 엑셀·CSV로 저장하세요. 지금 바로 시작해보세요.
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--rb-muted-strong)]">
-            CSV 업로드만으로 감성 분류, 키워드 추출, 개선 제안까지 한 번에 확인할 수 있습니다.
+            수집한 리뷰를 파일로 저장한 뒤 필요하면 감성 분류, 키워드 추출, 개선 제안까지 한 번에 확인할 수 있습니다.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <a className={buttonStyles({ variant: "primary" })} href="/dashboard/analyze">
-              무료로 분석 시작
+            <ExtensionInstallLink placement="blog_hub" />
+            <a className={buttonStyles({ variant: "secondary" })} href="/extension">
+              무료로 설치
             </a>
             <a className={buttonStyles({ variant: "secondary" })} href="/sample.csv" download>
               샘플 CSV 다운로드

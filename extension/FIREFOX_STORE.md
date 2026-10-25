@@ -1,6 +1,6 @@
-# Firefox(AMO) 제출 패키지 — ReviewBoost 리뷰 수집기 (v1.5.1)
+# Firefox(AMO) 제출 패키지 — ReviewBoost 리뷰 수집기 (v1.6.1)
 
-업로드 파일: **`extension/reviewboost-extension-firefox-1.5.1.zip`** (manifest가 ZIP 루트)
+업로드 파일: **`extension/reviewboost-extension-firefox-1.6.1.zip`** (manifest가 ZIP 루트)
 
 > ⚠️ AMO 제출은 Mozilla 계정 로그인 + (최초 1회) 개발자 등록이 필요해 **직접** 하셔야 합니다.
 
@@ -9,7 +9,7 @@
 ```bash
 cd extension
 npm run package:firefox   # build:firefox + ZIP 생성
-# → reviewboost-extension-firefox-1.5.1.zip
+# → reviewboost-extension-firefox-1.6.1.zip
 ```
 
 ## Chrome/Edge/웨일 빌드와 다른 점 (검수 대응)
@@ -55,7 +55,7 @@ npm run package:firefox   # build:firefox + ZIP 생성
 
 **제출 페이지**: https://addons.mozilla.org/developers/addon/submit/
 
-**파일 선택**: `reviewboost-extension-firefox-1.5.1.zip`
+**파일 선택**: `reviewboost-extension-firefox-1.6.1.zip`
 
 **플랫폼**: `Firefox` (Android 는 대상 아님)
 
@@ -69,7 +69,7 @@ npm run package:firefox   # build:firefox + ZIP 생성
 
 **요약 (Summary, 250자 이내)**:
 ```
-쿠팡·스마트스토어 등 11개 쇼핑몰 상품의 리뷰를 엑셀/CSV로 내려받고 ReviewBoost 무료 분석으로 연결합니다.
+쿠팡·스마트스토어 등 12개 쇼핑몰 상품의 리뷰를 엑셀/CSV로 내려받고 ReviewBoost 무료 분석으로 연결합니다.
 ```
 
 **상세 설명 (Description)**:
@@ -83,7 +83,8 @@ ReviewBoost 리뷰 수집기는 셀러가 지금 보고 있는 쿠팡·스마트
 
 ■ 특징
 - 브라우저 안에서 직접 동작: 사용자가 보는 화면의 공개 리뷰를 그대로 모읍니다.
-- 11개 쇼핑몰 지원: 쿠팡·스마트스토어·무신사·29CM·G마켓·옥션·11번가·SSG닷컴·오늘의집·컬리·올리브영.
+- 12개 쇼핑몰 지원: 쿠팡·스마트스토어·무신사·29CM·G마켓·옥션·11번가·SSG닷컴·오늘의집·컬리·올리브영·톡스토어.
+- 별점만 있는 리뷰 포함: 본문이 없는 별점 리뷰도 기본으로 수집하며 필요하면 제외할 수 있습니다.
 - 엑셀·CSV 내보내기: 스마트스토어 판매자센터 공식 리뷰 엑셀과 같은 25열 폼으로 저장.
 - 리뷰 이미지 URL 포함: 사진 리뷰의 이미지 주소도 함께 수집·내보냅니다.
 - ReviewBoost 무료 분석 연동(선택): 감정·카테고리·부정 키워드·개선안 리포트.
@@ -104,7 +105,7 @@ ReviewBoost 리뷰 수집기는 셀러가 지금 보고 있는 쿠팡·스마트
 
 ## 심사 통과 기준 체크
 
-- 정확성: 이름·설명·스크린샷이 기능과 일치 (10개 플랫폼).
+- 정확성: 이름·설명·스크린샷이 기능과 일치 (12개 플랫폼).
 - 사용성: 리뷰 수집·분석 결합은 니치, 스토어 내 중복 확장 없음.
 - 보안·개인정보: `activeTab` + 단일 상품 + 선택 전송 + CS 문의 입력값 전송만 — 최소 권한. 각 쇼핑몰 호스트 권한은 공개 리뷰 읽기 목적만.
 - 데이터 수집 동의: `data_collection_permissions.required` 4개 항목으로 선언, 개인정보처리방침과 일치.
@@ -113,7 +114,7 @@ ReviewBoost 리뷰 수집기는 셀러가 지금 보고 있는 쿠팡·스마트
 ## 제출 절차
 
 1. https://addons.mozilla.org/developers/ Mozilla 로그인
-2. **Submit a New Add-on** → `reviewboost-extension-firefox-1.5.1.zip` 업로드
+2. **Submit a New Add-on** → `reviewboost-extension-firefox-1.6.1.zip` 업로드
 3. 자동 검증(manifest/코드) 통과 확인 → 등록 정보 입력(위 복사용 값)
 4. 데이터 수집 설문 응답 → **Submit Version**
 5. 승인 시 AMO가 서명한 `.xpi` 로 배포되며, 임시 로드 대신 정식 설치 가능

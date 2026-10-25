@@ -18,6 +18,20 @@ export interface BlogPost {
   image?: string;
 }
 
+export type BlogCtaIntent = "collection" | "analysis" | "none";
+
+const collectionBlogSlugs = new Set([
+  "review-policy-disclosure-data-audit",
+  "reviewboost-extension-excel-guide",
+  "coupang-review-csv-export",
+  "review-collection-methods-comparison"
+]);
+
+export function getBlogCtaIntent(slug: string): BlogCtaIntent {
+  if (slug === "cafe24-review-migration-checklist") return "none";
+  return collectionBlogSlugs.has(slug) ? "collection" : "analysis";
+}
+
 export const blogPosts: BlogPost[] = [
 {
   "slug": "review-policy-disclosure-data-audit",
@@ -88,7 +102,7 @@ export const blogPosts: BlogPost[] = [
     {
       "type": "link",
       "text": "ReviewBoost 리뷰 수집기 사용 방법 확인하기",
-      "href": "https://reviewboost.co.kr/extension?utm_source=reviewboost_blog&utm_medium=owned_content&utm_campaign=review_policy_20261021"
+      "href": "/extension"
     },
     {
       "type": "link",
@@ -116,7 +130,7 @@ export const blogPosts: BlogPost[] = [
     },
     {
       "type": "p",
-      "text": "이 글은 ReviewBoost를 개발·운영하는 작성자의 사용 안내입니다. 아래는 쿠팡·스마트스토어 상품을 기준으로 설명합니다."
+      "text": "이 글은 ReviewBoost를 개발·운영하는 작성자의 사용 안내입니다. 아래는 쿠팡·스마트스토어 상품을 기준으로 설명합니다. 2026년 10월 25일 기준 현재 버전은 톡스토어를 포함한 12개 쇼핑몰을 지원하며, 본문 없이 별점만 있는 리뷰도 기본으로 수집합니다. 확장 화면에서 별점만 있는 리뷰의 포함 여부를 바꿀 수 있습니다."
     },
     {
       "type": "h2",
@@ -416,11 +430,11 @@ export const blogPosts: BlogPost[] = [
       { type: "h2", text: "리뷰 데이터는 셀러의 가장 중요한 자산" },
       {
         type: "p",
-        text: "쿠팡 리뷰는 단순한 고객 의견이 아닙니다. 실제로 별점이 1점만 하락해도 검색 결과에서 클릭률이 크게 떨어지고, 상세페이지 유입 대비 전환율도 함께 낮아집니다."
+        text: "쿠팡 리뷰는 단순한 고객 의견이 아닙니다. 별점이 하락해도 검색 결과에서 클릭률이 떨어질 수 있고, 상세페이지 유입 대비 전환율도 함께 낮아질 수 있습니다. 다만 이런 변화는 가격·광고·재고·프로모션 등 다른 요인과 함께 자사 데이터로 확인해야 합니다."
       },
       {
         type: "p",
-        text: "같은 광고비를 써도 성과가 달라지는 이유가 바로 리뷰 지표입니다. 리뷰를 분석하지 않으면 매출 하락 원인을 감으로만 추측하게 됩니다."
+        text: "같은 광고비를 써도 성과가 달라지는 이유 중 하나로 리뷰 지표를 살펴 볼 수 있습니다. 리뷰를 분석하지 않으면 매출 하락 원인을 감으로만 추측하게 됩니다."
       },
       { type: "h2", text: "리뷰 분석으로 알 수 있는 것들" },
       {
@@ -478,11 +492,11 @@ export const blogPosts: BlogPost[] = [
       { type: "h2", text: "부정 리뷰가 매출에 미치는 영향" },
       {
         type: "p",
-        text: "쿠팡 알고리즘은 별점과 리뷰 수를 노출 순위에 함께 반영합니다. 현장에서 체감되는 차이는 큽니다."
+        text: "쿠팡의 검색 노출 순위에 별점과 리뷰 수가 어떻게 반영되는지는 공식 근거 없이 단정할 수 없습니다. 운영자는 검색 순위보다 리뷰에서 반복되는 문제와 개선 후보를 먼저 확인할 수 있습니다."
       },
       {
         type: "p",
-        text: "별점이 떨어지면 검색 노출과 클릭, 구매 전환에 부정적인 영향을 줄 수 있습니다. 영향의 정도는 상품과 카테고리에 따라 다릅니다."
+        text: "별점과 리뷰 내용은 구매 결정에 참고됩니다. 검색 노출·클릭·구매 전환과의 관계는 상품과 카테고리, 가격, 광고 등의 조건을 함께 살펴 자사 데이터로 확인하세요."
       },
       { type: "h2", text: "부정 리뷰 카테고리별 대응 전략" },
       { type: "h3", text: "1. 배송 문제" },
@@ -546,7 +560,7 @@ export const blogPosts: BlogPost[] = [
       { type: "h2", text: "스마트스토어 리뷰가 중요한 이유" },
       {
         type: "p",
-        text: "네이버 스마트스토어에서는 리뷰가 검색 노출과 구매 결정에 직접 연결됩니다. 특히 네이버쇼핑 탭은 상품 신뢰도를 반영하기 때문에, 리뷰 수와 평점이 누적될수록 동일 카테고리 내 노출 경쟁력이 달라집니다."
+        text: "네이버 스마트스토어 리뷰는 구매자가 상품 경험을 확인하는 자료입니다. 리뷰 수와 평점이 검색 노출에 미치는 영향은 공식 근거 없이 단정하지 않고, 운영자는 반복되는 만족·불만과 상품 개선 후보를 확인하는 데 활용할 수 있습니다."
       },
       { type: "h2", text: "스마트스토어 리뷰 데이터 추출 방법" },
       {
@@ -586,7 +600,7 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "callout",
-        text: "스마트스토어 리뷰 관리는 일회성이 아닙니다. 매주 분석하고 개선하는 루틴을 만들면 6개월 후 별점이 확실히 달라집니다."
+        text: "스마트스토어 리뷰 관리는 일회성이 아닙니다. 매주 같은 기준으로 분석하고 개선하면 별점과 반복 불만이 어떻게 달라지는지 자사 데이터로 비교할 수 있습니다."
       }
     ]
   },
@@ -813,7 +827,7 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "callout",
-        text: "리뷰 분석에서 얻은 인사이트를 실행에 옮기면 매출은 반드시 따라옵니다. ReviewBoost로 지금 바로 첫 분석을 시작해보세요."
+        text: "리뷰 분석에서 얻은 개선안을 실행한 뒤에는 반복 불만·별점·전환 지표의 변화를 다시 측정하세요. ReviewBoost로 지금 바로 첫 분석을 시작해보세요."
       }
     ]
   },
@@ -831,11 +845,11 @@ export const blogPosts: BlogPost[] = [
       { type: "h2", text: "왜 리뷰 데이터로 상세페이지를 고쳐야 하나" },
       {
         type: "p",
-        text: "상세페이지는 광고로 데려온 방문자를 구매로 전환시키는 마지막 관문입니다. 그런데 많은 셀러가 상세페이지를 '보기 좋게' 고치는 데 집중하고, 정작 구매를 망설이게 하는 진짜 이유는 놓칩니다. 그 이유는 대부분 이미 리뷰 안에 적혀 있습니다."
+        text: "상세페이지는 광고로 데려온 방문자를 구매로 전환시키는 마지막 관문입니다. 그런데 많은 셀러가 상세페이지를 '보기 좋게' 고치는 데 집중하고, 정작 구매를 망설이게 하는 진짜 이유는 놓칩니다. 구매를 망설이게 하는 이유의 단서를 리뷰에서 찾을 수 있습니다."
       },
       {
         type: "p",
-        text: "예를 들어 '생각보다 작다', '색이 화면과 다르다', '설명에 없던 부품이 빠졌다' 같은 불만이 반복된다면, 이는 상세페이지가 정보를 충분히 전달하지 못했다는 신호입니다. 이런 불만은 환불·교환과 낮은 별점으로 이어지고, 결국 노출과 전환율을 함께 떨어뜨립니다."
+        text: "예를 들어 '생각보다 작다', '색이 화면과 다르다', '설명에 없던 부품이 빠졌다' 같은 불만이 반복된다면, 이는 상세페이지가 정보를 충분히 전달하지 못했다는 신호입니다. 이런 불만은 환불·교환이나 낮은 별점과 함께 나타날 수 있으므로 상세페이지에서 어떤 정보를 보완할지 검토할 근거가 됩니다."
       },
       { type: "h2", text: "리뷰에서 상세페이지 개선 포인트를 뽑는 4단계" },
       {
@@ -849,7 +863,7 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "p",
-        text: "이 과정을 손으로 하면 리뷰 수백 개를 읽고 분류하는 데만 하루가 갑니다. ReviewBoost는 CSV를 업로드하면 감성·카테고리 분류와 부정 키워드 TOP10을 자동으로 뽑아 주기 때문에, 셀러는 '무엇을 고칠까'가 아니라 '어떻게 고칠까'에 바로 집중할 수 있습니다."
+        text: "이 과정을 손으로 하면 리뷰 수백 개를 읽고 분류하는 데 시간이 오래 걸릴 수 있습니다. ReviewBoost는 CSV를 업로드하면 감성·카테고리 분류와 부정 키워드 TOP10을 자동으로 뽑아 주기 때문에, 셀러는 '무엇을 고칠까'가 아니라 '어떻게 고칠까'에 바로 집중할 수 있습니다."
       },
       { type: "h3", text: "카테고리별로 보는 개선 방향" },
       {
@@ -864,7 +878,7 @@ export const blogPosts: BlogPost[] = [
       { type: "h2", text: "우선순위 점수로 '먼저 고칠 것'을 정한다" },
       {
         type: "p",
-        text: "개선 항목이 많을 때는 무엇부터 손댈지가 관건입니다. ReviewBoost의 우선순위 점수는 0~100점으로 계산되며 부정 비율·리뷰 볼륨·최근성을 함께 반영합니다. 점수가 높은 이슈일수록 지금 전환율을 깎아먹고 있을 가능성이 크므로, 이 순서대로 상세페이지를 고치면 같은 노력으로 더 큰 효과를 얻습니다."
+        text: "개선 항목이 많을 때는 무엇부터 손댈지가 관건입니다. ReviewBoost의 우선순위 점수는 0~100점으로 계산되며 부정 비율·리뷰 볼륨·최근성을 함께 반영합니다. 점수는 전환율에 미치는 영향을 측정한 값이 아니라, 부정 비율·리뷰 수·최근성을 바탕으로 어떤 이슈를 먼저 검토할지 정하는 참고값입니다."
       },
       { type: "h2", text: "개선 후에는 반드시 다시 측정한다" },
       {
@@ -1049,7 +1063,7 @@ export const blogPosts: BlogPost[] = [
       {
         type: "link",
         text: "Chrome에 ReviewBoost 리뷰 수집기 설치하고 지원 쇼핑몰·한도 확인하기",
-        href: "https://reviewboost.co.kr/extension?utm_source=reviewboost_blog&utm_medium=referral&utm_campaign=review_collection_methods_comparison"
+        href: "/extension"
       },
       {
         type: "p",
