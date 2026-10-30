@@ -343,8 +343,8 @@ const blogRecordMetaBySlug: Record<string, BlogRecordMeta> = {
   "review-policy-disclosure-data-audit": { updatedAt: "2026-10-21", primaryKeyword: "후기 운영 정책 공개" },
   "reviewboost-extension-excel-guide": { updatedAt: "2026-09-24", primaryKeyword: "리뷰 엑셀 다운로드" },
   "cafe24-review-migration-checklist": {
-    updatedAt: "2026-09-24",
-    primaryKeyword: "카페24 리뷰 이전"
+    updatedAt: "2026-10-30",
+    primaryKeyword: "스마트스토어 리뷰 카페24 이전"
   },
   "coupang-review-analysis": {
     updatedAt: "2026-03-31",

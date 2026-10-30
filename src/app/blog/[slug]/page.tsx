@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import StructuredData from "@/components/seo/StructuredData";
+import ReviewisaStoreLink from "@/components/blog/ReviewisaStoreLink";
 import ExtensionInstallLink from "@/components/extension/ExtensionInstallLink";
 import { buttonStyles } from "@/components/ui/Button";
 import { ShellContainer } from "@/components/ui/Primitives";
@@ -86,7 +87,15 @@ function renderContentBlock(block: ContentBlock, key: string) {
         </figure>
       );
     case "link":
-      return <p key={key} className="articleParagraph"><a href={block.href} className="underline underline-offset-4">{block.text}</a></p>;
+      return (
+        <p key={key} className="articleParagraph">
+          {block.href === "https://store.cafe24.com/kr/apps/43542" && block.placement ? (
+            <ReviewisaStoreLink placement={block.placement}>{block.text}</ReviewisaStoreLink>
+          ) : (
+            <a href={block.href} className="underline underline-offset-4">{block.text}</a>
+          )}
+        </p>
+      );
     case "h2":
       return <h2 key={key} className="articleHeading2">{block.text}</h2>;
     case "h3":
