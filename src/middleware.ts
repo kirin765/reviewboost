@@ -46,5 +46,5 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sample\\.csv|sample_simple\\.csv).*)"]
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sample\\.csv|sample_simple\\.csv|go/).*)"]
 };

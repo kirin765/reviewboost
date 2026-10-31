@@ -272,7 +272,8 @@ export type FunnelEventName =
   | "extension_usage_anonymous_attempt"
   | "billing_webhook_failed"
   | "billing_payment_received"
-  | "billing_analytics_sent";
+  | "billing_analytics_sent"
+  | "outbound_click";
 
 /**
  * 결제벽 퍼널 카운터 기록. best-effort — DB 미구성(storage_off)이나 오류 시
