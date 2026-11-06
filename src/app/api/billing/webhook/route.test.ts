@@ -737,6 +737,143 @@ describe("POST /api/billing/webhook", () => {
     }
   });
 
+  it("does not send a payment notification from transaction.paid for ReviewBoost transactions", async () => {
+    // paid 단계에서는 고객/구독 정보가 비어 있고, completed 알림이 곧 온다.
+    // paid 로 먼저 알리면 "알 수 없음"으로 표시되고 completed 는 dedupe 로 억제되므로
+    // ReviewBoost 결제는 completed 에서만 1회 알린다.
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true } as Response);
+    process.env.BILLING_NOTIFY_TELEGRAM_BOT_TOKEN = "notifybot";
+    process.env.BILLING_NOTIFY_TELEGRAM_CHAT_ID = "111";
+    mocks.paddlePlanForPriceId.mockReturnValue("extension");
+    try {
+      const req = signedRequest({
+        event_type: "transaction.paid",
+        event_id: "evt_paid_skip",
+        data: {
+          id: "txn_paid_skip",
+          custom_data: { plan_tier: "extension" },
+          customer_id: "ctm_paid_skip",
+          subscription_id: "sub_paid_skip",
+          status: "paid",
+          items: [{ price: { id: "pri_ext" } }]
+        }
+      });
+
+      const res = await POST(req);
+
+      expect(res.status).toBe(200);
+      expect(fetchSpy).not.toHaveBeenCalledWith(
+        "https://api.telegram.org/botnotifybot/sendMessage",
+        expect.anything()
+      );
+      expect(mocks.recordFunnelEventOnce).not.toHaveBeenCalled();
+    } finally {
+      delete process.env.BILLING_NOTIFY_TELEGRAM_BOT_TOKEN;
+      delete process.env.BILLING_NOTIFY_TELEGRAM_CHAT_ID;
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("still notifies from transaction.paid for non-ReviewBoost products", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true } as Response);
+    process.env.BILLING_NOTIFY_TELEGRAM_BOT_TOKEN = "notifybot";
+    process.env.BILLING_NOTIFY_TELEGRAM_CHAT_ID = "111";
+    try {
+      const req = signedRequest({
+        event_type: "transaction.paid",
+        event_id: "evt_other_paid",
+        data: {
+          id: "txn_other_paid",
+          customer_id: "ctm_other",
+          customer: { email_address: "other@example.com" },
+          status: "paid",
+          items: [{ price: { id: "pri_other", product_id: "pro_other" } }]
+        }
+      });
+
+      const res = await POST(req);
+
+      expect(res.status).toBe(200);
+      const body = JSON.parse(String((fetchSpy.mock.calls[0][1] as RequestInit).body));
+      expect(body.text).toContain("기타 상품(pro_other)");
+      expect(body.text).toContain("other@example.com");
+      expect(body.text).toContain("외부 상품(구독 미관리)");
+    } finally {
+      delete process.env.BILLING_NOTIFY_TELEGRAM_BOT_TOKEN;
+      delete process.env.BILLING_NOTIFY_TELEGRAM_CHAT_ID;
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("fills in the customer email from Paddle when the webhook payload has none", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true } as Response);
+    process.env.BILLING_NOTIFY_TELEGRAM_BOT_TOKEN = "notifybot";
+    process.env.BILLING_NOTIFY_TELEGRAM_CHAT_ID = "111";
+    mocks.paddlePlanForPriceId.mockReturnValue("extension");
+    mocks.fetchPaddleCustomerEmail.mockResolvedValue("buyer@example.com");
+    try {
+      const req = signedRequest({
+        event_type: "transaction.completed",
+        event_id: "evt_pay_no_email",
+        data: {
+          id: "txn_pay_no_email",
+          custom_data: { user_id: "user-pay" },
+          customer_id: "ctm_pay_no_email",
+          subscription_id: "sub_pay_no_email",
+          status: "completed",
+          items: [{ price: { id: "pri_ext" } }]
+        }
+      });
+
+      const res = await POST(req);
+
+      expect(res.status).toBe(200);
+      expect(mocks.fetchPaddleCustomerEmail).toHaveBeenCalledWith("ctm_pay_no_email");
+      const body = JSON.parse(String((fetchSpy.mock.calls[0][1] as RequestInit).body));
+      expect(body.text).toContain("buyer@example.com");
+      expect(body.text).toContain("구독 반영 완료");
+    } finally {
+      delete process.env.BILLING_NOTIFY_TELEGRAM_BOT_TOKEN;
+      delete process.env.BILLING_NOTIFY_TELEGRAM_CHAT_ID;
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not label an unmapped ReviewBoost payment as an external product", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true } as Response);
+    process.env.BILLING_NOTIFY_TELEGRAM_BOT_TOKEN = "notifybot";
+    process.env.BILLING_NOTIFY_TELEGRAM_CHAT_ID = "111";
+    mocks.paddlePlanForPriceId.mockReturnValue("extension");
+    mocks.findUserIdByPaddleCustomerId.mockResolvedValue(null);
+    mocks.fetchPaddleCustomerEmail.mockResolvedValue(null);
+    mocks.findUserIdByEmail.mockResolvedValue(null);
+    try {
+      const req = signedRequest({
+        event_type: "transaction.completed",
+        event_id: "evt_pay_unmapped_rb",
+        data: {
+          id: "txn_pay_unmapped_rb",
+          custom_data: { plan_tier: "extension" },
+          customer_id: "ctm_pay_unmapped_rb",
+          subscription_id: "sub_pay_unmapped_rb",
+          status: "completed",
+          items: [{ price: { id: "pri_ext" } }]
+        }
+      });
+
+      const res = await POST(req);
+
+      expect(res.status).toBe(200);
+      const body = JSON.parse(String((fetchSpy.mock.calls[0][1] as RequestInit).body));
+      expect(body.text).toContain("구독 반영 실패(확인 필요)");
+      expect(body.text).not.toContain("외부 상품");
+    } finally {
+      delete process.env.BILLING_NOTIFY_TELEGRAM_BOT_TOKEN;
+      delete process.env.BILLING_NOTIFY_TELEGRAM_CHAT_ID;
+      fetchSpy.mockRestore();
+    }
+  });
+
   it("sends a Telegram payment notification on transaction.completed", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true } as Response);
     process.env.BILLING_NOTIFY_TELEGRAM_BOT_TOKEN = "notifybot";

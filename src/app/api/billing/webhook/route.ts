@@ -220,6 +220,18 @@ function planLabel(tier: string): string {
   return "Free/기타";
 }
 
+/** 알림의 상태 문구. ReviewBoost 결제를 외부 상품처럼 보이지 않게 한다. */
+function paymentStatusLabel(args: {
+  reviewBoost: boolean;
+  managed: boolean;
+  pending: boolean;
+}): string {
+  if (!args.reviewBoost) return "외부 상품(구독 미관리)";
+  if (args.pending) return "계정 미연결(pending)";
+  if (args.managed) return "구독 반영 완료";
+  return "구독 반영 실패(확인 필요)";
+}
+
 /** 알림에 표시할 상품/플랜 라벨. ReviewBoost 플랜이 아니면 price/product id 로 표기한다. */
 function paymentProductLabel(
   planTier: string | null,
@@ -279,9 +291,40 @@ function extractPaymentTotals(data: unknown): { total: number | null; currency: 
 }
 
 /**
+ * 알림에 표시할 고객 정보를 보강한다.
+ * `transaction.paid`/게스트 결제 페이로드에는 이메일/사용자 ID가 없는 경우가 많아,
+ * ① 페이로드 값 → ② Paddle 고객 API 이메일 → ③ profiles 의 customer 매핑 →
+ * ④ 이메일로 Clerk 사용자 조회 순으로 채운다. 조회 실패는 무시(best-effort).
+ */
+async function resolveNotificationIdentity(args: {
+  userId: string | null;
+  customerId: string | null;
+  customerEmail: string | null;
+}): Promise<{ userId: string | null; customerEmail: string | null }> {
+  let userId = args.userId;
+  let customerEmail = args.customerEmail;
+
+  if (!customerEmail && args.customerId) {
+    customerEmail = await fetchPaddleCustomerEmail(args.customerId);
+  }
+  if (!userId && args.customerId) {
+    try {
+      userId = await findUserIdByPaddleCustomerId(args.customerId);
+    } catch {
+      // ignore: 알림은 계속 진행
+    }
+  }
+  if (!userId && customerEmail) {
+    userId = await findUserIdByEmail(customerEmail);
+  }
+
+  return { userId, customerEmail };
+}
+
+/**
  * 새 결제 완료를 관리자 텔레그램으로 알린다. best-effort.
  * Paddle 계정의 모든 상품 결제를 대상으로 하며, ReviewBoost 로 귀속되지 않는
- * 외부 상품 결제라도 알림은 보낸다(managed=false).
+ * 외부 상품 결제라도 알린다(reviewBoost=false).
  * 같은 거래(transaction id)에 대해 Paddle 이 재시도/중복 이벤트를 보내도
  * `recordFunnelEventOnce` 로 최초 1회만 발송한다.
  */
@@ -300,8 +343,18 @@ async function notifyPaymentReceived(args: {
   currency: string | null;
   managed: boolean;
   pending: boolean;
+  reviewBoost: boolean;
   attribution: Record<string, string>;
 }): Promise<void> {
+  // 페이로드에 고객 정보가 없어도(transaction.paid/게스트 결제) "알 수 없음"으로
+  // 남지 않도록 이메일·사용자 ID를 보강한다.
+  const identity = await resolveNotificationIdentity({
+    userId: args.userId,
+    customerId: args.customerId,
+    customerEmail: args.customerEmail
+  });
+  args = { ...args, ...identity };
+
   const dedupeKey = `payment:${args.transactionId ?? args.subscriptionId ?? args.eventId ?? args.customerId ?? "unknown"}`;
 
   const fresh = await recordFunnelEventOnce(
@@ -320,6 +373,7 @@ async function notifyPaymentReceived(args: {
       currency: args.currency,
       managed: args.managed,
       pending: args.pending,
+      review_boost: args.reviewBoost,
       ...args.attribution
     },
     dedupeKey
@@ -337,7 +391,11 @@ async function notifyPaymentReceived(args: {
     `상품: ${paymentProductLabel(args.planTier, args.priceId, args.productId)}`,
     amount ? `금액: ${amount}` : null,
     `고객: ${customer}`,
-    `상태: ${args.managed ? (args.pending ? "계정 미연결(pending)" : "구독 반영 완료") : "외부 상품(구독 미관리)"}`,
+    `상태: ${paymentStatusLabel({
+      reviewBoost: args.reviewBoost,
+      managed: args.managed,
+      pending: args.pending
+    })}`,
     args.subscriptionId ? `구독: ${args.subscriptionId}` : null,
     args.transactionId ? `거래: ${args.transactionId}` : null
   ].filter((v): v is string => Boolean(v));
@@ -702,12 +760,22 @@ export async function POST(req: Request) {
       // invalid_entitlement_payload 오탐 알림이 발생하므로, 자격 반영은 subscription_id 가
       // 포함되는 transaction.completed/order.completed 에서만 수행한다.
       const canProvisionEntitlement = type === "transaction.completed" || type === "order.completed";
-      const receipt = canProvisionEntitlement && isReviewBoostTransaction(data)
+      const reviewBoost = isReviewBoostTransaction(data);
+      const receipt = canProvisionEntitlement && reviewBoost
         ? await handleEntitlementEvent(type, eventId, data)
         : null;
-      await notifyPaymentReceived(buildPaymentNotification({ eventType: type, eventId, data, receipt }));
+      // ReviewBoost 결제는 transaction.paid 로 먼저 알리지 않는다. 그 시점에는 고객/구독
+      // 정보가 비어 "알 수 없음"으로 표시되고, 같은 거래의 completed 알림은 dedupe 로
+      // 억제되기 때문. completed 에서 고객 정보를 보강해 정확히 1회 알린다.
+      // 외부 상품은 기존처럼 첫 결제 이벤트에서 알린다.
+      if (canProvisionEntitlement || !reviewBoost) {
+        await notifyPaymentReceived({
+          ...buildPaymentNotification({ eventType: type, eventId, data, receipt }),
+          reviewBoost
+        });
+      }
       // Only signed, completed ReviewBoost transactions count as GA revenue.
-      if (canProvisionEntitlement && isReviewBoostTransaction(data)) {
+      if (canProvisionEntitlement && reviewBoost) {
         const plan = paddlePlanForPriceId(extractPriceId(data));
         const outcome = await sendPurchaseAnalytics(data, plan);
         if (outcome === "sent") {
