@@ -30,12 +30,13 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe("extension payment recovery", () => {
-  it("guides a guest returning from payment to login without offering another purchase", async () => {
+  it("guides a guest returning from payment to login or signup without offering another purchase", async () => {
     mocks.query = "billing=success&checkout=1";
     vi.stubGlobal("fetch", vi.fn(() => response(guest)));
     render(<ExtensionConnectClient />);
     await flush();
     expect(screen.getByRole("link", { name: "로그인하고 연결하기" }).getAttribute("href")).toContain("billing%3Dsuccess");
+    expect(screen.getByRole("link", { name: "회원가입하고 연결하기" }).getAttribute("href")).toContain("/signup?next=");
     expect(mocks.checkout).not.toHaveBeenCalled();
   });
 

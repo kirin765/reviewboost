@@ -173,11 +173,16 @@ export function createSocialState(next: string | null, now = Date.now()): Social
   return { state: randomBytes(24).toString("hex"), next: sanitizeNext(next), exp: now + SOCIAL_STATE_TTL_MS };
 }
 
+/** 상대 경로만 허용(오픈 리다이렉트 방지). 허용되지 않으면 null. */
+export function safeInternalPath(next: string | null | undefined): string | null {
+  const raw = String(next ?? "").trim();
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+}
+
 /** 상대 경로만 허용(오픈 리다이렉트 방지). 기본 /login. */
 export function sanitizeNext(next: string | null | undefined): string {
-  const raw = String(next ?? "").trim();
-  if (!raw.startsWith("/") || raw.startsWith("//")) return "/login";
-  return raw;
+  return safeInternalPath(next) ?? "/login";
 }
 
 export function encodeSocialState(payload: SocialStatePayload): string {

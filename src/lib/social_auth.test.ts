@@ -7,6 +7,7 @@ import {
   exchangeSocialCode,
   fetchSocialProfile,
   resolveSocialEmail,
+  safeInternalPath,
   sanitizeNext,
   socialEmailFallback
 } from "@/lib/social_auth";
@@ -55,6 +56,18 @@ describe("sanitizeNext", () => {
     expect(sanitizeNext("//evil.com")).toBe("/login");
     expect(sanitizeNext("")).toBe("/login");
     expect(sanitizeNext(null)).toBe("/login");
+  });
+});
+
+describe("safeInternalPath", () => {
+  it("returns relative paths unchanged", () => {
+    expect(safeInternalPath("/extension-connect?ext=abc")).toBe("/extension-connect?ext=abc");
+  });
+  it("returns null for external or empty values", () => {
+    expect(safeInternalPath("https://evil.com")).toBeNull();
+    expect(safeInternalPath("//evil.com")).toBeNull();
+    expect(safeInternalPath("")).toBeNull();
+    expect(safeInternalPath(null)).toBeNull();
   });
 });
 

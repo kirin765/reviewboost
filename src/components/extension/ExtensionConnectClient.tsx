@@ -169,7 +169,7 @@ export default function ExtensionConnectClient() {
               </>
             ) : (
               <>
-                <strong>결제에 사용한 이메일로 로그인해 구독을 연결해주세요.</strong> 다시 결제할 필요는 없습니다.
+                <strong>결제에 사용한 이메일로 로그인하거나 회원가입해 구독을 연결해주세요.</strong> 다시 결제할 필요는 없습니다.
               </>
             )}
           </div>
@@ -198,7 +198,13 @@ export default function ExtensionConnectClient() {
                   <ExtensionCheckoutSummary />
                 </>
               ) : null}
-              <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
+              <p style={{ marginTop: 12, opacity: 0.8, fontSize: 13 }}>
+                결제만 먼저 하셨다면 <strong>결제에 사용한 이메일로 회원가입</strong>하면 구독이 자동으로 연결됩니다.
+              </p>
+              <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                <Link className="btn" href={`/signup?next=${encodeURIComponent(loginNext)}`}>
+                  회원가입하고 연결하기
+                </Link>
                 <span style={{ opacity: 0.6, fontSize: 13 }}>이미 계정이 있나요?</span>
                 <Link className="btn" href={`/login?next=${encodeURIComponent(loginNext)}`}>
                   로그인하고 연결하기
