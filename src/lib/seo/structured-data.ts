@@ -79,6 +79,7 @@ function websiteNode() {
     url: absoluteUrl("/"),
     name: "ReviewBoost",
     inLanguage: "ko",
+    publisher: { "@id": organizationId() },
     description:
       "쿠팡·스마트스토어 등 12개 쇼핑몰의 상품 리뷰를 엑셀·CSV로 저장하고, 선택하여 AI 분석으로 연결하는 리뷰 수집기"
   };
@@ -105,7 +106,7 @@ export function createGlobalStructuredData() {
 }
 
 export function createExtensionStructuredData(record: SeoPageRecord) {
-  const url = absoluteUrl(record.canonicalPath);
+  const url = absoluteUrl(extensionProduct.path);
   const softwareId = `${url}#software`;
   return {
     "@context": "https://schema.org",
@@ -250,7 +251,8 @@ export function createArticleStructuredData(
         mainEntityOfPage: canonicalUrl,
         headline: options.headline ?? record.title,
         description: record.description,
-        datePublished: options.datePublished ?? record.updatedAt,
+        ...(options.datePublished ? { datePublished: options.datePublished } : {}),
+        inLanguage: "ko",
         dateModified: record.updatedAt,
         author: {
           "@id": organizationId()

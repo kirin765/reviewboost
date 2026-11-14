@@ -6,7 +6,7 @@ import { getRequiredSeoPageRecord } from "@/lib/seo/page-registry";
 import { createArticleStructuredData } from "@/lib/seo/structured-data";
 
 const record = getRequiredSeoPageRecord("/help/oliveyoung-review-csv-export");
-export const metadata: Metadata = generatePageMetadata(record, { openGraphType: "article", publishedTime: record.updatedAt });
+export const metadata: Metadata = generatePageMetadata(record, { openGraphType: "article" });
 
 export default function OliveYoungReviewGuide() {
   return <><StructuredData data={createArticleStructuredData(record)} /><MarketingArticlePage

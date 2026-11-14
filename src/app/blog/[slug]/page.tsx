@@ -35,7 +35,6 @@ export async function generateMetadata(props: BlogDetailPageProps): Promise<Meta
 
   return generatePageMetadata(record, {
     openGraphType: "article",
-    publishedTime: record.updatedAt,
     image: post.image
   });
 }

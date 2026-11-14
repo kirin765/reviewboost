@@ -92,7 +92,8 @@ export function MarketingArticlePage({
   sections,
   faq,
   relatedLinks,
-  collectionGuide = false
+  collectionGuide = false,
+  updatedAt
 }: {
   eyebrow: string;
   title: string;
@@ -101,6 +102,7 @@ export function MarketingArticlePage({
   faq?: MarketingFaqItem[];
   relatedLinks?: MarketingCardItem[];
   collectionGuide?: boolean;
+  updatedAt?: string;
 }) {
   return (
     <main className="pageMain marketingPage">
@@ -108,6 +110,7 @@ export function MarketingArticlePage({
         <p className="sectionEyebrow marketingPageEyebrow">{eyebrow}</p>
         <h1 className="marketingPageTitle">{title}</h1>
         <p className="contentPageLead marketingPageLead">{lead}</p>
+        {updatedAt ? <p className="muted">최종 업데이트: <time dateTime={updatedAt}>{updatedAt}</time> · ReviewBoost 팀</p> : null}
       </section>
 
       <article className="card blogPostBody marketingArticleBody">

@@ -91,6 +91,18 @@ function breadcrumbs(...items: SeoBreadcrumb[]) {
 
 const publicRecords: SeoPageRecord[] = [
   {
+    section: "help",
+    slug: "support",
+    title: "문의 · 리뷰 수집 오류와 결제 지원",
+    description: "ReviewBoost 리뷰 수집 오류, 사용 방법, 결제·환불 문의를 남겨주세요. 상품 URL과 오류 메시지를 함께 보내면 확인에 도움이 됩니다.",
+    primaryKeyword: "ReviewBoost 문의",
+    canonicalPath: "/support",
+    updatedAt: "2026-11-02",
+    schema: ["webPage"],
+    indexable: true,
+    breadcrumbs: breadcrumbs({ label: "문의", path: "/support" })
+  },
+  {
     section: "features",
     slug: "extension",
     title: "리뷰 수집 확장 프로그램 · 쿠팡·스마트스토어 엑셀 다운로드",
@@ -242,12 +254,12 @@ const publicRecords: SeoPageRecord[] = [
   {
     section: "help",
     slug: "coupang-review-csv-export",
-    title: "쿠팡 리뷰 CSV 추출 가이드",
+    title: "쿠팡 리뷰 엑셀·CSV 다운로드 방법",
     description:
-      "쿠팡 리뷰 CSV를 추출하고 ReviewBoost에서 바로 분석하는 흐름을 단계별로 설명하는 실전 가이드입니다.",
+      "쿠팡 상품 리뷰를 ReviewBoost 확장 프로그램으로 엑셀·CSV로 저장하는 방법. 하루 50개 무료 수집, 파일 항목, 이미지 URL, 수집 오류 해결 방법을 확인하세요.",
     primaryKeyword: "쿠팡 리뷰 CSV 추출",
     canonicalPath: "/help/coupang-review-csv-export",
-    updatedAt: "2026-10-07",
+    updatedAt: "2026-11-02",
     schema: ["article"],
     indexable: true,
     breadcrumbs: breadcrumbs(
@@ -258,12 +270,12 @@ const publicRecords: SeoPageRecord[] = [
   {
     section: "help",
     slug: "smartstore-review-csv-export",
-    title: "스마트스토어 리뷰 CSV 추출 가이드",
+    title: "스마트스토어 리뷰 엑셀·CSV 다운로드 방법",
     description:
-      "스마트스토어 리뷰 데이터를 내려받고 ReviewBoost로 감성 분석과 FAQ 생성까지 연결하는 사용 가이드입니다.",
+      "스마트스토어 상품 리뷰를 ReviewBoost 확장 프로그램으로 엑셀·CSV로 저장하는 방법. 하루 50개 무료 수집, 파일 항목, 이미지 URL, 수집 오류 해결 방법을 확인하세요.",
     primaryKeyword: "스마트스토어 리뷰 CSV 추출",
     canonicalPath: "/help/smartstore-review-csv-export",
-    updatedAt: "2026-10-07",
+    updatedAt: "2026-11-02",
     schema: ["article"],
     indexable: true,
     breadcrumbs: breadcrumbs(

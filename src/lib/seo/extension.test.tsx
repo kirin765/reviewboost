@@ -3,6 +3,7 @@ import React from "react";
 import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createArticleStructuredData, createExtensionStructuredData } from "@/lib/seo/structured-data";
 import ExtensionPage from "@/app/extension/page";
 import StructuredData from "@/components/seo/StructuredData";
 import { extensionProduct, extensionFaqs } from "@/lib/extension-content";
@@ -15,6 +16,26 @@ import { GET as getLlms } from "@/app/llms.txt/route";
 afterEach(() => vi.unstubAllEnvs());
 
 describe("extension discoverability", () => {
+  it("identifies one product across both landing pages while keeping page URLs distinct", () => {
+    const graphs = ["/", "/extension"].map(path => createExtensionStructuredData(getRequiredSeoPageRecord(path))["@graph"]);
+    const apps = graphs.map(graph => graph.find(node => node["@type"] === "SoftwareApplication"));
+    expect(apps[0]).toEqual(apps[1]);
+    expect(apps[0]).toMatchObject({ "@id": "https://reviewboost.co.kr/extension#software" });
+    const pages = graphs.map(graph => graph.find(node => node["@type"] === "WebPage"));
+    expect(pages[0]).toMatchObject({ url: "https://reviewboost.co.kr/", mainEntity: { "@id": "https://reviewboost.co.kr/extension#software" } });
+    expect(pages[1]).toMatchObject({ url: "https://reviewboost.co.kr/extension" });
+  });
+
+  it("does not turn an article update into a new publication date", () => {
+    const record = getRequiredSeoPageRecord("/help/coupang-review-csv-export");
+    const graph = createArticleStructuredData(record)["@graph"];
+    const article = graph.find(node => node["@type"] === "Article");
+    expect(article).toMatchObject({ dateModified: record.updatedAt, inLanguage: "ko" });
+    expect(article).not.toHaveProperty("datePublished");
+    const dated = createArticleStructuredData(record, { datePublished: "2026-03-31" })["@graph"];
+    expect(dated.find(node => node["@type"] === "Article")).toMatchObject({ datePublished: "2026-03-31", dateModified: record.updatedAt });
+  });
+
   it("renders the product and every structured answer without client JavaScript", () => {
     const doc = new DOMParser().parseFromString(renderToStaticMarkup(<ExtensionPage />), "text/html");
     const script = doc.querySelector('script[type="application/ld+json"]')!;

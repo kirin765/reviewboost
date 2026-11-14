@@ -24,6 +24,7 @@ describe("seo sitemap builders", () => {
 
     expect(xml).toContain("https://reviewboost.co.kr/help");
     expect(xml).toContain("https://reviewboost.co.kr/help/csv-checklist");
+    expect(xml).toContain("<loc>https://reviewboost.co.kr/support</loc>");
     expect(xml).not.toContain("https://reviewboost.co.kr/blog");
   });
 });

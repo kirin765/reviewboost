@@ -9,7 +9,6 @@ const record = getRequiredSeoPageRecord("/help/csv-checklist");
 
 export const metadata: Metadata = generatePageMetadata(record, {
   openGraphType: "article",
-  publishedTime: record.updatedAt
 });
 
 export default async function HelpCsvChecklistPage() {

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import SupportForm from "@/components/SupportForm";
 
-export const metadata: Metadata = {
-  title: "1:1 문의 | ReviewBoost",
-  description: "결제·환불, 사용 방법, 오류 신고 등 무엇이든 남겨주세요. 이메일로 답변드립니다."
-};
+import { generatePageMetadata } from "@/lib/seo/metadata";
+import { getRequiredSeoPageRecord } from "@/lib/seo/page-registry";
+
+export const metadata: Metadata = generatePageMetadata(getRequiredSeoPageRecord("/support"));
 
 export default function SupportPage() {
   return (
